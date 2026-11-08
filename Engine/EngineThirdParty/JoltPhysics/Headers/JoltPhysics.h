@@ -65,10 +65,10 @@ public:
 	void SetLayerConfig(const FPhysicsLayerConfig& InLayerConfig);
 	const FPhysicsLayerConfig& GetLayerConfig() const;
 private:
-	TMap<ObjectIdentityType, TArray<FPhysicsBodyId>> m_Bodys;
-	TMap<FPhysicsBodyId, ObjectIdentityType> m_BodyToObjectIds;
-	TMap<FPhysicsBodyId, FShape*> m_Shapes;
-	TSet<class FCharacterVirtual*> m_Characters;
+	TMap<ObjectIdentityType, TArray<FPhysicsBodyId>> Bodies;
+	TMap<FPhysicsBodyId, ObjectIdentityType> BodyToObjectIds;
+	TMap<FPhysicsBodyId, FShape*> Shapes;
+	TSet<class FCharacterVirtual*> Characters;
 private:
 	FPhysicsData* PhysicsData;
 	const FPhysicsLayerConfig* LayerConfig;

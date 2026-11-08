@@ -2,7 +2,7 @@
 #include <Asset/AssetLoadManager.h>
 #include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <Editor/EditorLogManager.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
 
@@ -94,7 +94,7 @@ namespace PigeonEngine
 	{
 		ReleaseResource();
 	}
-	BOOL32 ESkeletonAnimation::IsResourceValid()const
+	BOOL32 ESkeletonAnimation::IsResourceValid() const
 	{
 		BOOL32 Result = FALSE;
 		if (const INT32 AnimationClipNum = AnimationClips.Num(); AnimationClipNum > 0)
@@ -118,15 +118,15 @@ namespace PigeonEngine
 		AnimationClips.Empty();
 		AnimationClipMapping.Empty();
 	}
-	const EString& ESkeletonAnimation::GetAnimationName()const
+	const EString& ESkeletonAnimation::GetAnimationName() const
 	{
 		return AnimationName;
 	}
-	INT32 ESkeletonAnimation::GetAnimationClipNum()const
+	INT32 ESkeletonAnimation::GetAnimationClipNum() const
 	{
 		return (AnimationClips.Num());
 	}
-	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(INT32 InIndex)const
+	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(INT32 InIndex) const
 	{
 		if ((InIndex >= 0) && (InIndex < AnimationClips.Num()))
 		{
@@ -134,7 +134,7 @@ namespace PigeonEngine
 		}
 		return nullptr;
 	}
-	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(const EString& InClipName)const
+	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(const EString& InClipName) const
 	{
 		if (INT32 FindIndex = 0; AnimationClipMapping.FindValue(InClipName, FindIndex))
 		{
@@ -142,11 +142,11 @@ namespace PigeonEngine
 		}
 		return nullptr;
 	}
-	const TArray<ESkeletonAnimationClip>& ESkeletonAnimation::GetAnimationClips()const
+	const TArray<ESkeletonAnimationClip>& ESkeletonAnimation::GetAnimationClips() const
 	{
 		return AnimationClips;
 	}
-	const TMap<EString, INT32>& ESkeletonAnimation::GetAnimationClipMapping()const
+	const TMap<EString, INT32>& ESkeletonAnimation::GetAnimationClipMapping() const
 	{
 		return AnimationClipMapping;
 	}
@@ -171,11 +171,11 @@ namespace PigeonEngine
 		}
 		return nullptr;
 	}
-	const EString& ESkeletonAnimation::GetSkeletonName()const
+	const EString& ESkeletonAnimation::GetSkeletonName() const
 	{
 		return SkeletonName;
 	}
-	const EString& ESkeletonAnimation::GetRootBoneName()const
+	const EString& ESkeletonAnimation::GetRootBoneName() const
 	{
 		return RootBoneName;
 	}
@@ -207,7 +207,7 @@ namespace PigeonEngine
 				PE_CHECK((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Num() == AnimationClips.Num()));
 				return TRUE;
 			}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			else
 			{
 				EString ErrorInfo = EString("Try to add animation clip but already exist [animation clip name = ") + InClip.ClipName + "].";
@@ -244,11 +244,11 @@ namespace PigeonEngine
 	}
 
 	ESkeletonAnimationAsset::ESkeletonAnimationAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<ESkeletonAnimation>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -262,7 +262,7 @@ namespace PigeonEngine
 		// Skeleton animation resource do not need to initialize.
 		if (IsInitialized())
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skeleton animation name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -276,7 +276,7 @@ namespace PigeonEngine
 
 	EAnimationManager::EAnimationManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = ENGINE_ANIMATION_ASSET_MANAGER_NAME;
 #endif
 	}
@@ -299,7 +299,7 @@ namespace PigeonEngine
 	{
 		ClearSkeletonAnimations();
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 EAnimationManager::ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath
 		, const EString& InSkeletonName, const EString& InRootBoneName)
 	{
@@ -307,7 +307,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton animation importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -319,7 +319,7 @@ namespace PigeonEngine
 		EString ImportPathName; EString ImportFileType;
 		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton animation importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -331,7 +331,7 @@ namespace PigeonEngine
 		//TODO Check import type(like fbx, ab...).
 		if (ImportPathName.Length() <= 3u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton animation importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -356,7 +356,7 @@ namespace PigeonEngine
 		TArray<ESkeletonAnimationClip> AssimpSkeletonAnimationClips;
 		if ((AssimpManager->ReadSkeletonAnimationFile(InImportFullPathName, AssimpSkeletonAnimationClips)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Assimp importer can not load skeleton animation file from path (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -395,7 +395,7 @@ namespace PigeonEngine
 		}
 		if (SkeletonAnimationAssetManager.Add(TempFullPathName, ResultAsset, TRUE) == 0u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Pixel shader path = [") + TempFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -469,7 +469,7 @@ namespace PigeonEngine
 			return NewAsset;
 		}
 		NewAsset = new ESkeletonAnimationAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -507,7 +507,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Load skeleton animation asset path name check failed (load file path : ");
 				ErrorData += InLoadPath;
@@ -527,7 +527,7 @@ namespace PigeonEngine
 			{
 				delete[]ReadFileMem;
 			}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Load skeleton animation asset failed (load file path : ");
 				ErrorData += TempFullPathName;
@@ -571,15 +571,15 @@ namespace PigeonEngine
 			RstMemSize -= StrStride;\
 		}\
 
-#define LOAD_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __PtrType, __Ptr) \
-		__PtrType* __Ptr = nullptr;\
+#define LOAD_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __PtrType, __OutputPtr) \
+		__PtrType* __OutputPtr = nullptr;\
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			void* NewPtr = new BYTE[MemSize];\
 			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
 			::memcpy_s(NewPtr, MemSize, TempPtr, MemSize);\
-			(__Ptr) = (__PtrType*)NewPtr;\
+			(__OutputPtr) = (__PtrType*)NewPtr;\
 			RstMemPtr = &(TempPtr[MemSize]);\
 			RstMemSize -= MemSize;\
 		}\
@@ -590,7 +590,7 @@ namespace PigeonEngine
 				EAssetType AssetType = static_cast<EAssetType>(TempAssetType);
 				if (AssetType != EAssetType::ASSET_TYPE_ANIMATION)
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					{
 						EString ErrorData("Load skeleton animation asset failed (load file path : ");
 						ErrorData += TempFullPathName;
@@ -607,7 +607,7 @@ namespace PigeonEngine
 				EAnimationType AnimationType = static_cast<EAnimationType>(TempAnimationType);
 				if ((AnimationType == EAnimationType::ANIMATION_TYPE_UNKNOWN) || (AnimationType >= EAnimationType::ANIMATION_TYPE_COUNT))
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					{
 						EString ErrorData("Load skeleton animation asset failed (load file path : ");
 						ErrorData += TempFullPathName;
@@ -749,7 +749,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Save skeleton animation asset path name check failed (save file path : ");
 				ErrorData += InSavePath;
@@ -978,7 +978,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const BOOL32 bHasImport = (!!InImportPath) && (!!InImportName) && (!!InImportFileType);
 		if (bHasImport)
 		{

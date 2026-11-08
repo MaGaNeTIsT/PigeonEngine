@@ -4,7 +4,7 @@
 #include "../../../../IO/SerializationHelper.h"
 #include "../World/World.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -81,11 +81,11 @@ namespace PigeonEngine
 
 	void PSceneComponent::ClearChildren()
 	{
-		for (auto elem = ChildrenComponents.Begin(); elem != ChildrenComponents.End(); elem++)
+		for (TSet<PSceneComponent*>::TIterator It = ChildrenComponents.Begin(); It != ChildrenComponents.End(); It++)
 		{
 
-			(*elem)->ParentComponent = nullptr;
-			(*elem)->Destroy();
+			(*It)->ParentComponent = nullptr;
+			(*It)->Destroy();
 		}
 		ChildrenComponents.Empty();
 	}
@@ -117,9 +117,9 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
-		for(const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			const PSceneComponent* Ret = elem->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
+			const PSceneComponent* Ret = Component->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
 			if(Ret)
 			{
 				return Ret;
@@ -163,7 +163,7 @@ namespace PigeonEngine
 		// this->TickRender();
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PSceneComponent::EditorTick(FLOAT deltaTime)
 	{
 		PActorComponent::EditorTick(deltaTime);
@@ -207,11 +207,11 @@ namespace PigeonEngine
 		{
 			SendUpdateRenderState();
 		}
-		for(const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			if(elem->GetOwnerActor() == this->GetOwnerActor())
+			if(Component->GetOwnerActor() == this->GetOwnerActor())
 			{
-				elem->TickRender();
+				Component->TickRender();
 			}
 		}
 	}
@@ -221,9 +221,9 @@ namespace PigeonEngine
 		PActorComponent::BeginAddedToScene(World);
 		MyWolrd = World;
 		this->CreateRenderState();
-		for(const auto& child : this->ChildrenComponents)
+		for (PSceneComponent* Child : this->ChildrenComponents)
 		{
-			child->BeginAddedToScene(World);
+			Child->BeginAddedToScene(World);
 		}
 	}
 
@@ -237,11 +237,11 @@ namespace PigeonEngine
 		this->Mobility = NewMobility;
 	}
 
-	BOOL32 PSceneComponent::ContainTransform()const
+	BOOL32 PSceneComponent::ContainTransform() const
 	{
 		return TRUE;
 	}
-	const ETransform& PSceneComponent::GetTransform()const
+	const ETransform& PSceneComponent::GetTransform() const
 	{
 		return Transform;
 	}
@@ -257,9 +257,9 @@ namespace PigeonEngine
 		Transform.SetLocation_Local(Location);
 
 		MarkRenderTransformAsDirty();
-		for (const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			elem->MarkRenderTransformAsDirty();
+			Component->MarkRenderTransformAsDirty();
 		}
 	}
 
@@ -268,9 +268,9 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_Local(Rotation);
 		MarkRenderTransformAsDirty();
-		for (const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			elem->MarkRenderTransformAsDirty();
+			Component->MarkRenderTransformAsDirty();
 		}
 	}
 
@@ -279,9 +279,9 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_Local(Scale);
 		MarkRenderTransformAsDirty();
-		for (const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			elem->MarkRenderTransformAsDirty();
+			Component->MarkRenderTransformAsDirty();
 		}
 	}
 
@@ -299,9 +299,9 @@ namespace PigeonEngine
 
 		Transform.SetLocation_World(Location, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
-		for (const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			elem->MarkRenderTransformAsDirty();
+			Component->MarkRenderTransformAsDirty();
 		}
 	}
 
@@ -310,9 +310,9 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_World(Rotation, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
-		for (const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			elem->MarkRenderTransformAsDirty();
+			Component->MarkRenderTransformAsDirty();
 		}
 	}
 
@@ -321,9 +321,9 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_World(Scale, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
-		for (const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			elem->MarkRenderTransformAsDirty();
+			Component->MarkRenderTransformAsDirty();
 		}
 	}
 
@@ -341,7 +341,7 @@ namespace PigeonEngine
 		return this->Transform.GetLocation_Local();
 	}
 
-	Quaternion PSceneComponent::GetComponentLocalRotation()const
+	Quaternion PSceneComponent::GetComponentLocalRotation() const
 	{
 		return this->Transform.GetRotation_Local();
 	}
@@ -381,7 +381,7 @@ namespace PigeonEngine
 		return this->Transform.GetUpVector_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
 	}
 
-	PE_NODISCARD const EBoundAABB& PSceneComponent::GetLocalBound()const
+	PE_NODISCARD const EBoundAABB& PSceneComponent::GetLocalBound() const
 	{
 		return LocalBound;
 	}
@@ -394,7 +394,7 @@ namespace PigeonEngine
 	{
 		EBoundAABB ResultBound(this->GetLocalBound());
 
-		for (const auto& ChildComponent : this->ChildrenComponents)
+		for (PSceneComponent* ChildComponent : this->ChildrenComponents)
 		{
 			const Vector3		TempLocalLocation(ChildComponent->GetComponentLocalLocation());
 			const Quaternion	TempLocalRotation(ChildComponent->GetComponentLocalRotation());
@@ -420,7 +420,7 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions START
-	BOOL32 PSceneComponent::IsRenderTransformDirty()const
+	BOOL32 PSceneComponent::IsRenderTransformDirty() const
 	{
 		return RenderTransformDirty;
 	}
@@ -460,7 +460,7 @@ namespace PigeonEngine
 		RenderTransformDirty = FALSE;
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	static Vector3 Location;
 	static Euler   Rotation;
 	static Vector3 Scale;
@@ -479,9 +479,9 @@ namespace PigeonEngine
 		if (bTreeNodeExpand)
 		{
 			// child actors
-			for (const auto& elem : ChildrenComponents)
+			for (PSceneComponent* Component : ChildrenComponents)
 			{
-				elem->GenerateComponentOutline(WorldCurrentSelectedComponent);
+				Component->GenerateComponentOutline(WorldCurrentSelectedComponent);
 			}
 			ImGui::TreePop();
 		}

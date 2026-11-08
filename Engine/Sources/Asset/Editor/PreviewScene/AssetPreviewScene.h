@@ -1,6 +1,6 @@
 #pragma once
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <CoreMinimal.h>
 #include <imgui.h>
@@ -40,6 +40,9 @@ namespace PigeonEngine
 		// IEngineFrameRenderer
 		virtual void PublishFrameCommands() override;
 		virtual void RenderFrame() override;
+		// Forwards a shader replacement to the preview renderer, whose pipeline states and
+		// parameter blocks were derived from the object that was just replaced.
+		virtual void OnShaderAssetReplaced(const EName& InShaderName) override;
 
 		void SetStaticMesh(const EStaticMeshAsset* InStaticMeshAsset);
 		void SetSkinnedMesh(const ESkinnedMeshAsset* InSkinnedMeshAsset, const ESkeletonAsset* InSkeletonAsset);
@@ -51,8 +54,8 @@ namespace PigeonEngine
 		// The editor's timeline: the position is in seconds and is clamped to the selected
 		// clip. While playback is enabled the value still advances every Tick.
 		void SetPlaybackTimeSeconds(FLOAT InTimeSeconds);
-		PE_NODISCARD FLOAT GetPlaybackTimeSeconds()const;
-		PE_NODISCARD FLOAT GetClipDurationSeconds()const;
+		PE_NODISCARD FLOAT GetPlaybackTimeSeconds() const;
+		PE_NODISCARD FLOAT GetClipDurationSeconds() const;
 		void ClearPreview();
 
 		ImTextureID GetTextureId() const;
@@ -81,34 +84,37 @@ namespace PigeonEngine
 		Vector3 GetPreviewPivot(const Vector3& InBoundsCenter) const;
 
 	private:
-		BOOL8					m_Initialized = FALSE;
+		BOOL8					bInitialized = FALSE;
 		// Set by Tick (GameThread) and cleared by RenderFrame (RenderThread): one published
 		// frame is one recorded frame, and a panel that stopped ticking stops rendering.
-		BOOL8					m_bRenderRequested = FALSE;
-		BOOL8					m_AutoRotate = TRUE;
-		BOOL8					m_PlayAnimation = TRUE;
-		UINT32				m_ViewportWidth = 512u;
-		UINT32				m_ViewportHeight = 512u;
-		FLOAT				m_PlaybackRate = 1.0f;
-		FLOAT				m_OrbitRadians = 0.0f;
-		FLOAT				m_PlaybackTimeSeconds = 0.0f;
-		FLOAT				m_CameraDistance = 200.0f;
+		BOOL8					bRenderRequested = FALSE;
+		// The ImGui handle of the last recorded image. Built on the render thread in RenderFrame,
+		// because registering the texture's bindless view is device work; the panel only reads it.
+		ImTextureID				PreviewTextureId = ImTextureID_Invalid;
+		BOOL8					bAutoRotate = TRUE;
+		BOOL8					bPlayAnimation = TRUE;
+		UINT32				ViewportWidth = 512u;
+		UINT32				ViewportHeight = 512u;
+		FLOAT				PlaybackRate = 1.0f;
+		FLOAT				OrbitRadians = 0.0f;
+		FLOAT				PlaybackTimeSeconds = 0.0f;
+		FLOAT				CameraDistance = 200.0f;
 		// Offset from the zone origin to the framing centre in preview space. The pivot sits on
 		// the zone origin, while the camera still needs to look at the whole mesh.
-		Vector3				m_CameraFocusOffset = Vector3::Zero();
-		EString				m_DebugLabel;
-		Vector3				m_ZoneOrigin = Vector3::Zero();
-		PActor* 				m_CameraActor = nullptr;
-		PCameraComponent*	m_CameraComponent = nullptr;
-		PWorld*				m_PreviewWorld = nullptr;
-		RSceneRenderer*		m_PreviewRenderer = nullptr;
-		PActor*				m_PreviewActor = nullptr;
-		PStaticMeshComponent*	m_StaticMeshComponent = nullptr;
-		PSkeletalMeshComponent*	m_SkeletalMeshComponent = nullptr;
-		const EStaticMeshAsset*	m_StaticMeshAsset = nullptr;
-		const ESkinnedMeshAsset*	m_SkinnedMeshAsset = nullptr;
-		const ESkeletonAsset*	m_SkeletonAsset = nullptr;
-		const ESkeletonAnimationClip*	m_AnimationClip = nullptr;
+		Vector3				CameraFocusOffset = Vector3::Zero();
+		EString				DebugLabel;
+		Vector3				ZoneOrigin = Vector3::Zero();
+		PActor* 				CameraActor = nullptr;
+		PCameraComponent*	CameraComponent = nullptr;
+		PWorld*				PreviewWorld = nullptr;
+		RSceneRenderer*		PreviewRenderer = nullptr;
+		PActor*				PreviewActor = nullptr;
+		PStaticMeshComponent*	StaticMeshComponent = nullptr;
+		PSkeletalMeshComponent*	SkeletalMeshComponent = nullptr;
+		const EStaticMeshAsset*	StaticMeshAsset = nullptr;
+		const ESkinnedMeshAsset*	SkinnedMeshAsset = nullptr;
+		const ESkeletonAsset*	SkeletonAsset = nullptr;
+		const ESkeletonAnimationClip*	AnimationClip = nullptr;
 	public:
 		EAssetPreviewScene(const EAssetPreviewScene&) = delete;
 		EAssetPreviewScene& operator=(const EAssetPreviewScene&) = delete;

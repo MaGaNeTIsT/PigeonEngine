@@ -5,108 +5,108 @@ PIGEONENGINE_NAMESPACE_BEGIN
 using namespace JPH;
 
 FCharacter::FCharacter(const FCharacterSettings& inSettings)
-	:m_CharacterCreateSettings(inSettings)
+	:CharacterCreateSettings(inSettings)
 	,FCharacterBase(inSettings)
 {
-	m_MaxSeparationDistance = inSettings.MaxSeparationDistance;
+	MaxSeparationDistance = inSettings.MaxSeparationDistance;
 
-	m_CharacterSettings = new CharacterSettings();
-	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings.Up);
-	m_CharacterSettings->mMaxSlopeAngle = inSettings.MaxSlopeAngle;
+	CharacterSettingsInstance = new CharacterSettings();
+	CharacterSettingsInstance->mUp = PhysicsUtility::Convert(inSettings.Up);
+	CharacterSettingsInstance->mMaxSlopeAngle = inSettings.MaxSlopeAngle;
 	if(inSettings.Shape)
-		m_CharacterSettings->mShape = inSettings.Shape->CreateShape();
-	m_CharacterSettings->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings.PlaneVector),inSettings.CharacterRadiusStanding);
-	m_CharacterSettings->mLayer = inSettings.Layer.ToJolt();
-	m_CharacterSettings->mMass = inSettings.Mass;
-	m_CharacterSettings->mFriction = inSettings.Friction;
-	m_CharacterSettings->mGravityFactor = inSettings.GravityFactor;
+		CharacterSettingsInstance->mShape = inSettings.Shape->CreateShape();
+	CharacterSettingsInstance->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings.PlaneVector),inSettings.CharacterRadiusStanding);
+	CharacterSettingsInstance->mLayer = inSettings.Layer.ToJolt();
+	CharacterSettingsInstance->mMass = inSettings.Mass;
+	CharacterSettingsInstance->mFriction = inSettings.Friction;
+	CharacterSettingsInstance->mGravityFactor = inSettings.GravityFactor;
 }
 
 FCharacter::~FCharacter()
 {
-	delete m_CharacterSettings;
-	m_CharacterSettings = nullptr;
-	if (m_Character)
+	delete CharacterSettingsInstance;
+	CharacterSettingsInstance = nullptr;
+	if (CharacterInstance)
 		RemoveFromPhysicsSystem();
 }
 void FCharacter::AddToPhysicsSystem(PhysicsUtility::EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, UINT64 inUserData, BOOL32 inLockBodies)
 {
-	m_Character = new Character(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
-	m_Character->AddToPhysicsSystem(inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
-	CharacterBase = m_Character;
+	CharacterInstance = new Character(CharacterSettingsInstance, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
+	CharacterInstance->AddToPhysicsSystem(inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
+	CharacterBase = CharacterInstance;
 }
 void FCharacter::RemoveFromPhysicsSystem(BOOL32 inLockBodies)
 {
-	m_Character->RemoveFromPhysicsSystem(inLockBodies);
-	delete m_Character;
-	m_Character = nullptr;
+	CharacterInstance->RemoveFromPhysicsSystem(inLockBodies);
+	delete CharacterInstance;
+	CharacterInstance = nullptr;
 }
 void FCharacter::Activate(BOOL32 inLockBodies)
 {
-	m_Character->Activate(inLockBodies);
+	CharacterInstance->Activate(inLockBodies);
 }
 void FCharacter::PostSimulation(BOOL32 inLockBodies)
 {
-	m_Character->PostSimulation(m_MaxSeparationDistance, inLockBodies);
+	CharacterInstance->PostSimulation(MaxSeparationDistance, inLockBodies);
 }
 void FCharacter::SetLinearAndAngularVelocity(Vector3 inLinearVelocity, Vector3 inAngularVelocity, BOOL32 inLockBodies)
 {
-	m_Character->SetLinearAndAngularVelocity(PhysicsUtility::Convert(inLinearVelocity), PhysicsUtility::Convert(inAngularVelocity), inLockBodies);
+	CharacterInstance->SetLinearAndAngularVelocity(PhysicsUtility::Convert(inLinearVelocity), PhysicsUtility::Convert(inAngularVelocity), inLockBodies);
 }
 Vector3 FCharacter::GetLinearVelocity(BOOL32 inLockBodies) const
 {
-	return PhysicsUtility::Convert(m_Character->GetLinearVelocity(inLockBodies));
+	return PhysicsUtility::Convert(CharacterInstance->GetLinearVelocity(inLockBodies));
 }
 void FCharacter::SetLinearVelocity(Vector3 inLinearVelocity, BOOL32 inLockBodies)
 {
-	return m_Character->SetLinearVelocity(PhysicsUtility::Convert(inLinearVelocity), inLockBodies);
+	return CharacterInstance->SetLinearVelocity(PhysicsUtility::Convert(inLinearVelocity), inLockBodies);
 }
 void FCharacter::AddLinearVelocity(Vector3 inLinearVelocity, BOOL32 inLockBodies)
 {
-	m_Character->AddLinearVelocity(PhysicsUtility::Convert(inLinearVelocity),inLockBodies);
+	CharacterInstance->AddLinearVelocity(PhysicsUtility::Convert(inLinearVelocity),inLockBodies);
 }
 void FCharacter::AddImpulse(Vector3 inImpulse, BOOL32 inLockBodies)
 {
-	m_Character->AddImpulse(PhysicsUtility::Convert(inImpulse),inLockBodies);
+	CharacterInstance->AddImpulse(PhysicsUtility::Convert(inImpulse),inLockBodies);
 }
 void FCharacter::GetPositionAndRotation(Vector3& outPosition, Quaternion& outRotation, BOOL32 inLockBodies) const
 {
 	Vec3 position;
 	Quat rotation;
-	m_Character->GetPositionAndRotation(position, rotation, inLockBodies);
+	CharacterInstance->GetPositionAndRotation(position, rotation, inLockBodies);
 	outPosition = PhysicsUtility::Convert2Centimeter(position);
 	outRotation = PhysicsUtility::Convert(rotation);
 }
 void FCharacter::SetPositionAndRotation(Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EActivate inActivationMode, BOOL32 inLockBodies) const
 {
-	m_Character->SetPositionAndRotation(PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
+	CharacterInstance->SetPositionAndRotation(PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
 }
 Vector3 FCharacter::GetPosition(BOOL32 inLockBodies) const
 {
-	return PhysicsUtility::Convert2Centimeter(m_Character->GetPosition(inLockBodies));
+	return PhysicsUtility::Convert2Centimeter(CharacterInstance->GetPosition(inLockBodies));
 }
 void FCharacter::SetPosition(Vector3 inPosition, PhysicsUtility::EActivate inActivationMode, BOOL32 inLockBodies)
 {
-	m_Character->SetPosition(PhysicsUtility::Convert2Meter(inPosition), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
+	CharacterInstance->SetPosition(PhysicsUtility::Convert2Meter(inPosition), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
 }
 Quaternion FCharacter::GetRotation(BOOL32 inLockBodies) const
 {
-	return PhysicsUtility::Convert(m_Character->GetRotation(inLockBodies));
+	return PhysicsUtility::Convert(CharacterInstance->GetRotation(inLockBodies));
 }
 void FCharacter::SetRotation(Quaternion inRotation, PhysicsUtility::EActivate inActivationMode, BOOL32 inLockBodies)
 {
-	m_Character->SetRotation(PhysicsUtility::Convert(inRotation), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
+	CharacterInstance->SetRotation(PhysicsUtility::Convert(inRotation), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
 }
 Vector3 FCharacter::GetCenterOfMassPosition(BOOL32 inLockBodies) const
 {
-	return PhysicsUtility::Convert2Centimeter(m_Character->GetCenterOfMassPosition(inLockBodies));
+	return PhysicsUtility::Convert2Centimeter(CharacterInstance->GetCenterOfMassPosition(inLockBodies));
 }
 void FCharacter::SetLayer(FPhysicsObjectLayer inLayer, BOOL32 inLockBodies)
 {
-	m_Character->SetLayer(inLayer.ToJolt(), inLockBodies);
+	CharacterInstance->SetLayer(inLayer.ToJolt(), inLockBodies);
 }
 BOOL32 FCharacter::SetShape(FShape* inShape, FLOAT inMaxPenetrationDepth, BOOL32 inLockBodies)
 {
-	return m_Character->SetShape(inShape->CreateShape(), inMaxPenetrationDepth, inLockBodies);
+	return CharacterInstance->SetShape(inShape->CreateShape(), inMaxPenetrationDepth, inLockBodies);
 }
 PIGEONENGINE_NAMESPACE_END

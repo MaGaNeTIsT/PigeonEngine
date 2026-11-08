@@ -6,7 +6,7 @@
 #include <EngineCommon.h>
 #include <BaseAsset.h>
 #include <AssetLoadManager.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <wincodec.h>
 #include <wincodecsdk.h>
 #pragma comment (lib, "windowscodecs.lib")
@@ -25,9 +25,9 @@ namespace PigeonEngine
 
 	struct ETextureResourceProperty
 	{
-		ETextureResourceProperty()noexcept : Width(0u), Height(0u), Depth(0u), PixelByteCount(0u), Format(RFormatType::FORMAT_UNKNOWN) {}
-		ETextureResourceProperty(const ETextureResourceProperty& Other)noexcept : Width(Other.Width), Height(Other.Height), Depth(Other.Depth), PixelByteCount(Other.PixelByteCount), Format(Other.Format) {}
-		ETextureResourceProperty(UINT32 InWidth, UINT32 InHeight, UINT32 InDepth, UINT32 InPixelByteCount, RFormatType InFormat)noexcept : Width(InWidth), Height(InHeight), Depth(InDepth), PixelByteCount(InPixelByteCount), Format(InFormat) {}
+		ETextureResourceProperty() noexcept : Width(0u), Height(0u), Depth(0u), PixelByteCount(0u), Format(RFormatType::FORMAT_UNKNOWN) {}
+		ETextureResourceProperty(const ETextureResourceProperty& Other) noexcept : Width(Other.Width), Height(Other.Height), Depth(Other.Depth), PixelByteCount(Other.PixelByteCount), Format(Other.Format) {}
+		ETextureResourceProperty(UINT32 InWidth, UINT32 InHeight, UINT32 InDepth, UINT32 InPixelByteCount, RFormatType InFormat) noexcept : Width(InWidth), Height(InHeight), Depth(InDepth), PixelByteCount(InPixelByteCount), Format(InFormat) {}
 		ETextureResourceProperty& operator=(const ETextureResourceProperty& Other)
 		{
 			Width			= Other.Width;
@@ -48,11 +48,11 @@ namespace PigeonEngine
 	class ETexture : public EObjectBase, public EResourceInterface
 	{
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	public:
-		ETextureType	GetTextureType()const { return TextureType; }
+		ETextureType	GetTextureType() const { return TextureType; }
 	protected:
 		void			SetTextureData(BYTE* InByteCode, const ETextureResourceProperty& InProperty, BOOL32 InSRGB);
 	public:
@@ -72,9 +72,9 @@ namespace PigeonEngine
 	class ETexture2D : public ETexture
 	{
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	public:
 		void			SetTexture2DData(BYTE* InByteCode, UINT32 InWidth, UINT32 InHeigh, UINT32 InPixelByteCount, RFormatType InFormat, BOOL32 InSRGB);
 	public:
@@ -89,9 +89,9 @@ namespace PigeonEngine
 	class ETextureCube : public ETexture
 	{
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	public:
 		// InSRGB states whether the stored bytes are sRGB encoded, exactly as it does for a 2D
 		// texture: the render layer decodes through the SRV, the stored bytes are never converted.
@@ -119,26 +119,26 @@ namespace PigeonEngine
 	{
 	public:
 		ETexture2DAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~ETexture2DAsset();
 	public:
-		virtual BOOL32	InitResource()override;
+		virtual BOOL32	InitResource() override;
 	public:
 		// Render thread only: the proxy this asset's cold data was turned into, or null while
 		// the creation command is still queued.
-		PE_NODISCARD const RTexture2DResource*	GetRenderResource()const
+		PE_NODISCARD const RTexture2DResource*	GetRenderResource() const
 		{
 			return static_cast<const RTexture2DResource*>(RenderBinding.Resolve());
 		}
-		PE_NODISCARD BOOL32	IsRenderResourceValid()const
+		PE_NODISCARD BOOL32	IsRenderResourceValid() const
 		{
 			const RTexture2DResource* Resource = GetRenderResource();
 			return ((!!Resource) && (Resource->IsRenderResourceValid()));
 		}
-		virtual void	UninitResource()override
+		virtual void	UninitResource() override
 		{
 			TBaseAsset<ETexture2D>::UninitResource();
 			RenderBinding.Release();
@@ -162,26 +162,26 @@ namespace PigeonEngine
 	{
 	public:
 		ETextureCubeAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~ETextureCubeAsset();
 	public:
-		virtual BOOL32	InitResource()override;
+		virtual BOOL32	InitResource() override;
 	public:
 		// Render thread only: the proxy this asset's cold data was turned into, or null while
 		// the creation command is still queued.
-		PE_NODISCARD const RTextureCubeResource*	GetRenderResource()const
+		PE_NODISCARD const RTextureCubeResource*	GetRenderResource() const
 		{
 			return static_cast<const RTextureCubeResource*>(RenderBinding.Resolve());
 		}
-		PE_NODISCARD BOOL32	IsRenderResourceValid()const
+		PE_NODISCARD BOOL32	IsRenderResourceValid() const
 		{
 			const RTextureCubeResource* Resource = GetRenderResource();
 			return ((!!Resource) && (Resource->IsRenderResourceValid()));
 		}
-		virtual void	UninitResource()override
+		virtual void	UninitResource() override
 		{
 			TBaseAsset<ETextureCube>::UninitResource();
 			RenderBinding.Release();
@@ -203,11 +203,11 @@ namespace PigeonEngine
 		typedef TAssetManager<EString, ETexture2DAsset>		ETexture2DAssetManager;
 		typedef TAssetManager<EString, ETextureCubeAsset>	ETextureCubeAssetManager;
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// InFallbackSRGB answers for an image that declares no colour space of its own (TGA and
 		// other formats carry none). A file that does declare one - an sRGB profile, or an Exif
 		// colour space of sRGB - decides by itself, and the fallback is not consulted. The value

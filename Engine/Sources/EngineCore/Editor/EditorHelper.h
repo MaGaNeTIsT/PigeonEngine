@@ -1,6 +1,6 @@
 #pragma once
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <CoreMinimal.h>
 #include <EngineCommon.h>

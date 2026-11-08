@@ -15,7 +15,7 @@
 
 namespace PigeonEngine
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<EEditorManager, EManagerBase>();
@@ -37,9 +37,9 @@ namespace PigeonEngine
 
 	void EEditorManager::ShutDown()
 	{
-		m_LogsManager->ShutDown();
-		m_AssetManager->ShutDown();
-		m_ImportManager->ShutDown();
+		LogsManager->ShutDown();
+		AssetManager->ShutDown();
+		ImportManager->ShutDown();
 	}
 
 	void EEditorManager::Init()
@@ -52,18 +52,18 @@ namespace PigeonEngine
 
 	void EEditorManager::EditorInit()
 	{
-		m_WorldManager     = EWorldManager::GetManagerSingleton();
-		m_AssetManager     = EAssetManager::GetManagerSingleton();
-		m_LogsManager      = EEditorLogManager::GetManagerSingleton();
-		m_ImportManager    = EImportManager::GetManagerSingleton();
-		m_EditorGlobalPanel = EEditorGlobalPanel::GetManagerSingleton();
-		m_EditorProfilerPanel = EEditorProfilerPanel::GetManagerSingleton();
-		m_LogsManager->EditorInit();
-		m_AssetManager->EditorInit();
-		m_WorldManager->EditorInit();
-		m_ImportManager->EditorInit();
+		WorldManager     = EWorldManager::GetManagerSingleton();
+		AssetManager     = EAssetManager::GetManagerSingleton();
+		LogsManager      = EEditorLogManager::GetManagerSingleton();
+		ImportManager    = EImportManager::GetManagerSingleton();
+		EditorGlobalPanel = EEditorGlobalPanel::GetManagerSingleton();
+		EditorProfilerPanel = EEditorProfilerPanel::GetManagerSingleton();
+		LogsManager->EditorInit();
+		AssetManager->EditorInit();
+		WorldManager->EditorInit();
+		ImportManager->EditorInit();
 
-		PEditorController* EditorController = static_cast<PEditorController*>(m_WorldManager->GetWorld()->GetController());
+		PEditorController* EditorController = static_cast<PEditorController*>(WorldManager->GetWorld()->GetController());
 		if (EditorController)
 		{
 			auto func = [this](IMouse::Event::EType Type, const Vector2& MousePos)
@@ -77,7 +77,7 @@ namespace PigeonEngine
 
 	void EEditorManager::HandleMouseEvent(IMouse::Event::EType Type, const Vector2& MousePos)
 	{
-		PWorld* World = m_WorldManager->GetWorld();
+		PWorld* World = WorldManager->GetWorld();
 		if (!World) { return; }
 
 		PController* PC = World->GetController();
@@ -88,29 +88,29 @@ namespace PigeonEngine
 			PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT);
 
 		// Block clicks when ImGui owns the mouse, but never block an active drag
-		if (ImGui::GetIO().WantCaptureMouse && !m_bDragging) { return; }
+		if (ImGui::GetIO().WantCaptureMouse && !bDragging) { return; }
 
 		if (Type == IMouse::Event::EType::LPress)
 		{
-			m_LastMousePos = MousePos;
+			LastMousePos = MousePos;
 
 			// Try gizmo hit first (only if something is selected)
-			if (m_SelectedComponent)
+			if (SelectedComponent)
 			{
 				Vector3 DragOrigin;
 				EGizmoAxis HitAxis = HitTestTranslationGizmo(
 					PC->GetCamera(),
-					m_SelectedComponent,
+					SelectedComponent,
 					MousePos.x, MousePos.y,
 					ScreenRect,
 					DragOrigin
 				);
 				if (HitAxis != EGizmoAxis::NONE)
 				{
-					m_DragAxis        = HitAxis;
-					m_DragOriginWorld = DragOrigin;
-					m_ComponentOrigin = m_SelectedComponent->GetComponentWorldLocation();
-					m_bDragging       = TRUE;
+					DragAxis        = HitAxis;
+					DragOriginWorld = DragOrigin;
+					ComponentOrigin = SelectedComponent->GetComponentWorldLocation();
+					bDragging       = TRUE;
 					return; // consumed by gizmo
 				}
 			}
@@ -124,34 +124,34 @@ namespace PigeonEngine
 			if (ClickedActor)
 			{
 				World->SetSelectedActor(ClickedActor);
-				m_SelectedComponent = ClickedActor->GetRootComponent();
+				SelectedComponent = ClickedActor->GetRootComponent();
 			}
 			else
 			{
 				World->SetSelectedActor(nullptr);
-				m_SelectedComponent = nullptr;
+				SelectedComponent = nullptr;
 			}
 		}
 		else if (Type == IMouse::Event::EType::Move)
 		{
-			if (m_bDragging && m_SelectedComponent)
+			if (bDragging && SelectedComponent)
 			{
 				Vector3 Delta = ComputeGizmoDragDelta(
 					PC->GetCamera(),
-					m_SelectedComponent,
-					m_DragAxis,
-					m_DragOriginWorld,
+					SelectedComponent,
+					DragAxis,
+					DragOriginWorld,
 					MousePos.x, MousePos.y,
 					ScreenRect
 				);
-				m_SelectedComponent->SetComponentWorldLocation(m_ComponentOrigin + Delta);
+				SelectedComponent->SetComponentWorldLocation(ComponentOrigin + Delta);
 			}
-			m_LastMousePos = MousePos;
+			LastMousePos = MousePos;
 		}
 		else if (Type == IMouse::Event::EType::LRelease)
 		{
-			m_bDragging = FALSE;
-			m_DragAxis  = EGizmoAxis::NONE;
+			bDragging = FALSE;
+			DragAxis  = EGizmoAxis::NONE;
 		}
 	}
 
@@ -159,30 +159,30 @@ namespace PigeonEngine
 	{
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
-		m_WorldManager->EditorUpdate();
-		m_AssetManager->EditorUpdate();
-		m_LogsManager->EditorUpdate();
-		m_ImportManager->EditorUpdate();
-		if (m_EditorGlobalPanel)
+		WorldManager->EditorUpdate();
+		AssetManager->EditorUpdate();
+		LogsManager->EditorUpdate();
+		ImportManager->EditorUpdate();
+		if (EditorGlobalPanel)
 		{
-			m_EditorGlobalPanel->DrawDisplaySettings();
+			EditorGlobalPanel->DrawDisplaySettings();
 		}
-		if (m_EditorProfilerPanel)
+		if (EditorProfilerPanel)
 		{
-			m_EditorProfilerPanel->DrawPanel();
+			EditorProfilerPanel->DrawPanel();
 		}
 
 		// Draw bounds for all actors
-		TArray<PActor*> AllActors = m_WorldManager->GetWorld()->GetAllActors();
+		TArray<PActor*> AllActors = WorldManager->GetWorld()->GetAllActors();
 		DrawObjectBounds(AllActors);
 
 		// Draw translation gizmo for selected component
-		if (m_SelectedComponent)
+		if (SelectedComponent)
 		{
-			PController* PC = m_WorldManager->GetWorld()->GetController();
+			PController* PC = WorldManager->GetWorld()->GetController();
 			if (PC && PC->GetCamera())
 			{
-				DrawTranslationGizmo(PC->GetCamera(), m_SelectedComponent);
+				DrawTranslationGizmo(PC->GetCamera(), SelectedComponent);
 			}
 		}
 	}

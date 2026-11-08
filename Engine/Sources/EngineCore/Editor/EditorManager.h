@@ -5,7 +5,7 @@
 
 namespace PigeonEngine
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	class EEditorManager : public EManagerBase
 	{
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EEditorManager)
@@ -24,24 +24,24 @@ namespace PigeonEngine
 		void HandleMouseEvent(IMouse::Event::EType Type, const Vector2& MousePos);
 
 	private:
-		BOOL32 m_EditorOpen = FALSE;
+		BOOL32 bEditorOpen = FALSE;
 
-		class EWorldManager*		m_WorldManager		= nullptr;
-		class EAssetManager*		m_AssetManager		= nullptr;
-		class EEditorLogManager*	m_LogsManager		= nullptr;
-		class EImportManager*		m_ImportManager		= nullptr;
-		class EEditorGlobalPanel*	m_EditorGlobalPanel	= nullptr;
-		class EEditorProfilerPanel*	m_EditorProfilerPanel = nullptr;
+		class EWorldManager*		WorldManager		= nullptr;
+		class EAssetManager*		AssetManager		= nullptr;
+		class EEditorLogManager*	LogsManager		= nullptr;
+		class EImportManager*		ImportManager		= nullptr;
+		class EEditorGlobalPanel*	EditorGlobalPanel	= nullptr;
+		class EEditorProfilerPanel*	EditorProfilerPanel = nullptr;
 
 		// Currently selected component (gizmo target)
-		class PSceneComponent* m_SelectedComponent = nullptr;
+		class PSceneComponent* SelectedComponent = nullptr;
 
 		// Gizmo drag state
-		EGizmoAxis	m_DragAxis          = EGizmoAxis::NONE;
-		Vector3		m_DragOriginWorld   = Vector3(0.f, 0.f, 0.f);
-		Vector3		m_ComponentOrigin   = Vector3(0.f, 0.f, 0.f);
-		Vector2		m_LastMousePos      = Vector2(0.f, 0.f);
-		BOOL8		m_bDragging         = FALSE;
+		EGizmoAxis	DragAxis          = EGizmoAxis::NONE;
+		Vector3		DragOriginWorld   = Vector3(0.f, 0.f, 0.f);
+		Vector3		ComponentOrigin   = Vector3(0.f, 0.f, 0.f);
+		Vector2		LastMousePos      = Vector2(0.f, 0.f);
+		BOOL8		bDragging         = FALSE;
 	};
 #endif
 }

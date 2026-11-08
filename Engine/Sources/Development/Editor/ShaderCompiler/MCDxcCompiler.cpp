@@ -35,18 +35,18 @@ namespace MC
 			// Local include: try parent file's directory first so relative paths work
 			if (InIncludeType == D3D_INCLUDE_LOCAL && InParentData != nullptr)
 			{
-				auto Iter = DataToDir.find(InParentData);
+				std::unordered_map<const void*, std::string>::iterator Iter = DataToDir.find(InParentData);
 				if (Iter != DataToDir.end())
 				{
 					DirsToTry.push_back(Iter->second);
 				}
 			}
-			for (auto& SearchDir : SearchDirs)
+			for (std::string& SearchDir : SearchDirs)
 			{
 				DirsToTry.push_back(SearchDir);
 			}
 
-			for (auto& Dir : DirsToTry)
+			for (std::string& Dir : DirsToTry)
 			{
 				std::string RawStr = Dir;
 				if (!RawStr.empty() && RawStr.back() != '/' && RawStr.back() != '\\')
@@ -148,17 +148,17 @@ namespace MC
 		OutArrayStride = 0;
 		if (InElements <= 1u)
 		{
-			return true;
+			return TRUE;
 		}
 		const uint32_t ElementContentSize = GetCbElementContentSize(InClass, InRows, InColumns);
 		const uint32_t ElementStride = RoundUp16(ElementContentSize);
 		if ((ElementContentSize == 0u) || (InContentBytes != ((InElements - 1u) * ElementStride + ElementContentSize)))
 		{
 			OutError = "cannot derive the array stride of constant buffer variable '" + InVariableName + "' (elements = " + std::to_string(InElements) + ", content bytes = " + std::to_string(InContentBytes) + ")";
-			return false;
+			return FALSE;
 		}
 		OutArrayStride = ElementStride;
-		return true;
+		return TRUE;
 	}
 
 	// Bound resources - what the compiled shader actually references. Unused declarations are
@@ -170,12 +170,12 @@ namespace MC
 			case D3D_SIT_CBUFFER:
 			{
 				OutKind = MCDxcBindingKind::Binding_CBuffer;
-				return true;
+				return TRUE;
 			}
 			case D3D_SIT_SAMPLER:
 			{
 				OutKind = MCDxcBindingKind::Binding_Sampler;
-				return true;
+				return TRUE;
 			}
 			case D3D_SIT_TEXTURE:
 			case D3D_SIT_TBUFFER:
@@ -183,7 +183,7 @@ namespace MC
 			case D3D_SIT_BYTEADDRESS:
 			{
 				OutKind = MCDxcBindingKind::Binding_Srv;
-				return true;
+				return TRUE;
 			}
 			case D3D_SIT_UAV_RWTYPED:
 			case D3D_SIT_UAV_RWSTRUCTURED:
@@ -193,10 +193,10 @@ namespace MC
 			case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
 			{
 				OutKind = MCDxcBindingKind::Binding_Uav;
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool CollectDxilBindings(ID3D12ShaderReflection* InReflection, const D3D12_SHADER_DESC& InShaderDesc, std::vector<MCDxcBinding>& OutBindings, std::string& OutError) noexcept
@@ -208,7 +208,7 @@ namespace MC
 			if (FAILED(HandleResult))
 			{
 				OutError = "shader reflection failed (ID3D12ShaderReflection::GetResourceBindingDesc), HRESULT = " + MakeHResultText(HandleResult);
-				return false;
+				return FALSE;
 			}
 			MCDxcBindingKind Kind = MCDxcBindingKind::Binding_Srv;
 			if (!ToBindingKind(BindingDesc.Type, Kind))
@@ -221,7 +221,7 @@ namespace MC
 			Binding.Kind = Kind;
 			OutBindings.emplace_back(std::move(Binding));
 		}
-		return true;
+		return TRUE;
 	}
 
 	static bool CollectDxbcBindings(ID3D11ShaderReflection* InReflection, const D3D11_SHADER_DESC& InShaderDesc, std::vector<MCDxcBinding>& OutBindings, std::string& OutError) noexcept
@@ -233,7 +233,7 @@ namespace MC
 			if (FAILED(HandleResult))
 			{
 				OutError = "shader reflection failed (ID3D11ShaderReflection::GetResourceBindingDesc), HRESULT = " + MakeHResultText(HandleResult);
-				return false;
+				return FALSE;
 			}
 			MCDxcBindingKind Kind = MCDxcBindingKind::Binding_Srv;
 			if (!ToBindingKind(BindingDesc.Type, Kind))
@@ -246,7 +246,7 @@ namespace MC
 			Binding.Kind = Kind;
 			OutBindings.emplace_back(std::move(Binding));
 		}
-		return true;
+		return TRUE;
 	}
 
 	static bool CollectDxilCbVariables(ID3D12ShaderReflectionConstantBuffer* InCbReflection, const D3D12_SHADER_BUFFER_DESC& InCbDesc, MCDxcCbLayout& OutLayout, std::string& OutError) noexcept
@@ -276,13 +276,13 @@ namespace MC
 				{
 					if (!FillCbArrayStride(Variable.Name, TypeDesc.Class, TypeDesc.Rows, TypeDesc.Columns, TypeDesc.Elements, VarDesc.Size, Variable.ArrayStride, OutError))
 					{
-						return false;
+						return FALSE;
 					}
 				}
 			}
 			OutLayout.Variables.emplace_back(std::move(Variable));
 		}
-		return true;
+		return TRUE;
 	}
 
 	static bool CollectDxbcCbVariables(ID3D11ShaderReflectionConstantBuffer* InCbReflection, const D3D11_SHADER_BUFFER_DESC& InCbDesc, MCDxcCbLayout& OutLayout, std::string& OutError) noexcept
@@ -312,13 +312,13 @@ namespace MC
 				{
 					if (!FillCbArrayStride(Variable.Name, TypeDesc.Class, TypeDesc.Rows, TypeDesc.Columns, TypeDesc.Elements, VarDesc.Size, Variable.ArrayStride, OutError))
 					{
-						return false;
+						return FALSE;
 					}
 				}
 			}
 			OutLayout.Variables.emplace_back(std::move(Variable));
 		}
-		return true;
+		return TRUE;
 	}
 
 	static bool ExtractReflectionFromDxil(IDxcUtils* InDxcUtils, const void* InBlobData, size_t InBlobSize, MCDxcResult& OutResult) noexcept
@@ -332,7 +332,7 @@ namespace MC
 		if (FAILED(HandleResult) || (!DxilReflection))
 		{
 			OutResult.Errors = "shader reflection failed (DXIL CreateReflection), HRESULT = " + MakeHResultText(HandleResult);
-			return false;
+			return FALSE;
 		}
 
 		D3D12_SHADER_DESC ShaderDesc{};
@@ -340,7 +340,7 @@ namespace MC
 		if (FAILED(HandleResult))
 		{
 			OutResult.Errors = "shader reflection failed (ID3D12ShaderReflection::GetDesc), HRESULT = " + MakeHResultText(HandleResult);
-			return false;
+			return FALSE;
 		}
 
 		for (UINT CbIdx = 0; CbIdx < ShaderDesc.ConstantBuffers; ++CbIdx)
@@ -360,16 +360,16 @@ namespace MC
 			Layout.ByteSize = CbDesc.Size;
 			if (!CollectDxilCbVariables(CbReflection, CbDesc, Layout, OutResult.Errors))
 			{
-				return false;
+				return FALSE;
 			}
 			OutResult.CBuffers.emplace_back(std::move(Layout));
 		}
 
 		if (!CollectDxilBindings(DxilReflection.Get(), ShaderDesc, OutResult.Bindings, OutResult.Errors))
 		{
-			return false;
+			return FALSE;
 		}
-		return true;
+		return TRUE;
 	}
 
 	static bool ExtractReflectionFromDxbc(const void* InBlobData, size_t InBlobSize, MCDxcResult& OutResult) noexcept
@@ -379,7 +379,7 @@ namespace MC
 		if (FAILED(HandleResult) || (!DxbcReflection))
 		{
 			OutResult.Errors = "shader reflection failed (DXBC D3DReflect), HRESULT = " + MakeHResultText(HandleResult);
-			return false;
+			return FALSE;
 		}
 
 		D3D11_SHADER_DESC ShaderDesc{};
@@ -387,7 +387,7 @@ namespace MC
 		if (FAILED(HandleResult))
 		{
 			OutResult.Errors = "shader reflection failed (ID3D11ShaderReflection::GetDesc), HRESULT = " + MakeHResultText(HandleResult);
-			return false;
+			return FALSE;
 		}
 
 		for (UINT CbIdx = 0; CbIdx < ShaderDesc.ConstantBuffers; ++CbIdx)
@@ -407,16 +407,16 @@ namespace MC
 			Layout.ByteSize = CbDesc.Size;
 			if (!CollectDxbcCbVariables(CbReflection, CbDesc, Layout, OutResult.Errors))
 			{
-				return false;
+				return FALSE;
 			}
 			OutResult.CBuffers.emplace_back(std::move(Layout));
 		}
 
 		if (!CollectDxbcBindings(DxbcReflection.Get(), ShaderDesc, OutResult.Bindings, OutResult.Errors))
 		{
-			return false;
+			return FALSE;
 		}
-		return true;
+		return TRUE;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -437,24 +437,24 @@ namespace MC
 		if (FAILED(HandleResult))
 		{
 			OutError = "DxcCreateInstance(DxcUtils) failed";
-			return false;
+			return FALSE;
 		}
 
 		HandleResult = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&DXCCompiler));
 		if (FAILED(HandleResult))
 		{
 			OutError = "DxcCreateInstance(DxcCompiler) failed";
-			return false;
+			return FALSE;
 		}
 
 		HandleResult = DXCUtils->CreateDefaultIncludeHandler(&DXCIncludeHandler);
 		if (FAILED(HandleResult))
 		{
 			OutError = "CreateDefaultIncludeHandler failed";
-			return false;
+			return FALSE;
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	void MCDxcCompiler::Shutdown() noexcept
@@ -497,7 +497,7 @@ namespace MC
 		if (FAILED(HandleResult))
 		{
 			OutResult.Errors = "CreateBlob failed";
-			return false;
+			return FALSE;
 		}
 
 		DxcBuffer SrcBuf{};
@@ -510,7 +510,7 @@ namespace MC
 		std::wstring EntryName = ToWideString(InParams.EntryName);
 
 		std::vector<std::wstring> IncludeDirWides;
-		for (auto& Dir : InParams.IncludeDirs)
+		for (const std::string& Dir : InParams.IncludeDirs)
 		{
 			IncludeDirWides.push_back(ToWideString(Dir));
 		}
@@ -519,7 +519,7 @@ namespace MC
 		Args.push_back(SourceName.c_str());
 		Args.push_back(L"-E"); Args.push_back(EntryName.c_str());
 		Args.push_back(L"-T"); Args.push_back(Profile.c_str());
-		for (auto& Dir : IncludeDirWides)
+		for (std::wstring& Dir : IncludeDirWides)
 		{
 			Args.push_back(L"-I"); Args.push_back(Dir.c_str());
 		}
@@ -536,7 +536,7 @@ namespace MC
 		}
 
 		std::vector<std::wstring> WideDefines;
-		for (const auto& Def : InParams.Defines)
+		for (const std::pair<std::string, std::string>& Def : InParams.Defines)
 		{
 			WideDefines.push_back(ToWideString(Def.first + "=" + Def.second));
 			Args.push_back(L"-D");
@@ -561,24 +561,24 @@ namespace MC
 		DXCResult->GetStatus(&HandleResult);
 		if (FAILED(HandleResult))
 		{
-			return false;
+			return FALSE;
 		}
 
 		Microsoft::WRL::ComPtr<IDxcBlob> DxilBlob;
 		if ((SUCCEEDED(DXCResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&DxilBlob), nullptr))) && DxilBlob)
 		{
-			auto* BufPtr = static_cast<const uint8_t*>(DxilBlob->GetBufferPointer());
+			const uint8_t* BufPtr = static_cast<const uint8_t*>(DxilBlob->GetBufferPointer());
 			OutResult.DxilBytes.assign(BufPtr, BufPtr + DxilBlob->GetBufferSize());
 		}
 
 		if (!DxilBlob)
 		{
 			OutResult.Errors = "shader compiler produced no object blob";
-			return false;
+			return FALSE;
 		}
 		if (!ExtractReflectionFromDxil(DXCUtils, DxilBlob->GetBufferPointer(), DxilBlob->GetBufferSize(), OutResult))
 		{
-			return false;
+			return FALSE;
 		}
 
 		if (InParams.bDebug)
@@ -586,13 +586,13 @@ namespace MC
 			Microsoft::WRL::ComPtr<IDxcBlob> PdbBlob;
 			if ((SUCCEEDED(DXCResult->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(&PdbBlob), nullptr))) && PdbBlob)
 			{
-				auto* BufPtr = static_cast<const uint8_t*>(PdbBlob->GetBufferPointer());
+				const uint8_t* BufPtr = static_cast<const uint8_t*>(PdbBlob->GetBufferPointer());
 				OutResult.PdbBytes.assign(BufPtr, BufPtr + PdbBlob->GetBufferSize());
 			}
 		}
 
-		OutResult.Success = true;
-		return true;
+		OutResult.Success = TRUE;
+		return TRUE;
 	}
 
 	bool MCDxcCompiler::CompileD3D(const MCCompileParams& InParams, MCDxcResult& OutResult) noexcept
@@ -613,7 +613,7 @@ namespace MC
 		}
 
 		std::vector<D3D_SHADER_MACRO> Macros;
-		for (const auto& Def : InParams.Defines)
+		for (const std::pair<std::string, std::string>& Def : InParams.Defines)
 		{
 			Macros.push_back({ Def.first.c_str(), Def.second.c_str() });
 		}
@@ -641,19 +641,19 @@ namespace MC
 
 		if (FAILED(HandleResult))
 		{
-			return false;
+			return FALSE;
 		}
 
-		auto* BufPtr = static_cast<const uint8_t*>(CodeBlob->GetBufferPointer());
+		const uint8_t* BufPtr = static_cast<const uint8_t*>(CodeBlob->GetBufferPointer());
 		OutResult.DxilBytes.assign(BufPtr, BufPtr + CodeBlob->GetBufferSize());
 
 		if (!ExtractReflectionFromDxbc(CodeBlob->GetBufferPointer(), CodeBlob->GetBufferSize(), OutResult))
 		{
-			return false;
+			return FALSE;
 		}
 
-		OutResult.Success = true;
-		return true;
+		OutResult.Success = TRUE;
+		return TRUE;
 	}
 
 }	// namespace MC

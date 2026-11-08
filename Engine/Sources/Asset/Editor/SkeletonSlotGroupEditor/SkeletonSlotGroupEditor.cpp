@@ -1,6 +1,6 @@
 #include "SkeletonSlotGroupEditor.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 
@@ -52,17 +52,17 @@ namespace PigeonEngine
 
 	void ESkeletonSlotGroupEditor::EditorInit()
 	{
-		m_ShowEditor = FALSE;
-		m_Asset = nullptr;
-		m_OpenedAssetFullPath = EString();
-		m_LastError = EString();
+		bShowEditor = FALSE;
+		Asset = nullptr;
+		OpenedAssetFullPath = EString();
+		LastError = EString();
 	}
 
 	void ESkeletonSlotGroupEditor::OpenSkeletonAsset(const EString& InAssetFullPath)
 	{
-		m_ShowEditor = TRUE;
-		m_Asset = nullptr;
-		m_LastError = EString();
+		bShowEditor = TRUE;
+		Asset = nullptr;
+		LastError = EString();
 
 		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
 		const EString AssetName = EPath::GetFileNameWithoutExtension(NormalizedAssetPath);
@@ -73,7 +73,7 @@ namespace PigeonEngine
 		}
 		if ((AssetName.Length() <= 0u) || (AssetDirectory.Length() <= 0u))
 		{
-			m_LastError = EString("Skeleton editor cannot parse asset path: ") + NormalizedAssetPath;
+			LastError = EString("Skeleton editor cannot parse asset path: ") + NormalizedAssetPath;
 			return;
 		}
 
@@ -81,66 +81,66 @@ namespace PigeonEngine
 		if (!(ESkeletonAssetManager::GetManagerSingleton()->LoadSkeletonAsset(AssetDirectory, AssetName, LoadedAsset))
 			|| (!LoadedAsset))
 		{
-			m_LastError = EString("Skeleton editor failed to load asset: ") + NormalizedAssetPath;
+			LastError = EString("Skeleton editor failed to load asset: ") + NormalizedAssetPath;
 			return;
 		}
 
-		m_Asset = LoadedAsset;
-		m_OpenedAssetFullPath = NormalizedAssetPath;
+		Asset = LoadedAsset;
+		OpenedAssetFullPath = NormalizedAssetPath;
 	}
 
 	void ESkeletonSlotGroupEditor::EditorUpdate()
 	{
-		if (!m_ShowEditor)
+		if (!bShowEditor)
 		{
 			return;
 		}
 
 		ImGui::SetNextWindowSize(ImVec2(720.0f, 640.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(500.0f, 50.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Skeleton Slot Groups", &m_ShowEditor, ImGuiWindowFlags_None);
+		ImGui::Begin("Skeleton Slot Groups", &bShowEditor, ImGuiWindowFlags_None);
 		{
-			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
+			if (ImGui::Button("Reload") && (OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenSkeletonAsset(m_OpenedAssetFullPath);
+				OpenSkeletonAsset(OpenedAssetFullPath);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Save"))
 			{
-				if (m_Asset)
+				if (Asset)
 				{
 					EString Error;
 					if (!ValidateSlotGroups(Error))
 					{
-						m_LastError = Error;
+						LastError = Error;
 					}
 					else if (!ESkeletonAssetManager::GetManagerSingleton()->SaveSkeletonAsset(
-						m_Asset->GetAssetPath(), m_Asset->GetAssetName(), m_Asset))
+						Asset->GetAssetPath(), Asset->GetAssetName(), Asset))
 					{
-						m_LastError = EString("Failed to save skeleton: ") + m_OpenedAssetFullPath;
+						LastError = EString("Failed to save skeleton: ") + OpenedAssetFullPath;
 					}
 					else
 					{
-						m_LastError = EString();
-						PE_LOG_LOG(EString("Saved skeleton slot groups: ") + m_OpenedAssetFullPath);
+						LastError = EString();
+						PE_LOG_LOG(EString("Saved skeleton slot groups: ") + OpenedAssetFullPath);
 					}
 				}
 			}
 			ImGui::SameLine();
-			ImGui::TextWrapped("%s", (m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No skeleton selected."));
+			ImGui::TextWrapped("%s", (OpenedAssetFullPath.Length() > 0u ? *OpenedAssetFullPath : "No skeleton selected."));
 
-			if (m_LastError.Length() > 0u)
+			if (LastError.Length() > 0u)
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastError);
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *LastError);
 			}
 
 			ImGui::Separator();
-			if (!m_Asset)
+			if (!Asset)
 			{
 				ImGui::End();
 				return;
 			}
-			ESkeleton* Skeleton = const_cast<ESkeleton*>(m_Asset->GetStoragedResource());
+			ESkeleton* Skeleton = const_cast<ESkeleton*>(Asset->GetStoragedResource());
 			if (!Skeleton)
 			{
 				ImGui::TextDisabled("Skeleton resource is null.");
@@ -254,15 +254,15 @@ namespace PigeonEngine
 		ImGui::End();
 	}
 
-	BOOL32 ESkeletonSlotGroupEditor::ValidateSlotGroups(EString& OutError)const
+	BOOL32 ESkeletonSlotGroupEditor::ValidateSlotGroups(EString& OutError) const
 	{
 		OutError = EString();
-		if (!m_Asset)
+		if (!Asset)
 		{
 			OutError = EString("No skeleton asset.");
 			return FALSE;
 		}
-		const ESkeleton* Skeleton = m_Asset->GetStoragedResource();
+		const ESkeleton* Skeleton = Asset->GetStoragedResource();
 		if (!Skeleton)
 		{
 			OutError = EString("Skeleton resource is null.");

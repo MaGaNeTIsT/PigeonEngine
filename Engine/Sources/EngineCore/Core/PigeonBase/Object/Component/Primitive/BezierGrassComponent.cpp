@@ -3,7 +3,7 @@
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -181,7 +181,7 @@ namespace PigeonEngine
 
 		if (!VertexData)
 		{
-			VertexData = new TStaticMeshVertexData<FBezierGrassPositionVertex>{ false };
+			VertexData = new TStaticMeshVertexData<FBezierGrassPositionVertex>{ FALSE };
 		}
 
 		const int32 NumLODs = InBodyParts.Num();
@@ -199,7 +199,7 @@ namespace PigeonEngine
 		{
 			float	TParam = 0.0f;
 			float	PrevTParam = 0.0f;
-			bool	bSecondPart = false;
+			bool	bSecondPart = FALSE;
 		};
 
 		auto GenerateLODTVertices = [InIsSplitBentPart](const TArray<uint32>& InBodyParts, uint32 InLODIndex, TArray<FRawPositionData>& OutTVertices, int32& OutNumVertices, float& OutMidT)->void
@@ -243,7 +243,7 @@ namespace PigeonEngine
 
 			// First Part
 			{
-				const FRawPositionData CurrentTParam{ 0.0f, 0.0f, false };
+				const FRawPositionData CurrentTParam{ 0.0f, 0.0f, FALSE };
 
 				OutTVertices.Add(CurrentTParam);
 				OutTVertices.Add(CurrentTParam);
@@ -269,7 +269,7 @@ namespace PigeonEngine
 					PrevTParam = PrevTFirstVertices[ClosestTDistIndex];
 				}
 
-				const FRawPositionData CurrentTParam{ TParam, PrevTParam, false };
+				const FRawPositionData CurrentTParam{ TParam, PrevTParam, FALSE };
 
 				OutTVertices.Add(CurrentTParam);
 				OutTVertices.Add(CurrentTParam);
@@ -279,7 +279,7 @@ namespace PigeonEngine
 			if (NumSecondParts > 0)
 			{
 				{
-					const FRawPositionData CurrentTParam{ OutTVertices.Last().TParam, OutTVertices.Last().PrevTParam, true };
+					const FRawPositionData CurrentTParam{ OutTVertices.Last().TParam, OutTVertices.Last().PrevTParam, TRUE };
 
 					OutMidT = FMath::FloorToFloat(CurrentTParam.TParam * T15BitFloat) / T15BitFloat;
 
@@ -307,7 +307,7 @@ namespace PigeonEngine
 						PrevTParam = PrevTSecondVertices[ClosestTDistIndex];
 					}
 
-					const FRawPositionData CurrentTParam{ TParam, PrevTParam, true };
+					const FRawPositionData CurrentTParam{ TParam, PrevTParam, TRUE };
 
 					OutTVertices.Add(CurrentTParam);
 					OutTVertices.Add(CurrentTParam);
@@ -315,7 +315,7 @@ namespace PigeonEngine
 			}
 
 			// Tip
-			OutTVertices.Add(FRawPositionData{ 1.0f, 1.0f, true });
+			OutTVertices.Add(FRawPositionData{ 1.0f, 1.0f, TRUE });
 		};
 		auto GenerateLODVertices = [](const TArray<FRawPositionData>& InTVertices, TArray<FBezierGrassPositionVertex>& OutVertices)->void
 		{
@@ -371,7 +371,7 @@ namespace PigeonEngine
 #endif
 
 	// Render proxy functions START
-	UINT8 PBezierGrassComponent::GetUpdateRenderState()const
+	UINT8 PBezierGrassComponent::GetUpdateRenderState() const
 	{
 		return UpdateState;
 	}
@@ -434,7 +434,7 @@ namespace PigeonEngine
 	}
 	// Render proxy functions END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PBezierGrassComponent::GenerateComponentOutline(const class PActorComponent* WorldCurrentSelectedComponent)
 	{
 		PPrimitiveComponent::GenerateComponentOutline(WorldCurrentSelectedComponent);

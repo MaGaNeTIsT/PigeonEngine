@@ -3,7 +3,7 @@
 
 namespace PigeonEngine
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	typedef struct {
 		CHAR* buf;
 		size_t* indices; /* byte offsets into buf */

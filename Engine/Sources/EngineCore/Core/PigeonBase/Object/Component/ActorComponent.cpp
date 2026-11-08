@@ -74,21 +74,21 @@ namespace PigeonEngine
 		PComponent::Uninit();
 	}
 
-	BOOL32 PActorComponent::ContainTransform()const
+	BOOL32 PActorComponent::ContainTransform() const
 	{
 		return FALSE;
 	}
 
 	// Render proxy functions START
-	BOOL32 PActorComponent::IsVisible()const
+	BOOL32 PActorComponent::IsVisible() const
 	{
 		return TRUE;
 	}
-	BOOL32 PActorComponent::ShouldRender()const
+	BOOL32 PActorComponent::ShouldRender() const
 	{
 		return IsVisible();
 	}
-	BOOL32 PActorComponent::IsRenderStateDirty()const
+	BOOL32 PActorComponent::IsRenderStateDirty() const
 	{
 		return RenderStateDirty;
 	}
@@ -115,7 +115,7 @@ namespace PigeonEngine
 	}
 
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PActorComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
 	{
 

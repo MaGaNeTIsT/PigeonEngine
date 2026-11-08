@@ -1,30 +1,30 @@
 #include "AnimationImporter.h"
 #include "AnimationAsset/AnimationAsset.h"
-#if _EDITOR_ONLY
-void PigeonEngine::EAnimationImporter::CreateImportEditor(TArray<EString> Paths)
+#if ENGINE_EDITOR_ONLY
+void PigeonEngine::EAnimationImporter::CreateImportEditor(TArray<EString> InPaths)
 {
 	NeedUpdate = TRUE;
-	InitializeEditor = FALSE;
-	m_Paths.Empty();
-	for (UINT32 i = 0, n = Paths.Num<UINT32>(); i < n; i++)
+	bInitializeEditor = FALSE;
+	Paths.Empty();
+	for (UINT32 PathIndex = 0u, PathNum = InPaths.Num<UINT32>(); PathIndex < PathNum; PathIndex++)
 	{
-		m_Paths.Add(Paths[i].Replace("\\", "/"));
+		Paths.Add(InPaths[PathIndex].Replace("\\", "/"));
 	}
 }
 
 void PigeonEngine::EAnimationImporter::UpdateImportEditor()
 {
 	static CHAR CopyFileFolder[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
-	static BOOL8 CheckCopyFile = FALSE;
+	static BOOL8 bCopyFile = FALSE;
 	static TArray<EString> SkeletonNames;
 	static INT32 SelectedSkeletonIndex = -1;
 	static CHAR RootBoneName[EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX] = "";
 
-	if (!InitializeEditor)
+	if (!bInitializeEditor)
 	{
 		::memset(CopyFileFolder, 0, EPath::MAX_PATH_LENGTH);
 		::memset(RootBoneName, 0, EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX);
-		CheckCopyFile = FALSE;
+		bCopyFile = FALSE;
 		SkeletonNames.Empty();
 		SelectedSkeletonIndex = -1;
 
@@ -46,17 +46,17 @@ void PigeonEngine::EAnimationImporter::UpdateImportEditor()
 		// Default to "None": the importer cannot know which skeleton an animation-only FBX
 		// belongs to, and a wrong hint would only produce a mismatch warning at runtime.
 		SelectedSkeletonIndex = -1;
-		InitializeEditor = TRUE;
+		bInitializeEditor = TRUE;
 	}
 
 	ImGui::Begin("Animation Importer", &NeedUpdate, ImGuiWindowFlags_::ImGuiWindowFlags_None);
 	{
-		for (UINT32 i = 0, n = m_Paths.Num<UINT32>(); i < n; i++)
+		for (UINT32 PathIndex = 0u, PathNum = Paths.Num<UINT32>(); PathIndex < PathNum; PathIndex++)
 		{
 			ImGui::Text("FileName:");
 			ImGui::SameLine();
 			{
-				EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);
+				EString FileName = EPath::GetFileNameWithExtension(Paths[PathIndex]);
 				ImGui::Text(*FileName);
 			}
 		}
@@ -86,8 +86,8 @@ void PigeonEngine::EAnimationImporter::UpdateImportEditor()
 		ImGui::InputText("Root Bone", RootBoneName, EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX, ImGuiInputTextFlags_CharsNoBlank);
 		ImGui::PopItemWidth();
 
-		ImGui::Checkbox("CopyFile", &CheckCopyFile);
-		if (CheckCopyFile)
+		ImGui::Checkbox("CopyFile", &bCopyFile);
+		if (bCopyFile)
 		{
 			ImGui::PushItemWidth(250);
 			ImGui::InputText("Copy File Path", CopyFileFolder, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
@@ -98,22 +98,30 @@ void PigeonEngine::EAnimationImporter::UpdateImportEditor()
 		{
 			const EString SkeletonName = ((SelectedSkeletonIndex >= 0) ? SkeletonNames[SelectedSkeletonIndex] : EString());
 			const EString RootBone = EString(RootBoneName);
-			for (UINT32 i = 0, n = m_Paths.Num<UINT32>(); i < n; i++)
+			BOOL32 bAnyImported = FALSE;
+			for (UINT32 PathIndex = 0u, PathNum = Paths.Num<UINT32>(); PathIndex < PathNum; PathIndex++)
 			{
 				//Import Asset
-				EAnimationManager::GetManagerSingleton()->ImportSkeletonAnimation(
-					EPath::GetFileNameWithoutExtension(m_Paths[i]), m_Paths[i],
-					EBaseSettings::ENGINE_ANIMATION_PATH, SkeletonName, RootBone);
+				if (EAnimationManager::GetManagerSingleton()->ImportSkeletonAnimation(
+					EPath::GetFileNameWithoutExtension(Paths[PathIndex]), Paths[PathIndex],
+					EBaseSettings::ENGINE_ANIMATION_PATH, SkeletonName, RootBone) != FALSE)
+				{
+					bAnyImported = TRUE;
+				}
 
 				//CopyFile
-				if (/*Asset &&*/ CheckCopyFile)
+				if (/*Asset &&*/ bCopyFile)
 				{
-					EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EPath::GetFileNameWithExtension(m_Paths[i]));
-					if (!EFileHelper::CopyFileToNewPath(m_Paths[i], CopyPath))
+					EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EPath::GetFileNameWithExtension(Paths[PathIndex]));
+					if (!EFileHelper::CopyFileToNewPath(Paths[PathIndex], CopyPath))
 					{
 						PE_CHECK((ENGINE_ASSET_ERROR), ("Animation Importer : copy file error!"), (FALSE));
 					}
 				}
+			}
+			if (bAnyImported != FALSE)
+			{
+				NotifyImportFinished();
 			}
 			NeedUpdate = FALSE;
 		}

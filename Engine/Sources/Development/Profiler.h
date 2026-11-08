@@ -10,32 +10,32 @@
 // Profiler enable switches
 //
 // Three layers of compile-time on/off:
-//   _ENABLE_PROFILER        - master switch. Defined by CMake via the
+//   ENGINE_ENABLE_PROFILER        - master switch. Defined by CMake via the
 //                             PIGEON_ENABLE_PROFILER option (defaults ON for
 //                             Debug / DebugEditor / Develop / DevelopEditor;
 //                             always forced 0 for Shipping). If no CMake
 //                             define reaches the translation unit the
 //                             fallback here keeps it OFF - never silently
 //                             turn it on without the build system's say.
-//   _CPU_ENABLE_PROFILER    - CPU-side scope timer + counter macros.
-//   _GPU_ENABLE_PROFILER    - GPU timestamp queries + draw-event macros.
+//   ENGINE_ENABLE_CPU_PROFILER    - CPU-side scope timer + counter macros.
+//   ENGINE_ENABLE_GPU_PROFILER    - GPU timestamp queries + draw-event macros.
 //
 // When a layer is off the matching PE_PROFILE_* / PE_GPU_EVENT_* macros
 // expand to literally nothing - the argument expression is not parsed for
 // side-effects and emits zero code.
 // ---------------------------------------------------------------------------
-#ifndef _ENABLE_PROFILER
-#define _ENABLE_PROFILER 0
+#ifndef ENGINE_ENABLE_PROFILER
+#define ENGINE_ENABLE_PROFILER 0
 #endif
-#ifndef _CPU_ENABLE_PROFILER
-#define _CPU_ENABLE_PROFILER (_ENABLE_PROFILER)
+#ifndef ENGINE_ENABLE_CPU_PROFILER
+#define ENGINE_ENABLE_CPU_PROFILER (ENGINE_ENABLE_PROFILER)
 #endif
-#ifndef _GPU_ENABLE_PROFILER
-#define _GPU_ENABLE_PROFILER (_ENABLE_PROFILER)
+#ifndef ENGINE_ENABLE_GPU_PROFILER
+#define ENGINE_ENABLE_GPU_PROFILER (ENGINE_ENABLE_PROFILER)
 #endif
 
-#define PE_PROFILER_CONCAT_INNER(A, B)  A##B
-#define PE_PROFILER_CONCAT(A, B)        PE_PROFILER_CONCAT_INNER(A, B)
+#define PE_PROFILER_CONCAT_INNER(__Left, __Right)  __Left##__Right
+#define PE_PROFILER_CONCAT(__Left, __Right)        PE_PROFILER_CONCAT_INNER(__Left, __Right)
 
 namespace PigeonEngine
 {
@@ -148,8 +148,8 @@ namespace PigeonEngine
 	class EProfiler : public EManagerBase
 	{
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
 	public:
 		void			ClearTraces();
 
@@ -158,24 +158,24 @@ namespace PigeonEngine
 		void			RecordScopeSample(const EName& InName, DOUBLE InSeconds);
 		void			RecordCounterSample(const EName& InName, DOUBLE InValue);
 
-		PE_NODISCARD BOOL8 GetScopeStat(const EName& InName, EProfileScopeStat& OutStat)const;
-		PE_NODISCARD BOOL8 GetCounterStat(const EName& InName, EProfileCounterStat& OutStat)const;
+		PE_NODISCARD BOOL8 GetScopeStat(const EName& InName, EProfileScopeStat& OutStat) const;
+		PE_NODISCARD BOOL8 GetCounterStat(const EName& InName, EProfileCounterStat& OutStat) const;
 
-		void			SnapshotScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot)const;
-		void			SnapshotCounters(TArray<TPair<EName, EProfileCounterStat>>& OutSnapshot)const;
+		void			SnapshotScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot) const;
+		void			SnapshotCounters(TArray<TPair<EName, EProfileCounterStat>>& OutSnapshot) const;
 
 	public:
 		// GPU (P.c onward will fill these; declared now so callers can target
 		// a single query surface regardless of which backend resolves the
 		// timestamps).
 		void			RecordGPUSample(const EName& InName, DOUBLE InSeconds);
-		PE_NODISCARD BOOL8 GetGPUStat(const EName& InName, EProfileScopeStat& OutStat)const;
-		void			SnapshotGPUScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot)const;
+		PE_NODISCARD BOOL8 GetGPUStat(const EName& InName, EProfileScopeStat& OutStat) const;
+		void			SnapshotGPUScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot) const;
 
 	private:
 		void			RecordSampleInternal(TMap<EName, EProfilerRing>& InOutMap, const EName& InName, DOUBLE InValue);
-		BOOL8			GetRingStatsInternal(const TMap<EName, EProfilerRing>& InMap, const EName& InName, EProfileScopeStat& OutStat)const;
-		void			SnapshotRingsInternal(const TMap<EName, EProfilerRing>& InMap, TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot)const;
+		BOOL8			GetRingStatsInternal(const TMap<EName, EProfilerRing>& InMap, const EName& InName, EProfileScopeStat& OutStat) const;
+		void			SnapshotRingsInternal(const TMap<EName, EProfilerRing>& InMap, TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot) const;
 
 	private:
 		mutable EMutex				StatsMutex;
@@ -199,12 +199,12 @@ namespace PigeonEngine
 	// declaration to that body and let the guard escape - always use it
 	// inside a proper `{}` block.
 	// -----------------------------------------------------------------------
-#if _CPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_CPU_PROFILER
 
 	class EProfileScopeGuard final
 	{
 	public:
-		EProfileScopeGuard(const EName& InName)noexcept
+		EProfileScopeGuard(const EName& InName) noexcept
 			: Name(InName), StartTicks(EBaseTimer::GetClockTicks()) {}
 		~EProfileScopeGuard()
 		{
@@ -220,21 +220,21 @@ namespace PigeonEngine
 		UINT64	StartTicks;
 	};
 
-	#define PE_PROFILE_SCOPE(InName) \
-		static ::PigeonEngine::EName PE_PROFILER_CONCAT(_PEProfileTag_, __LINE__){(InName)}; \
+	#define PE_PROFILE_SCOPE(__Name) \
+		static ::PigeonEngine::EName PE_PROFILER_CONCAT(_PEProfileTag_, __LINE__){(__Name)}; \
 		::PigeonEngine::EProfileScopeGuard PE_PROFILER_CONCAT(_PEProfileGuard_, __LINE__)(PE_PROFILER_CONCAT(_PEProfileTag_, __LINE__))
 
-	#define PE_PROFILE_COUNTER(InName, InValue) \
+	#define PE_PROFILE_COUNTER(__Name, __Value) \
 		do { \
-			static ::PigeonEngine::EName PE_PROFILER_CONCAT(_PEProfileCnt_, __LINE__){(InName)}; \
+			static ::PigeonEngine::EName PE_PROFILER_CONCAT(_PEProfileCnt_, __LINE__){(__Name)}; \
 			::PigeonEngine::EProfiler::GetManagerSingleton()->RecordCounterSample( \
-				PE_PROFILER_CONCAT(_PEProfileCnt_, __LINE__), static_cast<DOUBLE>(InValue)); \
+				PE_PROFILER_CONCAT(_PEProfileCnt_, __LINE__), static_cast<DOUBLE>(__Value)); \
 		} while(0)
 
 #else
 
-	#define PE_PROFILE_SCOPE(InName)
-	#define PE_PROFILE_COUNTER(InName, InValue)
+	#define PE_PROFILE_SCOPE(__Name)
+	#define PE_PROFILE_COUNTER(__Name, __Value)
 
 #endif
 
@@ -247,7 +247,7 @@ namespace PigeonEngine
 	// Profiler.cpp so this header doesn't drag IRCommandList.h into every
 	// CPU-only translation unit that uses PE_PROFILE_SCOPE.
 	// -----------------------------------------------------------------------
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 
 	class EGPUEventScope final
 	{
@@ -286,15 +286,15 @@ namespace PigeonEngine
 		BOOL32 bEnabled;
 	};
 
-	#define PE_GPU_EVENT_SCOPE(InCmd, InName) \
-		::PigeonEngine::EGPUEventScope PE_PROFILER_CONCAT(_PEGPUEvent_, __LINE__)((InCmd), (InName))
-	#define PE_GPU_EVENT_SCOPE_IF(InCmd, InName, InEnabled) \
-		::PigeonEngine::EGPUEventScope PE_PROFILER_CONCAT(_PEGPUEvent_, __LINE__)((InCmd), (InName), (InEnabled))
+	#define PE_GPU_EVENT_SCOPE(__CommandList, __Name) \
+		::PigeonEngine::EGPUEventScope PE_PROFILER_CONCAT(_PEGPUEvent_, __LINE__)((__CommandList), (__Name))
+	#define PE_GPU_EVENT_SCOPE_IF(__CommandList, __Name, __Enabled) \
+		::PigeonEngine::EGPUEventScope PE_PROFILER_CONCAT(_PEGPUEvent_, __LINE__)((__CommandList), (__Name), (__Enabled))
 
 #else
 
-	#define PE_GPU_EVENT_SCOPE(InCmd, InName)
-	#define PE_GPU_EVENT_SCOPE_IF(InCmd, InName, InEnabled)
+	#define PE_GPU_EVENT_SCOPE(__CommandList, __Name)
+	#define PE_GPU_EVENT_SCOPE_IF(__CommandList, __Name, __Enabled)
 
 #endif
 

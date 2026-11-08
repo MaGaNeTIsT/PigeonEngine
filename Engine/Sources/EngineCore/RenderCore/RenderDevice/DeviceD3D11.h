@@ -93,12 +93,12 @@ namespace PigeonEngine
 		virtual ERHIShaderStage GetShaderStage() const noexcept override { return Stage; }
 
 		// IRD3D11Shader
-		virtual ID3D11VertexShader*			GetD3D11VS()const override { return VertexShader.Get(); }
-		virtual ID3D11PixelShader*			GetD3D11PS()const override { return PixelShader.Get(); }
-		virtual ID3D11ComputeShader*		GetD3D11CS()const override { return ComputeShader.Get(); }
-		virtual ID3D11InputLayout*			GetD3D11InputLayout()const override { return InputLayout.Get(); }
-		virtual const void*					GetByteCode()const override { return ByteCode.GetData(); }
-		virtual UINT64						GetByteCodeSize()const override { return ByteCode.Num<UINT64>(); }
+		virtual ID3D11VertexShader*			GetD3D11VS() const override { return VertexShader.Get(); }
+		virtual ID3D11PixelShader*			GetD3D11PS() const override { return PixelShader.Get(); }
+		virtual ID3D11ComputeShader*		GetD3D11CS() const override { return ComputeShader.Get(); }
+		virtual ID3D11InputLayout*			GetD3D11InputLayout() const override { return InputLayout.Get(); }
+		virtual const void*					GetByteCode() const override { return ByteCode.GetData(); }
+		virtual UINT64						GetByteCodeSize() const override { return ByteCode.Num<UINT64>(); }
 
 		ERHIShaderStage							Stage;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>	VertexShader;
@@ -138,8 +138,8 @@ namespace PigeonEngine
 	{
 	public:
 		void			SetInitializeData(HWND hWnd, const Vector2Int& bufferSize, UINT32 bufferDepth = 24u, UINT32 frameNum = 60u, BOOL32 windowed = TRUE);
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
 	public:
 		BOOL32	CreateShaderObject(const RRHIShaderDesc& InDesc, RD3D11Shader& OutShader);
 		BOOL32	CreateBuffer(RBufferResource& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData = nullptr);
@@ -251,8 +251,8 @@ namespace PigeonEngine
 		void	ClearFinalOutput();
 		void	SetFinalOutput();
 	public:
-		D3D11_VIEWPORT		GetViewport() const { return m_Viewport; }
-		D3D_FEATURE_LEVEL	GetFeatureLevel() const { return m_FeatureLevel; }
+		D3D11_VIEWPORT		GetViewport() const { return Viewport; }
+		D3D_FEATURE_LEVEL	GetFeatureLevel() const { return FeatureLevel; }
 
 		// ========================================================
 		// IRRHIDevice interface
@@ -266,10 +266,10 @@ namespace PigeonEngine
 		// Lifecycle
 		virtual BOOL8           Initialize(const RRHIDeviceInitDesc& InDesc) noexcept override;
 		virtual void            Shutdown() noexcept override;
-		virtual ERHIBackendType GetBackendType()const noexcept override { return ERHIBackendType::RHI_BACKEND_D3D11; }
+		virtual ERHIBackendType GetBackendType() const noexcept override { return ERHIBackendType::RHI_BACKEND_D3D11; }
 		// D3D11 has no root constant space: a block the shader marks 'RootConstant' is bound
 		// as a plain constant buffer on this back-end.
-		virtual BOOL8           SupportsRootConstants()const noexcept override { return FALSE; }
+		virtual BOOL8           SupportsRootConstants() const noexcept override { return FALSE; }
 		virtual void            BeginFrame() noexcept override;
 		virtual void            EndFrame() noexcept override;
 		virtual void            Present(UINT32 InSyncInterval) noexcept override;
@@ -297,7 +297,7 @@ namespace PigeonEngine
 		virtual UINT32 RegisterBindlessUAV(IRRHITexture* InTexture) noexcept override;
 		virtual UINT32 RegisterBindlessUAV(IRRHIBuffer* InBuffer) noexcept override;
 		virtual void   ReleaseBindlessIndex(UINT32 InIndex) noexcept override;
-		virtual IRRHIResource* GetBindlessResource(UINT32 InIndex)const noexcept override;
+		virtual IRRHIResource* GetBindlessResource(UINT32 InIndex) const noexcept override;
 
 		// Upload
 		virtual void UploadBuffer(IRRHIBuffer* InDest, const UINT8* InData, UINT64 InSize, UINT64 InDestOffset = 0u) noexcept override;
@@ -313,9 +313,9 @@ namespace PigeonEngine
 		virtual void            SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount) noexcept override;
 
 		// Backbuffer access
-		virtual IRRHITexture*   GetCurrentBackBuffer()const noexcept override;
-		virtual UINT32          GetCurrentFrameIndex()const noexcept override { return CurrentFrameIndex; }
-		virtual UINT32          GetFrameInFlightCount()const noexcept override { return FrameInFlightCount; }
+		virtual IRRHITexture*   GetCurrentBackBuffer() const noexcept override;
+		virtual UINT32          GetCurrentFrameIndex() const noexcept override { return CurrentFrameIndex; }
+		virtual UINT32          GetFrameInFlightCount() const noexcept override { return FrameInFlightCount; }
 
 		// GPU timestamp queries (Phase P.c)
 		virtual BOOL8   CreateTimestampHeap(UINT32 InCapacity, UINT32 InFrameInFlight, RRHITimestampHeap** OutHeap) noexcept override;
@@ -325,18 +325,18 @@ namespace PigeonEngine
 		virtual BOOL8   ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InFrameSlot, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept override;
 		virtual UINT64  GetGPUTicksPerSecond(const RRHITimestampHeap* InHeap) const noexcept override;
 	private:
-		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		GetRenderDeviceContext() const { return m_ImmediateContext; }
-		Microsoft::WRL::ComPtr<ID3D11Device>			GetRenderDevice() const { return m_Device; }
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		GetRenderDeviceContext() const { return ImmediateContext; }
+		Microsoft::WRL::ComPtr<ID3D11Device>			GetRenderDevice() const { return Device; }
 	private:
-		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>	m_RenderTargetView;
-		Microsoft::WRL::ComPtr<ID3D11DepthStencilView>	m_DepthStencilView;
-		Microsoft::WRL::ComPtr<ID3D11Texture2D>			m_DepthTexture;
-		D3D11_VIEWPORT									m_Viewport;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>	RenderTargetView;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView>	DepthStencilView;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D>			DepthTexture;
+		D3D11_VIEWPORT									Viewport;
 	private:
-		Microsoft::WRL::ComPtr<IDXGISwapChain>			m_SwapChain;
-		D3D_FEATURE_LEVEL								m_FeatureLevel;
-		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		m_ImmediateContext;
-		Microsoft::WRL::ComPtr<ID3D11Device>			m_Device;
+		Microsoft::WRL::ComPtr<IDXGISwapChain>			SwapChain;
+		D3D_FEATURE_LEVEL								FeatureLevel;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		ImmediateContext;
+		Microsoft::WRL::ComPtr<ID3D11Device>			Device;
 	private:
 		// New IRRHIDevice state (Pascal names, no m_ prefix per current style)
 		RRenderTexture2D								BackBufferWrapper;
@@ -357,9 +357,9 @@ namespace PigeonEngine
 		UINT32											FrameInFlightCount;
 	private:
 		RDeviceD3D11()
-			: m_Device(nullptr), m_ImmediateContext(nullptr), m_SwapChain(nullptr), m_DepthTexture(nullptr)
-			, m_DepthStencilView(nullptr), m_RenderTargetView(nullptr)
-			, m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), m_Viewport(D3D11_VIEWPORT())
+			: Device(nullptr), ImmediateContext(nullptr), SwapChain(nullptr), DepthTexture(nullptr)
+			, DepthStencilView(nullptr), RenderTargetView(nullptr)
+			, FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), Viewport(D3D11_VIEWPORT())
 			, CurrentFrameIndex(0u), FrameInFlightCount(2u) {}
 		~RDeviceD3D11() {}
 		RDeviceD3D11(const RDeviceD3D11&) = delete;

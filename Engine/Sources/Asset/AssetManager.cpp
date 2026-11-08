@@ -1,5 +1,5 @@
 #include "AssetManager.h"
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include "../EngineCore/IO/FileHelper.h"
 #include "Editor/AnimationEditor/AnimationEditor.h"
 #include "Editor/AnimationMontageEditor/AnimationMontageEditor.h"
@@ -39,14 +39,14 @@ namespace PigeonEngine
 
 	EString EAssetFile::GetDisplayName() const
 	{
-		auto index = Path.RightFind("/");
+		INT32 FolderSeparatorIndex = Path.RightFind("/");
 		EString target = Path;
-		if(index == (INT32)Path.LastIndex())
+		if(FolderSeparatorIndex == (INT32)Path.LastIndex())
 		{
 			target = Path.Substring(0, Path.Length() - 1);
-			index = target.RightFind("/");
+			FolderSeparatorIndex = target.RightFind("/");
 		}
-		EString Name =  target.Substring(index + 1, Path.Length() - index - 1);
+		EString Name =  target.Substring(FolderSeparatorIndex + 1, Path.Length() - FolderSeparatorIndex - 1);
 
 		Name = Name.Replace(".PAsset", "");
 		return Name;
@@ -88,7 +88,7 @@ namespace PigeonEngine
 		const BOOL8 bSelected	= ImGui::Selectable(*Node->GetDisplayName(), &bSelectedFolder);
 		if (bMenuOpened)
 		{
-			for(const auto& elem : Node->GetChildrenFolder())
+			for (const TSharedPtr<EFolderTreeNode>& elem : Node->GetChildrenFolder())
 			{
 				TraverseFolder(elem, CurrentSelectedFolder);
 			}
@@ -109,7 +109,7 @@ namespace PigeonEngine
 	void EFolderTreeNode::SetChildrenFolder(const TArray<EString>& Paths)
 	{
 		ChildrenFolder.Empty();
-		for(const auto& elem : Paths)
+		for (const EString& elem : Paths)
 		{
 			ChildrenFolder.Add(EMemory::MakeShared<EFolderTreeNode>(elem));
 		}
@@ -118,7 +118,7 @@ namespace PigeonEngine
 	void EFolderTreeNode::SetChildrenFiles(const TArray<EString>& Paths)
 	{
 		ChildrenFile.Empty();
-		for(const auto& elem : Paths)
+		for (const EString& elem : Paths)
 		{
 			if(elem.Contains(".PAsset"))
 			{
@@ -151,14 +151,14 @@ namespace PigeonEngine
 
 	EString EFolderTreeNode::GetDisplayName() const
 	{
-		auto index = Path.RightFind("/");
+		INT32 FolderSeparatorIndex = Path.RightFind("/");
 		EString target = Path;
-		if(index == (INT32)Path.LastIndex())
+		if(FolderSeparatorIndex == (INT32)Path.LastIndex())
 		{
 			target = Path.Substring(0, Path.Length() - 1);
-			index = target.RightFind("/");
+			FolderSeparatorIndex = target.RightFind("/");
 		}
-		EString Name =  target.Substring(index + 1, Path.Length() - index - 1);
+		EString Name =  target.Substring(FolderSeparatorIndex + 1, Path.Length() - FolderSeparatorIndex - 1);
 		return Name;
 	}
 
@@ -232,11 +232,64 @@ namespace PigeonEngine
 		}
 		Node->SetChildrenFolder(ChildFolders);
 		Node->SetChildrenFiles(ChildFiles);
-		for(const auto&  elem : Node->GetChildrenFolder())
+		for (const TSharedPtr<EFolderTreeNode>& elem : Node->GetChildrenFolder())
 		{
 			ScanFolder(elem);
 		}
 		return TRUE;
+	}
+
+	// Finds a folder in a rebuilt tree by its stored path. RefreshContentBrowser uses it to
+	// keep the current folder across a rescan: the old node is detached, not deleted, and only
+	// its path is guaranteed to survive.
+	static TSharedPtr<EFolderTreeNode> FindFolderByPath(const TSharedPtr<EFolderTreeNode>& InNode, const EString& InPath)
+	{
+		if (!InNode)
+		{
+			return nullptr;
+		}
+		if (InNode->GetPath() == InPath)
+		{
+			return InNode;
+		}
+		const TArray<TSharedPtr<EFolderTreeNode>>& Children = InNode->GetChildrenFolder();
+		for (UINT32 ChildIndex = 0u, ChildNum = Children.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
+		{
+			TSharedPtr<EFolderTreeNode> Found = FindFolderByPath(Children[ChildIndex], InPath);
+			if (Found)
+			{
+				return Found;
+			}
+		}
+		return nullptr;
+	}
+
+	// The file counterpart of FindFolderByPath. A file that no longer exists answers null, and
+	// the caller clears the selection rather than leaving a pointer into the old tree.
+	static TSharedPtr<EAssetFile> FindFileByPath(const TSharedPtr<EFolderTreeNode>& InNode, const EString& InPath)
+	{
+		if (!InNode)
+		{
+			return nullptr;
+		}
+		const TArray<TSharedPtr<EAssetFile>>& Files = InNode->GetChildrenFile();
+		for (UINT32 FileIndex = 0u, FileNum = Files.Num<UINT32>(); FileIndex < FileNum; FileIndex++)
+		{
+			if (Files[FileIndex] && (Files[FileIndex]->GetPath() == InPath))
+			{
+				return Files[FileIndex];
+			}
+		}
+		const TArray<TSharedPtr<EFolderTreeNode>>& Children = InNode->GetChildrenFolder();
+		for (UINT32 ChildIndex = 0u, ChildNum = Children.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
+		{
+			TSharedPtr<EAssetFile> Found = FindFileByPath(Children[ChildIndex], InPath);
+			if (Found)
+			{
+				return Found;
+			}
+		}
+		return nullptr;
 	}
 
 	void EAssetManager::EditorInit()
@@ -283,6 +336,9 @@ namespace PigeonEngine
 			ProjectAssetRoot = nullptr;
 		}
 
+		// Loads (or imports) the icon textures. Their GPU proxies are built by the render
+		// thread and are still queued here, so the ImGui handles are resolved later by
+		// EnsureEditorIconTextureIds once the first update has drained those commands.
 		// folder icon
 		{
 			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
@@ -377,10 +433,139 @@ namespace PigeonEngine
 				TypeThumbNails.Add(EAssetType::ASSET_TYPE_UNKNOWN, TextureId);
 			}	
 		}
+
+		// The initial scan ran before the editor icons were imported, and the world may have
+		// imported assets before this call. Rescan on the first editor frame so the browser
+		// starts from the final contents.
+		bContentRefreshRequested = TRUE;
+	}
+
+	void EAssetManager::RequestContentRefresh()
+	{
+		bContentRefreshRequested = TRUE;
+	}
+
+	void EAssetManager::RefreshContentBrowser()
+	{
+		const EString CurrentPath = (Current ? Current->GetPath() : EString());
+		const EString SelectedPath = (SelectedFile ? SelectedFile->GetPath() : EString());
+
+		// Rescan in place: the root objects and the ImGui tree node identities stay, so the
+		// expansion state survives. Only the child arrays are rebuilt.
+		if (EngineAssetRoot)
+		{
+			ScanFolder(EngineAssetRoot);
+		}
+		if (ProjectAssetRoot)
+		{
+			ScanFolder(ProjectAssetRoot);
+		}
+
+		Current = (CurrentPath.Length() > 0u) ? FindFolderByPath(EngineAssetRoot, CurrentPath) : TSharedPtr<EFolderTreeNode>();
+		if ((!Current) && (CurrentPath.Length() > 0u) && (ProjectAssetRoot))
+		{
+			Current = FindFolderByPath(ProjectAssetRoot, CurrentPath);
+		}
+		if ((!Current) && (CurrentPath.Length() > 0u))
+		{
+			// The folder the user was in is gone; the root is the useful place to land.
+			Current = EngineAssetRoot;
+		}
+
+		SelectedFile = (SelectedPath.Length() > 0u) ? FindFileByPath(EngineAssetRoot, SelectedPath) : TSharedPtr<EAssetFile>();
+		if ((!SelectedFile) && (SelectedPath.Length() > 0u) && (ProjectAssetRoot))
+		{
+			SelectedFile = FindFileByPath(ProjectAssetRoot, SelectedPath);
+		}
+	}
+
+	// Resolves one editor icon to its ImGui handle. The texture exists as an asset once
+	// EditorInit has loaded it, but its GPU proxy is built by the render thread: the handle
+	// stays invalid until that command has run, which is what makes the caller retry.
+	static ImTextureID ResolveEditorIconTexture(const CHAR* InTextureName)
+	{
+		const ETexture2DAsset* Asset = nullptr;
+		// Cached lookup only: EditorInit owns the load / import, and a missing icon must not
+		// turn every frame into a disk read.
+		if (ETextureAssetManager::GetManagerSingleton()->LoadTexture2DAsset(
+			EBaseSettings::ENGINE_TEXTURE_PATH, EString(InTextureName), Asset) == FALSE)
+		{
+			return ImTextureID_Invalid;
+		}
+		return ((Asset != nullptr) ? EngineTextureToImgui(Asset) : ImTextureID_Invalid);
+	}
+
+	void EAssetManager::EnsureEditorIconTextureIds()
+	{
+		if (bEditorIconTextureIdsReady != FALSE)
+		{
+			return;
+		}
+
+		// EditorInit loads the icon textures, but their GPU proxies are built on the render
+		// thread. This runs from EditorUpdate, after the frame boundary has retired those
+		// creation commands, and retries until every icon has a live handle.
+		BOOL32 bAllReady = TRUE;
+
+		const ImTextureID ResolvedFolderTextureId = ResolveEditorIconTexture(PE_TEXT("Icon_ContentBrowser_Folder"));
+		if (ResolvedFolderTextureId != ImTextureID_Invalid)
+		{
+			FolderTextureId = ResolvedFolderTextureId;
+		}
+		else
+		{
+			bAllReady = FALSE;
+		}
+
+		const struct FEditorThumbnailRequest
+		{
+			EAssetType	Type;
+			const CHAR*	TextureName;
+		} Requests[] =
+		{
+			{ EAssetType::ASSET_TYPE_MESH,					PE_TEXT("Icon_ContentBrowser_Mesh") },
+			{ EAssetType::ASSET_TYPE_SHADER,				PE_TEXT("Icon_ContentBrowser_Shader") },
+			{ EAssetType::ASSET_TYPE_SKELETON,				PE_TEXT("Icon_ContentBrowser_Skeleton") },
+			{ EAssetType::ASSET_TYPE_ANIMATION,				PE_TEXT("Icon_ContentBrowser_Animation") },
+			// The montage / notify / state machine families have no dedicated icon yet; they
+			// share the animation icon rather than falling back to the font atlas.
+			{ EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE,	PE_TEXT("Icon_ContentBrowser_Animation") },
+			{ EAssetType::ASSET_TYPE_ANIM_MONTAGE,			PE_TEXT("Icon_ContentBrowser_Animation") },
+			{ EAssetType::ASSET_TYPE_ANIM_NOTIFY,			PE_TEXT("Icon_ContentBrowser_Animation") },
+			{ EAssetType::ASSET_TYPE_UNKNOWN,				PE_TEXT("Icon_ContentBrowser_No") },
+		};
+		constexpr UINT32 RequestCount = PE_ARRAYSIZE(Requests);
+		for (UINT32 RequestIndex = 0u; RequestIndex < RequestCount; RequestIndex++)
+		{
+			const ImTextureID ResolvedTextureId = ResolveEditorIconTexture(Requests[RequestIndex].TextureName);
+			if (ResolvedTextureId != ImTextureID_Invalid)
+			{
+				TypeThumbNails.Add(Requests[RequestIndex].Type, ResolvedTextureId);
+			}
+			else
+			{
+				bAllReady = FALSE;
+			}
+		}
+
+		bEditorIconTextureIdsReady = bAllReady;
 	}
 
 	void EAssetManager::EditorUpdate()
 	{
+		// A refresh request may come from an importer (through EImportManager) or from the
+		// Refresh button. Both are consumed here, before anything draws, so the tree is never
+		// rebuilt while GenerateContentBrowser iterates it.
+		const BOOL32 bImportRefreshRequested = EImportManager::GetManagerSingleton()->ConsumeContentBrowserRefreshRequest();
+		if ((bContentRefreshRequested != FALSE) || (bImportRefreshRequested != FALSE))
+		{
+			bContentRefreshRequested = FALSE;
+			RefreshContentBrowser();
+		}
+
+		// The icon handles need the render thread's texture creation, so they are resolved here
+		// rather than in EditorInit.
+		EnsureEditorIconTextureIds();
 		GenerateContentBrowser();
 		if (AnimationEditor)
 		{
@@ -414,17 +599,37 @@ namespace PigeonEngine
 		{
 			ImGui::Text("PigeonContent");
 			{
-				ImGui::BeginChild("Tree", ImVec2(200, 0), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+				// The tree is a resizable child: its right border is the drag line, and ImGui
+				// persists the width in the ini. The constraints keep it from collapsing and
+				// leave the content pane at least 200px, whatever the dock node's width is.
+				const FLOAT MaximumTreeWidth = EMath::Max(160.0f, ImGui::GetContentRegionAvail().x - 200.0f);
+				ImGui::SetNextWindowSizeConstraints(ImVec2(160.0f, 0.0f), ImVec2(MaximumTreeWidth, FLT_MAX));
+				ImGui::BeginChild("Tree", ImVec2(220.0f, 0.0f)
+					, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX
+					, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 				ImGui::Text("FolderTree");
+				ImGui::SameLine();
+				EImportManager::GetManagerSingleton()->ShowImporterButton();
+				ImGui::SameLine();
+				if (ImGui::Button("Refresh"))
 				{
-					EImportManager::GetManagerSingleton()->ShowImporterButton();
-					ImGui::BeginChild("Project", ImVec2(180, 120), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+					RequestContentRefresh();
+				}
+				{
+					// The Project/Engine split is vertical and draggable, and both panes follow
+					// the tree width instead of a fixed 180.
+					ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 80.0f), ImVec2(FLT_MAX, 400.0f));
+					ImGui::BeginChild("Project", ImVec2(0.0f, 140.0f)
+						, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY
+						, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 					ImGui::Text("Project");
 					EFolderTreeNode::TraverseFolder(ProjectAssetRoot, Current);
 					ImGui::EndChild();
 				}
 				{
-					ImGui::BeginChild("Engine", ImVec2(180, 0), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+					ImGui::BeginChild("Engine", ImVec2(0.0f, 0.0f)
+						, ImGuiChildFlags_Borders
+						, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 					ImGui::Text("Engine");
 					EFolderTreeNode::TraverseFolder(EngineAssetRoot, Current);
 					ImGui::EndChild();
@@ -435,149 +640,176 @@ namespace PigeonEngine
 
 			ImGui::SameLine();
 			{
-				ImGui::BeginChild("Content", ImVec2(700, 0), TRUE);
+				ImGui::BeginChild("Content", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
+				const ImGuiStyle& Style = ImGui::GetStyle();
+				const FLOAT SidebarWidth = 260.0f;
+				const FLOAT ContentWidth = ImGui::GetContentRegionAvail().x;
+				const FLOAT GridChildWidth = EMath::Max(ContentWidth - SidebarWidth - Style.ItemSpacing.x, 1.0f);
+				// The scrollbar is reserved before it appears, so a row that only fits the full
+				// width does not overflow by its width once the grid starts scrolling.
+				const FLOAT AvailableWidth = EMath::Max(GridChildWidth - Style.ScrollbarSize, 1.0f);
+				const FLOAT CellPadding = 6.0f;
+				const FLOAT CellWidth = ContentIconSize + Style.FramePadding.x * 2.0f + CellPadding * 2.0f;
+				const FLOAT CellHeight = ContentIconSize + Style.FramePadding.x * 2.0f + CellPadding * 2.0f
+					+ ImGui::GetTextLineHeight() * 2.0f + Style.ItemSpacing.y;
+				const FLOAT ItemStride = CellWidth + Style.ItemSpacing.x;
+				const UINT32 ItemsPerRow = EMath::Max(1u, static_cast<UINT32>(AvailableWidth / ItemStride));
+
+				// The grid is the scrolling part; the sidebar beside it keeps the size control
+				// and the selected asset's actions in view no matter where the grid is scrolled.
+				ImGui::BeginChild("Grid", ImVec2(GridChildWidth, 0.0f), ImGuiChildFlags_None);
 				if (EMemory::GetPtr(Current))
 				{
-					if (EMemory::GetPtr(SelectedFile))
+					// The folder whose contents are being drawn. A click on a folder updates
+					// Current for the next frame; keeping this snapshot here stops the file loop
+					// below from suddenly drawing the clicked folder's files in this same frame.
+					const TSharedPtr<EFolderTreeNode> ContentFolder = Current;
+					const TArray<TSharedPtr<EFolderTreeNode>>& ChildrenFolder = ContentFolder->GetChildrenFolder();
+					UINT32 ItemIndex = 0u;
+					for (UINT32 FolderIndex = 0u, FolderNum = ChildrenFolder.Num<UINT32>(); FolderIndex < FolderNum; FolderIndex++)
 					{
-						ImGui::Text("Selected Asset: %s", *SelectedFile->GetDisplayName());
-						ImGui::SameLine();
-						ImGui::TextDisabled("(%s)", *AssetTypeAsString(SelectedFile->GetType()));
-						if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor)
+						ImGui::PushID(ItemIndex);
+						ImGui::BeginChild("##item", ImVec2(CellWidth, CellHeight), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+						const FLOAT FolderButtonWidth = ContentIconSize + Style.FramePadding.x * 2.0f;
+						ImGui::SetCursorPos(ImVec2(CellPadding + (CellWidth - CellPadding * 2.0f - FolderButtonWidth) * 0.5f, CellPadding));
+						if (ImGui::ImageButton("##folder", FolderTextureId, ImVec2(ContentIconSize, ContentIconSize)))
 						{
-							ImGui::SameLine();
-							if (ImGui::Button("Open Animation Editor"))
-							{
-								AnimationEditor->OpenAnimationAsset(SelectedFile->GetPath());
-							}
+							Current = ChildrenFolder[FolderIndex];
 						}
-						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Open State Machine Editor"))
-							{
-								StateMachineEditor->OpenStateMachineAsset(SelectedFile->GetPath());
-							}
-						}
-						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Open Montage Editor"))
-							{
-								MontageEditor->OpenMontageAsset(SelectedFile->GetPath());
-							}
-						}
-						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Open Notify Editor"))
-							{
-								NotifyEditor->OpenNotifyAsset(SelectedFile->GetPath());
-							}
-						}
-						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Edit Slot Groups"))
-							{
-								SkeletonSlotEditor->OpenSkeletonAsset(SelectedFile->GetPath());
-							}
-						}
-						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Open Mesh Editor"))
-							{
-								MeshEditor->OpenMeshAsset(SelectedFile->GetPath());
-							}
-						}
-						ImGui::Separator();
-					}
-
-					ImVec2 button_sz(100, 100);
-					auto ChildrenFolder = Current->GetChildrenFolder();
-					FLOAT window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-					UINT32 i = 0;
-					for (UINT32 n = ChildrenFolder.Num<UINT32>(); i < n; ++i)
-					{
-						ImGui::PushID(i);
-						ImGui::BeginChild("asdas", ImVec2(120, 150), FALSE);
-						// imgui 1.91+ ImageButton requires a str_id first argument
-						// (was inferred from texture id before). Use the loop index
-						// stringified - already inside a PushID(i) so collisions are
-						// fine within the parent ID scope.
-						if(ImGui::ImageButton("##folder", FolderTextureId, button_sz))
-						{
-							Current = ChildrenFolder[i];
-						}
-						ImGui::TextWrapped(*ChildrenFolder[i]->GetDisplayName());
+						const FLOAT FolderButtonHeight = ImGui::GetItemRectSize().y;
+						ImGui::SetCursorPos(ImVec2(CellPadding, CellPadding + FolderButtonHeight + Style.ItemSpacing.y));
+						ImGui::PushTextWrapPos(CellWidth - CellPadding);
+						ImGui::TextWrapped("%s", *ChildrenFolder[FolderIndex]->GetDisplayName());
+						ImGui::PopTextWrapPos();
 						ImGui::EndChild();
-						const FLOAT last_button_x2 = ImGui::GetItemRectMax().x;
-						const ImGuiStyle& style = ImGui::GetStyle();
-						const FLOAT next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x; 
-						if ( next_button_x2 < window_visible_x2)
-							ImGui::SameLine();
 						ImGui::PopID();
-
+						++ItemIndex;
+						if ((ItemIndex % ItemsPerRow) != 0u)
+						{
+							ImGui::SameLine();
+						}
 					}
 
-					for(auto& elem : Current->GetChildrenFile())
+					const TArray<TSharedPtr<EAssetFile>>& ChildrenFile = ContentFolder->GetChildrenFile();
+					for (UINT32 FileIndex = 0u, FileNum = ChildrenFile.Num<UINT32>(); FileIndex < FileNum; FileIndex++)
 					{
-						ImGui::PushID(i);
-						ImGui::BeginChild("asdas", ImVec2(120, 150), FALSE);
+						const TSharedPtr<EAssetFile>& File = ChildrenFile[FileIndex];
+						ImGui::PushID(ItemIndex);
+						ImGui::BeginChild("##item", ImVec2(CellWidth, CellHeight), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
 						// imgui 1.91+ removed SetItemAllowOverlap(); replaced with
 						// SetNextItemAllowOverlap() declared BEFORE the underlying
 						// Selectable so a subsequent overlay Image+Text doesn't
 						// hijack the click.
 						ImGui::SetNextItemAllowOverlap();
-						const BOOL8 bSelected = ImGui::Selectable(*(EString("##") + elem->GetDisplayName()), elem == SelectedFile, 0, ImVec2(120, 150));
-						const ImTextureID id = GetThumbNail(elem->GetType(), elem);
-						ImGui::SetCursorPos(ImVec2(0,0));
-						ImGui::Image(id, button_sz);
-						ImGui::SetCursorPos(ImVec2(0, button_sz.y + 10));
-						ImGui::TextWrapped(*elem->GetDisplayName());
-						ImGui::EndChild();
-						const FLOAT last_button_x2 = ImGui::GetItemRectMax().x;
-						const ImGuiStyle& style = ImGui::GetStyle();
-						const FLOAT next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
-						if(bSelected)
+						const BOOL8 bSelected = ImGui::Selectable("##file", File == SelectedFile, 0, ImVec2(CellWidth, CellHeight));
+						const ImTextureID IconTextureId = GetThumbNail(File->GetType(), File);
+						ImGui::SetCursorPos(ImVec2(CellPadding + (CellWidth - CellPadding * 2.0f - ContentIconSize) * 0.5f, CellPadding));
+						ImGui::Image(IconTextureId, ImVec2(ContentIconSize, ContentIconSize));
+						ImGui::SetCursorPos(ImVec2(CellPadding, CellPadding + ContentIconSize + Style.ItemSpacing.y));
+						ImGui::PushTextWrapPos(CellWidth - CellPadding);
+						ImGui::TextWrapped("%s", *File->GetDisplayName());
+						ImGui::PopTextWrapPos();
+						if (bSelected)
 						{
-							SelectedFile = elem;
-							if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							SelectedFile = File;
+							if ((File->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
-								AnimationEditor->OpenAnimationAsset(elem->GetPath());
+								AnimationEditor->OpenAnimationAsset(File->GetPath());
 							}
-							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							else if ((File->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
-								StateMachineEditor->OpenStateMachineAsset(elem->GetPath());
+								StateMachineEditor->OpenStateMachineAsset(File->GetPath());
 							}
-							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							else if ((File->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
-								MontageEditor->OpenMontageAsset(elem->GetPath());
+								MontageEditor->OpenMontageAsset(File->GetPath());
 							}
-							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							else if ((File->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
-								NotifyEditor->OpenNotifyAsset(elem->GetPath());
+								NotifyEditor->OpenNotifyAsset(File->GetPath());
 							}
-							else if ((elem->GetType() == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							else if ((File->GetType() == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
-								SkeletonSlotEditor->OpenSkeletonAsset(elem->GetPath());
+								SkeletonSlotEditor->OpenSkeletonAsset(File->GetPath());
 							}
-							else if ((elem->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							else if ((File->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
-								MeshEditor->OpenMeshAsset(elem->GetPath());
+								MeshEditor->OpenMeshAsset(File->GetPath());
 							}
-							PE_LOG_LOG(EString("ContentBrowser:Select ") + elem->GetDisplayName());
+							PE_LOG_LOG(EString(PE_TEXT("ContentBrowser:Select ")) + File->GetDisplayName());
 						}
-						if ( next_button_x2 < window_visible_x2)
-							ImGui::SameLine();
-						++i;
+						ImGui::EndChild();
 						ImGui::PopID();
+						++ItemIndex;
+						if ((ItemIndex % ItemsPerRow) != 0u)
+						{
+							ImGui::SameLine();
+						}
 					}
 
-				}
+				} // if Current
 
-				ImGui::EndChild();
+				ImGui::EndChild(); // Grid
+
+				ImGui::SameLine();
+				ImGui::BeginChild("Sidebar", ImVec2(SidebarWidth, 0.0f), ImGuiChildFlags_Borders);
+				ImGui::TextDisabled("Icon Size");
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+				ImGui::SliderFloat("##IconSize", &ContentIconSize, 30.0f, 160.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
+				ImGui::TextDisabled("(%u per row)", ItemsPerRow);
+				ImGui::Separator();
+				if (EMemory::GetPtr(SelectedFile))
+				{
+					ImGui::TextDisabled("Selected Asset");
+					ImGui::TextWrapped("%s", *SelectedFile->GetDisplayName());
+					ImGui::TextDisabled("(%s)", *AssetTypeAsString(SelectedFile->GetType()));
+					ImGui::Separator();
+					const EAssetType SelectedType = SelectedFile->GetType();
+					const BOOL32 bCanOpenEditor = ((SelectedType == EAssetType::ASSET_TYPE_ANIMATION)
+						|| (SelectedType == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE)
+						|| (SelectedType == EAssetType::ASSET_TYPE_ANIM_MONTAGE)
+						|| (SelectedType == EAssetType::ASSET_TYPE_ANIM_NOTIFY)
+						|| (SelectedType == EAssetType::ASSET_TYPE_SKELETON)
+						|| (SelectedType == EAssetType::ASSET_TYPE_MESH)) ? TRUE : FALSE;
+					if (bCanOpenEditor != FALSE)
+					{
+						const FLOAT SidebarButtonWidth = ImGui::GetContentRegionAvail().x;
+						if (ImGui::Button("Open Editor", ImVec2(SidebarButtonWidth, 0.0f)))
+						{
+							if ((SelectedType == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor)
+							{
+								AnimationEditor->OpenAnimationAsset(SelectedFile->GetPath());
+							}
+							else if ((SelectedType == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor)
+							{
+								StateMachineEditor->OpenStateMachineAsset(SelectedFile->GetPath());
+							}
+							else if ((SelectedType == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor)
+							{
+								MontageEditor->OpenMontageAsset(SelectedFile->GetPath());
+							}
+							else if ((SelectedType == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor)
+							{
+								NotifyEditor->OpenNotifyAsset(SelectedFile->GetPath());
+							}
+							else if ((SelectedType == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor)
+							{
+								SkeletonSlotEditor->OpenSkeletonAsset(SelectedFile->GetPath());
+							}
+							else if ((SelectedType == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
+							{
+								MeshEditor->OpenMeshAsset(SelectedFile->GetPath());
+							}
+						}
+					}
+				}
+				else
+				{
+					ImGui::TextDisabled("No asset selected.");
+				}
+				ImGui::EndChild(); // Sidebar
+
+				ImGui::EndChild(); // Content
 			}
 		}
 

@@ -140,6 +140,13 @@ namespace PigeonEngine
 		PE_NODISCARD virtual BOOL32	BindGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData) const;
 		// Anything a subclass binds in addition to the shared set, after the geometry.
 		virtual BOOL32	BindExtraResources(IRCommandList* InCommandList, const FPrimitivePassData& InData) const;
+		// Record: resources that belong to the pass or the view rather than to the material,
+		// bound after the material and its extra resources and before the draw. A forward pass
+		// that shades uses it for the light lists and the environment, whose binding plan slots
+		// differ from the deferred lighting pass's. TRUE when it wrote a descriptor table of its
+		// own, which tells the record path that the next draw cannot reuse the material bindings.
+		virtual BOOL32	BindPassResources(IRCommandList* InCommandList, const FPassRecordContext& InContext
+			, const FPrimitivePassData& InData) const;
 		// The draw itself. The default is one indexed draw of the group.
 		PE_NODISCARD virtual BOOL32	DrawGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData
 			, const UINT32 InIndexCount, const UINT32 InStartIndex) const;

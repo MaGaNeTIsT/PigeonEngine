@@ -109,7 +109,7 @@ namespace PigeonEngine
 
 		void AddTags(const ETagContainer& Other)
 		{
-			for (const auto& Tag : Other.Tags)
+			for (const ETag& Tag : Other.Tags)
 			{
 				AddTag(Tag);
 			}
@@ -127,7 +127,7 @@ namespace PigeonEngine
 
 		void RemoveTags(const ETagContainer& Other)
 		{
-			for (const auto& Tag : Other.Tags)
+			for (const ETag& Tag : Other.Tags)
 			{
 				RemoveTag(Tag);
 			}
@@ -145,7 +145,7 @@ namespace PigeonEngine
 
 		PE_NODISCARD BOOL32 HasAny(const ETagContainer& Other) const
 		{
-			for (const auto& Tag : Other.Tags)
+			for (const ETag& Tag : Other.Tags)
 			{
 				if (Tags.Contains(Tag))
 				{
@@ -157,7 +157,7 @@ namespace PigeonEngine
 
 		PE_NODISCARD BOOL32 HasAll(const ETagContainer& Other) const
 		{
-			for (const auto& Tag : Other.Tags)
+			for (const ETag& Tag : Other.Tags)
 			{
 				if (!Tags.Contains(Tag))
 				{
@@ -201,7 +201,7 @@ namespace PigeonEngine
 		PE_NODISCARD ETagContainer Intersection(const ETagContainer& Other) const
 		{
 			ETagContainer Result;
-			for (const auto& Tag : Tags)
+			for (const ETag& Tag : Tags)
 			{
 				if (Other.Tags.Contains(Tag))
 				{
@@ -214,7 +214,7 @@ namespace PigeonEngine
 		PE_NODISCARD ETagContainer Difference(const ETagContainer& Other) const
 		{
 			ETagContainer Result;
-			for (const auto& Tag : Tags)
+			for (const ETag& Tag : Tags)
 			{
 				if (!Other.Tags.Contains(Tag))
 				{

@@ -14,7 +14,7 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	PObject::PObject() : EObjectBase(), m_Active(FALSE)
+	PObject::PObject() : EObjectBase(), bActive(FALSE)
 	{
 	}
 	PObject::~PObject()
@@ -43,9 +43,9 @@ namespace PigeonEngine
 
 	TSharedPtr<CJsonObject> PObject::Serialize()
 	{
-		auto Json = EMemory::MakeShared<CJsonObject>();
+		TSharedPtr<CJsonObject> Json = EMemory::MakeShared<CJsonObject>();
 		Json->SetUInt64Field("TypeHash", this->GetTypeHash());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		Json->SetStringField("Name", this->GetDebugName());
 #endif
 		return Json;
@@ -99,17 +99,17 @@ namespace PigeonEngine
 		return bAddedToScene;
 	}
 
-	BOOL32 PObject::IsActive()const
+	BOOL32 PObject::IsActive() const
 	{
-		return m_Active;
+		return bActive;
 	}
 	void PObject::Active()
 	{
-		m_Active = TRUE;
+		bActive = TRUE;
 	}
 	void PObject::Inactive()
 	{
-		m_Active = FALSE;
+		bActive = FALSE;
 	}
 
 };

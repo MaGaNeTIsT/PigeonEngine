@@ -39,11 +39,12 @@
 //   ModSuction, Translucent and Time #defines of UCGVectorParams
 //       new named SWEParams fields, declared in the component JSON: the same
 //       twenty fields the two already migrated SWE passes declare, then
-//       ModLocation, ModRadius, ModRadial, ModSuction, Translucent and Time in
-//       the legacy order, with the legacy names. Time is the legacy's own clock
-//       for the swirl, not the engine's GlobalParams time, so it stays a field of
-//       this block. ModLocationX and ModLocationY have no reader in the body and
-//       are not declared
+//       ModifierLocation, ModifierRadius, ModifierRadial, ModifierSuction,
+//       WhirlpoolTranslucency and WhirlpoolTime in the legacy order, with the
+//       axis and spelling adjustments this port needs. WhirlpoolTime is the
+//       legacy's own clock for the swirl, not the engine's GlobalParams time.
+//       The unused ModifierLocation split fields have no reader and are not
+//       declared
 //   old FluxModifierTransform, a local function of this pass
 //       new Public/Fluid/ShallowWaterEquationModifier.hlsl, which is the same
 //       arithmetic. The modifier pass computes the same transform inline, so the
@@ -55,7 +56,8 @@
 //       forward direction of FluxForceWhirlpool, which is still the literal
 //       float2( 1, -1 ) the legacy passed
 //   old FluxForceWhirlpool read the ModLocation, ModRadius, ModRadial and
-//   ModSuction #defines straight out of the parameter block
+//   ModSuction #defines straight out of the parameter block; this port reads
+//   ModifierLocation, ModifierRadius, ModifierRadial and ModifierSuction
 //       new it still does, through the named fields of the same block. It is the
 //       only helper in the family that reads the block directly, and it is left
 //       that way because it was written that way
@@ -102,7 +104,9 @@ groupshared uint SharedTileBitmask;
 //++[Bili]Begin
 //Modify by HengCan | Modifier Whirlpool Shader | 2026/04/07 14:12 |
 
-// UV to world: the texcoord times the area size plus its world origin.
+// UV to world XZ: the texcoord times the area size plus its world origin. The
+// simulation plane is world XZ; the height axis is world Y and does not appear
+// in this 2D transform.
 float2 FluxSimulationUVToWorld( in float2 InTexcoord, in float2 InWorldLocation, in float2 InWorldScale )
 {
 	return (InTexcoord.xy * InWorldScale.xy + InWorldLocation.xy);
@@ -138,18 +142,18 @@ float2 FluxSwirl( in float2 InPosition, in float2 InCenter, in float2 InDirectio
 
 float2 FluxForceWhirlpool( in float2 InWorldPosition )
 {
-	return FluxSwirl( InWorldPosition.xy, (ModLocation), float2(1, -1), (ModRadius), (ModRadial), (ModSuction) );
+	return FluxSwirl( InWorldPosition.xy, (ModifierLocation), float2(1, -1), (ModifierRadius), (ModifierRadial), (ModifierSuction) );
 }
 
 bool ComputeModifier(
 	in int2		InCoord,
 	out float4	OutValue)
 {
-	float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize; float2 Resolution;
-	FluxSimulationUV( Location, Scale, InvScale, Height, TexelSize, Resolution );
+	float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize; float2 Resolution;
+	FluxSimulationUV( Location, Scale, InvScale, ReferenceY, TexelSize, Resolution );
 
-	int2 LocalCoord = InCoord - asint( PixelAnchor );
-	int2 LocalRes = asint( PixelSize );
+	int2 LocalCoord = InCoord - PixelAnchor;
+	int2 LocalRes = PixelSize;
 	int2 Res = int2( (int)(Resolution.x), (int)(Resolution.y) );
 	// The bounds test is a predicate now and not a return. The early exit below
 	// owns a group barrier, every thread of the group has to reach it, and a
@@ -185,14 +189,14 @@ bool ComputeModifier(
 	}
 
 	float2 Texcoord0 = saturate( (InCoord.xy + 0.5) / Resolution.xy );
-	float2 Texcoord1 = FluxModifierTransform( Texcoord0.xy, (ModLocation), (ModRadius) * 2, float2(1, 0), Location.xy, Scale.xy );
-	float ScaledTime = (Time) * 0.15;
+	float2 Texcoord1 = FluxModifierTransform( Texcoord0.xy, (ModifierLocation), (ModifierRadius) * 2, float2(1, 0), Location.xy, Scale.xy );
+	float ScaledTime = (WhirlpoolTime) * 0.15;
 	float2 TimeVec;
 	sincos(ScaledTime, TimeVec.x, TimeVec.y);
-	float Weight = 1 - saturate(distance((ModLocation), FluxSimulationUVToWorld( Texcoord0.xy, Location.xy, Scale.xy ) + (TimeVec.xy * 300)) / (ModRadius));
+	float Weight = 1 - saturate(distance((ModifierLocation), FluxSimulationUVToWorld( Texcoord0.xy, Location.xy, Scale.xy ) + (TimeVec.xy * 300)) / (ModifierRadius));
 	float Weight2 = Weight * Weight;
 	float Weight3 = Weight2 * Weight;
-	float4 VelocityHeightFoamValue = OutVelocityHeightFoamTex[ InCoord ];
+	float4 VelocityHeightFoamValue = PE_LOAD_TEX2D( VelocityHeightFoamTex, int3( InCoord, 0 ) );
 	float WaterDepth = VelocityHeightFoamValue.z * (1 - (saturate((Weight3 - 0.5) * 2.0) * 1.0));
 	float2 Position0, Position1;
 	FluxVelocitySeparation( Texcoord0.xy, Position0, Position1, Location.xy, Scale.xy, TexelSize.xy );
@@ -200,10 +204,10 @@ bool ComputeModifier(
 	float2 Velocity1 = FluxForceWhirlpool( Position1.xy );
 	float2 Velocity = lerp(float2(Velocity0.x, Velocity1.y) * Weight2, VelocityHeightFoamValue.xy, 0.7);
 
-	float SrcW = Weight * (Translucent);
+	float SrcW = Weight * (WhirlpoolTranslucency);
 	float3 SrcXYZ = float3(Velocity.xy, WaterDepth) * SrcW;
 
-	float4 DstValue = OutVelocityHeightFoamTex[ InCoord ];
+	float4 DstValue = PE_LOAD_TEX2D( VelocityHeightFoamTex, int3( InCoord, 0 ) );
 	OutValue = float4( DstValue.xyz * (1 - SrcW) + SrcXYZ.xyz, DstValue.w * (1 - SrcW));
 	return true;
 }
@@ -222,7 +226,7 @@ void CSMain(uint3 InDispatchThreadID : SV_DispatchThreadID
 	}
 	GroupMemoryBarrierWithGroupSync();
 #endif	//SWE_EARLY_EXIT_USES_TILE_MASK
-	int2 Coord = int2( InDispatchThreadID.xy ) + asint( PixelAnchor );
+	int2 Coord = int2( InDispatchThreadID.xy ) + PixelAnchor;
 	float4 Value;
 	if (!(ComputeModifier( Coord, Value )))
 	{

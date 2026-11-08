@@ -1,6 +1,6 @@
 #pragma once
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Array.h>
@@ -32,15 +32,15 @@ namespace PigeonEngine
 		void DrawCurvePreview(const EAnimMontage& InMontage);
 
 	private:
-		BOOL8							m_ShowEditor = FALSE;
-		const EAnimMontageAsset*		m_Asset = nullptr;
+		BOOL8							bShowEditor = FALSE;
+		const EAnimMontageAsset*		Asset = nullptr;
 		// Loaded on demand for clip durations; the timeline still works without it.
-		const ESkeletonAnimationAsset*	m_AnimationAsset = nullptr;
-		EString							m_OpenedAssetFullPath;
-		EString							m_LastError;
-		TArray<CHAR>					m_JsonBuffer;
-		INT32							m_SelectedCurveSectionIndex = 0;
-		INT32							m_SelectedCurveIndex = 0;
+		const ESkeletonAnimationAsset*	AnimationAsset = nullptr;
+		EString							OpenedAssetFullPath;
+		EString							LastError;
+		TArray<CHAR>					JsonBuffer;
+		INT32							SelectedCurveSectionIndex = 0;
+		INT32							SelectedCurveIndex = 0;
 	};
 
 }

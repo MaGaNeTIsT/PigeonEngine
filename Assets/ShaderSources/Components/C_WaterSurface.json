@@ -1,0 +1,32 @@
+{
+	"Name": "WaterSurface",
+	"Template": "Components/C_WaterSurface.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "WaterSurfaceParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "WaterAreaLoc", "Format": "float2", "Default": [0.0, 0.0] },
+				{ "Name": "WaterAreaSize", "Format": "float2", "Default": [1.0, 1.0] },
+				{ "Name": "WaterReferenceY", "Format": "float", "Default": [0.0] },
+				{ "Name": "WaterHeightScale", "Format": "float", "Default": [1.0] },
+				{ "Name": "WaterMaxHeight", "Format": "float", "Default": [1000.0] },
+				{ "Name": "WaterTime", "Format": "float", "Default": [0.0] },
+				{ "Name": "WaterEnable", "Format": "float", "Default": [1.0] },
+				{ "Name": "WaterSimulationValid", "Format": "float", "Default": [0.0] },
+				{ "Name": "WaterRefractionValid", "Format": "float", "Default": [0.0] },
+				{ "Name": "WaterTexelSize", "Format": "float2", "Default": [0.00390625, 0.00390625] },
+				{ "Name": "WaterNormalStrength", "Format": "float", "Default": [1.0] },
+				{ "Name": "WaterFlowStrength", "Format": "float", "Default": [1.0] },
+				{ "Name": "WaterScatterDepth", "Format": "float", "Default": [150.0] },
+				{ "Name": "WaterRefractionStrength", "Format": "float", "Default": [0.05] }
+			]
+		}
+	],
+	"Textures": [
+		{ "Name": "WaterHeightWetTex", "Type": "2D", "Format": "float2", "SamplerName": "SamplerLinearClamp", "Slot": 0 },
+		{ "Name": "WaterStateTex", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 1 },
+		{ "Name": "WaterGroundTex", "Type": "2D", "Format": "float", "SamplerName": "SamplerLinearClamp", "Slot": 2 },
+		{ "Name": "WaterRefractionColor", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 3 }
+	]
+}

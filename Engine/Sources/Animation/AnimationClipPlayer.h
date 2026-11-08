@@ -30,26 +30,26 @@ namespace PigeonEngine
 		void Reset();
 
 		void SetClip(const ESkeletonAnimationClip* InClip, INT32 InClipIndex);
-		PE_NODISCARD const ESkeletonAnimationClip* GetClip()const;
+		PE_NODISCARD const ESkeletonAnimationClip* GetClip() const;
 
 		void Play();
 		void Pause();
-		PE_NODISCARD BOOL32 IsPlaying()const;
+		PE_NODISCARD BOOL32 IsPlaying() const;
 		// TRUE after a one-shot clip reached its end and stopped. Pause() does not set it,
 		// so a paused clip can resume without being treated as finished.
-		PE_NODISCARD BOOL32 HasFinished()const;
+		PE_NODISCARD BOOL32 HasFinished() const;
 
 		void SetPlayRate(FLOAT InPlayRate);
-		PE_NODISCARD FLOAT GetPlayRate()const;
+		PE_NODISCARD FLOAT GetPlayRate() const;
 
 		void SetLoopMode(EAnimationLoopMode InLoopMode);
-		PE_NODISCARD EAnimationLoopMode GetLoopMode()const;
+		PE_NODISCARD EAnimationLoopMode GetLoopMode() const;
 
 		void SetPositionSeconds(FLOAT InPositionSeconds);
-		PE_NODISCARD FLOAT GetPositionSeconds()const;
-		PE_NODISCARD FLOAT GetPreviousPositionSeconds()const;
-		PE_NODISCARD BOOL32 HasLoopedLastAdvance()const;
-		PE_NODISCARD FLOAT GetClipDurationSeconds()const;
+		PE_NODISCARD FLOAT GetPositionSeconds() const;
+		PE_NODISCARD FLOAT GetPreviousPositionSeconds() const;
+		PE_NODISCARD BOOL32 HasLoopedLastAdvance() const;
+		PE_NODISCARD FLOAT GetClipDurationSeconds() const;
 
 		/*
 		* Advances the playback position by InDeltaSeconds according to the loop mode. A
@@ -64,10 +64,10 @@ namespace PigeonEngine
 		* so bones without a curve keep their base value. Returns FALSE when there is no clip
 		* or no usable binding.
 		*/
-		BOOL32 Evaluate(const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose)const;
+		BOOL32 Evaluate(const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose) const;
 
 	private:
-		PE_NODISCARD FLOAT GetTicksPerSecond()const;
+		PE_NODISCARD FLOAT GetTicksPerSecond() const;
 
 	private:
 		const ESkeletonAnimationClip*	Clip = nullptr;

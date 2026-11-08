@@ -4,7 +4,7 @@
 
 namespace PigeonEngine
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	class EEditorGlobalPanel : public EManagerBase
 	{
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EEditorGlobalPanel)

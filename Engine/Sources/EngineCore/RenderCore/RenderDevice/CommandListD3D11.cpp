@@ -188,7 +188,7 @@ namespace PigeonEngine
 		}
 
 		// GPU profiler: open event + first timestamp for this pass. No-op
-		// when PassName is null or _GPU_ENABLE_PROFILER is off.
+		// when PassName is null or ENGINE_ENABLE_GPU_PROFILER is off.
 		PE_GPU_PROFILER_PASS_BEGIN(this, InDesc.PassName);
 		bProfilerPassOpen = ((InDesc.PassName != nullptr) ? TRUE : FALSE);
 
@@ -293,7 +293,7 @@ namespace PigeonEngine
 			return;
 		}
 		// D3D11 back-end always produces RPipelineStateD3D11; the cast is safe.
-		auto* PipelineState = static_cast<RPipelineStateD3D11*>(InPipelineState);
+		RPipelineStateD3D11* PipelineState = static_cast<RPipelineStateD3D11*>(InPipelineState);
 
 		if (PipelineState->bIsCompute)
 		{

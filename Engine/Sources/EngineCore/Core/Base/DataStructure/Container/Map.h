@@ -35,7 +35,7 @@ namespace PigeonEngine
 		{
 			return Map.begin();
 		}
-		typename TConstIterator Begin()const
+		typename TConstIterator Begin() const
 		{
 			return Map.begin();
 		}
@@ -43,7 +43,7 @@ namespace PigeonEngine
 		{
 			return Map.end();
 		}
-		typename TConstIterator End()const
+		typename TConstIterator End() const
 		{
 			return Map.end();
 		}
@@ -52,8 +52,8 @@ namespace PigeonEngine
 		* DO NOT USE DIRECTLY
 		* STL-like iterators to enable range-based for loop support.
 		*/
-		typename TConstIterator begin()const{return Map.begin();}
-		typename TConstIterator end()const{return Map.end();}
+		typename TConstIterator begin() const{return Map.begin();}
+		typename TConstIterator end() const{return Map.end();}
 		typename TIterator      begin(){return Map.begin();}
 		typename TIterator      end(){return Map.end();}
 
@@ -71,7 +71,7 @@ namespace PigeonEngine
 		BOOL32 FindKey  (const V& Value, K& OutKey) const;
 		BOOL32 FindValue(const K& Key,   V& OutValue) const
 		{
-			auto It = Map.find(Key);
+			TConstIterator It = Map.find(Key);
 			if (It != Map.end())
 			{
 				OutValue = It->second;
@@ -81,16 +81,16 @@ namespace PigeonEngine
 		}
 		V* FindValueAsPtr(const K& Key)
 		{
-			auto It = Map.find(Key);
+			TIterator It = Map.find(Key);
 			if (It != Map.end())
 			{
 				return (&(It->second));
 			}
 			return nullptr;
 		}
-		const V* FindValueAsPtr(const K& Key)const
+		const V* FindValueAsPtr(const K& Key) const
 		{
-			auto It = Map.find(Key);
+			TConstIterator It = Map.find(Key);
 			if (It != Map.end())
 			{
 				return (&(It->second));
@@ -183,7 +183,7 @@ namespace PigeonEngine
 		* Check if contains item with InKeyValue in mapped datas.
 		* Return [BOOL32]: If contains return TRUE. If not then return FALSE.
 		*/
-		BOOL32 Contain(const TKeyType& InKeyValue)const
+		BOOL32 Contain(const TKeyType& InKeyValue) const
 		{
 			return (SavedDatas.ContainsKey(InKeyValue));
 		}
@@ -194,9 +194,9 @@ namespace PigeonEngine
 		{
 			if (SavedDatas.Num() > 0)
 			{
-				for (auto it = SavedDatas.Begin(); it != SavedDatas.End(); it++)
+				for (TMap<TKeyType, TValueType*>::TIterator It = SavedDatas.Begin(); It != SavedDatas.End(); It++)
 				{
-					delete (it->second);
+					delete (It->second);
 				}
 				SavedDatas.Empty();
 			}
@@ -204,7 +204,7 @@ namespace PigeonEngine
 		/*
 		* Get size of mapped datas.
 		*/
-		UINT32 Num()const
+		UINT32 Num() const
 		{
 			return (SavedDatas.Num());
 		}
@@ -315,7 +315,7 @@ namespace PigeonEngine
 	template <typename K, typename V>
 	BOOL32 TMap<K, V>::FindKey(const V& Value, K& OutKey) const
 	{
-		for(const auto& elem : Map)
+		for (const std::pair<const K, V>& elem : Map)
 		{
 			if(elem.second == Value)
 			{
@@ -329,7 +329,7 @@ namespace PigeonEngine
 	template <typename K, typename V>
 	void TMap<K, V>::GenerateKeyArray(TArray<K>& OutKeys)
 	{
-		for(const auto& elem : Map)
+		for (const std::pair<const K, V>& elem : Map)
 		{
 			OutKeys.Add(elem.first);
 		}
@@ -338,7 +338,7 @@ namespace PigeonEngine
 	template <typename K, typename V>
 	void TMap<K, V>::GenerateValueArray(TArray<V>& OutValues)
 	{
-		for(const auto& elem : Map)
+		for (const std::pair<const K, V>& elem : Map)
 		{
 			OutValues.Add(elem.second);
 		}

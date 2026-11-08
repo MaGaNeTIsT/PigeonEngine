@@ -89,27 +89,27 @@ namespace PigeonEngine
 		MissingBoneNum = 0;
 	}
 
-	BOOL32 ESkeletonBinding::IsValid()const
+	BOOL32 ESkeletonBinding::IsValid() const
 	{
 		return (((Skeleton != nullptr) && (Animation != nullptr) && (ClipCurveBoneIndices.Num() > 0)) ? TRUE : FALSE);
 	}
 
-	const ESkeleton* ESkeletonBinding::GetSkeleton()const
+	const ESkeleton* ESkeletonBinding::GetSkeleton() const
 	{
 		return Skeleton;
 	}
 
-	const ESkeletonAnimation* ESkeletonBinding::GetAnimation()const
+	const ESkeletonAnimation* ESkeletonBinding::GetAnimation() const
 	{
 		return Animation;
 	}
 
-	INT32 ESkeletonBinding::GetMissingBoneNum()const
+	INT32 ESkeletonBinding::GetMissingBoneNum() const
 	{
 		return MissingBoneNum;
 	}
 
-	INT32 ESkeletonBinding::GetBoneIndex(INT32 InClipIndex, INT32 InCurveIndex)const
+	INT32 ESkeletonBinding::GetBoneIndex(INT32 InClipIndex, INT32 InCurveIndex) const
 	{
 		if ((InClipIndex < 0) || (InClipIndex >= ClipCurveBoneIndices.Num()))
 		{

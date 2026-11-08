@@ -6,7 +6,7 @@
 
 namespace PigeonEngine
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	/*
 	* Backend-agnostic ImGui manager. Owns:
@@ -153,7 +153,7 @@ namespace PigeonEngine
 		static void             RendererRenderWindow(ImGuiViewport* viewport, void* render_arg);
 		static void             RendererSwapBuffers(ImGuiViewport* viewport, void* render_arg);
 	private:
-		WndData                 m_WndData;
+		WndData                 WindowData;
 		EImGuiRenderer          Renderer;
 
 		CLASS_MANAGER_SINGLETON_BODY(CImGUIManager)
@@ -161,7 +161,9 @@ namespace PigeonEngine
 	};
 
 	// Convert an engine texture asset to an ImTextureID suitable for ImGui::Image() etc.
-	// Returns ImTextureID_Invalid if the asset has no valid bindless SRV.
+	// The first call acquires the texture's bindless SRV from the registry, so later calls
+	// reuse the same index. Returns ImTextureID_Invalid while the asset's GPU proxy does not
+	// exist yet, which is the state a caller has to retry from.
 	extern PE_INLINE ImTextureID EngineTextureToImgui(const class ETexture2DAsset* InAsset);
 
 	// Convert a raw IRRHITexture* (render textures, manually created textures, etc.)

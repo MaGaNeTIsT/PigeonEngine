@@ -567,6 +567,10 @@ namespace PigeonEngine
 			{
 				Renderer->OnShaderAssetReplaced(ReplacedShaderName);
 			}
+			// The editor asset previews are renderers of their own, with their own pipeline
+			// states and parameter blocks. They are told here so a reload reaches them in the
+			// same frame it reaches the window.
+			EMainManager::GetManagerSingleton()->NotifyFrameRenderersShaderReplaced(ReplacedShaderName);
 		});
 	}
 

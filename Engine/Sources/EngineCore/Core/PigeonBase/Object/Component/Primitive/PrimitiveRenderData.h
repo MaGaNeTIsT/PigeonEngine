@@ -4,6 +4,7 @@
 #include <EngineCommon.h>
 #include <Base/DataStructure/BaseType.h>
 #include <RenderConfig/RenderConfig.h>
+#include <PigeonBase/Object/Component/Water/WaterSimulationTypes.h>
 
 namespace PigeonEngine
 {
@@ -123,6 +124,16 @@ namespace PigeonEngine
 		const EAssetBase*	Asset	= nullptr;
 	};
 
+	// A named reference to another primitive in the same scene. A water surface uses it to
+	// name the simulation body it reads, so the render thread resolves the identity through
+	// the scene instead of holding a pointer a removal could dangle.
+	struct FPrimitiveNamedIdentityReport
+	{
+	public:
+		EName				RoleName;
+		ObjectIdentityType	Identity	= 0ull;
+	};
+
 	// A named shader instance a primitive uses outside the material slot model, such as the
 	// compute instance of a construction pass.
 	struct FPrimitiveNamedInstanceReport
@@ -149,6 +160,7 @@ namespace PigeonEngine
 		void	SetMaterialInstance(const UINT32 InSlotIndex, const EName& InPassName, const EShaderInstance* InInstance);
 		void	SetNamedInstance(const EName& InRoleName, const EShaderInstance* InInstance);
 		void	SetNamedAsset(const EName& InRoleName, const EAssetBase* InAsset);
+		void	SetNamedIdentity(const EName& InRoleName, const ObjectIdentityType InIdentity);
 	public:
 		PE_NODISCARD const EAssetBase*	GetMeshAsset() const { return MeshAsset; }
 		PE_NODISCARD const EAssetBase*	GetSkeletonAsset() const { return SkeletonAsset; }
@@ -157,12 +169,14 @@ namespace PigeonEngine
 		PE_NODISCARD const EShaderInstance*	FindMaterialInstance(const UINT32 InSlotIndex, const EName& InPassName) const;
 		PE_NODISCARD const EShaderInstance*	FindNamedInstance(const EName& InRoleName) const;
 		PE_NODISCARD const EAssetBase*		FindNamedAsset(const EName& InRoleName) const;
+		PE_NODISCARD const ObjectIdentityType*	FindNamedIdentity(const EName& InRoleName) const;
 	private:
 		const EAssetBase*					MeshAsset		= nullptr;
 		const EAssetBase*					SkeletonAsset	= nullptr;
 		TArray<FPrimitiveMaterialSlotReport>	MaterialSlots;
 		TArray<FPrimitiveNamedInstanceReport>	NamedInstances;
 		TArray<FPrimitiveNamedAssetReport>		NamedAssets;
+		TArray<FPrimitiveNamedIdentityReport>	NamedIdentities;
 	};
 
 	/*
@@ -211,6 +225,10 @@ namespace PigeonEngine
 		// of through the asset report: the report says what the primitive is made of, this says
 		// where its bones are this frame.
 		TArray<Matrix4x4>		BoneToRootMatrices;
+		// Water simulation payload. Only a water simulation primitive fills it; every other
+		// primitive leaves bHasWaterSimulation FALSE.
+		FWaterSimulationDescription	WaterSimulation;
+		BOOL32						bHasWaterSimulation	= FALSE;
 		UINT32					DirtyChannels	= PRIMITIVE_UPDATE_NONE;
 	};
 

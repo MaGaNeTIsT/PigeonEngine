@@ -19,7 +19,7 @@
 
 #include "Development/Message/Message.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #include "../Editor/EditorManager.h"
@@ -27,7 +27,7 @@
 #include "../Editor/EditorProfilerPanel.h"
 #endif
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 
@@ -55,11 +55,11 @@ namespace PigeonEngine
 
 	EMainManager::EMainManager()
 	{
-		m_HWND			= nullptr;
-		m_WindowSize	= Vector2Int(static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_HEIGHT));
-		m_GraphicDepth	= 24u;
-		m_FrameRate		= static_cast<UINT32>(EEngineSettings::ENGINE_UPDATE_FRAME);
-		m_Windowed		= EEngineSettings::ENGINE_WINDOWED;
+		WindowHandle			= nullptr;
+		WindowSize	= Vector2Int(static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_HEIGHT));
+		GraphicDepth	= 24u;
+		FrameRate		= static_cast<UINT32>(EEngineSettings::ENGINE_UPDATE_FRAME);
+		bWindowed		= EEngineSettings::ENGINE_WINDOWED;
 
 		if PE_CONSTEXPR (EEngineSettings::ENGINE_GRAPHICS_API == static_cast<UINT8>(ERHIBackendType::RHI_BACKEND_D3D12))
 		{
@@ -70,53 +70,53 @@ namespace PigeonEngine
 			RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		}
 
-		m_PhysicsManager	= FPhysicsManager::GetManagerSingleton();
-#if _EDITOR_ONLY
-		m_ImGUIManager		= CImGUIManager::GetManagerSingleton();
-		m_AssimpManager		= CAssimpManager::GetManagerSingleton();
-		m_EditorManager     = EEditorManager::GetManagerSingleton();
-		m_EditorGlobalPanel = EEditorGlobalPanel::GetManagerSingleton();
-		m_EditorProfilerPanel = EEditorProfilerPanel::GetManagerSingleton();
+		PhysicsManager	= FPhysicsManager::GetManagerSingleton();
+#if ENGINE_EDITOR_ONLY
+		ImGUIManager		= CImGUIManager::GetManagerSingleton();
+		AssimpManager		= CAssimpManager::GetManagerSingleton();
+		EditorManager     = EEditorManager::GetManagerSingleton();
+		EditorGlobalPanel = EEditorGlobalPanel::GetManagerSingleton();
+		EditorProfilerPanel = EEditorProfilerPanel::GetManagerSingleton();
 #endif
-		m_ClassTypeRegisterManager = EClassTypeRegisterManager::GetManagerSingleton();
-		m_ClassFactoryRegisterManager = EClassFactoryRegisterManager::GetManagerSingleton();
+		ClassTypeRegisterManager = EClassTypeRegisterManager::GetManagerSingleton();
+		ClassFactoryRegisterManager = EClassFactoryRegisterManager::GetManagerSingleton();
 
-		m_WorldManager = EWorldManager::GetManagerSingleton();
-		m_WorldTickManager = EWorldTickManager::GetManagerSingleton();
-		m_PrePhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
+		WorldManager = EWorldManager::GetManagerSingleton();
+		WorldTickManager = EWorldTickManager::GetManagerSingleton();
+		PrePhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
 		{
-			if (m_WorldManager && m_WorldManager->GetWorld())
+			if (WorldManager && WorldManager->GetWorld())
 			{
-				m_WorldManager->GetWorld()->FixedTick(InDeltaTime);
+				WorldManager->GetWorld()->FixedTick(InDeltaTime);
 			}
-			if (m_PhysicsManager)
+			if (PhysicsManager)
 			{
-				m_PhysicsManager->PrePhysicsUpdate(InDeltaTime);
-			}
-		});
-		m_PhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
-		{
-			if (m_PhysicsManager)
-			{
-				m_PhysicsManager->FixedUpdate(InDeltaTime);
+				PhysicsManager->PrePhysicsUpdate(InDeltaTime);
 			}
 		});
-		m_PostPhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
+		PhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
 		{
-			if (m_PhysicsManager)
+			if (PhysicsManager)
 			{
-				m_PhysicsManager->PostPhysicsUpdate(InDeltaTime);
+				PhysicsManager->FixedUpdate(InDeltaTime);
+			}
+		});
+		PostPhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
+		{
+			if (PhysicsManager)
+			{
+				PhysicsManager->PostPhysicsUpdate(InDeltaTime);
 			}
 		});
 
-		m_MessageManager = EMessageManager::GetManagerSingleton();
+		MessageManager = EMessageManager::GetManagerSingleton();
 	}
 	EMainManager::~EMainManager()
 	{
-		if (m_GameTimer)
+		if (GameTimer)
 		{
-			delete m_GameTimer;
-			m_GameTimer = nullptr;
+			delete GameTimer;
+			GameTimer = nullptr;
 		}
 	}
 	LRESULT EMainManager::HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
@@ -128,24 +128,24 @@ namespace PigeonEngine
 		// Opens the window every render resource has to live inside. Set before anything can
 		// create one; closed again at the very end of ShutDown, after the last resource is
 		// gone.
-		m_bEngineLifetimeActive = TRUE;
+		bEngineLifetimeActive = TRUE;
 
-		m_ClassTypeRegisterManager->DoRegister();
-		m_ClassFactoryRegisterManager->DoRegister();
+		ClassTypeRegisterManager->DoRegister();
+		ClassFactoryRegisterManager->DoRegister();
 
-		m_MessageManager->Initialize();
+		MessageManager->Initialize();
 
-		EInput::Initialize(m_HWND);
+		EInput::Initialize(WindowHandle);
 
 		{
 			RRHIDeviceInitDesc DeviceInitDesc;
-			DeviceInitDesc.WindowHandle		= m_HWND;
-			DeviceInitDesc.BackBufferWidth	= static_cast<UINT32>(m_WindowSize.x);
-			DeviceInitDesc.BackBufferHeight	= static_cast<UINT32>(m_WindowSize.y);
+			DeviceInitDesc.WindowHandle		= WindowHandle;
+			DeviceInitDesc.BackBufferWidth	= static_cast<UINT32>(WindowSize.x);
+			DeviceInitDesc.BackBufferHeight	= static_cast<UINT32>(WindowSize.y);
 			DeviceInitDesc.BackBufferCount	= 2u;
-			DeviceInitDesc.RefreshRateHz	= m_FrameRate;
-			DeviceInitDesc.bIsWindowed		= (m_Windowed != FALSE);
-#if _EDITOR_ONLY
+			DeviceInitDesc.RefreshRateHz	= FrameRate;
+			DeviceInitDesc.bIsWindowed		= (bWindowed != FALSE);
+#if ENGINE_EDITOR_ONLY
 			// Opt-in through the engine setting: the validation layer turns every recorded
 			// command into a checked CPU call, which is exactly what makes a PSO / resource
 			// failure readable - and what makes a frame with a shadow pass unusably slow. The
@@ -205,15 +205,15 @@ namespace PigeonEngine
 			RRenderResourceManager::GetManagerSingleton()->Initialize();
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("RenderThread already created."), (!RenderThread));
 			RenderThread = new RRenderThread(RenderDevice, RenderScene, SceneRenderer);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			// Secondary renderers (the asset previews) record before the main scene does, so
 			// everything they write into their offscreen targets is already there when this
 			// frame's main pass submits the ImGui overlay that samples them.
 			RenderThread->SetPreSceneRenderCallback([this]() -> void
 			{
-				for (UINT32 RendererIndex = 0u, RendererNum = m_FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
+				for (UINT32 RendererIndex = 0u, RendererNum = FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
 				{
-					m_FrameRenderers[RendererIndex]->RenderFrame();
+					FrameRenderers[RendererIndex]->RenderFrame();
 				}
 			});
 			RenderThread->SetAfterRenderCallback([this]() -> void
@@ -222,30 +222,30 @@ namespace PigeonEngine
 				// of the frame's command list. What is left here is the platform windows: a
 				// panel dragged out of the main window has its own swap chain, and ImGui
 				// records and presents each of them through the hooks the manager registered.
-				m_ImGUIManager->RenderPlatformWindows();
+				ImGUIManager->RenderPlatformWindows();
 			});
 #endif
 			RenderThread->Start();
 		}
 
-#if _EDITOR_ONLY
-		m_ImGUIManager->Initialize();
-		m_AssimpManager->Initialize();
-		m_EditorManager->Initialize();
-		m_EditorGlobalPanel->Initialize();
-		m_EditorProfilerPanel->Initialize();
+#if ENGINE_EDITOR_ONLY
+		ImGUIManager->Initialize();
+		AssimpManager->Initialize();
+		EditorManager->Initialize();
+		EditorGlobalPanel->Initialize();
+		EditorProfilerPanel->Initialize();
 #endif
 
-		m_WindowTimer.Init();
-		m_WorldTickManager->Initialize();
-		m_WorldManager->Initialize();
+		WindowTimer.Init();
+		WorldTickManager->Initialize();
+		WorldManager->Initialize();
 
-		m_PhysicsManager->Initialize();
+		PhysicsManager->Initialize();
 	}
 	void EMainManager::ShutDown()
 	{
 		// Stop the RenderThread first so its WorkerEntry can no longer fire
-		// AfterRenderCallback (which dereferences m_ImGUIManager) or touch
+		// AfterRenderCallback (which dereferences ImGUIManager) or touch
 		// SceneRenderer / RenderDevice while we tear them down below.
 		if (RenderThread)
 		{
@@ -254,16 +254,16 @@ namespace PigeonEngine
 			RenderThread = nullptr;
 		}
 
-		m_PhysicsManager->ShutDown();
-		m_WorldManager->ShutDown();
-		m_WorldTickManager->ShutDown();
+		PhysicsManager->ShutDown();
+		WorldManager->ShutDown();
+		WorldTickManager->ShutDown();
 
-#if _EDITOR_ONLY
-		m_EditorManager->ShutDown();
-		m_AssimpManager->ShutDown();
-		m_ImGUIManager->ShutDown();
-		m_EditorGlobalPanel->ShutDown();
-		m_EditorProfilerPanel->ShutDown();
+#if ENGINE_EDITOR_ONLY
+		EditorManager->ShutDown();
+		AssimpManager->ShutDown();
+		ImGUIManager->ShutDown();
+		EditorGlobalPanel->ShutDown();
+		EditorProfilerPanel->ShutDown();
 #endif
 
 		{
@@ -298,11 +298,11 @@ namespace PigeonEngine
 		RenderDevice->Shutdown();
 		EInput::ShutDown();
 
-		m_MessageManager->ShutDown();
+		MessageManager->ShutDown();
 
 		// Closes the lifetime window last: everything above is still allowed to release
 		// resources, anything after this point is not.
-		m_bEngineLifetimeActive = FALSE;
+		bEngineLifetimeActive = FALSE;
 	}
 	void EMainManager::RegisterAssetManager(EManagerBase* InManager)
 	{
@@ -310,11 +310,11 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _EDITOR_ONLY
-		Check((!m_AssetManagers.Contains(InManager)), (ENGINE_CORE_ERROR)
+#if ENGINE_EDITOR_ONLY
+		Check((!AssetManagers.Contains(InManager)), (ENGINE_CORE_ERROR)
 			, (PE_TEXT("[EMainManager::RegisterAssetManager] The manager is already registered.")));
-#endif	// _EDITOR_ONLY
-		m_AssetManagers.Add(InManager);
+#endif	// ENGINE_EDITOR_ONLY
+		AssetManagers.Add(InManager);
 		InManager->Initialize();
 	}
 	void EMainManager::UnregisterAssetManager(EManagerBase* InManager)
@@ -323,11 +323,11 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT32 ManagerIndex = 0u, ManagerNum = m_AssetManagers.Num<UINT32>(); ManagerIndex < ManagerNum; ManagerIndex++)
+		for (UINT32 ManagerIndex = 0u, ManagerNum = AssetManagers.Num<UINT32>(); ManagerIndex < ManagerNum; ManagerIndex++)
 		{
-			if (m_AssetManagers[ManagerIndex] == InManager)
+			if (AssetManagers[ManagerIndex] == InManager)
 			{
-				m_AssetManagers.RemoveAt(ManagerIndex);
+				AssetManagers.RemoveAt(ManagerIndex);
 				return;
 			}
 		}
@@ -338,11 +338,11 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _EDITOR_ONLY
-		Check((!m_FrameRenderers.Contains(InRenderer)), (ENGINE_CORE_ERROR)
+#if ENGINE_EDITOR_ONLY
+		Check((!FrameRenderers.Contains(InRenderer)), (ENGINE_CORE_ERROR)
 			, (PE_TEXT("[EMainManager::RegisterFrameRenderer] The renderer is already registered.")));
-#endif	// _EDITOR_ONLY
-		m_FrameRenderers.Add(InRenderer);
+#endif	// ENGINE_EDITOR_ONLY
+		FrameRenderers.Add(InRenderer);
 	}
 	void EMainManager::UnregisterFrameRenderer(IEngineFrameRenderer* InRenderer)
 	{
@@ -350,13 +350,20 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT32 RendererIndex = 0u, RendererNum = m_FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
+		for (UINT32 RendererIndex = 0u, RendererNum = FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
 		{
-			if (m_FrameRenderers[RendererIndex] == InRenderer)
+			if (FrameRenderers[RendererIndex] == InRenderer)
 			{
-				m_FrameRenderers.RemoveAt(RendererIndex);
+				FrameRenderers.RemoveAt(RendererIndex);
 				return;
 			}
+		}
+	}
+	void EMainManager::NotifyFrameRenderersShaderReplaced(const EName& InShaderName)
+	{
+		for (UINT32 RendererIndex = 0u, RendererNum = FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
+		{
+			FrameRenderers[RendererIndex]->OnShaderAssetReplaced(InShaderName);
 		}
 	}
 	void EMainManager::ShutDownAssetManagers()
@@ -364,11 +371,11 @@ namespace PigeonEngine
 		// Reverse registration order: a manager registered later may hold references into one
 		// registered earlier. The list is walked by index while it shrinks, so an Unregister
 		// from a manager's own ShutDown cannot invalidate the walk.
-		while (m_AssetManagers.Num<UINT32>() > 0u)
+		while (AssetManagers.Num<UINT32>() > 0u)
 		{
-			const UINT32 ManagerIndex = m_AssetManagers.Num<UINT32>() - 1u;
-			EManagerBase* Manager = m_AssetManagers[ManagerIndex];
-			m_AssetManagers.RemoveAt(ManagerIndex);
+			const UINT32 ManagerIndex = AssetManagers.Num<UINT32>() - 1u;
+			EManagerBase* Manager = AssetManagers[ManagerIndex];
+			AssetManagers.RemoveAt(ManagerIndex);
 			if (Manager)
 			{
 				Manager->ShutDown();
@@ -377,36 +384,36 @@ namespace PigeonEngine
 	}
 	void EMainManager::SetInitializer(HWND hWnd)
 	{
-		m_HWND = hWnd;
+		WindowHandle = hWnd;
 	}
 	void EMainManager::UpdateManager()
 	{
-		m_WindowTimer.Update();
+		WindowTimer.Update();
 	}
 	void EMainManager::Init()
 	{
-		if (m_GameTimer)
+		if (GameTimer)
 		{
-			delete m_GameTimer;
-			m_GameTimer = nullptr;
+			delete GameTimer;
+			GameTimer = nullptr;
 		}
-		m_GameTimer = new EGameTimer(&(this->m_WindowTimer));
+		GameTimer = new EGameTimer(&(this->WindowTimer));
 
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene can not be null."), (!!RenderScene));
 		RenderScene->Init();
 
-		m_GameTimer->Reset();
-		m_WorldTickManager->Init();
-		m_WorldTickManager->RegisterPrePhysicsTick(m_PrePhysicsFixedTickHandler);
-		m_WorldTickManager->RegisterPhysicsTick(m_PhysicsFixedTickHandler);
-		m_WorldTickManager->RegisterPostPhysicsTick(m_PostPhysicsFixedTickHandler);
+		GameTimer->Reset();
+		WorldTickManager->Init();
+		WorldTickManager->RegisterPrePhysicsTick(PrePhysicsFixedTickHandler);
+		WorldTickManager->RegisterPhysicsTick(PhysicsFixedTickHandler);
+		WorldTickManager->RegisterPostPhysicsTick(PostPhysicsFixedTickHandler);
 
 		//need Init before world manager.
-		m_PhysicsManager->Init();
+		PhysicsManager->Init();
 
-		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
-		m_WorldManager->Init();
-#if _EDITOR_ONLY
+		WorldManager->GetWorld()->BindRenderScene(RenderScene);
+		WorldManager->Init();
+#if ENGINE_EDITOR_ONLY
 		// Please ensure that this function is called at the end
 		EditorInit();
 #endif
@@ -423,18 +430,18 @@ namespace PigeonEngine
 			RenderThread->WaitForRenderIdle();
 		}
 
-		m_WorldTickManager->UnregisterPrePhysicsTick(m_PrePhysicsFixedTickHandler);
-		m_WorldTickManager->UnregisterPhysicsTick(m_PhysicsFixedTickHandler);
-		m_WorldTickManager->UnregisterPostPhysicsTick(m_PostPhysicsFixedTickHandler);
-		m_PhysicsManager->Uninit();
-		m_WorldManager->Uninit();
-		m_WorldTickManager->Uninit();
+		WorldTickManager->UnregisterPrePhysicsTick(PrePhysicsFixedTickHandler);
+		WorldTickManager->UnregisterPhysicsTick(PhysicsFixedTickHandler);
+		WorldTickManager->UnregisterPostPhysicsTick(PostPhysicsFixedTickHandler);
+		PhysicsManager->Uninit();
+		WorldManager->Uninit();
+		WorldTickManager->Uninit();
 		RenderScene->Uninit();
 
-		if (m_GameTimer)
+		if (GameTimer)
 		{
-			delete m_GameTimer;
-			m_GameTimer = nullptr;
+			delete GameTimer;
+			GameTimer = nullptr;
 		}
 
 	}
@@ -446,14 +453,14 @@ namespace PigeonEngine
 		PE_PROFILE_SCOPE(PROFILER_SCOPE_GAME_THREAD);
 
 		// Async with render thread
-		m_GameTimer->Update();
-		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+		GameTimer->Update();
+		WorldManager->GetWorld()->Tick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
 		{
 			// Physics runs on the game thread today, so this bracket nests inside
 			// GameThread. The scope stays on the call, not on the thread: moving
 			// physics to its own loop keeps this measurement without a rewrite.
 			PE_PROFILE_SCOPE(PROFILER_SCOPE_PHYSICS_THREAD);
-			m_PhysicsManager->Update();
+			PhysicsManager->Update();
 		}
 
 		/*
@@ -485,30 +492,30 @@ namespace PigeonEngine
 		// creation command can still be reading their cold data.
 		RRenderResourceManager::GetManagerSingleton()->FlushRetiredObjects();
 
-		if (m_bPendingResize)
+		if (bPendingResize)
 		{
-			m_bPendingResize = FALSE;
-			if (RenderDevice->ResizeSwapChain(m_PendingResizeWidth, m_PendingResizeHeight))
+			bPendingResize = FALSE;
+			if (RenderDevice->ResizeSwapChain(PendingResizeWidth, PendingResizeHeight))
 			{
-				SceneRenderer->ResizeRenderTargets(m_PendingResizeWidth, m_PendingResizeHeight);
-				m_WorldManager->GetWorld()->UpdateCameraViewports(m_PendingResizeWidth, m_PendingResizeHeight);
-				const INT32 NewWidth  = static_cast<INT32>(m_PendingResizeWidth);
-				const INT32 NewHeight = static_cast<INT32>(m_PendingResizeHeight);
-				m_WindowSize = Vector2Int(NewWidth, NewHeight);
+				SceneRenderer->ResizeRenderTargets(PendingResizeWidth, PendingResizeHeight);
+				WorldManager->GetWorld()->UpdateCameraViewports(PendingResizeWidth, PendingResizeHeight);
+				const INT32 NewWidth  = static_cast<INT32>(PendingResizeWidth);
+				const INT32 NewHeight = static_cast<INT32>(PendingResizeHeight);
+				WindowSize = Vector2Int(NewWidth, NewHeight);
 				EInput::Controller.UpdateWindowSize(NewWidth, NewHeight);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				// A window that fits in the old size has to be kept inside the new one. Without
 				// this, shrinking the main window hands each panel its own platform window and
 				// the layout scatters; growing again does not bring them back.
-				m_ImGUIManager->ClampWindowsToMainViewport(m_PendingResizeWidth, m_PendingResizeHeight);
+				ImGUIManager->ClampWindowsToMainViewport(PendingResizeWidth, PendingResizeHeight);
 #endif
 			}
 		}
 
-#if _EDITOR_ONLY
-		m_ImGUIManager->Update();				// ImGui::NewFrame
+#if ENGINE_EDITOR_ONLY
+		ImGUIManager->Update();				// ImGui::NewFrame
 		EditorUpdate();
-		m_WorldManager->GetWorld()->EditorTick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+		WorldManager->GetWorld()->EditorTick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
 		{
 			RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();
 			const Vector3 TempPos(-500.f, 100.f, 500.f);
@@ -521,19 +528,19 @@ namespace PigeonEngine
 			Manager->DrawCapsule(TempPos + Vector3(700.f, -50.f, 0.f), TempPos + Vector3(700.f, -50.f, 0.f) + Vector3(0.f, 100.f, 0.f), 40.f, 40.f, Color4::White());
 			Manager->DrawSphere(TempPos + Vector3(800.f, 0.f, 0.f), 40.f, Color4::White(), Quaternion::Identity());
 		}
-		m_ImGUIManager->PrepareDrawData();		// ImGui::Render - DrawData ready for the worker
+		ImGUIManager->PrepareDrawData();		// ImGui::Render - DrawData ready for the worker
 #endif
 
 		// Swap double buffer
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		RDebugWireframePrimitiveManager::GetManagerSingleton()->SwapCommandSlots();
 #endif
 		RenderScene->SwapCommandSlots();
 		// Secondary renderers publish here for the same reason: their back slot is written by
 		// this thread and drained by the render thread, so it flips at the same boundary.
-		for (UINT32 RendererIndex = 0u, RendererNum = m_FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
+		for (UINT32 RendererIndex = 0u, RendererNum = FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
 		{
-			m_FrameRenderers[RendererIndex]->PublishFrameCommands();
+			FrameRenderers[RendererIndex]->PublishFrameCommands();
 		}
 		// The render resource queue needs no flip of its own any more: it is a single lock free
 		// queue that any thread may write and the render thread drains at the top of the frame,
@@ -542,46 +549,46 @@ namespace PigeonEngine
 	}
 	void EMainManager::FixedUpdate()
 	{
-		m_WorldTickManager->Tick(static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::EEngineSettings::ENGINE_FIXED_UPDATE_FRAME));
+		WorldTickManager->Tick(static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::EEngineSettings::ENGINE_FIXED_UPDATE_FRAME));
 	}
 	void EMainManager::Draw()
 	{
 
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void EMainManager::EditorInit()
 	{
 
-		m_EditorManager->EditorInit();
+		EditorManager->EditorInit();
 	}
 
 	void EMainManager::EditorUpdate()
 	{
-		m_EditorManager->EditorUpdate();
+		EditorManager->EditorUpdate();
 	}
 #endif
 
 	HWND EMainManager::GetWindowHandle()
 	{
-		return (m_HWND);
+		return (WindowHandle);
 	}
 	const Vector2Int& EMainManager::GetWindowSize() const
 	{
-		return m_WindowSize;
+		return WindowSize;
 	}
 	const EBaseTimer& EMainManager::GetWindowTimer()
 	{
-		return (m_WindowTimer);
+		return (WindowTimer);
 	}
 	const EGameTimer* EMainManager::GetGameTimer()
 	{
-		return (m_GameTimer);
+		return (GameTimer);
 	}
 
 	void EMainManager::GatherSupportedResolutions()
 	{
-		m_SupportedResolutions.Empty();
+		SupportedResolutions.Empty();
 		DEVMODEW DevMode = {};
 		DevMode.dmSize   = sizeof(DevMode);
 		DWORD ModeIndex  = 0u;
@@ -591,7 +598,7 @@ namespace PigeonEngine
 			Item.Width  = static_cast<UINT32>(DevMode.dmPelsWidth);
 			Item.Height = static_cast<UINT32>(DevMode.dmPelsHeight);
 			BOOL32 bFound = FALSE;
-			for (const RResolutionItem& Existing : m_SupportedResolutions)
+			for (const RResolutionItem& Existing : SupportedResolutions)
 			{
 				if (Existing == Item)
 				{
@@ -601,23 +608,23 @@ namespace PigeonEngine
 			}
 			if (!bFound)
 			{
-				m_SupportedResolutions.Add(Item);
+				SupportedResolutions.Add(Item);
 			}
 			++ModeIndex;
 		}
 		// Sort ascending by Width, then Height
-		const INT32 Count = static_cast<INT32>(m_SupportedResolutions.Num());
+		const INT32 Count = static_cast<INT32>(SupportedResolutions.Num());
 		for (INT32 i = 0; i < Count - 1; ++i)
 		{
 			for (INT32 j = 0; j < Count - 1 - i; ++j)
 			{
-				const RResolutionItem& A = m_SupportedResolutions[j];
-				const RResolutionItem& B = m_SupportedResolutions[j + 1];
+				const RResolutionItem& A = SupportedResolutions[j];
+				const RResolutionItem& B = SupportedResolutions[j + 1];
 				if (A.Width > B.Width || (A.Width == B.Width && A.Height > B.Height))
 				{
-					RResolutionItem Temp    = m_SupportedResolutions[j];
-					m_SupportedResolutions[j]     = m_SupportedResolutions[j + 1];
-					m_SupportedResolutions[j + 1] = Temp;
+					RResolutionItem Temp    = SupportedResolutions[j];
+					SupportedResolutions[j]     = SupportedResolutions[j + 1];
+					SupportedResolutions[j + 1] = Temp;
 				}
 			}
 		}
@@ -625,47 +632,47 @@ namespace PigeonEngine
 
 	void EMainManager::ApplyResolution(UINT32 InWidth, UINT32 InHeight, BOOL32 InIsFullscreen)
 	{
-		m_bIsFullscreen = InIsFullscreen;
+		bIsFullscreen = InIsFullscreen;
 		if (InIsFullscreen)
 		{
-			HMONITOR Monitor    = ::MonitorFromWindow(m_HWND, MONITOR_DEFAULTTONEAREST);
+			HMONITOR Monitor    = ::MonitorFromWindow(WindowHandle, MONITOR_DEFAULTTONEAREST);
 			MONITORINFO MonInfo = {};
 			MonInfo.cbSize      = sizeof(MonInfo);
 			::GetMonitorInfoW(Monitor, &MonInfo);
-			::SetWindowLongPtrW(m_HWND, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+			::SetWindowLongPtrW(WindowHandle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 			::SetWindowPos(
-				m_HWND,
+				WindowHandle,
 				HWND_TOP,
 				MonInfo.rcMonitor.left,
 				MonInfo.rcMonitor.top,
 				MonInfo.rcMonitor.right  - MonInfo.rcMonitor.left,
 				MonInfo.rcMonitor.bottom - MonInfo.rcMonitor.top,
 				SWP_FRAMECHANGED | SWP_NOACTIVATE);
-			m_PendingResizeWidth  = static_cast<UINT32>(MonInfo.rcMonitor.right  - MonInfo.rcMonitor.left);
-			m_PendingResizeHeight = static_cast<UINT32>(MonInfo.rcMonitor.bottom - MonInfo.rcMonitor.top);
+			PendingResizeWidth  = static_cast<UINT32>(MonInfo.rcMonitor.right  - MonInfo.rcMonitor.left);
+			PendingResizeHeight = static_cast<UINT32>(MonInfo.rcMonitor.bottom - MonInfo.rcMonitor.top);
 		}
 		else
 		{
 			RECT ClientRect = { 0, 0, static_cast<LONG>(InWidth), static_cast<LONG>(InHeight) };
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			constexpr DWORD WindowStyle = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
 #else
 			constexpr DWORD WindowStyle = WS_VISIBLE | (WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME));
 #endif
 			::AdjustWindowRect(&ClientRect, WS_OVERLAPPEDWINDOW, FALSE);
-			::SetWindowLongPtrW(m_HWND, GWL_STYLE, WindowStyle);
+			::SetWindowLongPtrW(WindowHandle, GWL_STYLE, WindowStyle);
 			::SetWindowPos(
-				m_HWND,
+				WindowHandle,
 				HWND_TOP,
 				CW_USEDEFAULT,
 				CW_USEDEFAULT,
 				ClientRect.right  - ClientRect.left,
 				ClientRect.bottom - ClientRect.top,
 				SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOMOVE | SWP_SHOWWINDOW);
-			m_PendingResizeWidth  = InWidth;
-			m_PendingResizeHeight = InHeight;
+			PendingResizeWidth  = InWidth;
+			PendingResizeHeight = InHeight;
 		}
-		m_bPendingResize = TRUE;
+		bPendingResize = TRUE;
 	}
 
 	void EMainManager::OnWindowResized(UINT32 InNewWidth, UINT32 InNewHeight)
@@ -674,19 +681,19 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		m_bPendingResize      = TRUE;
-		m_PendingResizeWidth  = InNewWidth;
-		m_PendingResizeHeight = InNewHeight;
-		m_bIsFullscreen       = FALSE;
+		bPendingResize      = TRUE;
+		PendingResizeWidth  = InNewWidth;
+		PendingResizeHeight = InNewHeight;
+		bIsFullscreen       = FALSE;
 	}
 
 	const TArray<RResolutionItem>& EMainManager::GetSupportedResolutions() const
 	{
-		return m_SupportedResolutions;
+		return SupportedResolutions;
 	}
 
 	BOOL32 EMainManager::GetIsFullscreen() const
 	{
-		return m_bIsFullscreen;
+		return bIsFullscreen;
 	}
 };

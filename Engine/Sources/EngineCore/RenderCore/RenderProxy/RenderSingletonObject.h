@@ -17,13 +17,13 @@ namespace PigeonEngine
 	class RFullScreenTriangle final
 	{
 	public:
-		UINT32	GetIndexCount()const;
+		UINT32	GetIndexCount() const;
 		// Binds the triangle's vertex stream and index buffer for a draw of one program. Which
 		// slot the stream lands in comes from that program's vertex stage reflection, never from
 		// a number written here: the fullscreen factory declares where its one input sits, and a
 		// full screen pass that binds anywhere else reads an unbound attribute, which for a
 		// factory that builds its position out of that attribute means an invisible draw.
-		void	BindPrimitiveBuffers(IRCommandList* InCommandList, const EShaderProgram& InProgram)const;
+		void	BindPrimitiveBuffers(IRCommandList* InCommandList, const EShaderProgram& InProgram) const;
 	public:
 		RFullScreenTriangle();
 		RFullScreenTriangle(const RFullScreenTriangle& Other);
@@ -31,17 +31,17 @@ namespace PigeonEngine
 		RFullScreenTriangle& operator=(const RFullScreenTriangle& Other);
 	};
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	class RDebugWireframePrimitive
 	{
 	public:
 		BOOL32					InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum);
 		BOOL32					InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum, const UINT32* InIndexDatas, const UINT32 InIndexNum);
-		BOOL32					IsUseShortIndex()const;
-		UINT32					GetIndexCount()const;
-		const EBoundAABB&		GetBound()const;
-		const RBufferResource&	GetPrimitiveVertexBuffer()const;
-		const RBufferResource&	GetPrimitiveIndexBuffer()const;
+		BOOL32					IsUseShortIndex() const;
+		UINT32					GetIndexCount() const;
+		const EBoundAABB&		GetBound() const;
+		const RBufferResource&	GetPrimitiveVertexBuffer() const;
+		const RBufferResource&	GetPrimitiveIndexBuffer() const;
 	private:
 		BOOL32				UseShortIndex;
 		UINT32				IndexCount;
@@ -73,8 +73,8 @@ namespace PigeonEngine
 	public:
 		PE_CONSTEXPR_STATIC UINT32 PrimitiveDrawableMaxNum = 256u;
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
 		void			InitNewFrame();
 		void			SwapCommandSlots();
 		void			RenderPrimitives_RenderThread(class IRCommandList* InCommandList, const class RViewProxy* InView);

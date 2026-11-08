@@ -61,11 +61,11 @@ namespace PigeonEngine
 		// The prefiltered environment cube's base resolution exponent (8 = 256).
 		UINT32			GetPrefilterResolutionExponent() const noexcept;
 	public:
-		BOOL32			IsRenderValid()const;
+		BOOL32			IsRenderValid() const;
 		// The renderer calls this before Draw. The dome binds everything inside Draw, right
 		// after the pipeline state that would otherwise void it, so there is nothing to do
 		// here; the hook stays because the renderer calls it first.
-		void			BindRenderResource()const;
+		void			BindRenderResource() const;
 		void			Draw(class IRCommandList* InCommandList, const class RViewProxy* InView);
 		/*
 		* Render thread: the sky shader was replaced, so the process wide program is re-derived here
@@ -90,7 +90,7 @@ namespace PigeonEngine
 		RFullScreenTriangle			FullScreenTriangle;
 		// Binds the environment cube at the register the sky program's pixel stage reports,
 		// which is how the slot stays correct when the shader's reflection changes.
-		void			BindEnvironmentCube(IRCommandList* InCommandList)const;
+		void			BindEnvironmentCube(IRCommandList* InCommandList) const;
 	protected:
 		// The block the sky shader reads its own values from: the tint and the sky luminance in
 		// cd/m2. Named at construction, like every other block object - the name is its identity

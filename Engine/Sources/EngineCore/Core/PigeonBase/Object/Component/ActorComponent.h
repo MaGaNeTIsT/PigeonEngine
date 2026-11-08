@@ -14,12 +14,12 @@ namespace PigeonEngine
 		virtual void Init() override;
 		virtual void Uninit() override;
 	public:
-		virtual BOOL32 ContainTransform()const;
+		virtual BOOL32 ContainTransform() const;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PActorComponent)
 
 	public:
-		PActor* GetOwnerActor()const;
+		PActor* GetOwnerActor() const;
 		void    RemoveFromOwnerActor();
 		void	OnAddedToScene(PWorld* World);
 		void	OnRemovedFromScene();
@@ -33,9 +33,9 @@ namespace PigeonEngine
 
 		// Render proxy functions START
 	public:
-		virtual BOOL32	IsVisible()const;
-		BOOL32			ShouldRender()const;
-		BOOL32			IsRenderStateDirty()const;
+		virtual BOOL32	IsVisible() const;
+		BOOL32			ShouldRender() const;
+		BOOL32			IsRenderStateDirty() const;
 		virtual void	CreateRenderState();
 		virtual void	DestroyRenderState();
 		virtual void	SendUpdateRenderState();
@@ -46,7 +46,7 @@ namespace PigeonEngine
 		BOOL32	RenderStateDirty = FALSE;
 		// Render proxy functions END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent);
 		virtual void GenerateComponentDetail();

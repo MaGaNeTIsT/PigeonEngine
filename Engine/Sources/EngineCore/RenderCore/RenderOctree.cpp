@@ -359,7 +359,7 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
-	UINT32 ROctree::GetPrimitiveNum()const
+	UINT32 ROctree::GetPrimitiveNum() const
 	{
 		UINT32 Result = 0u;
 		for (INT32 i = 0, n = Elements.Num(); i < n; i++)
@@ -547,61 +547,61 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
-	const Vector3& ROctree::GetTargetCellSize()const
+	const Vector3& ROctree::GetTargetCellSize() const
 	{
 		return TargetCellSize;
 	}
-	const Vector3& ROctree::GetBoundOrigin()const
+	const Vector3& ROctree::GetBoundOrigin() const
 	{
 		return BoundOrigin;
 	}
-	const Vector3& ROctree::GetBoundSize()const
+	const Vector3& ROctree::GetBoundSize() const
 	{
 		return BoundSize;
 	}
-	const Vector3& ROctree::GetUsedCellSize()const
+	const Vector3& ROctree::GetUsedCellSize() const
 	{
 		return UsedCellSize;
 	}
-	UINT32 ROctree::GetAxisCellNum(EOctreeAxisType InAxisType)const
+	UINT32 ROctree::GetAxisCellNum(EOctreeAxisType InAxisType) const
 	{
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check octree axis type failed."), (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if ((InAxisType >= EOctreeAxisType::OCTREE_AXIS_X) && (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT))
 #endif
 		{
 			return (PerAxisCellNum[InAxisType]);
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		return 0u;
 #endif
 	}
-	UINT32 ROctree::GetAxisDepth(EOctreeAxisType InAxisType)const
+	UINT32 ROctree::GetAxisDepth(EOctreeAxisType InAxisType) const
 	{
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check octree axis type failed."), (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if ((InAxisType >= EOctreeAxisType::OCTREE_AXIS_X) && (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT))
 #endif
 		{
 			return (PerAxisDepth[InAxisType]);
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		return 0u;
 #endif
 	}
-	UINT32 ROctree::GetMaxDepth()const
+	UINT32 ROctree::GetMaxDepth() const
 	{
 		return MaxDepth;
 	}
-	const TArray<ROctreeNode>& ROctree::GetNodes()const
+	const TArray<ROctreeNode>& ROctree::GetNodes() const
 	{
 		return Nodes;
 	}
-	const TArray<ROctreeElement>& ROctree::GetElements()const
+	const TArray<ROctreeElement>& ROctree::GetElements() const
 	{
 		return Elements;
 	}
-	const TArray<ROctreeLayerInfo>& ROctree::GetLayerInfos()const
+	const TArray<ROctreeLayerInfo>& ROctree::GetLayerInfos() const
 	{
 		return LayerInfos;
 	}

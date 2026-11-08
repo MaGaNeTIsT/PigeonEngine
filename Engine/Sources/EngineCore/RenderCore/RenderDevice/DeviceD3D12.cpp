@@ -5,9 +5,7 @@
 #include <CoreMinimal.h>
 #include <Config/EngineConfig.h>
 #include <RHI/RRHIBindlessManager.h>
-#if _EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
-#endif
 
 namespace PigeonEngine
 {
@@ -708,7 +706,7 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 	// The API's shader model as the token the engine writes everywhere else ("6_6"). It exists
 	// for the one message that has to name what a device reports, so it is editor only: in a
 	// shipping build the log macros compile away, and a helper only they reference would be the
@@ -768,7 +766,7 @@ namespace PigeonEngine
 		}
 		return EString(PE_TEXT("an earlier shader model"));
 	}
-#endif	// !(_SHIPPING_MODE)
+#endif	// !(ENGINE_SHIPPING_MODE)
 
 	BOOL8 RDeviceD3D12::CheckShaderModelSupport() noexcept
 	{
@@ -801,13 +799,13 @@ namespace PigeonEngine
 		}
 		if (ShaderModelSupport.HighestShaderModel < RequiredApiModel)
 		{
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 			// 6.6 in particular needs a recent driver and runtime, which is what the bindless path
 			// rides on: a device that cannot report the configured model cannot run it either.
 			PE_LOG_ERROR(EString(PE_TEXT("[DeviceD3D12] The device supports at most shader model ")) + MakeShaderModelSupportText(ShaderModelSupport.HighestShaderModel)
 				+ EString(PE_TEXT(", and this build is compiled for ")) + MakeShaderModelSupportText(RequiredApiModel)
 				+ EString(PE_TEXT(". Lower ENGINE_SHADERMODEL_VERSION or run on a device whose driver and runtime report the configured model.")));
-#endif	// !(_SHIPPING_MODE)
+#endif	// !(ENGINE_SHIPPING_MODE)
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: the device does not support the configured shader model.")));
 			return FALSE;
 		}
@@ -1719,7 +1717,7 @@ namespace PigeonEngine
 		// Clear any PSOs that are still in the cache (never destroyed by the
 		// engine - happens when a Phase 1 stub PSO is created but the owner
 		// shuts down without calling DestroyResource on it).
-		for (auto& Pair : PipelineStateCache)
+		for (TMap<UINT64, RD3D12PipelineState*>::TValueType& Pair : PipelineStateCache)
 		{
 			delete Pair.second;
 		}
@@ -2697,7 +2695,7 @@ namespace PigeonEngine
 		// mask, and D3D12 reads a null PS as "no pixel stage" rather than as an error. A pixel
 		// shader that is present but has no valid container is still refused.
 		const BOOL8 bHasShaders = ((bVSValid != FALSE) && ((bPSValid != FALSE) || (PS == nullptr))) ? TRUE : FALSE;
-	#if _EDITOR_ONLY
+	#if ENGINE_EDITOR_ONLY
 		if ((VS || PS) && !bHasShaders)
 		{
 			auto FormatFirstBytes = [](const IRD3D12Shader* InShader) -> EString
@@ -2769,7 +2767,7 @@ namespace PigeonEngine
 
 		const SIZE_T VSContainerSize = TrimBytecodeSize(VS->GetByteCode(), VS->GetByteCodeSize());
 		const SIZE_T PSContainerSize = ((PS != nullptr) ? TrimBytecodeSize(PS->GetByteCode(), PS->GetByteCodeSize()) : 0u);
-	#if _EDITOR_ONLY
+	#if ENGINE_EDITOR_ONLY
 		{
 			auto FormatHeader = [](const void* InBytes, SIZE_T InSize, SIZE_T InTrimmed) -> EString
 			{
@@ -3288,7 +3286,7 @@ namespace PigeonEngine
 		}
 	}
 
-	IRRHIResource* RDeviceD3D12::GetBindlessResource(UINT32 InIndex)const noexcept
+	IRRHIResource* RDeviceD3D12::GetBindlessResource(UINT32 InIndex) const noexcept
 	{
 		// Indices are absolute heap offsets; classify by region then dereference
 		// the per-region table at the relative slot.
@@ -3870,7 +3868,7 @@ namespace PigeonEngine
 	// IRRHIDevice - Backbuffer access
 	// =========================================================================
 
-	IRRHITexture* RDeviceD3D12::GetCurrentBackBuffer()const noexcept
+	IRRHITexture* RDeviceD3D12::GetCurrentBackBuffer() const noexcept
 	{
 		UINT32 Index = SwapChain->GetCurrentBackBufferIndex();
 		if (Index < static_cast<UINT32>(BackBuffers.Num()))
@@ -4083,7 +4081,7 @@ namespace PigeonEngine
 		return HeapIndex;
 	}
 
-	UINT32 RDeviceD3D12::GetSlotSetArenaBase(const UINT32 InRecorderIndex)const
+	UINT32 RDeviceD3D12::GetSlotSetArenaBase(const UINT32 InRecorderIndex) const
 	{
 		// One arena slice per (frame, recorder). Two frames in flight never write the same
 		// descriptors, and two recorders in one frame never hand out the same descriptor.
@@ -4092,12 +4090,12 @@ namespace PigeonEngine
 		return (SLOT_SET_ARENA_REGION_BASE + (SliceIndex * SLOT_TABLE_STRIDE_PER_FRAME) + SLOT_SET_ARENA_OFFSET);
 	}
 
-	UINT32 RDeviceD3D12::GetSlotSetArenaCapacity()const
+	UINT32 RDeviceD3D12::GetSlotSetArenaCapacity() const
 	{
 		return (SLOT_TABLE_STRIDE_PER_FRAME - SLOT_SET_ARENA_OFFSET);
 	}
 
-	UINT32 RDeviceD3D12::GetSlotSetArenaUsed(const UINT32 InRecorderIndex)const
+	UINT32 RDeviceD3D12::GetSlotSetArenaUsed(const UINT32 InRecorderIndex) const
 	{
 		const UINT32 RecorderIndex = ((InRecorderIndex < MAX_RECORDERS) ? InRecorderIndex : 0u);
 		return SlotSetArenaUsed[CurrentFrameIndex % FRAME_IN_FLIGHT][RecorderIndex];
@@ -4126,7 +4124,7 @@ namespace PigeonEngine
 		}
 	}
 
-	UINT32 RDeviceD3D12::GetSlotSamplerTableBase()const
+	UINT32 RDeviceD3D12::GetSlotSamplerTableBase() const
 	{
 		return ((CurrentFrameIndex % FRAME_IN_FLIGHT) * SLOT_SAMPLER_STRIDE_PER_FRAME);
 	}

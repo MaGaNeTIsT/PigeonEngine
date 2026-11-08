@@ -193,6 +193,26 @@ namespace PigeonEngine
 		NamedAssets.Add(Entry);
 	}
 
+	void FPrimitiveRenderAssetReport::SetNamedIdentity(const EName& InRoleName, const ObjectIdentityType InIdentity)
+	{
+		if (!InRoleName.IsValid())
+		{
+			return;
+		}
+		for (UINT32 Index = 0u, Num = NamedIdentities.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (NamedIdentities[Index].RoleName == InRoleName)
+			{
+				NamedIdentities[Index].Identity = InIdentity;
+				return;
+			}
+		}
+		FPrimitiveNamedIdentityReport Entry;
+		Entry.RoleName = InRoleName;
+		Entry.Identity = InIdentity;
+		NamedIdentities.Add(Entry);
+	}
+
 	const FPrimitiveMaterialSlotReport* FPrimitiveRenderAssetReport::GetMaterialSlot(const UINT32 InSlotIndex) const
 	{
 		if (InSlotIndex >= MaterialSlots.Num<UINT32>())
@@ -231,6 +251,18 @@ namespace PigeonEngine
 			if (NamedAssets[Index].RoleName == InRoleName)
 			{
 				return NamedAssets[Index].Asset;
+			}
+		}
+		return nullptr;
+	}
+
+	const ObjectIdentityType* FPrimitiveRenderAssetReport::FindNamedIdentity(const EName& InRoleName) const
+	{
+		for (UINT32 Index = 0u, Num = NamedIdentities.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (NamedIdentities[Index].RoleName == InRoleName)
+			{
+				return &(NamedIdentities[Index].Identity);
 			}
 		}
 		return nullptr;

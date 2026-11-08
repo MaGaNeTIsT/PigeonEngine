@@ -54,9 +54,9 @@ namespace PigeonEngine
 	// One bit per EShaderStageType. The compile layer names the stages it needs, and the
 	// publishing entry points below name the stages a publisher feeds, so a mask and a stage
 	// entry line up without a translation table.
-	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_VERTEX		= (1u << 0u);
-	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_PIXEL		= (1u << 1u);
-	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_COMPUTE		= (1u << 2u);
+	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_VERTEX			= (1u << 0u);
+	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_PIXEL			= (1u << 1u);
+	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_COMPUTE			= (1u << 2u);
 	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_GRAPHICS		= ENGINE_SHADER_STAGE_MASK_VERTEX | ENGINE_SHADER_STAGE_MASK_PIXEL;
 
 	/*
@@ -65,23 +65,27 @@ namespace PigeonEngine
 	* and the publish call rather than written as a literal at both ends. Modules that own only
 	* constant buffers (the global and view blocks) have no entry: the claim surface is resources.
 	*/
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SKY					= PE_TEXT("Sky");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_SH		= PE_TEXT("EnvironmentSH");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER = PE_TEXT("EnvironmentPrefilter");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF		= PE_TEXT("EnvironmentBRDF");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_LIGHTING			= PE_TEXT("Lighting");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SHADOW_MASK		= PE_TEXT("ShadowMask");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_COPY				= PE_TEXT("Copy");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SKELETAL			= PE_TEXT("Skeletal");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_DEBUG_WIREFRAME	= PE_TEXT("DebugWireframe");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_BEZIER_GRASS		= PE_TEXT("BezierGrass");
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_IMGUI				= PE_TEXT("ImGui");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SKY						= PE_TEXT("Sky");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_SH				= PE_TEXT("EnvironmentSH");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER		= PE_TEXT("EnvironmentPrefilter");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF			= PE_TEXT("EnvironmentBRDF");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_LIGHTING					= PE_TEXT("Lighting");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SHADOW_MASK				= PE_TEXT("ShadowMask");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_COPY						= PE_TEXT("Copy");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SKELETAL					= PE_TEXT("Skeletal");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_DEBUG_WIREFRAME			= PE_TEXT("DebugWireframe");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_BEZIER_GRASS				= PE_TEXT("BezierGrass");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_IMGUI						= PE_TEXT("ImGui");
+	// The water simulation passes publish their own state and ground textures, and the water
+	// surface publishes the simulation outputs it reads into the user material.
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_WATER_SIMULATION			= PE_TEXT("WaterSimulation");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_WATER_SURFACE				= PE_TEXT("WaterSurface");
 	// The material / shader instance publisher. Its bindings are Exposure driven rather than
 	// statically claimed, but a value it does publish and then cannot use is still its defect.
-	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_MATERIAL			= PE_TEXT("Material");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_MATERIAL					= PE_TEXT("Material");
 
 	// Variant the engine internal shaders ship with when the caller has no preference.
-	PE_CONSTEXPR_STATIC const CHAR* ENGINE_SHADER_DEFAULT_VARIANT_NAME = "Base";
+	PE_CONSTEXPR_STATIC const CHAR* ENGINE_SHADER_DEFAULT_VARIANT_NAME				= PE_TEXT("Base");
 
 	// A shader is not looked up by name any more: a caller states the parameters it knows
 	// (material, program, vertex axis, stages) through EShaderJobBuilder::EnsureAssembly,
@@ -187,6 +191,16 @@ namespace PigeonEngine
 	extern BOOL32	BindShaderResources(IRCommandList* InCommandList
 		, const EShaderParameterSet& InParameters, const EShaderProgram& InProgram, const UINT32 InStageMask
 		, const EName& InScopeName);
+	/*
+	* The same, with a second set whose register bound resources take precedence over the base
+	* set's. A pass instance inherits buffer values through its parent chain, but resource
+	* overrides are read from one set only, so a per draw texture (the water simulation outputs
+	* a surface reads) cannot reach a material's pass instance any other way. Bindless indices
+	* are still checked in the base set, which is where their constant buffers live.
+	*/
+	extern BOOL32	BindShaderResources(IRCommandList* InCommandList
+		, const EShaderParameterSet& InBaseParameters, const EShaderParameterSet& InOverrideParameters
+		, const EShaderProgram& InProgram, const UINT32 InStageMask, const EName& InScopeName);
 	// The same for a publisher that already holds one stage's plan rather than the program - the
 	// debug wireframe's per primitive instance buffers arrive that way.
 	extern BOOL32	BindShaderResources(IRCommandList* InCommandList

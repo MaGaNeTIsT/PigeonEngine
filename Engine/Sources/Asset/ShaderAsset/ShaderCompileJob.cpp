@@ -5,10 +5,10 @@
 #include <Editor/EditorLogManager.h>
 #include <Config/EngineConfig.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 namespace PigeonEngine
 {
@@ -54,12 +54,12 @@ namespace PigeonEngine
 
 	BOOL32 GetShaderBuildConfigName(EString& OutName)
 	{
-#if _SHIPPING_MODE
+#if ENGINE_SHIPPING_MODE
 		OutName = EString("Shipping");
-#elif _DEVELOP_MODE
-		OutName = (_EDITOR_ONLY ? EString("DevelopEditor") : EString("Develop"));
+#elif ENGINE_DEVELOP_MODE
+		OutName = (ENGINE_EDITOR_ONLY ? EString("DevelopEditor") : EString("Develop"));
 #else
-		OutName = (_EDITOR_ONLY ? EString("DebugEditor") : EString("Debug"));
+		OutName = (ENGINE_EDITOR_ONLY ? EString("DebugEditor") : EString("Debug"));
 #endif
 		return TRUE;
 	}
@@ -114,7 +114,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	BOOL32 EShaderCompileJob::GetCompileDescriptionJsonPath(const EShaderCompileRequest& InRequest, EString& OutCompileJsonPath)
 	{
@@ -570,7 +570,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 	// ---------------------------------------------------------------------------
 	// Entry point
@@ -592,7 +592,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// Editor: compile when needed, then import the artifacts into PAssets. Runtime
 		// only loads: cooking already happened, the PAssets are shipped.
 		if ((InRequest.bForceRecompile) || (!EShaderCompileJob::IsUpToDate(InRequest)))
@@ -607,7 +607,7 @@ namespace PigeonEngine
 				return FALSE;
 			}
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 		return EShaderAssetManager::GetManagerSingleton()->LoadShaderAsset(OutputDirectory, SourceName, OutAsset, InRequest.bForceRecompile);
 	}

@@ -11,12 +11,12 @@ namespace PigeonEngine
 
 	// The bones are the vertex factory's binding surface, and this proxy is the only publisher
 	// of these two names (the material's vertex stage never writes them).
-	static const FShaderBindingClaim g_SkeletalBindingClaims[] =
+	static const FShaderBindingClaim GSkeletalBindingClaims[] =
 	{
 		{ EName(PE_TEXT("BoneMatrices")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 		{ EName(PE_TEXT("BoneInverseTransposeMatrices")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_SkeletalBindingClaims, EName(SHADER_BINDING_SCOPE_SKELETAL));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GSkeletalBindingClaims, EName(SHADER_BINDING_SCOPE_SKELETAL));
 
 	static void RegisterClassTypes()
 	{
@@ -254,27 +254,27 @@ namespace PigeonEngine
 				Check(((BindPoses.Num() > 0) && (BindPoses.Num() == BindPoseMappings.Num())), (ENGINE_RENDER_CORE_ERROR));
 				Check((BindPoses.Num() == BoneValues.Num()), (ENGINE_RENDER_CORE_ERROR));
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				BOOL32 CheckBoneUpdate = FALSE;
 #endif
-				for (auto It = BindPoseMappings.Begin(); It != BindPoseMappings.End(); It++)
+				for (TMap<EString, USHORT>::TConstIterator It = BindPoseMappings.Begin(); It != BindPoseMappings.End(); It++)
 				{
 					const Matrix4x4* BindPosePtr = BindPoses.FindValueAsPtr(It->first);
 					const USHORT BoneIndex = Skeleton->GetBoneIndex(It->first);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					if ((!!BindPosePtr) && (BoneIndex < InBoneToRootMatrices.Num<USHORT>()))
 #endif
 					{
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 						BoneValues[It->second] = (InBoneToRootMatrices[BoneIndex]) * (*BindPosePtr);
 #else
 						BoneValues[It->second] = (InBoneToRootMatrices[BoneIndex].Transpose()) * (*BindPosePtr);
 #endif
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 						CheckBoneUpdate = TRUE;
 #endif
 					}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					else
 					{
 						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Skeleton render resource is not valid."));
@@ -294,13 +294,13 @@ namespace PigeonEngine
 					// step with an asset whose adjustment changed after it was installed.
 					SkinnedLocalBound = SkinnedMesh->GetAdjustedBoundAABB();
 				}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				if (CheckBoneUpdate)
 #endif
 				{
 					SkeletonRenderResource.UpdateRenderResource(BoneValues);
 				}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				else
 				{
 					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Updating skeleton render resource failed."));

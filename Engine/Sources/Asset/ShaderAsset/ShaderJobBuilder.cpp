@@ -243,7 +243,7 @@ namespace PigeonEngine
 		}
 		if ((PEMaterialValue.HasMember("VariantDefines")) && (PEMaterialValue["VariantDefines"].IsArray()))
 		{
-			for (const auto& DefineValue : PEMaterialValue["VariantDefines"].GetArray())
+			for (const rapidjson::Value& DefineValue : PEMaterialValue["VariantDefines"].GetArray())
 			{
 				if (!DefineValue.IsString())
 				{
@@ -341,7 +341,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (const auto& ComponentValue : InStageValue["Components"].GetArray())
+		for (const rapidjson::Value& ComponentValue : InStageValue["Components"].GetArray())
 		{
 			if (!ComponentValue.IsObject())
 			{
@@ -361,7 +361,7 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
-		for (const auto& StageValue : InProgramDocument["Stages"].GetArray())
+		for (const rapidjson::Value& StageValue : InProgramDocument["Stages"].GetArray())
 		{
 			if (!StageValue.IsObject())
 			{
@@ -601,7 +601,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		for (const auto& StageValue : ProgramDocument["Stages"].GetArray())
+		for (const rapidjson::Value& StageValue : ProgramDocument["Stages"].GetArray())
 		{
 			if (!StageValue.IsObject())
 			{
@@ -767,7 +767,7 @@ namespace PigeonEngine
 		Writer.StartArray();
 		if (((*StageValue).HasMember("Components")) && ((*StageValue)["Components"].IsArray()))
 		{
-			for (const auto& ComponentValue : (*StageValue)["Components"].GetArray())
+			for (const rapidjson::Value& ComponentValue : (*StageValue)["Components"].GetArray())
 			{
 				if (!ComponentValue.IsObject())
 				{
@@ -801,7 +801,7 @@ namespace PigeonEngine
 		Writer.StartArray();
 		if (((*StageValue).HasMember("Defines")) && ((*StageValue)["Defines"].IsArray()))
 		{
-			for (const auto& DefineValue : (*StageValue)["Defines"].GetArray())
+			for (const rapidjson::Value& DefineValue : (*StageValue)["Defines"].GetArray())
 			{
 				if (!DefineValue.IsObject())
 				{
@@ -934,7 +934,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	// Compile side only: a shipping build reads the cooked artifacts and never asks which
 	// stage asset name a compile would have produced.
@@ -981,7 +981,7 @@ namespace PigeonEngine
 		return ((Manifest.FindVariant(InVariantName) != nullptr) ? TRUE : FALSE);
 	}
 
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 	// The variant has to be the one the axis asked for. A same named variant with other
 	// defines would be a cache collision, and noticing it here is cheaper than debugging a
@@ -1074,7 +1074,7 @@ namespace PigeonEngine
 			}
 		}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (!BuildGeneratedComponents((InDesc.GeneratedRoot.Length() > 0u) ? InDesc.GeneratedRoot : GetShaderGeneratedRoot()))
 		{
 			return FALSE;
@@ -1183,7 +1183,7 @@ namespace PigeonEngine
 	// MakeVariantDesc only reports what it hands on.
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_JOB_BASE_VARIANT_NAME = "Base";
 
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 	// The content of a variant, spelled out for the one message that has to show it. Nothing
 	// else reads a variant's defines as text: they travel as data and the compiler writes them
 	// into the manifest. Editor only, like the log line it feeds - in a shipping build the log
@@ -1207,7 +1207,7 @@ namespace PigeonEngine
 		Text += EString(PE_TEXT("]"));
 		return Text;
 	}
-#endif	// !(_SHIPPING_MODE)
+#endif	// !(ENGINE_SHIPPING_MODE)
 
 	BOOL32 EShaderJobBuilder::MakeVariantDesc(const EName& InVariantName
 		, const TArray<EShaderVariantDefine>& InDefines
@@ -1235,14 +1235,14 @@ namespace PigeonEngine
 		OutVariantDesc.bIsVariant = ((InVariantName == EName(SHADER_JOB_BASE_VARIANT_NAME)) ? FALSE : TRUE);
 		OutVariantDesc.Defines = InDefines;
 		OutVariantDesc.Replaces = InReplaces;
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 		const BOOL32 bCarriesContent = ((InDefines.Num<UINT32>() > 0u) || (InReplaces.Num<UINT32>() > 0u));
 		if ((!OutVariantDesc.bIsVariant) && (bCarriesContent))
 		{
 			PE_LOG_LOG(EString(PE_TEXT("[ShaderJobBuilder] The reserved variant name 'Base' was given content, which the compiler refuses (a name is not an axis). "))
 				+ MakeVariantContentText(InDefines, InReplaces));
 		}
-#endif	// !(_SHIPPING_MODE)
+#endif	// !(ENGINE_SHIPPING_MODE)
 		return TRUE;
 	}
 

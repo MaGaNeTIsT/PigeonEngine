@@ -24,7 +24,6 @@ set(ASSETS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/Assets)
 set(BASE_BINARY_DIR ${PROJECT_BINARY_DIR}/Engine)
 set(CONFIGS_BINARY_DIR ${BASE_BINARY_DIR}/Configs)
 set(TEMP_BINARY_DIR ${PROJECT_BINARY_DIR}/Temp)
-set(TEMP_RAWSHADER_BINARY_DIR ${TEMP_BINARY_DIR}/OutputRawShaders)
 set(BUILD_BINARY_DIR ${PROJECT_BINARY_DIR}/Build64)
 set(TOOLS_BINARY_DIR ${BUILD_BINARY_DIR}/Tools)
 
@@ -147,59 +146,40 @@ target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
 	$<$<CONFIG:Shipping>:NDEBUG>
 )
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:Debug>:_DEBUG_MODE=1>
-	$<$<CONFIG:Debug>:_DEVELOP_MODE=0>
-	$<$<CONFIG:Debug>:_SHIPPING_MODE=0>
-	$<$<CONFIG:Debug>:_EDITOR_ONLY=0>
+	$<$<CONFIG:Debug>:ENGINE_DEBUG_MODE=1>
+	$<$<CONFIG:Debug>:ENGINE_DEVELOP_MODE=0>
+	$<$<CONFIG:Debug>:ENGINE_SHIPPING_MODE=0>
+	$<$<CONFIG:Debug>:ENGINE_EDITOR_ONLY=0>
 )
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:DebugEditor>:_DEBUG_MODE=1>
-	$<$<CONFIG:DebugEditor>:_DEVELOP_MODE=0>
-	$<$<CONFIG:DebugEditor>:_SHIPPING_MODE=0>
-	$<$<CONFIG:DebugEditor>:_EDITOR_ONLY=1>
+	$<$<CONFIG:DebugEditor>:ENGINE_DEBUG_MODE=1>
+	$<$<CONFIG:DebugEditor>:ENGINE_DEVELOP_MODE=0>
+	$<$<CONFIG:DebugEditor>:ENGINE_SHIPPING_MODE=0>
+	$<$<CONFIG:DebugEditor>:ENGINE_EDITOR_ONLY=1>
 )
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:Develop>:_DEBUG_MODE=0>
-	$<$<CONFIG:Develop>:_DEVELOP_MODE=1>
-	$<$<CONFIG:Develop>:_SHIPPING_MODE=0>
-	$<$<CONFIG:Develop>:_EDITOR_ONLY=0>
+	$<$<CONFIG:Develop>:ENGINE_DEBUG_MODE=0>
+	$<$<CONFIG:Develop>:ENGINE_DEVELOP_MODE=1>
+	$<$<CONFIG:Develop>:ENGINE_SHIPPING_MODE=0>
+	$<$<CONFIG:Develop>:ENGINE_EDITOR_ONLY=0>
 )
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:DevelopEditor>:_DEBUG_MODE=0>
-	$<$<CONFIG:DevelopEditor>:_DEVELOP_MODE=1>
-	$<$<CONFIG:DevelopEditor>:_SHIPPING_MODE=0>
-	$<$<CONFIG:DevelopEditor>:_EDITOR_ONLY=1>
+	$<$<CONFIG:DevelopEditor>:ENGINE_DEBUG_MODE=0>
+	$<$<CONFIG:DevelopEditor>:ENGINE_DEVELOP_MODE=1>
+	$<$<CONFIG:DevelopEditor>:ENGINE_SHIPPING_MODE=0>
+	$<$<CONFIG:DevelopEditor>:ENGINE_EDITOR_ONLY=1>
 )
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:Shipping>:_DEBUG_MODE=0>
-	$<$<CONFIG:Shipping>:_DEVELOP_MODE=0>
-	$<$<CONFIG:Shipping>:_SHIPPING_MODE=1>
-	$<$<CONFIG:Shipping>:_EDITOR_ONLY=0>
+	$<$<CONFIG:Shipping>:ENGINE_DEBUG_MODE=0>
+	$<$<CONFIG:Shipping>:ENGINE_DEVELOP_MODE=0>
+	$<$<CONFIG:Shipping>:ENGINE_SHIPPING_MODE=1>
+	$<$<CONFIG:Shipping>:ENGINE_EDITOR_ONLY=0>
 )
-
-option(ENABLED_HLSL_DEBUG "Enable hlsl debug info" OFF)
-if(ENABLED_HLSL_DEBUG)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-		$<$<CONFIG:Debug>:PE_HLSL_DEBUG=1>
-		$<$<CONFIG:DebugEditor>:PE_HLSL_DEBUG=1>
-		$<$<CONFIG:Develop>:PE_HLSL_DEBUG=0>
-		$<$<CONFIG:DevelopEditor>:PE_HLSL_DEBUG=0>
-		$<$<CONFIG:Shipping>:PE_HLSL_DEBUG=0>
-	)
-else()
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-		$<$<CONFIG:Debug>:PE_HLSL_DEBUG=0>
-		$<$<CONFIG:DebugEditor>:PE_HLSL_DEBUG=0>
-		$<$<CONFIG:Develop>:PE_HLSL_DEBUG=0>
-		$<$<CONFIG:DevelopEditor>:PE_HLSL_DEBUG=0>
-		$<$<CONFIG:Shipping>:PE_HLSL_DEBUG=0>
-	)
-endif()
 
 #Pigeon Engine Profiler toggle
 # PIGEON_ENABLE_PROFILER lets you opt out of the CPU/GPU profiler stubs
 # (PE_PROFILE_SCOPE / PE_PROFILE_COUNTER / PE_GPU_EVENT_*) in any non-Shipping
-# config. Shipping always forces _ENABLE_PROFILER=0 regardless of this option
+# config. Shipping always forces ENGINE_ENABLE_PROFILER=0 regardless of this option
 # so retail builds never carry the instrumentation cost.
 option(PIGEON_ENABLE_PROFILER "Compile profiler instrumentation (CPU + GPU). Forced off in Shipping." ON)
 if(PIGEON_ENABLE_PROFILER)
@@ -208,11 +188,11 @@ else()
 	set(_PIGEON_PROFILER_VALUE 0)
 endif()
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:Debug>:_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
-	$<$<CONFIG:DebugEditor>:_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
-	$<$<CONFIG:Develop>:_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
-	$<$<CONFIG:DevelopEditor>:_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
-	$<$<CONFIG:Shipping>:_ENABLE_PROFILER=0>
+	$<$<CONFIG:Debug>:ENGINE_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
+	$<$<CONFIG:DebugEditor>:ENGINE_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
+	$<$<CONFIG:Develop>:ENGINE_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
+	$<$<CONFIG:DevelopEditor>:ENGINE_ENABLE_PROFILER=${_PIGEON_PROFILER_VALUE}>
+	$<$<CONFIG:Shipping>:ENGINE_ENABLE_PROFILER=0>
 )
 
 #Pigeon Engine Third Party Include & Link
@@ -334,7 +314,6 @@ file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_H ${BASE_SOURCE_DIR}/EngineThirdPart
 file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_HPP ${BASE_SOURCE_DIR}/EngineThirdParty/*.hpp)
 file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_C ${BASE_SOURCE_DIR}/EngineThirdParty/*.c)
 file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_CPP ${BASE_SOURCE_DIR}/EngineThirdParty/*.cpp)
-file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_HLSL ${BASE_SOURCE_DIR}/EngineThirdParty/*.hlsl)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_H})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_HPP})
@@ -351,38 +330,6 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_HPP})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_C})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_CPP})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_HLSL})
-
-if(MSVC)
-	message(STATUS "Start set shader files properties")
-	foreach(HLSL_FILE ${ENGINE_THIRDPARTY_HEADERS_HLSL})
-		get_filename_component(FILE_NAME ${HLSL_FILE} NAME)
-		if(FILE_NAME MATCHES "_PEVS\\.hlsl$")
-			message(STATUS "${FILE_NAME} is a vertex shader.")
-			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Vertex")
-		endif()
-		if(FILE_NAME MATCHES "_PEPS\\.hlsl$")
-			message(STATUS "${FILE_NAME} is a pixel shader.")
-			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Pixel")
-		endif()
-		if(FILE_NAME MATCHES "_PECS\\.hlsl$")
-			message(STATUS "${FILE_NAME} is a compute shader.")
-			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Compute")
-		endif()
-		set_source_files_properties(${HLSL_FILE} PROPERTIES
-			VS_SHADER_ENTRYPOINT "main"
-			VS_SHADER_MODEL "5.0"
-		)
-		if(ENABLED_HLSL_DEBUG)
-			set_source_files_properties(${HLSL_FILE} PROPERTIES
-				VS_SHADER_DISABLE_OPTIMIZATIONS ON
-				VS_SHADER_ENABLE_DEBUG ON
-			)
-		endif()
-		get_filename_component(OUTPUT_FILE_NAME ${HLSL_FILE} NAME_WLE)
-		set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_OBJECT_FILE_NAME "${TEMP_RAWSHADER_BINARY_DIR}/${OUTPUT_FILE_NAME}.cso")
-	endforeach()
-endif()
 
 #Extra Tools
 add_subdirectory(${ENGINE_SOURCE_DIR}/Development/Editor/ShaderCompiler)
@@ -402,5 +349,4 @@ target_sources(${ENGINE_PROJECT_NAME} PRIVATE
 	${ENGINE_THIRDPARTY_HEADERS_HPP}
 	${ENGINE_THIRDPARTY_HEADERS_C}
 	${ENGINE_THIRDPARTY_HEADERS_CPP}
-	${ENGINE_THIRDPARTY_HEADERS_HLSL}
 )

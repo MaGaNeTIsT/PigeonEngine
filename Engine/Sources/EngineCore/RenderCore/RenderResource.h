@@ -65,7 +65,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// StructuredBuffer can bind UAV or SRV, so this function only determines by buffer valid.
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			if (RHIBuffer)
 			{
@@ -73,13 +73,13 @@ namespace PigeonEngine
 			}
 			return (!!Buffer);
 		}
-		virtual BOOL8 InitRenderResource()noexcept override
+		virtual BOOL8 InitRenderResource() noexcept override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
 			return TRUE;
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			AccessMapRead		= FALSE;
 			AccessMapWrite		= FALSE;
@@ -95,16 +95,16 @@ namespace PigeonEngine
 		}
 
 		// IRRHIBuffer
-		virtual UINT64	GetByteSize()const noexcept override { return ByteSize; }
-		virtual UINT32	GetStructureByteStride()const noexcept override { return StructureByteStride; }
-		virtual UINT8	GetBindFlags()const noexcept override { return BindFlags; }
-		virtual UINT32	GetBindlessSRVIndex()const noexcept override { return BindlessSRVIndex; }
-		virtual UINT32	GetBindlessUAVIndex()const noexcept override { return BindlessUAVIndex; }
+		virtual UINT64	GetByteSize() const noexcept override { return ByteSize; }
+		virtual UINT32	GetStructureByteStride() const noexcept override { return StructureByteStride; }
+		virtual UINT8	GetBindFlags() const noexcept override { return BindFlags; }
+		virtual UINT32	GetBindlessSRVIndex() const noexcept override { return BindlessSRVIndex; }
+		virtual UINT32	GetBindlessUAVIndex() const noexcept override { return BindlessUAVIndex; }
 
 		// IRD3D11Buffer native getters
-		virtual ID3D11Buffer*				GetD3D11Buffer()const noexcept override { return Buffer.Get(); }
-		virtual ID3D11ShaderResourceView*	GetD3D11SRV()const noexcept override { return ShaderResourceView.Get(); }
-		virtual ID3D11UnorderedAccessView*	GetD3D11UAV()const noexcept override { return UnorderedAccessView.Get(); }
+		virtual ID3D11Buffer*				GetD3D11Buffer() const noexcept override { return Buffer.Get(); }
+		virtual ID3D11ShaderResourceView*	GetD3D11SRV() const noexcept override { return ShaderResourceView.Get(); }
+		virtual ID3D11UnorderedAccessView*	GetD3D11UAV() const noexcept override { return UnorderedAccessView.Get(); }
 
 		// Phase 1 transition helper: create the underlying structured buffer through the
 		// abstract IRRHIDevice. The desc must carry the structured misc flag and the
@@ -176,7 +176,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// RenderTexture2D can bind RTV, UAV, SRV or DSV, so this function only determines by buffer valid.
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			if (RHITexture)
 			{
@@ -184,13 +184,13 @@ namespace PigeonEngine
 			}
 			return (!!Buffer);
 		}
-		virtual BOOL8 InitRenderResource()noexcept override
+		virtual BOOL8 InitRenderResource() noexcept override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
 			return TRUE;
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			Buffer				= nullptr;
 			RenderTargetView	= nullptr;
@@ -210,25 +210,25 @@ namespace PigeonEngine
 		}
 
 		// IRRHITexture
-		virtual UINT32      GetWidth()const noexcept override { return Width; }
-		virtual UINT32      GetHeight()const noexcept override { return Height; }
-		virtual UINT32      GetDepth()const noexcept override { return 1u; }
-		virtual UINT32      GetMipLevels()const noexcept override { return MipLevels; }
-		virtual UINT32      GetArraySize()const noexcept override { return ArraySize; }
-		virtual RFormatType GetFormat()const noexcept override { return Format; }
-		virtual UINT8       GetBindFlags()const noexcept override { return BindFlags; }
-		virtual UINT32      GetBindlessSRVIndex()const noexcept override { return BindlessSRVIndex; }
-		virtual UINT32      GetBindlessUAVIndex()const noexcept override { return BindlessUAVIndex; }
+		virtual UINT32      GetWidth() const noexcept override { return Width; }
+		virtual UINT32      GetHeight() const noexcept override { return Height; }
+		virtual UINT32      GetDepth() const noexcept override { return 1u; }
+		virtual UINT32      GetMipLevels() const noexcept override { return MipLevels; }
+		virtual UINT32      GetArraySize() const noexcept override { return ArraySize; }
+		virtual RFormatType GetFormat() const noexcept override { return Format; }
+		virtual UINT8       GetBindFlags() const noexcept override { return BindFlags; }
+		virtual UINT32      GetBindlessSRVIndex() const noexcept override { return BindlessSRVIndex; }
+		virtual UINT32      GetBindlessUAVIndex() const noexcept override { return BindlessUAVIndex; }
 		// Only the D3D11 path answers here: in D3D12 mode the object the render layer binds is
 		// the back-end's own texture (RHITexture), which carries its resolved formats itself.
-		virtual RFormatType GetViewFormat(ERHIViewFormatType InView)const noexcept override { return ViewFormats.GetViewFormat(InView); }
+		virtual RFormatType GetViewFormat(ERHIViewFormatType InView) const noexcept override { return ViewFormats.GetViewFormat(InView); }
 
 		// IRD3D11Texture native getters
-		virtual ID3D11Resource*				GetD3D11Resource()const noexcept override { return Buffer.Get(); }
-		virtual ID3D11ShaderResourceView*	GetD3D11SRV()const noexcept override { return ShaderResourceView.Get(); }
-		virtual ID3D11RenderTargetView*		GetD3D11RTV()const noexcept override { return RenderTargetView.Get(); }
-		virtual ID3D11DepthStencilView*		GetD3D11DSV()const noexcept override { return DepthStencilView.Get(); }
-		virtual ID3D11UnorderedAccessView*	GetD3D11UAV()const noexcept override { return UnorderedAccessView.Get(); }
+		virtual ID3D11Resource*				GetD3D11Resource() const noexcept override { return Buffer.Get(); }
+		virtual ID3D11ShaderResourceView*	GetD3D11SRV() const noexcept override { return ShaderResourceView.Get(); }
+		virtual ID3D11RenderTargetView*		GetD3D11RTV() const noexcept override { return RenderTargetView.Get(); }
+		virtual ID3D11DepthStencilView*		GetD3D11DSV() const noexcept override { return DepthStencilView.Get(); }
+		virtual ID3D11UnorderedAccessView*	GetD3D11UAV() const noexcept override { return UnorderedAccessView.Get(); }
 
 		// Phase 2 transition helper: create the underlying RT/DS texture
 		// through IRRHIDevice::CreateRenderTexture2DResource. D3D11 unwraps
@@ -246,6 +246,12 @@ namespace PigeonEngine
 		// In D3D12 mode this is the actual D3D12 texture; in D3D11 mode
 		// it's `this` (the wrapper IS-A IRRHITexture via IRD3D11Texture).
 		IRRHITexture* GetResolvedRHITexture() { return RHITexture ? RHITexture : static_cast<IRRHITexture*>(this); }
+		// The read only form a const proxy getter needs. The wrapper itself is not const on
+		// D3D11, but the resolved handle is only read, so the qualifier is dropped here once.
+		const IRRHITexture* GetResolvedRHITexture() const
+		{
+			return RHITexture ? RHITexture : static_cast<const IRRHITexture*>(this);
+		}
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>		RenderTargetView;
@@ -300,7 +306,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// Texture2DResource must bind SRV, so this function determines by buffer valid and SRV valid.
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			if (RHITexture)
 			{
@@ -308,13 +314,13 @@ namespace PigeonEngine
 			}
 			return ((!!Buffer) && (!!ShaderResourceView));
 		}
-		virtual BOOL8 InitRenderResource()noexcept override
+		virtual BOOL8 InitRenderResource() noexcept override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
 			return TRUE;
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			Buffer				= nullptr;
 			ShaderResourceView	= nullptr;
@@ -330,19 +336,19 @@ namespace PigeonEngine
 		}
 
 		// IRRHITexture
-		virtual UINT32      GetWidth()const noexcept override { return Width; }
-		virtual UINT32      GetHeight()const noexcept override { return Height; }
-		virtual UINT32      GetDepth()const noexcept override { return 1u; }
-		virtual UINT32      GetMipLevels()const noexcept override { return MipLevels; }
-		virtual UINT32      GetArraySize()const noexcept override { return ArraySize; }
-		virtual RFormatType GetFormat()const noexcept override { return Format; }
-		virtual UINT8       GetBindFlags()const noexcept override { return BindFlags; }
-		virtual UINT32      GetBindlessSRVIndex()const noexcept override { return BindlessSRVIndex; }
-		virtual UINT32      GetBindlessUAVIndex()const noexcept override { return BindlessUAVIndex; }
+		virtual UINT32      GetWidth() const noexcept override { return Width; }
+		virtual UINT32      GetHeight() const noexcept override { return Height; }
+		virtual UINT32      GetDepth() const noexcept override { return 1u; }
+		virtual UINT32      GetMipLevels() const noexcept override { return MipLevels; }
+		virtual UINT32      GetArraySize() const noexcept override { return ArraySize; }
+		virtual RFormatType GetFormat() const noexcept override { return Format; }
+		virtual UINT8       GetBindFlags() const noexcept override { return BindFlags; }
+		virtual UINT32      GetBindlessSRVIndex() const noexcept override { return BindlessSRVIndex; }
+		virtual UINT32      GetBindlessUAVIndex() const noexcept override { return BindlessUAVIndex; }
 
 		// IRD3D11Texture native getters
-		virtual ID3D11Resource*				GetD3D11Resource()const noexcept override { return Buffer.Get(); }
-		virtual ID3D11ShaderResourceView*	GetD3D11SRV()const noexcept override { return ShaderResourceView.Get(); }
+		virtual ID3D11Resource*				GetD3D11Resource() const noexcept override { return Buffer.Get(); }
+		virtual ID3D11ShaderResourceView*	GetD3D11SRV() const noexcept override { return ShaderResourceView.Get(); }
 
 		// The RHI texture behind this resource, whichever back-end created it: this wrapper is the
 		// object itself on D3D11 (it is an IRRHITexture through IRD3D11Texture), while D3D12 stores
@@ -403,7 +409,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// TextureCubeResource must bind SRV, so this function determines by buffer valid and SRV valid.
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			if (RHITexture)
 			{
@@ -411,13 +417,13 @@ namespace PigeonEngine
 			}
 			return ((!!Buffer) && (!!ShaderResourceView));
 		}
-		virtual BOOL8 InitRenderResource()noexcept override
+		virtual BOOL8 InitRenderResource() noexcept override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
 			return TRUE;
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			Buffer				= nullptr;
 			ShaderResourceView	= nullptr;
@@ -432,19 +438,19 @@ namespace PigeonEngine
 		}
 
 		// IRRHITexture
-		virtual UINT32		GetWidth()const noexcept override { return Width; }
-		virtual UINT32      GetHeight()const noexcept override { return Height; }
-		virtual UINT32      GetDepth()const noexcept override { return 1u; }
-		virtual UINT32      GetMipLevels()const noexcept override { return MipLevels; }
-		virtual UINT32      GetArraySize()const noexcept override { return 6u; }
-		virtual RFormatType GetFormat()const noexcept override { return Format; }
-		virtual UINT8       GetBindFlags()const noexcept override { return BindFlags; }
-		virtual UINT32      GetBindlessSRVIndex()const noexcept override { return BindlessSRVIndex; }
-		virtual UINT32      GetBindlessUAVIndex()const noexcept override { return BindlessUAVIndex; }
+		virtual UINT32		GetWidth() const noexcept override { return Width; }
+		virtual UINT32      GetHeight() const noexcept override { return Height; }
+		virtual UINT32      GetDepth() const noexcept override { return 1u; }
+		virtual UINT32      GetMipLevels() const noexcept override { return MipLevels; }
+		virtual UINT32      GetArraySize() const noexcept override { return 6u; }
+		virtual RFormatType GetFormat() const noexcept override { return Format; }
+		virtual UINT8       GetBindFlags() const noexcept override { return BindFlags; }
+		virtual UINT32      GetBindlessSRVIndex() const noexcept override { return BindlessSRVIndex; }
+		virtual UINT32      GetBindlessUAVIndex() const noexcept override { return BindlessUAVIndex; }
 
 		// IRD3D11Texture native getters
-		virtual ID3D11Resource*				GetD3D11Resource()const noexcept override { return Buffer.Get(); }
-		virtual ID3D11ShaderResourceView*	GetD3D11SRV()const noexcept override { return ShaderResourceView.Get(); }
+		virtual ID3D11Resource*				GetD3D11Resource() const noexcept override { return Buffer.Get(); }
+		virtual ID3D11ShaderResourceView*	GetD3D11SRV() const noexcept override { return ShaderResourceView.Get(); }
 
 		// Phase 1 transition helper: create the underlying cubemap through
 		// IRRHIDevice::CreateTexture (cube path detected via MiscFlags).
@@ -498,7 +504,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// BufferResource is raw buffer resource, so this function only determines by buffer valid.
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			if (RHIBuffer)
 			{
@@ -506,13 +512,13 @@ namespace PigeonEngine
 			}
 			return (!!Buffer);
 		}
-		virtual BOOL8 InitRenderResource()noexcept override
+		virtual BOOL8 InitRenderResource() noexcept override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
 			return TRUE;
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			Buffer				= nullptr;
 			ByteSize			= 0u;
@@ -524,14 +530,14 @@ namespace PigeonEngine
 		}
 
 		// IRRHIBuffer
-		virtual UINT64	GetByteSize()const noexcept override { return ByteSize; }
-		virtual UINT32	GetStructureByteStride()const noexcept override { return StructureByteStride; }
-		virtual UINT8	GetBindFlags()const noexcept override { return BindFlags; }
-		virtual UINT32	GetBindlessSRVIndex()const noexcept override { return BindlessSRVIndex; }
-		virtual UINT32	GetBindlessUAVIndex()const noexcept override { return BindlessUAVIndex; }
+		virtual UINT64	GetByteSize() const noexcept override { return ByteSize; }
+		virtual UINT32	GetStructureByteStride() const noexcept override { return StructureByteStride; }
+		virtual UINT8	GetBindFlags() const noexcept override { return BindFlags; }
+		virtual UINT32	GetBindlessSRVIndex() const noexcept override { return BindlessSRVIndex; }
+		virtual UINT32	GetBindlessUAVIndex() const noexcept override { return BindlessUAVIndex; }
 
 		// IRD3D11Buffer native getters
-		virtual ID3D11Buffer* GetD3D11Buffer()const noexcept override { return Buffer.Get(); }
+		virtual ID3D11Buffer* GetD3D11Buffer() const noexcept override { return Buffer.Get(); }
 
 		// Phase 1 transition helper: create the underlying buffer through the
 		// abstract IRRHIDevice. For D3D11 the returned heap RBufferResource
@@ -574,12 +580,12 @@ namespace PigeonEngine
 			IndexCount	= Other.IndexCount;
 			return (*this);
 		}
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check index buffer short index failed."), (UseShort ? (IndexCount <= 65536u) : TRUE));
 			return (RBufferResource::IsRenderResourceValid() && (IndexCount != 0u));
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			RBufferResource::ReleaseRenderResource();
 			UseShort	= FALSE;
@@ -601,11 +607,11 @@ namespace PigeonEngine
 			Stride = Other.Stride;
 			return (*this);
 		}
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			return (RBufferResource::IsRenderResourceValid() && (Stride != 0u));
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			RBufferResource::ReleaseRenderResource();
 			Stride = 0u;
@@ -626,7 +632,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// SamplerResource validation only determines by SamplerState valid.
-		virtual BOOL8 IsRenderResourceValid()const noexcept override
+		virtual BOOL8 IsRenderResourceValid() const noexcept override
 		{
 			if (RHISampler)
 			{
@@ -634,20 +640,20 @@ namespace PigeonEngine
 			}
 			return (!!SamplerState);
 		}
-		virtual BOOL8 InitRenderResource()noexcept override
+		virtual BOOL8 InitRenderResource() noexcept override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
 			return TRUE;
 		}
-		virtual void ReleaseRenderResource()noexcept override
+		virtual void ReleaseRenderResource() noexcept override
 		{
 			SamplerState = nullptr;
 			RHISampler = nullptr;
 		}
 
 		// IRD3D11Sampler native getter
-		virtual ID3D11SamplerState* GetD3D11SamplerState()const noexcept override { return SamplerState.Get(); }
+		virtual ID3D11SamplerState* GetD3D11SamplerState() const noexcept override { return SamplerState.Get(); }
 
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> SamplerState;
 		// D3D12 transition: populated only when the active back-end is D3D12.
@@ -661,6 +667,14 @@ namespace PigeonEngine
 	public:
 		RRenderTexture2D	SceneDepthStencil;
 		RRenderTexture2D	SceneColor;
+		// A linear copy of SceneColor taken before the water pass draws into it. The water
+		// material samples this for refraction, because a draw cannot sample the colour target
+		// it is writing.
+		RRenderTexture2D	WaterRefractionColor;
+		// Whether this frame's copy was recorded. A frame whose copy program or target was not
+		// ready leaves the texture out of the water bindings, and the material skips the term
+		// instead of sampling the previous frame's contents.
+		BOOL32				bWaterRefractionValid = FALSE;
 		RRenderTexture2D	GBufferA;
 		RRenderTexture2D	GBufferB;
 		RRenderTexture2D	GBufferC;
@@ -679,8 +693,8 @@ namespace PigeonEngine
 		// than with a size of its own.
 		RRenderTexture2D	DirectionalShadowMask;
 	public:
-		const Vector2Int&	GetTextureSize()const;
-		BOOL32				IsNeedStencil()const;
+		const Vector2Int&	GetTextureSize() const;
+		BOOL32				IsNeedStencil() const;
 	private:
 		Vector2Int			TextureSize;
 		BOOL32				NeedStencil;

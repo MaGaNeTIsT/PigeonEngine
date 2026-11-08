@@ -42,79 +42,79 @@ namespace PigeonEngine
 
 	EBaseTimer::EBaseTimer()
 	{
-		::ZeroMemory(&(this->m_T1), sizeof(this->m_T1));
-		::ZeroMemory(&(this->m_T2), sizeof(this->m_T2));
-		::ZeroMemory(&(this->m_Ticks), sizeof(this->m_Ticks));
-		this->m_Delta = EMath::TruncToDouble(0);
-		this->m_Clock = EMath::TruncToDouble(0);
+		::ZeroMemory(&(this->T1), sizeof(this->T1));
+		::ZeroMemory(&(this->T2), sizeof(this->T2));
+		::ZeroMemory(&(this->Ticks), sizeof(this->Ticks));
+		this->Delta = EMath::TruncToDouble(0);
+		this->Clock = EMath::TruncToDouble(0);
 	}
 	EBaseTimer::~EBaseTimer()
 	{
 	}
 	void EBaseTimer::Init()
 	{
-		::ZeroMemory(&(this->m_T1), sizeof(this->m_T1));
-		::ZeroMemory(&(this->m_T2), sizeof(this->m_T2));
-		::ZeroMemory(&(this->m_Ticks), sizeof(this->m_Ticks));
-		this->m_Delta = EMath::TruncToDouble(0);
-		this->m_Clock = EMath::TruncToDouble(0);
+		::ZeroMemory(&(this->T1), sizeof(this->T1));
+		::ZeroMemory(&(this->T2), sizeof(this->T2));
+		::ZeroMemory(&(this->Ticks), sizeof(this->Ticks));
+		this->Delta = EMath::TruncToDouble(0);
+		this->Clock = EMath::TruncToDouble(0);
 
-		this->m_Ticks.QuadPart = static_cast<LONGLONG>(GetCachedTicksPerSecond());
-		this->m_T1.QuadPart    = static_cast<LONGLONG>(GetClockTicks());
+		this->Ticks.QuadPart = static_cast<LONGLONG>(GetCachedTicksPerSecond());
+		this->T1.QuadPart    = static_cast<LONGLONG>(GetClockTicks());
 	}
 	void EBaseTimer::Update()
 	{
-		this->m_T2.QuadPart = static_cast<LONGLONG>(GetClockTicks());
-		LONGLONG Diff = this->m_T2.QuadPart - this->m_T1.QuadPart;
+		this->T2.QuadPart = static_cast<LONGLONG>(GetClockTicks());
+		LONGLONG Diff = this->T2.QuadPart - this->T1.QuadPart;
 		if (Diff < 0) { Diff = 0; }
-		const LONGLONG Freq = (this->m_Ticks.QuadPart > 0) ? this->m_Ticks.QuadPart : static_cast<LONGLONG>(GetCachedTicksPerSecond());
-		this->m_Delta = static_cast<DOUBLE>(Diff) / static_cast<DOUBLE>(Freq);
-		this->m_Clock += this->m_Delta;
-		this->m_T1.QuadPart = this->m_T2.QuadPart;
+		const LONGLONG Freq = (this->Ticks.QuadPart > 0) ? this->Ticks.QuadPart : static_cast<LONGLONG>(GetCachedTicksPerSecond());
+		this->Delta = static_cast<DOUBLE>(Diff) / static_cast<DOUBLE>(Freq);
+		this->Clock += this->Delta;
+		this->T1.QuadPart = this->T2.QuadPart;
 	}
-	DOUBLE EBaseTimer::GetClockTime()const
+	DOUBLE EBaseTimer::GetClockTime() const
 	{
-		return (this->m_Clock);
+		return (this->Clock);
 	}
-	DOUBLE EBaseTimer::GetDeltaTime()const
+	DOUBLE EBaseTimer::GetDeltaTime() const
 	{
-		return (this->m_Delta);
+		return (this->Delta);
 	}
 
 
 
 	EGameTimer::EGameTimer(EBaseTimer* timer)
 	{
-		this->m_Timer = timer;
-		this->m_Total = EMath::TruncToDouble(0);
-		this->m_Delta = EMath::TruncToDouble(0);
+		this->Timer = timer;
+		this->Total = EMath::TruncToDouble(0);
+		this->Delta = EMath::TruncToDouble(0);
 	}
 	EGameTimer::~EGameTimer()
 	{
 	}
 	void EGameTimer::Reset()
 	{
-		this->m_Total = EMath::TruncToDouble(0);
-		this->m_Delta = EMath::TruncToDouble(0);
+		this->Total = EMath::TruncToDouble(0);
+		this->Delta = EMath::TruncToDouble(0);
 	}
 	void EGameTimer::Update()
 	{
-		if ((this->m_Timer) == nullptr)
+		if ((this->Timer) == nullptr)
 		{
 			this->Reset();
 			return;
 		}
-		DOUBLE temp = this->m_Timer->GetClockTime();
-		m_Delta = temp - m_Total;
-		m_Total = temp;
+		DOUBLE temp = this->Timer->GetClockTime();
+		Delta = temp - Total;
+		Total = temp;
 	}
-	DOUBLE EGameTimer::GetClockTime()const
+	DOUBLE EGameTimer::GetClockTime() const
 	{
-		return (this->m_Total);
+		return (this->Total);
 	}
-	DOUBLE EGameTimer::GetDeltaTime()const
+	DOUBLE EGameTimer::GetDeltaTime() const
 	{
-		return (this->m_Delta);
+		return (this->Delta);
 	}
 
 	namespace EngineSystemTime

@@ -28,11 +28,11 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(PSkeletalMeshComponent)
 
 	public:
-		const ESkinnedMeshAsset*        GetMeshAsset()const;
+		const ESkinnedMeshAsset*        GetMeshAsset() const;
 		void                            SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset);
-		const ESkeletonAsset*           GetSkeletonAsset()const;
+		const ESkeletonAsset*           GetSkeletonAsset() const;
 		void                            SetSkeletonAsset(const ESkeletonAsset* InSkeletonAsset);
-		const ESkeletonBoneMemoryPool&  GetBoneMemoryPool()const;
+		const ESkeletonBoneMemoryPool&  GetBoneMemoryPool() const;
 		ESkeletonBoneMemoryPool&        GetBoneMemoryPool();
 		// Call this after writing the bone matrices, which is what the animation update does.
 		// Nothing else can see that they moved, so without this call the render side keeps the
@@ -50,8 +50,8 @@ namespace PigeonEngine
 
 		// Animation START
 	public:
-		PE_NODISCARD const ESkeletonAnimationAsset* GetAnimationAsset()const;
-		PE_NODISCARD EAnimInstance*                 GetAnimInstance()const;
+		PE_NODISCARD const ESkeletonAnimationAsset* GetAnimationAsset() const;
+		PE_NODISCARD EAnimInstance*                 GetAnimInstance() const;
 		/*
 		* Game thread: binds an already loaded animation asset to this component's skeleton.
 		* Returns FALSE when either side is not loaded or no curve could be bound; the asset
@@ -82,7 +82,7 @@ namespace PigeonEngine
 		// Convenience form: TRUE maps to REPEAT, FALSE maps to ONCE.
 		void                                        SetAnimationLoop(BOOL32 bInLoop);
 		void                                        SetAnimationLoopMode(EAnimationLoopMode InLoopMode);
-		PE_NODISCARD EAnimationLoopMode             GetAnimationLoopMode()const;
+		PE_NODISCARD EAnimationLoopMode             GetAnimationLoopMode() const;
 		void                                        SetAnimationPositionSeconds(FLOAT InPositionSeconds);
 		// Animation END
 
@@ -92,7 +92,7 @@ namespace PigeonEngine
 		// animation asset currently bound to this component.
 		BOOL32                                      SetStateMachine(const EAnimStateMachine* InMachine);
 		void                                        ClearStateMachine();
-		PE_NODISCARD EAnimStateMachineInstance*     GetStateMachineInstance()const;
+		PE_NODISCARD EAnimStateMachineInstance*     GetStateMachineInstance() const;
 		// State machine END
 
 		// Montage START
@@ -105,20 +105,20 @@ namespace PigeonEngine
 		void                                        PauseMontage(const EString& InSlotName);
 		void                                        ResumeMontage();
 		void                                        ResumeMontage(const EString& InSlotName);
-		PE_NODISCARD BOOL32                         IsMontagePlaying()const;
-		PE_NODISCARD BOOL32                         IsMontagePlaying(const EString& InSlotName)const;
-		PE_NODISCARD EAnimMontageInstance*          GetMontageInstance()const;
-		PE_NODISCARD EAnimMontageInstance*          GetMontageInstanceBySlot(const EString& InSlotName)const;
-		PE_NODISCARD INT32                          GetMontageInstanceCount()const;
-		PE_NODISCARD EAnimMontageInstance*          GetMontageInstanceAt(INT32 InIndex)const;
+		PE_NODISCARD BOOL32                         IsMontagePlaying() const;
+		PE_NODISCARD BOOL32                         IsMontagePlaying(const EString& InSlotName) const;
+		PE_NODISCARD EAnimMontageInstance*          GetMontageInstance() const;
+		PE_NODISCARD EAnimMontageInstance*          GetMontageInstanceBySlot(const EString& InSlotName) const;
+		PE_NODISCARD INT32                          GetMontageInstanceCount() const;
+		PE_NODISCARD EAnimMontageInstance*          GetMontageInstanceAt(INT32 InIndex) const;
 		// Montage END
 
 		// Root motion START
 	public:
 		void                                        SetRootMotionEnabled(BOOL32 bInEnabled);
-		PE_NODISCARD BOOL32                         IsRootMotionEnabled()const;
+		PE_NODISCARD BOOL32                         IsRootMotionEnabled() const;
 		void                                        SetRootMotionBoneIndex(INT32 InBoneIndex);
-		PE_NODISCARD INT32                          GetRootMotionBoneIndex()const;
+		PE_NODISCARD INT32                          GetRootMotionBoneIndex() const;
 		// Root motion END
 
 	protected:
@@ -145,9 +145,9 @@ namespace PigeonEngine
 
 		// Render proxy functions START
 	public:
-		virtual void                CreateRenderState()override;
-		virtual void                DestroyRenderState()override;
-		virtual void                SendUpdateRenderState()override;
+		virtual void                CreateRenderState() override;
+		virtual void                DestroyRenderState() override;
+		virtual void                SendUpdateRenderState() override;
 		// Render proxy functions END
 	};
 

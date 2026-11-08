@@ -1,6 +1,6 @@
 #include "SpotLightComponent.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -61,7 +61,7 @@ namespace PigeonEngine
 		SetLuminousIntensityCandela(EMath::Max(0.f, InLuminousFluxLumen) / ConeSolidAngle);
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PSpotLightComponent::GenerateComponentDetail()
 	{
 		PLocalLightComponent::GenerateComponentDetail();

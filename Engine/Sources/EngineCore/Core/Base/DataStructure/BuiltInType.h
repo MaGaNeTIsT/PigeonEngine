@@ -62,8 +62,8 @@ namespace PigeonEngine
 		DOUBLE		TDoubleVal;
 	};
 
-#define PE_TEXT(__S)					__S
-#define PE_WTEXT(__S)					L##__S
+#define PE_TEXT(__String)					__String
+#define PE_WTEXT(__String)					L##__String
 
 #ifdef _FORCE_INTEGRAL_BOOL
 
@@ -363,10 +363,10 @@ namespace PigeonEngine
 	struct BOOL32
 	{
 	public:
-		constexpr BOOL32(const INT32 InValue)noexcept : BoolValue(InValue) {}
-		BOOL32()noexcept : BoolValue(FALSE) {}
-		BOOL32(const BOOL32& Other)noexcept : BoolValue(Other.BoolValue) {}
-		BOOL32(const BOOL8& Other)noexcept : BoolValue(Other == true) {}
+		constexpr BOOL32(const INT32 InValue) noexcept : BoolValue(InValue) {}
+		BOOL32() noexcept : BoolValue(FALSE) {}
+		BOOL32(const BOOL32& Other) noexcept : BoolValue(Other.BoolValue) {}
+		BOOL32(const BOOL8& Other) noexcept : BoolValue(Other == TRUE) {}
 	public:
 		BOOL32& operator=(const BOOL32& Other)
 		{
@@ -383,11 +383,11 @@ namespace PigeonEngine
 			BoolValue = (BoolValue & 0x1) & (Other.BoolValue & 0x1);
 			return (*this);
 		}
-		BOOL8 operator==(const BOOL32& Other)const
+		BOOL8 operator==(const BOOL32& Other) const
 		{
 			return ((BoolValue & 0x1) == (Other.BoolValue & 0x1));
 		}
-		BOOL8 operator!=(const BOOL32& Other)const
+		BOOL8 operator!=(const BOOL32& Other) const
 		{
 			return ((BoolValue & 0x1) != (Other.BoolValue & 0x1));
 		}
@@ -406,28 +406,28 @@ namespace PigeonEngine
 			BoolValue = (BoolValue & 0x1) & (InValue & 0x1);
 			return (*this);
 		}
-		BOOL8 operator==(const INT32& InValue)const
+		BOOL8 operator==(const INT32& InValue) const
 		{
 			return ((BoolValue & 0x1) == (InValue & 0x1));
 		}
-		BOOL8 operator!=(const INT32& InValue)const
+		BOOL8 operator!=(const INT32& InValue) const
 		{
 			return ((BoolValue & 0x1) != (InValue & 0x1));
 		}
-		operator BOOL8()const
+		operator BOOL8() const
 		{
 			return ((BoolValue & 0x1) != 0x0);
 		}
-		BOOL8 operator!()const
+		BOOL8 operator!() const
 		{
 			return ((BoolValue & 0x1) == 0x0);
 		}
 		BOOL32& operator=(const BOOL8& Other)
 		{
-			BoolValue = (Other == true);
+			BoolValue = (Other == TRUE);
 			return (*this);
 		}
-		operator INT32()const
+		operator INT32() const
 		{
 			return BoolValue;
 		}

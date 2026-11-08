@@ -597,7 +597,8 @@ namespace PigeonEngine
 	}
 
 	void BindShaderParameterResources(IRCommandList* InCommandList, const EShaderParameterSet& InParameters
-		, const EShaderBindingPlan& InBindingPlan, const ERHIShaderStage InStage, const EName& InScopeName)
+		, const EShaderParameterSet* InOverrideParameters, const EShaderBindingPlan& InBindingPlan
+		, const ERHIShaderStage InStage, const EName& InScopeName)
 	{
 		if (!InCommandList)
 		{
@@ -634,7 +635,15 @@ namespace PigeonEngine
 			// so only the resource kinds are the ones a caller has to publish.
 			const BOOL32 bNeedsValue = ((Binding->Kind == EShaderBindingKindType::SHADER_BINDING_KIND_SRV)
 				|| (Binding->Kind == EShaderBindingKindType::SHADER_BINDING_KIND_UAV)) ? TRUE : FALSE;
-			const EShaderParameterValue* Value = InParameters.FindResourceOverride(Binding->Name);
+			// A per draw resource (the water simulation outputs) outranks the material's own
+			// value of the same name. The base set is still the owner of every binding the
+			// override set does not carry.
+			const EShaderParameterValue* Value = ((InOverrideParameters != nullptr)
+				? InOverrideParameters->FindResourceOverride(Binding->Name) : nullptr);
+			if (!Value)
+			{
+				Value = InParameters.FindResourceOverride(Binding->Name);
+			}
 			if (!Value)
 			{
 				if (Binding->ClaimState == EShaderBindingClaimStateType::SHADER_BINDING_CLAIM_STATE_EXPOSURE)
@@ -831,7 +840,7 @@ namespace PigeonEngine
 			// Blocks first, then the register bound resources. Both read their root from the plan,
 			// so neither a root index nor a literal slot is written down here.
 			BindShaderParameterBuffers(InCommandList, InOutBuffers, InProgram, StageEntry->Stage, bIsCompute);
-			BindShaderParameterResources(InCommandList, InParameters, StageEntry->BindingPlan, RHIStage, InScopeName);
+			BindShaderParameterResources(InCommandList, InParameters, nullptr, StageEntry->BindingPlan, RHIStage, InScopeName);
 		}
 	}
 
@@ -876,7 +885,41 @@ namespace PigeonEngine
 				bResult = FALSE;
 				continue;
 			}
-			BindShaderParameterResources(InCommandList, InParameters, StageEntry->BindingPlan, RHIStage, InScopeName);
+			BindShaderParameterResources(InCommandList, InParameters, nullptr, StageEntry->BindingPlan, RHIStage, InScopeName);
+		}
+		return bResult;
+	}
+
+	BOOL32 BindShaderResources(IRCommandList* InCommandList, const EShaderParameterSet& InParameters
+		, const EShaderParameterSet& InOverrideParameters, const EShaderProgram& InProgram
+		, const UINT32 InStageMask, const EName& InScopeName)
+	{
+		if (!InCommandList)
+		{
+			return FALSE;
+		}
+		BOOL32 bResult = TRUE;
+		for (UINT32 StageIndex = 0u, StageCount = InProgram.GetStageEntryNum(); StageIndex < StageCount; StageIndex++)
+		{
+			const EShaderStageEntry* StageEntry = InProgram.GetStageEntryByIndex(StageIndex);
+			if ((!StageEntry) || (StageEntry->bValid == FALSE) || (StageMaskContains(InStageMask, StageEntry->Stage) == FALSE))
+			{
+				continue;
+			}
+			ERHIShaderStage RHIStage;
+			if (TranslateShaderStageToRHI(StageEntry->Stage, RHIStage) == FALSE)
+			{
+				continue;
+			}
+			// The bindless index fields live in the base set's constant buffers; the override
+			// set only carries the register bound resources this draw replaces.
+			if (CheckBindlessIndicesPublished(InParameters, StageEntry->BindingPlan) == FALSE)
+			{
+				bResult = FALSE;
+				continue;
+			}
+			BindShaderParameterResources(InCommandList, InParameters, &InOverrideParameters
+				, StageEntry->BindingPlan, RHIStage, InScopeName);
 		}
 		return bResult;
 	}
@@ -892,7 +935,7 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		BindShaderParameterResources(InCommandList, InParameters, InBindingPlan, InStage, InScopeName);
+		BindShaderParameterResources(InCommandList, InParameters, nullptr, InBindingPlan, InStage, InScopeName);
 		return TRUE;
 	}
 

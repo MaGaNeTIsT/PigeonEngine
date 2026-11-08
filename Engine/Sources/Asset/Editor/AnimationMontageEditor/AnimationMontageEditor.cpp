@@ -1,6 +1,6 @@
 #include "AnimationMontageEditor.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 
@@ -170,21 +170,21 @@ namespace PigeonEngine
 
 	void EAnimMontageEditor::EditorInit()
 	{
-		m_ShowEditor = FALSE;
-		m_Asset = nullptr;
-		m_AnimationAsset = nullptr;
-		m_OpenedAssetFullPath = EString();
-		m_LastError = EString();
-		m_JsonBuffer.Empty();
-		m_SelectedCurveSectionIndex = 0;
-		m_SelectedCurveIndex = 0;
+		bShowEditor = FALSE;
+		Asset = nullptr;
+		AnimationAsset = nullptr;
+		OpenedAssetFullPath = EString();
+		LastError = EString();
+		JsonBuffer.Empty();
+		SelectedCurveSectionIndex = 0;
+		SelectedCurveIndex = 0;
 	}
 
 	void EAnimMontageEditor::OpenMontageAsset(const EString& InAssetFullPath)
 	{
-		m_ShowEditor = TRUE;
-		m_Asset = nullptr;
-		m_LastError = EString();
+		bShowEditor = TRUE;
+		Asset = nullptr;
+		LastError = EString();
 
 		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
 		const EString AssetName = EPath::GetFileNameWithoutExtension(NormalizedAssetPath);
@@ -195,30 +195,30 @@ namespace PigeonEngine
 		}
 		if ((AssetName.Length() <= 0u) || (AssetDirectory.Length() <= 0u))
 		{
-			m_LastError = EString("Montage editor cannot parse asset path: ") + NormalizedAssetPath;
+			LastError = EString("Montage editor cannot parse asset path: ") + NormalizedAssetPath;
 			return;
 		}
 
 		const EAnimMontageAsset* LoadedAsset = nullptr;
 		if (!(EAnimMontageManager::GetManagerSingleton()->LoadMontageAsset(AssetDirectory, AssetName, LoadedAsset)) || (!LoadedAsset))
 		{
-			m_LastError = EString("Montage editor failed to load asset: ") + NormalizedAssetPath;
+			LastError = EString("Montage editor failed to load asset: ") + NormalizedAssetPath;
 			return;
 		}
 
-		m_Asset = LoadedAsset;
-		m_OpenedAssetFullPath = NormalizedAssetPath;
-		m_SelectedCurveSectionIndex = 0;
-		m_SelectedCurveIndex = 0;
-		m_AnimationAsset = nullptr;
-		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+		Asset = LoadedAsset;
+		OpenedAssetFullPath = NormalizedAssetPath;
+		SelectedCurveSectionIndex = 0;
+		SelectedCurveIndex = 0;
+		AnimationAsset = nullptr;
+		const EAnimMontage* Montage = Asset->GetStoragedResource();
 		if ((Montage) && (Montage->AnimationAssetName.Length() > 0u))
 		{
 			const ESkeletonAnimationAsset* LoadedAnimation = nullptr;
 			if (EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(
 				EBaseSettings::ENGINE_ANIMATION_PATH, Montage->AnimationAssetName, LoadedAnimation))
 			{
-				m_AnimationAsset = LoadedAnimation;
+				AnimationAsset = LoadedAnimation;
 			}
 		}
 		LoadJsonBufferFromAsset();
@@ -226,65 +226,65 @@ namespace PigeonEngine
 
 	void EAnimMontageEditor::EditorUpdate()
 	{
-		if (!m_ShowEditor)
+		if (!bShowEditor)
 		{
 			return;
 		}
 
 		ImGui::SetNextWindowSize(ImVec2(920.0f, 760.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(440.0f, 36.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Montage Editor", &m_ShowEditor, ImGuiWindowFlags_None);
+		ImGui::Begin("Montage Editor", &bShowEditor, ImGuiWindowFlags_None);
 		{
-			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
+			if (ImGui::Button("Reload") && (OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenMontageAsset(m_OpenedAssetFullPath);
+				OpenMontageAsset(OpenedAssetFullPath);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Apply"))
 			{
-				if (m_Asset)
+				if (Asset)
 				{
 					EString Error;
-					const EString JsonText(m_JsonBuffer.GetData());
-					if (EAnimMontageManager::GetManagerSingleton()->RebuildMontageAsset(m_Asset, JsonText, Error))
+					const EString JsonText(JsonBuffer.GetData());
+					if (EAnimMontageManager::GetManagerSingleton()->RebuildMontageAsset(Asset, JsonText, Error))
 					{
-						m_LastError = EString();
+						LastError = EString();
 					}
 					else
 					{
-						m_LastError = Error;
+						LastError = Error;
 					}
 				}
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Save"))
 			{
-				if (m_Asset)
+				if (Asset)
 				{
 					EString Error;
-					const EString JsonText(m_JsonBuffer.GetData());
-					if (EAnimMontageManager::GetManagerSingleton()->SaveMontageAsset(m_Asset, JsonText, Error))
+					const EString JsonText(JsonBuffer.GetData());
+					if (EAnimMontageManager::GetManagerSingleton()->SaveMontageAsset(Asset, JsonText, Error))
 					{
-						m_LastError = EString();
+						LastError = EString();
 					}
 					else
 					{
-						m_LastError = Error;
+						LastError = Error;
 					}
 				}
 			}
 			ImGui::SameLine();
-			ImGui::TextWrapped("%s", (m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No montage selected."));
+			ImGui::TextWrapped("%s", (OpenedAssetFullPath.Length() > 0u ? *OpenedAssetFullPath : "No montage selected."));
 
-			if (m_LastError.Length() > 0u)
+			if (LastError.Length() > 0u)
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastError);
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *LastError);
 			}
 
 			ImGui::Separator();
-			if (m_Asset)
+			if (Asset)
 			{
-				const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+				const EAnimMontage* Montage = Asset->GetStoragedResource();
 				if (Montage)
 				{
 					ImGui::Text("Name: %s", *Montage->Name);
@@ -317,20 +317,20 @@ namespace PigeonEngine
 					}
 
 					ImGui::Separator();
-					ImGui::BeginChild("MontageTimeline", ImVec2(0.0f, 210.0f), true);
+					ImGui::BeginChild("MontageTimeline", ImVec2(0.0f, 210.0f), TRUE);
 					DrawTimeline(*Montage);
 					ImGui::EndChild();
 
 					ImGui::Separator();
-					ImGui::BeginChild("MontageCurvePreview", ImVec2(0.0f, 240.0f), true);
+					ImGui::BeginChild("MontageCurvePreview", ImVec2(0.0f, 240.0f), TRUE);
 					DrawCurvePreview(*Montage);
 					ImGui::EndChild();
 				}
 			}
 
-			if (m_JsonBuffer.Num() > 0)
+			if (JsonBuffer.Num() > 0)
 			{
-				ImGui::InputTextMultiline("JSON", m_JsonBuffer.GetData(), static_cast<int>(m_JsonBuffer.Num())
+				ImGui::InputTextMultiline("JSON", JsonBuffer.GetData(), static_cast<int>(JsonBuffer.Num())
 					, ImVec2(-1.0f, -1.0f), ImGuiInputTextFlags_AllowTabInput);
 			}
 		}
@@ -348,7 +348,7 @@ namespace PigeonEngine
 			return;
 		}
 
-		const ESkeletonAnimation* Animation = (m_AnimationAsset ? m_AnimationAsset->GetStoragedResource() : nullptr);
+		const ESkeletonAnimation* Animation = (AnimationAsset ? AnimationAsset->GetStoragedResource() : nullptr);
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		constexpr FLOAT LabelWidth = 180.0f;
 		constexpr FLOAT RowHeight = 28.0f;
@@ -419,23 +419,23 @@ namespace PigeonEngine
 	void EAnimMontageEditor::DrawCurvePreview(const EAnimMontage& InMontage)
 	{
 		ImGui::TextDisabled("Curve preview (read-only)");
-		if ((!m_AnimationAsset) || (!m_AnimationAsset->GetStoragedResource()) || (InMontage.Sections.Num() <= 0))
+		if ((!AnimationAsset) || (!AnimationAsset->GetStoragedResource()) || (InMontage.Sections.Num() <= 0))
 		{
 			ImGui::TextDisabled("Animation asset or sections are unavailable.");
 			return;
 		}
-		const ESkeletonAnimation* Animation = m_AnimationAsset->GetStoragedResource();
-		m_SelectedCurveSectionIndex = EMath::Clamp(m_SelectedCurveSectionIndex, 0, InMontage.Sections.Num() - 1);
-		const EString CurrentSectionName = InMontage.Sections[m_SelectedCurveSectionIndex].Name;
+		const ESkeletonAnimation* Animation = AnimationAsset->GetStoragedResource();
+		SelectedCurveSectionIndex = EMath::Clamp(SelectedCurveSectionIndex, 0, InMontage.Sections.Num() - 1);
+		const EString CurrentSectionName = InMontage.Sections[SelectedCurveSectionIndex].Name;
 		if (ImGui::BeginCombo("Section", *CurrentSectionName))
 		{
 			for (INT32 SectionIndex = 0; SectionIndex < InMontage.Sections.Num(); SectionIndex++)
 			{
-				const BOOL8 bSelected = (SectionIndex == m_SelectedCurveSectionIndex);
+				const BOOL8 bSelected = (SectionIndex == SelectedCurveSectionIndex);
 				if (ImGui::Selectable(*InMontage.Sections[SectionIndex].Name, bSelected))
 				{
-					m_SelectedCurveSectionIndex = SectionIndex;
-					m_SelectedCurveIndex = 0;
+					SelectedCurveSectionIndex = SectionIndex;
+					SelectedCurveIndex = 0;
 				}
 				if (bSelected)
 				{
@@ -445,7 +445,7 @@ namespace PigeonEngine
 			ImGui::EndCombo();
 		}
 
-		const EAnimMontageSection& Section = InMontage.Sections[m_SelectedCurveSectionIndex];
+		const EAnimMontageSection& Section = InMontage.Sections[SelectedCurveSectionIndex];
 		const ESkeletonAnimationClip* Clip = Animation->GetAnimationClip(Section.ClipName);
 		if (!Clip)
 		{
@@ -458,16 +458,16 @@ namespace PigeonEngine
 			ImGui::TextDisabled("This clip has no bone curves.");
 			return;
 		}
-		m_SelectedCurveIndex = EMath::Clamp(m_SelectedCurveIndex, 0, CurveNum - 1);
-		const EString CurrentCurveName = Clip->AnimationCurves[m_SelectedCurveIndex].BoneName;
+		SelectedCurveIndex = EMath::Clamp(SelectedCurveIndex, 0, CurveNum - 1);
+		const EString CurrentCurveName = Clip->AnimationCurves[SelectedCurveIndex].BoneName;
 		if (ImGui::BeginCombo("Bone Curve", *CurrentCurveName))
 		{
 			for (INT32 CurveIndex = 0; CurveIndex < CurveNum; CurveIndex++)
 			{
-				const BOOL8 bSelected = (CurveIndex == m_SelectedCurveIndex);
+				const BOOL8 bSelected = (CurveIndex == SelectedCurveIndex);
 				if (ImGui::Selectable(*Clip->AnimationCurves[CurveIndex].BoneName, bSelected))
 				{
-					m_SelectedCurveIndex = CurveIndex;
+					SelectedCurveIndex = CurveIndex;
 				}
 				if (bSelected)
 				{
@@ -477,7 +477,7 @@ namespace PigeonEngine
 			ImGui::EndCombo();
 		}
 
-		const EBoneAnimationCurve& Curve = Clip->AnimationCurves[m_SelectedCurveIndex];
+		const EBoneAnimationCurve& Curve = Clip->AnimationCurves[SelectedCurveIndex];
 		FLOAT TimeMax = Clip->Duration;
 		for (INT32 KeyIndex = 0; KeyIndex < Curve.PositionKeys.Num(); KeyIndex++)
 		{
@@ -504,12 +504,12 @@ namespace PigeonEngine
 
 	void EAnimMontageEditor::LoadJsonBufferFromAsset()
 	{
-		m_JsonBuffer.Empty();
-		if (!m_Asset)
+		JsonBuffer.Empty();
+		if (!Asset)
 		{
 			return;
 		}
-		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+		const EAnimMontage* Montage = Asset->GetStoragedResource();
 		if (!Montage)
 		{
 			return;
@@ -517,11 +517,11 @@ namespace PigeonEngine
 
 		const EString& SourceJson = Montage->SourceJson;
 		const INT32 BufferLength = static_cast<INT32>(SourceJson.Length()) + MontageEditorBufferHeadroom + 1;
-		m_JsonBuffer.SetNum(BufferLength);
-		::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
+		JsonBuffer.SetNum(BufferLength);
+		::memset(JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
 		if (SourceJson.Length() > 0u)
 		{
-			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *SourceJson, SourceJson.Length());
+			::memcpy_s(JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *SourceJson, SourceJson.Length());
 		}
 	}
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Array.h>
@@ -27,11 +27,11 @@ namespace PigeonEngine
 		void LoadJsonBufferFromAsset();
 
 	private:
-		BOOL8					m_ShowEditor = FALSE;
-		const EAnimNotifyAsset*	m_Asset = nullptr;
-		EString					m_OpenedAssetFullPath;
-		EString					m_LastError;
-		TArray<CHAR>			m_JsonBuffer;
+		BOOL8					bShowEditor = FALSE;
+		const EAnimNotifyAsset*	Asset = nullptr;
+		EString					OpenedAssetFullPath;
+		EString					LastError;
+		TArray<CHAR>			JsonBuffer;
 	};
 
 }

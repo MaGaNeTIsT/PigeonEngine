@@ -5,6 +5,7 @@
 #include <RHI/IRCommandList.h>
 #include <RHI/IRRHIDevice.h>
 #include <RHI/IRRHISwapChain.h>
+#include <RHI/RRHIBindlessManager.h>
 #include <Config/EngineConfig.h>
 #include <Development/GPUProfiler.h>
 #include <TextureAsset/TextureAsset.h>
@@ -12,7 +13,7 @@
 
 namespace PigeonEngine
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #define IM_VK_KEYPAD_ENTER          (VK_RETURN + 256)
 
@@ -35,7 +36,7 @@ namespace PigeonEngine
 
 	CImGUIManager::CImGUIManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = ENGINE_IMGUI_MANAGER_NAME;
 #endif
 	}
@@ -64,7 +65,7 @@ namespace PigeonEngine
 		io.BackendFlags           |= ImGuiBackendFlags_RendererHasTextures;
 
 		RECT rect = { 0, 0, 0, 0 };
-		::GetClientRect(m_WndData.hWnd, &rect);
+		::GetClientRect(WindowData.hWnd, &rect);
 		io.DisplaySize = ImVec2((FLOAT)(rect.right - rect.left), (FLOAT)(rect.bottom - rect.top));
 	}
 	void CImGUIManager::ShutDown()
@@ -88,14 +89,14 @@ namespace PigeonEngine
 	}
 	FLOAT CImGUIManager::GetDpiScale()
 	{
-		const FLOAT Scale = GetManagerSingleton()->m_WndData.DpiScale;
+		const FLOAT Scale = GetManagerSingleton()->WindowData.DpiScale;
 		return (Scale > 0.0f) ? Scale : 1.0f;
 	}
 
 	void CImGUIManager::Update()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		m_WndData.Tick++;
+		WindowData.Tick++;
 		const EGameTimer* GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
 		io.DeltaTime = static_cast<FLOAT>(GameTimer->GetDeltaTime());
 
@@ -108,7 +109,7 @@ namespace PigeonEngine
 
 		WndProcessKeyEventsWorkarounds();
 
-		if (m_WndData.WantUpdateMonitors)
+		if (WindowData.WantUpdateMonitors)
 		{
 			WndUpdateMonitors();
 		}
@@ -118,9 +119,9 @@ namespace PigeonEngine
 		WndPollMouseWhileButtonDown();
 
 		ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
-		if (m_WndData.LastMouseCursor != mouse_cursor)
+		if (WindowData.LastMouseCursor != mouse_cursor)
 		{
-			m_WndData.LastMouseCursor = mouse_cursor;
+			WindowData.LastMouseCursor = mouse_cursor;
 			WndUpdateMouseCursor();
 		}
 
@@ -273,13 +274,13 @@ namespace PigeonEngine
 	void CImGUIManager::WndPollMouseWhileButtonDown()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		if ((!(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)) || (m_WndData.MouseButtonsDown == 0))
+		if ((!(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)) || (WindowData.MouseButtonsDown == 0))
 		{
 			return;
 		}
 
 		constexpr UINT32 MouseMoveTimeoutTicks = 3;
-		if ((m_WndData.Tick - m_WndData.LastMouseMoveTick) >= MouseMoveTimeoutTicks)
+		if ((WindowData.Tick - WindowData.LastMouseMoveTick) >= MouseMoveTimeoutTicks)
 		{
 			POINT CursorPos = {};
 			if (::GetCursorPos(&CursorPos) != FALSE)
@@ -292,7 +293,7 @@ namespace PigeonEngine
 		static constexpr INT32 ButtonVirtualKeys[] = { VK_LBUTTON, VK_RBUTTON, VK_MBUTTON };
 		for (INT32 ButtonIndex = 0; ButtonIndex < IM_ARRAYSIZE(ButtonVirtualKeys); ButtonIndex++)
 		{
-			if ((m_WndData.MouseButtonsDown & (1 << ButtonIndex)) == 0)
+			if ((WindowData.MouseButtonsDown & (1 << ButtonIndex)) == 0)
 			{
 				continue;
 			}
@@ -301,9 +302,9 @@ namespace PigeonEngine
 				continue;
 			}
 
-			m_WndData.MouseButtonsDown &= ~(1 << ButtonIndex);
+			WindowData.MouseButtonsDown &= ~(1 << ButtonIndex);
 			io.AddMouseButtonEvent(ButtonIndex, FALSE);
-			if ((m_WndData.MouseButtonsDown == 0) && (::GetCapture() != nullptr))
+			if ((WindowData.MouseButtonsDown == 0) && (::GetCapture() != nullptr))
 			{
 				::ReleaseCapture();
 			}
@@ -333,7 +334,7 @@ namespace PigeonEngine
 		//PE_CHECK((ENGINE_RENDER_CORE_ERROR), PE_TEXT("Already initialized a platform backend!"), (io.BackendPlatformUserData == nullptr));
 		IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
 
-		io.BackendPlatformUserData = (void*)(&m_WndData);
+		io.BackendPlatformUserData = (void*)(&WindowData);
 		io.BackendPlatformName = "imgui_impl_win32";
 		io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 		io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
@@ -356,10 +357,10 @@ namespace PigeonEngine
 		}
 
 		HWND hWnd = EMainManager::GetManagerSingleton()->GetWindowHandle();
-		m_WndData.hWnd = hWnd;
-		m_WndData.WantUpdateHasGamepad = FALSE;
-		m_WndData.WantUpdateMonitors = TRUE;
-		m_WndData.LastMouseCursor = ImGuiMouseCursor_COUNT;
+		WindowData.hWnd = hWnd;
+		WindowData.WantUpdateHasGamepad = FALSE;
+		WindowData.WantUpdateMonitors = TRUE;
+		WindowData.LastMouseCursor = ImGuiMouseCursor_COUNT;
 		// One UI scale for the whole application, taken from the monitor the main window is on.
 		// ImGui's style and layout are global, so a per-monitor UI scale cannot be expressed by
 		// the docking branch; a single scale keeps the saved logical layout valid on every
@@ -368,12 +369,12 @@ namespace PigeonEngine
 		// logical units into physical pixels and is also what ImGui 1.92 uses to rasterize
 		// fonts at the right density. The scale is fixed for the lifetime of the context:
 		// moving the main window to another display keeps the same logical layout.
-		m_WndData.DpiScale = static_cast<FLOAT>(::GetDpiForWindow(hWnd)) / GDpiBase;
-		if (m_WndData.DpiScale <= 0.0f)
+		WindowData.DpiScale = static_cast<FLOAT>(::GetDpiForWindow(hWnd)) / GDpiBase;
+		if (WindowData.DpiScale <= 0.0f)
 		{
-			m_WndData.DpiScale = 1.0f;
+			WindowData.DpiScale = 1.0f;
 		}
-		io.DisplayFramebufferScale = ImVec2(m_WndData.DpiScale, m_WndData.DpiScale);
+		io.DisplayFramebufferScale = ImVec2(WindowData.DpiScale, WindowData.DpiScale);
 
 		ImGuiViewport* MainViewport = ImGui::GetMainViewport();
 		MainViewport->PlatformHandle = (void*)hWnd;
@@ -392,13 +393,13 @@ namespace PigeonEngine
 		switch (msg)
 		{
 		case WM_MOUSEMOVE:
-			m_WndData.MouseHwnd = hWnd;
-			m_WndData.LastMouseMoveTick = m_WndData.Tick;
-			if (!m_WndData.MouseTracked)
+			WindowData.MouseHwnd = hWnd;
+			WindowData.LastMouseMoveTick = WindowData.Tick;
+			if (!WindowData.MouseTracked)
 			{
 				TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, hWnd, 0 };
 				::TrackMouseEvent(&tme);
-				m_WndData.MouseTracked = TRUE;
+				WindowData.MouseTracked = TRUE;
 			}
 			{
 				// With multi-viewport enabled, ImGui works in absolute (screen) coordinates:
@@ -418,11 +419,11 @@ namespace PigeonEngine
 			}
 			break;
 		case WM_MOUSELEAVE:
-			if (m_WndData.MouseHwnd == hWnd)
+			if (WindowData.MouseHwnd == hWnd)
 			{
-				m_WndData.MouseHwnd = nullptr;
+				WindowData.MouseHwnd = nullptr;
 			}
-			m_WndData.MouseTracked = FALSE;
+			WindowData.MouseTracked = FALSE;
 			{
 				// Entering another one of our windows also sends WM_MOUSELEAVE to the one that
 				// was left. Reporting "no mouse" unconditionally would drop the position in the
@@ -457,15 +458,15 @@ namespace PigeonEngine
 			// slider) keeps following the mouse. Capture being owned by another window is the
 			// signal that the up edge was lost.
 			HWND HwndWithCapture = ::GetCapture();
-			if ((m_WndData.MouseButtonsDown != 0) && (HwndWithCapture != hWnd))
+			if ((WindowData.MouseButtonsDown != 0) && (HwndWithCapture != hWnd))
 			{
-				m_WndData.MouseButtonsDown = 0;
+				WindowData.MouseButtonsDown = 0;
 			}
-			if ((m_WndData.MouseButtonsDown == 0) && (HwndWithCapture == nullptr))
+			if ((WindowData.MouseButtonsDown == 0) && (HwndWithCapture == nullptr))
 			{
 				::SetCapture(hWnd);
 			}
-			m_WndData.MouseButtonsDown |= 1 << button;
+			WindowData.MouseButtonsDown |= 1 << button;
 			io.AddMouseButtonEvent(button, TRUE);
 			return 0;
 		}
@@ -479,8 +480,8 @@ namespace PigeonEngine
 			if (msg == WM_RBUTTONUP) { button = 1; }
 			if (msg == WM_MBUTTONUP) { button = 2; }
 			if (msg == WM_XBUTTONUP) { button = (GET_XBUTTON_WPARAM(wParam) == XBUTTON1) ? 3 : 4; }
-			m_WndData.MouseButtonsDown &= ~(1 << button);
-			if (m_WndData.MouseButtonsDown == 0 && ::GetCapture() == hWnd)
+			WindowData.MouseButtonsDown &= ~(1 << button);
+			if (WindowData.MouseButtonsDown == 0 && ::GetCapture() == hWnd)
 			{
 				::ReleaseCapture();
 			}
@@ -553,13 +554,13 @@ namespace PigeonEngine
 		case WM_DEVICECHANGE:
 			if ((UINT32)wParam == DBT_DEVNODES_CHANGED)
 			{
-				m_WndData.WantUpdateHasGamepad = TRUE;
+				WindowData.WantUpdateHasGamepad = TRUE;
 			}
 			return 0;
 		case WM_DISPLAYCHANGE:
 			// A monitor was added, removed or resized; the monitor list the platform backend
 			// published to ImGui has to be rebuilt before the next frame positions a window.
-			m_WndData.WantUpdateMonitors = TRUE;
+			WindowData.WantUpdateMonitors = TRUE;
 			return 0;
 		}
 		return 0;
@@ -893,7 +894,7 @@ namespace PigeonEngine
 		if (MainViewport && (!MainViewport->PlatformUserData))
 		{
 			PlatformViewportData* MainViewportData = IM_NEW(PlatformViewportData)();
-			MainViewportData->Hwnd		= GetManagerSingleton()->m_WndData.hWnd;
+			MainViewportData->Hwnd		= GetManagerSingleton()->WindowData.hWnd;
 			MainViewportData->HwndOwned	= FALSE;
 			MainViewport->PlatformUserData = MainViewportData;
 		}
@@ -918,9 +919,9 @@ namespace PigeonEngine
 			}
 		}
 
-		if (GetManagerSingleton()->m_WndData.hWnd)
+		if (GetManagerSingleton()->WindowData.hWnd)
 		{
-			::SetPropA(GetManagerSingleton()->m_WndData.hWnd, "IMGUI_CONTEXT", nullptr);
+			::SetPropA(GetManagerSingleton()->WindowData.hWnd, "IMGUI_CONTEXT", nullptr);
 		}
 
 		ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
@@ -976,8 +977,8 @@ namespace PigeonEngine
 		// window a panel was dragged into is one of ours, not a foreign application.
 		const HWND ForegroundWindow = ::GetForegroundWindow();
 		const BOOL32 bAppFocused = ((ForegroundWindow != nullptr)
-			&& ((ForegroundWindow == m_WndData.hWnd)
-				|| (::IsChild(ForegroundWindow, m_WndData.hWnd) != FALSE)
+			&& ((ForegroundWindow == WindowData.hWnd)
+				|| (::IsChild(ForegroundWindow, WindowData.hWnd) != FALSE)
 				|| (WndFindViewportByWindowHandle(ForegroundWindow) != nullptr))) ? TRUE : FALSE;
 
 		if (bAppFocused != FALSE)
@@ -986,12 +987,12 @@ namespace PigeonEngine
 			// derived from the window it is dragging, so honouring it moves the cursor under
 			// the window and the two chase each other - the panel drifts away from the pointer
 			// instead of following it.
-			if (io.WantSetMousePos && (m_WndData.MouseButtonsDown == 0))
+			if (io.WantSetMousePos && (WindowData.MouseButtonsDown == 0))
 			{
 				// ImGui's MousePos is in logical units; Win32's SetCursorPos takes physical pixels.
 				::SetCursorPos((INT32)(io.MousePos.x * DpiScale), (INT32)(io.MousePos.y * DpiScale));
 			}
-			else if ((m_WndData.MouseTracked == FALSE) && (bHasScreenPos != FALSE))
+			else if ((WindowData.MouseTracked == FALSE) && (bHasScreenPos != FALSE))
 			{
 				// Not inside any client area (over a frame, between windows, or before the
 				// first WM_MOUSEMOVE): publish the OS position so ImGui always has one while
@@ -1053,7 +1054,7 @@ namespace PigeonEngine
 		ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
 		PlatformIO.Monitors.resize(0);
 		::EnumDisplayMonitors(nullptr, nullptr, WndUpdateMonitorsEnumProc, 0);
-		GetManagerSingleton()->m_WndData.WantUpdateMonitors = FALSE;
+		GetManagerSingleton()->WindowData.WantUpdateMonitors = FALSE;
 	}
 
 	LRESULT CALLBACK CImGUIManager::WndProcHandlerPlatformWindow(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -1170,9 +1171,9 @@ namespace PigeonEngine
 				if (::GetCapture() == ViewportData->Hwnd)
 				{
 					::ReleaseCapture();
-					if (GetManagerSingleton()->m_WndData.hWnd)
+					if (GetManagerSingleton()->WindowData.hWnd)
 					{
-						::SetCapture(GetManagerSingleton()->m_WndData.hWnd);
+						::SetCapture(GetManagerSingleton()->WindowData.hWnd);
 					}
 				}
 				::SetPropA(ViewportData->Hwnd, "IMGUI_CONTEXT", nullptr);
@@ -1452,19 +1453,34 @@ namespace PigeonEngine
 		// ImTextureID_Invalid == 0, but our bindless indices start at 0 too.
 		// We store (RealBindlessIndex + 1) so index 0 is never confused with
 		// Invalid. EImGuiRenderer subtracts 1 before passing to the RHI.
-		if (InAsset && InAsset->IsRenderResourceValid())
+		if ((InAsset == nullptr) || (InAsset->IsRenderResourceValid() == FALSE))
 		{
-			const RTexture2DResource* RenderResource = InAsset->GetRenderResource();
-			if (RenderResource)
-			{
-				const UINT32 Idx = RenderResource->GetBindlessSRVIndex();
-				if (Idx != RHI_INVALID_BINDLESS_INDEX)
-				{
-					return static_cast<ImTextureID>(Idx + 1u);
-				}
-			}
+			return ImTextureID_Invalid;
 		}
-		return ImTextureID_Invalid;
+		const RTexture2DResource* RenderResource = InAsset->GetRenderResource();
+		if (!RenderResource)
+		{
+			return ImTextureID_Invalid;
+		}
+		// The asset's proxy is not registered with the device heap until something asks for an
+		// index. Asking the registry keeps the answer stable across calls; a direct device
+		// registration would hand out a new descriptor every time.
+		IRRHITexture* ResolvedTexture = const_cast<RTexture2DResource*>(RenderResource)->GetResolvedRHITexture();
+		if (!ResolvedTexture)
+		{
+			return ImTextureID_Invalid;
+		}
+		UINT32 Idx = ResolvedTexture->GetBindlessSRVIndex();
+		if (Idx == RHI_INVALID_BINDLESS_INDEX)
+		{
+			Idx = RRHIBindlessManager::GetManagerSingleton()->AcquireIndex(
+				ResolvedTexture, ERHIBindlessIndexKind::RHI_BINDLESS_INDEX_SRV);
+		}
+		if (Idx == RHI_INVALID_BINDLESS_INDEX)
+		{
+			return ImTextureID_Invalid;
+		}
+		return static_cast<ImTextureID>(Idx + 1u);
 	}
 
 	PE_INLINE ImTextureID EngineTextureToImgui(IRRHITexture* InTexture)
@@ -1474,12 +1490,11 @@ namespace PigeonEngine
 		// texture as a bindless SRV if it hasn't been registered yet, then
 		// returns the ImGui-offset ID (RealIndex + 1).
 		if (!InTexture) { return ImTextureID_Invalid; }
-		IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		if (!Device) { return ImTextureID_Invalid; }
 		UINT32 Idx = InTexture->GetBindlessSRVIndex();
 		if (Idx == RHI_INVALID_BINDLESS_INDEX)
 		{
-			Idx = Device->RegisterBindlessSRV(InTexture);
+			Idx = RRHIBindlessManager::GetManagerSingleton()->AcquireIndex(
+				InTexture, ERHIBindlessIndexKind::RHI_BINDLESS_INDEX_SRV);
 		}
 		if (Idx == RHI_INVALID_BINDLESS_INDEX) { return ImTextureID_Invalid; }
 		return static_cast<ImTextureID>(Idx + 1u);

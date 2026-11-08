@@ -1,7 +1,7 @@
 #include "ObjectBase.h"
 #include <Base/RTTI/RTTIManager.h>
 #include <Config/EngineConfig.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include "../../../../Development/Config/EngineDebugName.h"
 #endif
 
@@ -20,7 +20,7 @@ namespace PigeonEngine
 	EObjectBase::EObjectBase()
 		: ERTTIObject()
 		, UniqueID(_AllocUniqueID())
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, DebugName(EEngineSettings::ENGINE_DEFAULT_NAME)
 #endif
 	{
@@ -28,7 +28,7 @@ namespace PigeonEngine
 	EObjectBase::~EObjectBase()
 	{
 	}
-	const ObjectIdentityType& EObjectBase::GetUniqueID()const
+	const ObjectIdentityType& EObjectBase::GetUniqueID() const
 	{
 		return UniqueID;
 	}
@@ -40,8 +40,8 @@ namespace PigeonEngine
 	{
 		return (GetUniqueID() != obj.GetUniqueID());
 	}
-#if _EDITOR_ONLY
-	const EString& EObjectBase::GetDebugName()const
+#if ENGINE_EDITOR_ONLY
+	const EString& EObjectBase::GetDebugName() const
 	{
 		return DebugName;
 	}

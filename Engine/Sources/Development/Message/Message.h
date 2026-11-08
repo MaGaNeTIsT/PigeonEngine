@@ -11,9 +11,9 @@ namespace PigeonEngine
 		explicit EMessageBase(const EName& InMessageName = EName::None());
 		virtual ~EMessageBase();
 
-		const EName& GetMessageName()const;
-		SIZE_T GetMessageTypeID()const;
-		virtual BOOL32 IsObjectMessage()const;
+		const EName& GetMessageName() const;
+		SIZE_T GetMessageTypeID() const;
+		virtual BOOL32 IsObjectMessage() const;
 		void SetMessageName(const EName& InMessageName);
 
 	private:
@@ -26,9 +26,9 @@ namespace PigeonEngine
 		EName MessageName;
 		UINT32 ListenerID = 0u;
 
-		BOOL32 IsValid()const;
-		BOOL32 operator==(const FMessageListenerHandle& Other)const;
-		BOOL32 operator!=(const FMessageListenerHandle& Other)const;
+		BOOL32 IsValid() const;
+		BOOL32 operator==(const FMessageListenerHandle& Other) const;
+		BOOL32 operator!=(const FMessageListenerHandle& Other) const;
 	};
 
 	class EObjectMessageBase : public EMessageBase
@@ -37,9 +37,9 @@ namespace PigeonEngine
 		EObjectMessageBase(const EName& InMessageName = EName::None(), const EObjectBase* InObject = nullptr);
 		virtual ~EObjectMessageBase();
 
-		const EObjectBase* GetObject()const;
-		ObjectIdentityType GetObjectUniqueID()const;
-		virtual BOOL32 IsObjectMessage()const override;
+		const EObjectBase* GetObject() const;
+		ObjectIdentityType GetObjectUniqueID() const;
+		virtual BOOL32 IsObjectMessage() const override;
 		void SetObject(const EObjectBase* InObject);
 
 	private:
@@ -56,7 +56,7 @@ namespace PigeonEngine
 		template<typename... TForwardArgs>
 		TMessageArgs(const EName& InMessageName, TForwardArgs&&... InArgs);
 
-		const FArgumentTuple& GetArguments()const;
+		const FArgumentTuple& GetArguments() const;
 
 		static SIZE_T GetStaticMessageTypeID();
 
@@ -74,7 +74,7 @@ namespace PigeonEngine
 		template<typename... TForwardArgs>
 		TObjectMessageArgs(const EName& InMessageName, const EObjectBase* InObject, TForwardArgs&&... InArgs);
 
-		const FArgumentTuple& GetArguments()const;
+		const FArgumentTuple& GetArguments() const;
 
 		static SIZE_T GetStaticMessageTypeID();
 
@@ -115,8 +115,8 @@ namespace PigeonEngine
 		using FMessageCallback = TFunction<void(const EMessageBase&)>;
 
 	public:
-		virtual void Initialize()override;
-		virtual void ShutDown()override;
+		virtual void Initialize() override;
+		virtual void ShutDown() override;
 
 		FMessageListenerHandle Subscribe(const EName& InMessageName, const FMessageCallback& InCallback)
 		{
@@ -198,8 +198,8 @@ namespace PigeonEngine
 		template<typename TMessageType>
 		UINT32 Broadcast(const TMessageType& InMessage);
 
-		BOOL32 HasMessage(const EName& InMessageName)const;
-		UINT32 GetListenerNum(const EName& InMessageName)const;
+		BOOL32 HasMessage(const EName& InMessageName) const;
+		UINT32 GetListenerNum(const EName& InMessageName) const;
 		void ClearMessage(const EName& InMessageName);
 		void Clear();
 

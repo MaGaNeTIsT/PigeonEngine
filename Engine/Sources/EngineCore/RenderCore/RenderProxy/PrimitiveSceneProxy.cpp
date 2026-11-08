@@ -624,6 +624,14 @@ namespace PigeonEngine
 			InContext.StateCache.ShaderInstance = nullptr;
 			InContext.StateCache.PipelineState = nullptr;
 		}
+		// Pass owned resources go after the material's own, so a name the material publishes is
+		// not overwritten by a pass default. A hook that wrote a table of its own invalidates the
+		// material bindings for the next draw, exactly like the extra resources above.
+		if (BindPassResources(CommandList, InContext, *Data) != FALSE)
+		{
+			InContext.StateCache.ShaderInstance = nullptr;
+			InContext.StateCache.PipelineState = nullptr;
+		}
 		if (!DrawGeometry(CommandList, *Data, InItem.IndexCount, InItem.StartIndex))
 		{
 			ReportSkippedDraw(Data->PassName, EString(PE_TEXT("its geometry could not be submitted")));
@@ -684,6 +692,14 @@ namespace PigeonEngine
 	BOOL32 RPrimitiveSceneProxy::BindExtraResources(IRCommandList* InCommandList, const FPrimitivePassData& InData) const
 	{
 		(void)InCommandList;
+		(void)InData;
+		return FALSE;
+	}
+	BOOL32 RPrimitiveSceneProxy::BindPassResources(IRCommandList* InCommandList, const FPassRecordContext& InContext
+		, const FPrimitivePassData& InData) const
+	{
+		(void)InCommandList;
+		(void)InContext;
 		(void)InData;
 		return FALSE;
 	}

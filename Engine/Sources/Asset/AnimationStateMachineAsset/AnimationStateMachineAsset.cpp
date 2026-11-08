@@ -2,7 +2,7 @@
 
 #include <IO/FileHelper.h>
 #include <RapidJson/Headers/JsonObject.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
 #endif
 
@@ -90,7 +90,7 @@ namespace PigeonEngine
 
 	EAnimStateMachineManager::EAnimStateMachineManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = "AnimationStateMachineManager";
 #endif
 	}
@@ -100,11 +100,11 @@ namespace PigeonEngine
 	}
 
 	EAnimStateMachineAsset::EAnimStateMachineAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<EAnimStateMachine>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -149,7 +149,7 @@ namespace PigeonEngine
 		StateMachineAssetManager.Clear();
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 EAnimStateMachineManager::ImportStateMachine(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath)
 	{
 		EString JsonText;
@@ -194,7 +194,7 @@ namespace PigeonEngine
 		}
 
 		EAnimStateMachineAsset* NewAsset = new EAnimStateMachineAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -390,13 +390,13 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		Root.GetStringField(PE_TEXT("name"), OutMachine.Name);
-		Root.GetStringField(PE_TEXT("skeleton"), OutMachine.SkeletonName);
-		Root.GetStringField(PE_TEXT("animation"), OutMachine.AnimationAssetName);
+		Root.GetStringField(PE_TEXT("Name"), OutMachine.Name);
+		Root.GetStringField(PE_TEXT("Skeleton"), OutMachine.SkeletonName);
+		Root.GetStringField(PE_TEXT("Animation"), OutMachine.AnimationAssetName);
 
 		{
 			TArray<CJsonObject*> ParameterObjects;
-			Root.GetObjectArrayField(PE_TEXT("parameters"), ParameterObjects);
+			Root.GetObjectArrayField(PE_TEXT("Parameters"), ParameterObjects);
 			FJsonObjectArrayGuard ParameterGuard(ParameterObjects);
 			for (INT32 ParameterIndex = 0; ParameterIndex < ParameterObjects.Num(); ParameterIndex++)
 			{
@@ -406,14 +406,14 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimStateMachineParameter Parameter;
-				ParameterObject->GetStringField(PE_TEXT("name"), Parameter.Name);
+				ParameterObject->GetStringField(PE_TEXT("Name"), Parameter.Name);
 				EString TypeText;
-				ParameterObject->GetStringField(PE_TEXT("type"), TypeText);
+				ParameterObject->GetStringField(PE_TEXT("Type"), TypeText);
 				Parameter.Type = ParseParameterType(TypeText);
 				if (Parameter.Type == ANIM_PARAM_FLOAT)
 				{
 					FLOAT DefaultValue = 0.0f;
-					if (ParameterObject->GetFloatField(PE_TEXT("default"), DefaultValue))
+					if (ParameterObject->GetFloatField(PE_TEXT("Default"), DefaultValue))
 					{
 						Parameter.DefaultFloat = DefaultValue;
 					}
@@ -421,7 +421,7 @@ namespace PigeonEngine
 				else if (Parameter.Type == ANIM_PARAM_BOOL)
 				{
 					BOOL8 DefaultValue = FALSE;
-					if (ParameterObject->GetBoolField(PE_TEXT("default"), DefaultValue))
+					if (ParameterObject->GetBoolField(PE_TEXT("Default"), DefaultValue))
 					{
 						Parameter.DefaultBool = DefaultValue;
 					}
@@ -432,7 +432,7 @@ namespace PigeonEngine
 
 		{
 			TArray<CJsonObject*> StateObjects;
-			if (!(Root.GetObjectArrayField(PE_TEXT("states"), StateObjects)))
+			if (!(Root.GetObjectArrayField(PE_TEXT("States"), StateObjects)))
 			{
 				for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 				{
@@ -450,18 +450,18 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimStateMachineState State;
-				StateObject->GetStringField(PE_TEXT("name"), State.Name);
-				StateObject->GetStringField(PE_TEXT("clip"), State.ClipName);
+				StateObject->GetStringField(PE_TEXT("Name"), State.Name);
+				StateObject->GetStringField(PE_TEXT("Clip"), State.ClipName);
 				EString LoopText;
-				StateObject->GetStringField(PE_TEXT("loop"), LoopText);
+				StateObject->GetStringField(PE_TEXT("Loop"), LoopText);
 				State.LoopMode = ParseLoopMode(LoopText);
 				FLOAT PlayRate = 1.0f;
-				if (StateObject->GetFloatField(PE_TEXT("rate"), PlayRate))
+				if (StateObject->GetFloatField(PE_TEXT("Rate"), PlayRate))
 				{
 					State.PlayRate = PlayRate;
 				}
 				FLOAT BlendSeconds = 0.2f;
-				if (StateObject->GetFloatField(PE_TEXT("blend"), BlendSeconds))
+				if (StateObject->GetFloatField(PE_TEXT("Blend"), BlendSeconds))
 				{
 					State.BlendSeconds = BlendSeconds;
 				}
@@ -482,7 +482,7 @@ namespace PigeonEngine
 
 		{
 			TArray<CJsonObject*> TransitionObjects;
-			Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+			Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 			FJsonObjectArrayGuard TransitionGuard(TransitionObjects);
 			for (INT32 TransitionIndex = 0; TransitionIndex < TransitionObjects.Num(); TransitionIndex++)
 			{
@@ -494,8 +494,8 @@ namespace PigeonEngine
 				EAnimStateMachineTransition Transition;
 				EString FromText;
 				EString ToText;
-				TransitionObject->GetStringField(PE_TEXT("from"), FromText);
-				TransitionObject->GetStringField(PE_TEXT("to"), ToText);
+				TransitionObject->GetStringField(PE_TEXT("From"), FromText);
+				TransitionObject->GetStringField(PE_TEXT("To"), ToText);
 				const BOOL32 bAnyState = ((FromText.Length() <= 0u) || (FromText == EString("Any")));
 				Transition.FromStateIndex = (bAnyState ? -1 : OutMachine.FindState(FromText));
 				Transition.ToStateIndex = OutMachine.FindState(ToText);
@@ -506,29 +506,29 @@ namespace PigeonEngine
 				}
 
 				INT32 Priority = 0;
-				if (TransitionObject->GetIntField(PE_TEXT("priority"), Priority))
+				if (TransitionObject->GetIntField(PE_TEXT("Priority"), Priority))
 				{
 					Transition.Priority = Priority;
 				}
 				FLOAT BlendSeconds = 0.2f;
-				if (TransitionObject->GetFloatField(PE_TEXT("blend"), BlendSeconds))
+				if (TransitionObject->GetFloatField(PE_TEXT("Blend"), BlendSeconds))
 				{
 					Transition.BlendSeconds = BlendSeconds;
 				}
 				FLOAT MinTimeInState = 0.0f;
-				if (TransitionObject->GetFloatField(PE_TEXT("minTime"), MinTimeInState))
+				if (TransitionObject->GetFloatField(PE_TEXT("MinTime"), MinTimeInState))
 				{
 					Transition.MinTimeInState = MinTimeInState;
 				}
 				BOOL8 bCanTransitionToSelf = FALSE;
-				if (TransitionObject->GetBoolField(PE_TEXT("canSelf"), bCanTransitionToSelf))
+				if (TransitionObject->GetBoolField(PE_TEXT("CanSelf"), bCanTransitionToSelf))
 				{
 					Transition.bCanTransitionToSelf = bCanTransitionToSelf;
 				}
 
 				{
 					TArray<CJsonObject*> ConditionObjects;
-					TransitionObject->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+					TransitionObject->GetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
 					FJsonObjectArrayGuard ConditionGuard(ConditionObjects);
 					for (INT32 ConditionIndex = 0; ConditionIndex < ConditionObjects.Num(); ConditionIndex++)
 					{
@@ -540,8 +540,8 @@ namespace PigeonEngine
 						EAnimStateMachineCondition Condition;
 						EString ParameterName;
 						EString CompareText;
-						ConditionObject->GetStringField(PE_TEXT("param"), ParameterName);
-						ConditionObject->GetStringField(PE_TEXT("op"), CompareText);
+						ConditionObject->GetStringField(PE_TEXT("Param"), ParameterName);
+						ConditionObject->GetStringField(PE_TEXT("Op"), CompareText);
 						Condition.ParameterIndex = OutMachine.FindParameter(ParameterName);
 						if (Condition.ParameterIndex < 0)
 						{
@@ -550,7 +550,7 @@ namespace PigeonEngine
 						}
 						Condition.Compare = ParseCompareType(CompareText);
 						FLOAT CompareValue = 0.0f;
-						if (ConditionObject->GetFloatField(PE_TEXT("value"), CompareValue))
+						if (ConditionObject->GetFloatField(PE_TEXT("Value"), CompareValue))
 						{
 							Condition.Value = CompareValue;
 						}
@@ -563,7 +563,7 @@ namespace PigeonEngine
 		}
 
 		EString EntryName;
-		Root.GetStringField(PE_TEXT("entry"), EntryName);
+		Root.GetStringField(PE_TEXT("Entry"), EntryName);
 		OutMachine.EntryStateIndex = ((EntryName.Length() > 0u) ? OutMachine.FindState(EntryName) : 0);
 		if (OutMachine.EntryStateIndex < 0)
 		{

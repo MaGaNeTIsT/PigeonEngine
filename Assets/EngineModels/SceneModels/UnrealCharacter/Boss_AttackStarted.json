@@ -1,9 +1,9 @@
 {
-  "name": "Boss_AttackStarted",
-  "description": "Boss attack start event.",
-  "class": "Log",
-  "state": false,
-  "payload": {
-    "event": "attack_started"
-  }
+	"Name": "Boss_AttackStarted",
+	"Description": "Boss attack start event.",
+	"Class": "Log",
+	"State": false,
+	"Payload": {
+		"Event": "attack_started"
+	}
 }

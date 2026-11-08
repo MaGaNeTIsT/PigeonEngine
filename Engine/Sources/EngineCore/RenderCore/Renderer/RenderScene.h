@@ -15,7 +15,6 @@ namespace PigeonEngine
 	class PPrimitiveComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
-	class PFluidWaterComponent;
 	class RViewProxy;
 	class RSkyLightSceneProxy;
 	class RDirectionalLightSceneProxy;
@@ -23,7 +22,6 @@ namespace PigeonEngine
 	class RStaticMeshSceneProxy;
 	class RSkeletalMeshSceneProxy;
 	class RBezierGrassSceneProxy;
-	class RFluidWaterSceneProxy;
 
 	class RCommand final
 	{
@@ -109,7 +107,7 @@ namespace PigeonEngine
 			SceneProxies.Pop();
 			return TRUE;
 		}
-		UINT32 GetSceneProxyCount()const
+		UINT32 GetSceneProxyCount() const
 		{
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check primitive mapping and array length failed."), (SceneProxyMapping.Num() == SceneProxies.Num()));
 			return (SceneProxies.Num<UINT32>());
@@ -124,57 +122,47 @@ namespace PigeonEngine
 	public:
 		void			Init();
 		void			Uninit();
-		virtual void	ClearAll()override;
-		virtual void	UnbindErrorCheck()override;
+		virtual void	ClearAll() override;
+		virtual void	UnbindErrorCheck() override;
 	public:
-		virtual void	AddCamera(PCameraComponent* InComponent)override;
-		virtual void	RemoveCamera(PCameraComponent* InComponent)override;
-		virtual void	UpdateCamera(PCameraComponent* InComponent)override;
+		virtual void	AddCamera(PCameraComponent* InComponent) override;
+		virtual void	RemoveCamera(PCameraComponent* InComponent) override;
+		virtual void	UpdateCamera(PCameraComponent* InComponent) override;
 
-		virtual void	AddSkyLight(PSkyLightComponent* InComponent)override;
-		virtual void	RemoveSkyLight(PSkyLightComponent* InComponent)override;
-		virtual void	UpdateSkyLight(PSkyLightComponent* InComponent)override;
+		virtual void	AddSkyLight(PSkyLightComponent* InComponent) override;
+		virtual void	RemoveSkyLight(PSkyLightComponent* InComponent) override;
+		virtual void	UpdateSkyLight(PSkyLightComponent* InComponent) override;
 
-		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override;
-		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override;
-		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)override;
+		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent) override;
+		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent) override;
+		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent) override;
 
-		virtual void	AddLocalLight(PLocalLightComponent* InComponent)override;
-		virtual void	RemoveLocalLight(PLocalLightComponent* InComponent)override;
-		virtual void	UpdateLocalLight(PLocalLightComponent* InComponent)override;
+		virtual void	AddLocalLight(PLocalLightComponent* InComponent) override;
+		virtual void	RemoveLocalLight(PLocalLightComponent* InComponent) override;
+		virtual void	UpdateLocalLight(PLocalLightComponent* InComponent) override;
 
-		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override;
-		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override;
-		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override;
+		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent) override;
+		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent) override;
+		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent) override;
 
-		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
-		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
-		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
+		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent) override;
+		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent) override;
+		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent) override;
 
-		virtual void	AddBezierGrass(PBezierGrassComponent* InComponent)override;
-		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent)override;
-		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent)override;
+		virtual void	AddBezierGrass(PBezierGrassComponent* InComponent) override;
+		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent) override;
+		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent) override;
 
-		virtual void	AddFluidWater(PFluidWaterComponent* InComponent)override;
-		virtual void	RemoveFluidWater(PFluidWaterComponent* InComponent)override;
-		virtual void	UpdateFluidWater(PFluidWaterComponent* InComponent)override;
+		virtual void	AddPrimitive(PPrimitiveComponent* InComponent) override;
+		virtual void	UpdatePrimitive(PPrimitiveComponent* InComponent) override;
+		virtual void	RemovePrimitive(PPrimitiveComponent* InComponent) override;
 	public:
-		/*
-		* The generic primitive path. A primitive is registered by the identity its snapshot
-		* carries, built on the RENDER thread from that snapshot, and found by the same identity
-		* for its later updates and its removal. The component never hands a proxy pointer over,
-		* and the scene never reads a component.
-		*
-		* These are declared here rather than on RSceneInterface because the typed entry points
-		* above still exist and forward onto them; the interface shrinks to these three once
-		* every primitive kind is migrated.
-		*/
-		void	AddPrimitive(PPrimitiveComponent* InComponent);
-		void	UpdatePrimitive(PPrimitiveComponent* InComponent);
-		void	RemovePrimitive(PPrimitiveComponent* InComponent);
-	public:
-		PE_NODISCARD RPrimitiveSceneProxy*	FindPrimitiveProxy(const ObjectIdentityType& InIdentity)const;
-		PE_NODISCARD const TArray<RPrimitiveSceneProxy*>&	GetPrimitives()const;
+		// The generic primitive path. A primitive is registered by the identity its snapshot
+		// carries, built on the render thread from that snapshot, and found by the same
+		// identity for its later updates and its removal. The typed entry points above still
+		// exist and forward onto these three; new primitive kinds use them directly.
+		PE_NODISCARD RPrimitiveSceneProxy*	FindPrimitiveProxy(const ObjectIdentityType& InIdentity) const;
+		PE_NODISCARD const TArray<RPrimitiveSceneProxy*>&	GetPrimitives() const;
 	protected:
 		void	AddPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy);
 		void	RemovePrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy);
@@ -199,38 +187,35 @@ namespace PigeonEngine
 
 		// RenderThread-side accessors - drain the front slot.
 		RCommand&		GetAddCommandsForRender();
-		const RCommand&	GetAddCommandsForRender()const;
+		const RCommand&	GetAddCommandsForRender() const;
 		RCommand&		GetRemoveCommandsForRender();
-		const RCommand&	GetRemoveCommandsForRender()const;
+		const RCommand&	GetRemoveCommandsForRender() const;
 		RCommand&		GetUpdateCommandsForRender();
-		const RCommand&	GetUpdateCommandsForRender()const;
+		const RCommand&	GetUpdateCommandsForRender() const;
 
 		// Main-thread frame boundary: must be called between RenderThread
 		// finishing the previous frame and GameThread emitting the next.
 		void			SwapCommandSlots();
 
 		ROctree&		GetSceneOctree();
-		const ROctree&	GetSceneOctree()const;
+		const ROctree&	GetSceneOctree() const;
 
 		RSceneProxyMapping<RViewProxy>&							GetViewProxies();
-		const RSceneProxyMapping<RViewProxy>&					GetViewProxies()const;
+		const RSceneProxyMapping<RViewProxy>&					GetViewProxies() const;
 		RSceneProxyMapping<RSkyLightSceneProxy>&				GetSkyLightProxies();
-		const RSceneProxyMapping<RSkyLightSceneProxy>&			GetSkyLightProxies()const;
+		const RSceneProxyMapping<RSkyLightSceneProxy>&			GetSkyLightProxies() const;
 		RSceneProxyMapping<RDirectionalLightSceneProxy>&		GetDirectionalLightSceneProxies();
-		const RSceneProxyMapping<RDirectionalLightSceneProxy>&	GetDirectionalLightSceneProxies()const;
+		const RSceneProxyMapping<RDirectionalLightSceneProxy>&	GetDirectionalLightSceneProxies() const;
 		RSceneProxyMapping<RLocalLightSceneProxy>&				GetLocalLightSceneProxies();
 		const RSceneProxyMapping<RLocalLightSceneProxy>&		GetLocalLightSceneProxies() const;
 		RSceneProxyMapping<RBezierGrassSceneProxy>&				GetBezierGrassSceneProxies();
-		const RSceneProxyMapping<RBezierGrassSceneProxy>&		GetBezierGrassSceneProxies()const;
-		RSceneProxyMapping<RFluidWaterSceneProxy>&				GetFluidWaterSceneProxies();
-		const RSceneProxyMapping<RFluidWaterSceneProxy>&		GetFluidWaterSceneProxies()const;
+		const RSceneProxyMapping<RBezierGrassSceneProxy>&		GetBezierGrassSceneProxies() const;
 	protected:
 		void	AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveSkyLight_RenderThread(RSkyLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveLocalLight_RenderThread(RLocalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveBezierGrass_RenderThread(RBezierGrassSceneProxy* InSceneProxy, BOOL32 InIsAdd);
-		void	AddOrRemoveFluidWater_RenderThread(RFluidWaterSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 	protected:
 		ROctree		RenderSceneOctree;
 	protected:
@@ -245,7 +230,6 @@ namespace PigeonEngine
 		RSceneProxyMapping<RDirectionalLightSceneProxy>	DirectionalLightSceneProxies;
 		RSceneProxyMapping<RLocalLightSceneProxy>		LocalLightSceneProxies;
 		RSceneProxyMapping<RBezierGrassSceneProxy>		BezierGrassSceneProxies;
-		RSceneProxyMapping<RFluidWaterSceneProxy>		FluidWaterSceneProxies;
 	protected:
 		// Double-buffered render-command queues. GameThread writes into
 		// RenderXxxCommands[BackSlotIndex]; RenderThread drains
@@ -267,40 +251,40 @@ namespace PigeonEngine
 	class RSceneNull : public EObjectBase, public RSceneInterface
 	{
 	public:
-		virtual void	ClearAll()override {}
-		virtual void	UnbindErrorCheck()override {}
+		virtual void	ClearAll() override {}
+		virtual void	UnbindErrorCheck() override {}
 	public:
-		virtual void	AddCamera(PCameraComponent* InComponent)override {}
-		virtual void	RemoveCamera(PCameraComponent* InComponent)override {}
-		virtual void	UpdateCamera(PCameraComponent* InComponent)override {}
+		virtual void	AddCamera(PCameraComponent* InComponent) override {}
+		virtual void	RemoveCamera(PCameraComponent* InComponent) override {}
+		virtual void	UpdateCamera(PCameraComponent* InComponent) override {}
 
-		virtual void	AddSkyLight(PSkyLightComponent* InComponent)override {}
-		virtual void	RemoveSkyLight(PSkyLightComponent* InComponent)override {}
-		virtual void	UpdateSkyLight(PSkyLightComponent* InComponent)override {}
+		virtual void	AddSkyLight(PSkyLightComponent* InComponent) override {}
+		virtual void	RemoveSkyLight(PSkyLightComponent* InComponent) override {}
+		virtual void	UpdateSkyLight(PSkyLightComponent* InComponent) override {}
 
-		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override {}
-		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override {}
-		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)override {}
+		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent) override {}
+		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent) override {}
+		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent) override {}
 
-		virtual void	AddLocalLight(PLocalLightComponent* InComponent)override {}
-		virtual void	RemoveLocalLight(PLocalLightComponent* InComponent)override {}
-		virtual void	UpdateLocalLight(PLocalLightComponent* InComponent)override {}
+		virtual void	AddLocalLight(PLocalLightComponent* InComponent) override {}
+		virtual void	RemoveLocalLight(PLocalLightComponent* InComponent) override {}
+		virtual void	UpdateLocalLight(PLocalLightComponent* InComponent) override {}
 
-		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override {}
-		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override {}
-		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override {}
+		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent) override {}
+		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent) override {}
+		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent) override {}
 
-		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
-		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
-		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
+		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent) override {}
+		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent) override {}
+		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent) override {}
 
-		virtual void	AddBezierGrass(PBezierGrassComponent* InComponent)override {}
-		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent)override {}
-		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent)override {}
+		virtual void	AddBezierGrass(PBezierGrassComponent* InComponent) override {}
+		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent) override {}
+		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent) override {}
 
-		virtual void	AddFluidWater(PFluidWaterComponent* InComponent)override {}
-		virtual void	RemoveFluidWater(PFluidWaterComponent* InComponent)override {}
-		virtual void	UpdateFluidWater(PFluidWaterComponent* InComponent)override {}
+		virtual void	AddPrimitive(PPrimitiveComponent* InComponent) override {}
+		virtual void	RemovePrimitive(PPrimitiveComponent* InComponent) override {}
+		virtual void	UpdatePrimitive(PPrimitiveComponent* InComponent) override {}
 	public:
 		RSceneNull() {}
 		RSceneNull(const RSceneNull& Other) {}

@@ -3,7 +3,7 @@
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -94,7 +94,7 @@ namespace PigeonEngine
 	}
 	// Render proxy functions END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PDirectionalLightComponent::GenerateComponentDetail()
 	{
 		PLightComponent::GenerateComponentDetail();

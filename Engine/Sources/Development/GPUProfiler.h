@@ -125,25 +125,25 @@ namespace PigeonEngine
 
 // ---------------------------------------------------------------------------
 // Macro hooks. Use these at call sites (RenderThread, SceneRenderer,
-// CommandList backends). When _GPU_ENABLE_PROFILER is off they expand to
+// CommandList backends). When ENGINE_ENABLE_GPU_PROFILER is off they expand to
 // nothing - argument expressions are NOT evaluated.
 // ---------------------------------------------------------------------------
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 
-#define PE_GPU_PROFILER_BEGIN_FRAME(InCmd) \
-	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->BeginFrame((InCmd))
-#define PE_GPU_PROFILER_END_FRAME(InCmd) \
-	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->EndFrame((InCmd))
-#define PE_GPU_PROFILER_PASS_BEGIN(InCmd, InName) \
-	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->OnPassBegin((InCmd), (InName))
-#define PE_GPU_PROFILER_PASS_END(InCmd) \
-	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->OnPassEnd((InCmd))
+#define PE_GPU_PROFILER_BEGIN_FRAME(__CommandList) \
+	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->BeginFrame((__CommandList))
+#define PE_GPU_PROFILER_END_FRAME(__CommandList) \
+	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->EndFrame((__CommandList))
+#define PE_GPU_PROFILER_PASS_BEGIN(__CommandList, __Name) \
+	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->OnPassBegin((__CommandList), (__Name))
+#define PE_GPU_PROFILER_PASS_END(__CommandList) \
+	::PigeonEngine::EGPUProfiler::GetManagerSingleton()->OnPassEnd((__CommandList))
 
 #else
 
-#define PE_GPU_PROFILER_BEGIN_FRAME(InCmd)
-#define PE_GPU_PROFILER_END_FRAME(InCmd)
-#define PE_GPU_PROFILER_PASS_BEGIN(InCmd, InName)
-#define PE_GPU_PROFILER_PASS_END(InCmd)
+#define PE_GPU_PROFILER_BEGIN_FRAME(__CommandList)
+#define PE_GPU_PROFILER_END_FRAME(__CommandList)
+#define PE_GPU_PROFILER_PASS_BEGIN(__CommandList, __Name)
+#define PE_GPU_PROFILER_PASS_END(__CommandList)
 
 #endif

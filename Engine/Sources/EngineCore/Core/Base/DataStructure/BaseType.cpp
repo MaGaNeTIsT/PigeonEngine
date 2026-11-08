@@ -74,7 +74,7 @@ namespace PigeonEngine
 			RotatorFromQuat.Yaw = 0.f;
 			RotatorFromQuat.Roll = EMath::RadiansToDegrees(atan2f(-m21, m11));
 		}
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 		if (RotatorFromQuat.IsContainNaN())
 		{
 			RotatorFromQuat = Euler::Zero();
@@ -194,7 +194,7 @@ namespace PigeonEngine
 	{
 		Vector3 TempForward(InTargetLocation - InViewLocation);
 		TempForward.Normalize();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		Check((!((Vector3::Dot(TempForward, InViewUpDirection) > 0.95f) || (Vector3::Dot(TempForward, InViewUpDirection) < -0.95f))), (ENGINE_MATH_ERROR));
 #endif
 		Vector3 TempRight(Vector3::Cross(InViewUpDirection, TempForward));
@@ -527,7 +527,7 @@ namespace PigeonEngine
 	}
 	BOOL8 EStructDataReference::IsValid() const noexcept
 	{
-		if (auto DataPtr = DataRef.lock(); DataPtr)
+		if (TSharedPtr<EStructAllocator> DataPtr = DataRef.lock(); DataPtr)
 		{
 			return ((MemSize > 0u) && ((MemOffset + MemSize) <= (DataPtr->HeapSize())));
 		}
@@ -535,7 +535,7 @@ namespace PigeonEngine
 	}
 	UINT8* EStructDataReference::GetData() noexcept
 	{
-		if (auto DataPtr = DataRef.lock(); DataPtr && (MemSize > 0u) && ((MemOffset + MemSize) <= (DataPtr->HeapSize())))
+		if (TSharedPtr<EStructAllocator> DataPtr = DataRef.lock(); DataPtr && (MemSize > 0u) && ((MemOffset + MemSize) <= (DataPtr->HeapSize())))
 		{
 			return (DataPtr->HeapData());
 		}
@@ -589,7 +589,7 @@ namespace PigeonEngine
 	}
 	BOOL8 EStructVariable::IsValid() const noexcept
 	{
-		if (auto StructDataPtr = StructData.lock(); StructDataPtr)
+		if (TSharedPtr<EStructDataReference> StructDataPtr = StructData.lock(); StructDataPtr)
 		{
 			return ((StructDataPtr->MemSize > 0u) && (Info.Size > 0u) && ((MemOffset + Info.Size) <= (StructDataPtr->MemSize)));
 		}
@@ -610,22 +610,22 @@ namespace PigeonEngine
 	{
 		if ((!!InValuePtr) && (InValueSize > 0u))
 		{
-			if (auto StructDataPtr = StructData.lock(); StructDataPtr)
+			if (TSharedPtr<EStructDataReference> StructDataPtr = StructData.lock(); StructDataPtr)
 			{
 				Check((InValueSize == Info.Size), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructVariable::SetValue] Invalid Value Size")));
 				Check((StructDataPtr->IsValid()), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructVariable::SetValue] Invalid Struct")));
 				Check(((Info.Size > 0) && ((MemOffset + Info.Size) <= (StructDataPtr->MemSize))), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructVariable::SetValue] Invalid Struct Variable")));
-				if (auto HeapPtr = StructDataPtr->DataRef.lock(); HeapPtr)
+				if (TSharedPtr<EStructAllocator> HeapPtr = StructDataPtr->DataRef.lock(); HeapPtr)
 				{
 					UINT8* DstPtr = HeapPtr->HeapData();
 					DstPtr = DstPtr + (StructDataPtr->GetOffset());
 					DstPtr = DstPtr + MemOffset;
 					EMemory::Memcpy(DstPtr, InValuePtr,
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 						EMath::Min(Info.Size, InValueSize)
-#else	// !_EDITOR_ONLY
+#else	// !ENGINE_EDITOR_ONLY
 						Info.Size
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 					);
 				}
 			}
@@ -720,13 +720,13 @@ namespace PigeonEngine
 	void EExclusiveStruct::AddStructVariable(const EName& InVarName, const EVariableFormat& InFormat, UINT32 InNumArrayMembers, UINT32 InInitMemSize, const UINT8* InInitValuePtr) noexcept
 	{
 		Check((InNumArrayMembers > 0u), (ENGINE_CORE_ERROR), (PE_TEXT("[EExclusiveStruct::AddStructVariable] Invalid NumMembers")));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (StructVariableNames.ContainsKey(InVarName))
 		{
 			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[EExclusiveStruct::AddStructVariable] Struct variable is exist, so can not add same value.")));
 			return;
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		const UINT32 MemOffset = InitStructSize;
 		InitStructSize += GetVariableFormatSize(InFormat) * InNumArrayMembers;
 		StructVariableNames.Add(InVarName, StructVariables.Num());
@@ -755,11 +755,11 @@ namespace PigeonEngine
 				return TRUE;
 			}
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		EString ErrorInfo(PE_TEXT("[EExclusiveStruct::FindVariable] Could not find name["));
 		ErrorInfo = ErrorInfo + InVarName.ToString() + PE_TEXT("] variable.");
 		PE_FAILED((ENGINE_CORE_ERROR), (*ErrorInfo));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		return FALSE;
 	}
 	void EExclusiveStruct::CopyFromOther(const EExclusiveStruct& Other) noexcept
@@ -772,11 +772,11 @@ namespace PigeonEngine
 		}
 		StructDataRef->CopyFromOther(*(Other.StructDataRef));
 		StructDataRef->DataRef = RawData;
-		for (const auto& IterVar : Other.StructVariableNames)
+		for (const TMap<EName, UINT32>::TValueType& IterVar : Other.StructVariableNames)
 		{
 			StructVariableNames.Add(IterVar.first, IterVar.second);
 		}
-		for (const auto& Var : Other.StructVariables)
+		for (const EStructVariable& Var : Other.StructVariables)
 		{
 			EStructVariable& NewVar = StructVariables.AddDefaultGetRef();
 			NewVar.StructData = StructDataRef;
@@ -951,13 +951,13 @@ namespace PigeonEngine
 		}
 		Check((StIdx < Structs.Num()), (ENGINE_CORE_ERROR), (PE_TEXT("[ESharedStruct::AddStructVariable] Invalid Struct Index")));
 		ESingleStruct& St = Structs[StIdx];
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (St.StructVariableNames.ContainsKey(InVarName))
 		{
 			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[ESharedStruct::AddStructVariable] Struct variable is exist, so can not add same value.")));
 			return;
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		const UINT32 MemOffset = St.InitStructSize;
 		St.InitStructSize += GetVariableFormatSize(InFormat) * InNumArrayMembers;
 		St.StructVariableNames.Add(InVarName, St.StructVariables.Num());
@@ -990,17 +990,17 @@ namespace PigeonEngine
 				}
 			}
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		EString ErrorInfo(PE_TEXT("[ESharedStruct::FindVariable] Could not find name[Struct:"));
 		ErrorInfo = ErrorInfo + InStructName.ToString() + PE_TEXT(" Variable:") + InVarName.ToString() + PE_TEXT("] variable.");
 		PE_FAILED((ENGINE_CORE_ERROR), (*ErrorInfo));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		return FALSE;
 	}
 	void ESharedStruct::CopyFromOther(const ESharedStruct& Other) noexcept
 	{
 		ClearStruct();
-		for (const auto& IterVar : Other.StructNames)
+		for (const TMap<EName, UINT32>::TValueType& IterVar : Other.StructNames)
 		{
 			StructNames.Add(IterVar.first, IterVar.second);
 		}
@@ -1009,7 +1009,7 @@ namespace PigeonEngine
 		{
 			EMemory::Memcpy(RawData->HeapData(), Other.RawData->HeapData(), Other.RawData->HeapSize());
 		}
-		for (const auto& St : Other.Structs)
+		for (const ESingleStruct& St : Other.Structs)
 		{
 			ESingleStruct& NewSt = Structs.AddDefaultGetRef();
 			NewSt.StructVariableNames = St.StructVariableNames;
@@ -1017,7 +1017,7 @@ namespace PigeonEngine
 			NewSt.StructDataRef->CopyFromOther(*(St.StructDataRef));
 			NewSt.StructDataRef->DataRef = RawData;
 			NewSt.InitStructSize = St.InitStructSize;
-			for (const auto& StVar : St.StructVariables)
+			for (const EStructVariable& StVar : St.StructVariables)
 			{
 				EStructVariable& NewVar = NewSt.StructVariables.AddDefaultGetRef();
 				NewVar.StructData = NewSt.StructDataRef;
@@ -1158,13 +1158,13 @@ namespace PigeonEngine
 	void EStructArray::AddStructVariable(const EName& InVarName, const EVariableFormat& InFormat, UINT32 InNumArrayMembers) noexcept
 	{
 		Check((InNumArrayMembers > 0u), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::AddStructVariable] Invalid NumMembers")));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (StructVariableNames.ContainsKey(InVarName))
 		{
 			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::AddStructVariable] Struct variable is exist, so can not add same value.")));
 			return;
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		if (StructDataRefs.Num() == 0u)
 		{
 			TSharedPtr<EStructDataReference> NewData = EMemory::MakeShared<EStructDataReference>();
@@ -1196,11 +1196,11 @@ namespace PigeonEngine
 				return TRUE;
 			}
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		EString ErrorInfo(PE_TEXT("[EStructArray::FindVariable] Could not find name["));
 		ErrorInfo = ErrorInfo + InVarName.ToString() + PE_TEXT("] variable.");
 		PE_FAILED((ENGINE_CORE_ERROR), (*ErrorInfo));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		return FALSE;
 	}
 	void EStructArray::CopyFromOther(const EStructArray& Other) noexcept
@@ -1211,18 +1211,18 @@ namespace PigeonEngine
 		{
 			EMemory::Memcpy(RawData->HeapData(), Other.RawData->HeapData(), Other.RawData->HeapSize());
 		}
-		for (const auto& StDataRef : Other.StructDataRefs)
+		for (const TSharedPtr<EStructDataReference>& StDataRef : Other.StructDataRefs)
 		{
 			TSharedPtr<EStructDataReference> NewStDataRef = EMemory::MakeShared<EStructDataReference>();
 			NewStDataRef->CopyFromOther(*(StDataRef));
 			NewStDataRef->DataRef = RawData;
 			StructDataRefs.Add(NewStDataRef);
 		}
-		for (const auto& IterVar : Other.StructVariableNames)
+		for (const TMap<EName, UINT32>::TValueType& IterVar : Other.StructVariableNames)
 		{
 			StructVariableNames.Add(IterVar.first, IterVar.second);
 		}
-		for (const auto& Var : Other.StructVariables)
+		for (const EStructVariable& Var : Other.StructVariables)
 		{
 			EStructVariable& NewVar = StructVariables.AddDefaultGetRef();
 			NewVar.StructData.reset();
@@ -1297,15 +1297,15 @@ namespace PigeonEngine
 		(void)ConstBits.IsEmpty();
 		(void)ConstBits.IsValidIndex(0);
 		(void)ConstBits.GetData();
-		for (auto It = ConstBits.begin(); It; ++It)
+		for (TBitArray<_TSizeType>::TConstIterator It = ConstBits.begin(); It; ++It)
 		{
 			(void)((BOOL8)(*It));
 		}
-		for (auto It = ConstBits.rbegin(); It; ++It)
+		for (TBitArray<_TSizeType>::TConstReverseIterator It = ConstBits.rbegin(); It; ++It)
 		{
 			(void)((BOOL8)(*It));
 		}
-		for (auto It = Moved.begin(); It; ++It)
+		for (TBitArray<_TSizeType>::TIterator It = Moved.begin(); It; ++It)
 		{
 			(*It) = TRUE;
 		}

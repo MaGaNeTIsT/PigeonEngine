@@ -1,10 +1,11 @@
 #include "LevelActor.h"
 #include <Base/Timer/Timer.h>
 #include <Demo/SponzaScene.h>
+#include <Demo/WaterScene.h>
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <AnimationMontageAsset/AnimationMontageAsset.h>
 #include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
@@ -263,7 +264,7 @@ namespace PigeonEngine
 				, EString(PE_TEXT("Boss_Idle")), EString(PE_TEXT("FBX")));
 			NewSkeletalMeshComp->RequestAnimationAsset(EString(PE_TEXT("Boss_Idle")), &AnimationImportSource, TRUE);
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			// The state machine is authored as JSON under the source assets. Import it only
 			// when its PAsset is missing, so an editor-edited PAsset is not overwritten by
 			// the sample on every level load.
@@ -517,14 +518,16 @@ namespace PigeonEngine
 			this->GetWorld()->AddActor(CharacterController);
 		}
 
+		const Vector3 GroundHalfExtent(1000.f, 10.f, 1000.f);
+
+		// The visible ground plane sits under the water sample: its 2000 x 2000 footprint is
+		// exactly the simulation domain, and Sponza already covers the origin.
 		{
 			PActor* New = new PActor();
 			POBJ_DEBUGNAME_SET(New, "Plane Actor");
 
 			New->SetIsTickable(TRUE);
 			this->GetWorld()->AddActor(New);
-
-			const Vector3 PlaneHalfExtent(1000.f, 10.f, 1000.f);
 
 			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
 			NewStaticMeshComp->SetIsTickable(TRUE);
@@ -536,14 +539,31 @@ namespace PigeonEngine
 
 			New->AddComponent(NewStaticMeshComp);
 
-			FBoxShape* Shape = new FBoxShape(PlaneHalfExtent, 0.f);
+			// The static body captures the owner's world transform when the component is
+			// added, so the transform has to be in place first.
+			New->SetActorScale(GroundHalfExtent * 2.f);
+			New->SetActorLocation(GWaterSceneLocation + Vector3(0.0f, -10.0f, 0.0f));
+
+			FBoxShape* Shape = new FBoxShape(GroundHalfExtent, 0.f);
 			PPhysicsComponent* PhysicsComponent = new PPhysicsComponent(Shape);
 			PhysicsComponent->SetOwnerActor(New);
 
 			New->AddComponent(PhysicsComponent);
+		}
 
-			New->SetActorScale(PlaneHalfExtent * 2.f);
-			New->SetActorLocation(Vector3(0.0f, -10.0f, 0.0f));
+		// The physics character still stands where the visible plane used to be, so its old
+		// collision box stays behind at the origin: no mesh, and therefore no visible change
+		// under Sponza.
+		{
+			PActor* New = new PActor();
+			POBJ_DEBUGNAME_SET(New, "Physics Floor Actor");
+			New->SetIsTickable(TRUE);
+			this->GetWorld()->AddActor(New);
+
+			FBoxShape* Shape = new FBoxShape(GroundHalfExtent, 0.f);
+			PPhysicsComponent* PhysicsComponent = new PPhysicsComponent(Shape);
+			PhysicsComponent->SetOwnerActor(New);
+			New->AddComponent(PhysicsComponent);
 		}
 
 #if 0
@@ -615,6 +635,8 @@ namespace PigeonEngine
 		// the source's world space, so the content above stays where it is and the building grows
 		// around it. The build waits on assets, so it continues across frames on its own.
 		BuildDemoSponzaScene(*GetWorld());
+		// The water sample is independent of the Sponza build and waits on its own assets.
+		BuildDemoWaterScene(*GetWorld());
 	}
 
 	void PLevelActor::UserEndPlay()

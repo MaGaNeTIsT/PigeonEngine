@@ -5,6 +5,7 @@
 #include <map>
 #include <cstdint>
 #include <document.h>
+#include <Base/DataStructure/BuiltInType.h>
 
 
 namespace MC
@@ -101,9 +102,9 @@ namespace MC
 		MCVarFormat					Format				= {};
 		std::string					Name				= "";
 		std::vector<uint32_t>		Default				= {};
-		bool						bArray				= false;
-		bool						bColor				= false;
-		bool						bExposure			= false;
+		bool						bArray				= FALSE;
+		bool						bColor				= FALSE;
+		bool						bExposure			= FALSE;
 	};
 
 	struct MCVariableInputTemplate
@@ -117,7 +118,7 @@ namespace MC
 		int				Slot		= 0;
 		std::string			Name		= "";
 		std::vector<MCVariableInput>	Fields		= {};
-		bool				bRootConstant	= false;	// Marked by the shader json: this buffer is fed through root 32 bit constants.
+		bool				bRootConstant	= FALSE;	// Marked by the shader json: this buffer is fed through root 32 bit constants.
 	};
 
 	enum class MCTextureSamplerFilterType : uint8_t
@@ -163,13 +164,13 @@ namespace MC
 		MCTexSamplerAddressModeType				AddressW			= MCTexSamplerAddressModeType::Tex_Sampler_Clamp;
 		MCTextureSamplerComparisonFuncType		ComparisonFunc		= MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Never;
 		std::string								Name				= "";
-		bool									bExposure			= false;
+		bool									bExposure			= FALSE;
 		// Bindless: this resource asks for a descriptor heap index field of its own, declared in
 		// the constant buffer it names. Both are recorded as declared, and whether an index field
 		// is emitted at all is the compile target's decision (see the bindless emission in the
 		// parse). A static sampler simply leaves both at their defaults, which is what the engine
 		// samplers and the passes that never index a heap do.
-		bool									bPreferBindless		= false;
+		bool									bPreferBindless		= FALSE;
 		std::string								BindConstantBuffer	= "";
 	};
 
@@ -198,9 +199,9 @@ namespace MC
 		MCTextureType			Type			= MCTextureType::Tex_2D;
 		std::string				Name			= "";
 		std::string				SamplerName		= "";
-		bool					bExposure		= false;
+		bool					bExposure		= FALSE;
 		// See MCTextureSampler: the same declaration, for a texture.
-		bool					bPreferBindless		= false;
+		bool					bPreferBindless		= FALSE;
 		std::string				BindConstantBuffer	= "";
 	};
 
@@ -224,10 +225,10 @@ namespace MC
 		MCVarFormat							ElemFmt				= {};
 		std::string							Name				= "";
 		std::vector<MCVariableInput>		StructFields		= {};
-		bool								bHasStruct			= false;
-		bool								bExposure			= false;
+		bool								bHasStruct			= FALSE;
+		bool								bExposure			= FALSE;
 		// See MCTextureSampler: the same declaration, for a buffer.
-		bool								bPreferBindless		= false;
+		bool								bPreferBindless		= FALSE;
 		std::string							BindConstantBuffer	= "";
 	};
 
@@ -317,7 +318,7 @@ namespace MC
 		std::string		OutFileName			= "";			// File name of the reflection output, decided by the caller.
 		std::string		DefHash				= "";			// Reserved: build identity, meant for future ShaderMap / logging.
 		std::string		RplHash				= "";			// Reserved: build identity, meant for future ShaderMap / logging.
-		bool			bSM66				= false;		// Consumption started with the bindless path: a resource that declares it gets its heap index field only when this build targets 6.6.
+		bool			bSM66				= FALSE;		// Consumption started with the bindless path: a resource that declares it gets its heap index field only when this build targets 6.6.
 	};
 
 	bool ParseShader(const MCLoadParam& InLoadParam, std::vector<MCDefine>& InOutDefs, const std::vector<MCReplace>& InRpls, std::string& OutHlsl);

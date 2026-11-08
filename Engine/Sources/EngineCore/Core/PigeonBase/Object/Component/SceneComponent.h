@@ -51,7 +51,7 @@ namespace PigeonEngine
 		virtual void Destroy() override;
 		void    Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime) override;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
 
@@ -95,7 +95,7 @@ namespace PigeonEngine
 	private:
 		EMobilityType Mobility = EMobilityType::EMT_DYNAMIC;
 	public:
-		PE_NODISCARD BOOL32 ContainTransform()const override;
+		PE_NODISCARD BOOL32 ContainTransform() const override;
 
 		PE_NODISCARD Vector3    GetComponentLocalLocation() const;
 		PE_NODISCARD Quaternion GetComponentLocalRotation() const;
@@ -105,12 +105,12 @@ namespace PigeonEngine
 		PE_NODISCARD Quaternion GetComponentWorldRotation() const;
 		PE_NODISCARD Vector3    GetComponentWorldScale() const;
 
-		PE_NODISCARD Vector3 GetComponentForwardVector()const;
-		PE_NODISCARD Vector3 GetComponentRightVector()const;
-		PE_NODISCARD Vector3 GetComponentUpVector()const;
+		PE_NODISCARD Vector3 GetComponentForwardVector() const;
+		PE_NODISCARD Vector3 GetComponentRightVector() const;
+		PE_NODISCARD Vector3 GetComponentUpVector() const;
 
-		PE_NODISCARD const ETransform& GetTransform()const;
-		PE_NODISCARD ETransform        GetWorldTransform()const;
+		PE_NODISCARD const ETransform& GetTransform() const;
+		PE_NODISCARD ETransform        GetWorldTransform() const;
 
 
 		void SetComponentLocation(const Vector3& Location);
@@ -134,7 +134,7 @@ namespace PigeonEngine
 		// static function to attach
 		static void AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform = ETransform());
 		// Get this component's attached parent component.
-		PE_NODISCARD PSceneComponent* GetParentComponent()const;
+		PE_NODISCARD PSceneComponent* GetParentComponent() const;
 
 	protected:
 		// 
@@ -157,30 +157,30 @@ namespace PigeonEngine
 
 	public:
 		// children components wil NOT be involved
-		PE_NODISCARD const EBoundAABB&  GetLocalBound()const;
+		PE_NODISCARD const EBoundAABB&  GetLocalBound() const;
 		void                            SetLocalBound(const EBoundAABB& InNewBound);
 		// children components WILL be involved
-		PE_NODISCARD const EBoundAABB  GetComponentBound()const;
+		PE_NODISCARD const EBoundAABB  GetComponentBound() const;
 
 	protected:
 		EBoundAABB  LocalBound = EBoundAABB(Vector3(0.f,0.f,0.f), Vector3(0.f,0.f,0.f), TRUE);
 
 		// Render proxy functions START
 	public:
-		BOOL32          IsRenderTransformDirty()const;
-		virtual void	CreateRenderState()override;
-		virtual void	DestroyRenderState()override;
-		virtual void	SendUpdateRenderState()override;
+		BOOL32          IsRenderTransformDirty() const;
+		virtual void	CreateRenderState() override;
+		virtual void	DestroyRenderState() override;
+		virtual void	SendUpdateRenderState() override;
 	protected:
 		virtual void    MarkRenderTransformAsDirty();
-		virtual void	MarkRenderStateAsDirty()override;
-		virtual void	CleanMarkRenderStateDirty()override;
+		virtual void	MarkRenderStateAsDirty() override;
+		virtual void	CleanMarkRenderStateDirty() override;
 	protected:
 		BOOL32          RenderTransformDirty = FALSE;
 		// Render proxy functions END
 
 		// ImGui
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent);
 		virtual void GenerateComponentDetail();

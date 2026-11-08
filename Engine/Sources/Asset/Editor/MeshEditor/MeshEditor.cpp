@@ -1,6 +1,6 @@
 #include "MeshEditor.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 
@@ -144,37 +144,37 @@ namespace PigeonEngine
 	void EMeshEditor::EditorInit()
 	{
 		ResetLoadedAsset();
-		m_OpenedAssetFullPath = EString();
-		m_LastOpenError = EString();
-		m_ShowEditor = FALSE;
-		m_PreviewScene.Initialize("MeshEditorPreview", Vector3(32000.0f, 32000.0f, 32000.0f));
+		OpenedAssetFullPath = EString();
+		LastOpenError = EString();
+		bShowEditor = FALSE;
+		PreviewScene.Initialize("MeshEditorPreview", Vector3(32000.0f, 32000.0f, 32000.0f));
 	}
 
 	void EMeshEditor::EditorUpdate()
 	{
-		if (!m_ShowEditor)
+		if (!bShowEditor)
 		{
 			return;
 		}
 
 		ImGui::SetNextWindowSize(ImVec2(1320.0f, 820.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(420.0f, 40.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Mesh Editor", &m_ShowEditor, ImGuiWindowFlags_None);
+		ImGui::Begin("Mesh Editor", &bShowEditor, ImGuiWindowFlags_None);
 		{
-			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
+			if (ImGui::Button("Reload") && (OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenMeshAsset(m_OpenedAssetFullPath);
+				OpenMeshAsset(OpenedAssetFullPath);
 			}
 			ImGui::SameLine();
-			ImGui::TextWrapped("%s", m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No mesh asset selected.");
+			ImGui::TextWrapped("%s", OpenedAssetFullPath.Length() > 0u ? *OpenedAssetFullPath : "No mesh asset selected.");
 
-			if (m_LastOpenError.Length() > 0u)
+			if (LastOpenError.Length() > 0u)
 			{
 				ImGui::Separator();
-				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastOpenError);
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *LastOpenError);
 			}
 
-			if (!m_MeshResource)
+			if (!MeshResource)
 			{
 				ImGui::Separator();
 				ImGui::Text("No mesh asset selected.");
@@ -187,31 +187,31 @@ namespace PigeonEngine
 				const FLOAT TopPanelHeight = EMath::Max(AvailableRegion.y * 0.54f, 320.0f);
 				const FLOAT LeftPanelWidth = EMath::Max(AvailableRegion.x * 0.36f, 340.0f);
 
-				ImGui::BeginChild("MeshEditorInfoPanel", ImVec2(LeftPanelWidth, TopPanelHeight), true, ImGuiWindowFlags_None);
+				ImGui::BeginChild("MeshEditorInfoPanel", ImVec2(LeftPanelWidth, TopPanelHeight), TRUE, ImGuiWindowFlags_None);
 				{
 					DrawMeshSummary();
 
-					if (m_MeshType == static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN))
+					if (MeshType == static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN))
 					{
 						ImGui::Separator();
 						ImGui::Text("Preview Settings");
 
-						if (m_AvailableSkeletonAssetPaths.Num() > 0)
+						if (AvailableSkeletonAssetPaths.Num() > 0)
 						{
 							// Keep the label string alive through BeginCombo; a pointer into a
 							// temporary EString is freed before ImGui draws the preview text.
-							const EString CurrentSkeletonName = (m_SelectedPreviewSkeletonIndex >= 0)
-								? EPath::GetFileNameWithoutExtension(m_AvailableSkeletonAssetPaths[m_SelectedPreviewSkeletonIndex])
+							const EString CurrentSkeletonName = (SelectedPreviewSkeletonIndex >= 0)
+								? EPath::GetFileNameWithoutExtension(AvailableSkeletonAssetPaths[SelectedPreviewSkeletonIndex])
 								: EString("None");
 							if (ImGui::BeginCombo("Preview Skeleton", *CurrentSkeletonName))
 							{
-								for (INT32 SkeletonIndex = 0, SkeletonNum = m_AvailableSkeletonAssetPaths.Num(); SkeletonIndex < SkeletonNum; SkeletonIndex++)
+								for (INT32 SkeletonIndex = 0, SkeletonNum = AvailableSkeletonAssetPaths.Num(); SkeletonIndex < SkeletonNum; SkeletonIndex++)
 								{
-									const BOOL8 bSelected = (m_SelectedPreviewSkeletonIndex == SkeletonIndex);
-									const EString AssetName = EPath::GetFileNameWithoutExtension(m_AvailableSkeletonAssetPaths[SkeletonIndex]);
+									const BOOL8 bSelected = (SelectedPreviewSkeletonIndex == SkeletonIndex);
+									const EString AssetName = EPath::GetFileNameWithoutExtension(AvailableSkeletonAssetPaths[SkeletonIndex]);
 									if (ImGui::Selectable(*AssetName, bSelected))
 									{
-										m_SelectedPreviewSkeletonIndex = SkeletonIndex;
+										SelectedPreviewSkeletonIndex = SkeletonIndex;
 										UpdatePreviewScene();
 									}
 									if (bSelected)
@@ -228,14 +228,14 @@ namespace PigeonEngine
 						}
 					}
 
-					ImGui::Checkbox("Auto Rotate", reinterpret_cast<bool*>(&m_PreviewAutoRotate));
-					m_PreviewScene.SetAutoRotate(m_PreviewAutoRotate);
+					ImGui::Checkbox("Auto Rotate", reinterpret_cast<bool*>(&bPreviewAutoRotate));
+					PreviewScene.SetAutoRotate(bPreviewAutoRotate);
 				}
 				ImGui::EndChild();
 
 				ImGui::SameLine();
 
-				ImGui::BeginChild("MeshEditorPreviewPanel", ImVec2(0.0f, TopPanelHeight), true, ImGuiWindowFlags_None);
+				ImGui::BeginChild("MeshEditorPreviewPanel", ImVec2(0.0f, TopPanelHeight), TRUE, ImGuiWindowFlags_None);
 				{
 					ImGui::Text("Preview Scene");
 					ImGui::Separator();
@@ -243,9 +243,9 @@ namespace PigeonEngine
 					ImVec2 PreviewRegion = ImGui::GetContentRegionAvail();
 					const FLOAT PreviewWidth = EMath::Max(PreviewRegion.x, 64.0f);
 					const FLOAT PreviewHeight = EMath::Max(PreviewRegion.y, 64.0f);
-					m_PreviewScene.UpdateViewportSize(static_cast<UINT32>(PreviewWidth), static_cast<UINT32>(PreviewHeight));
-					m_PreviewScene.Tick(ImGui::GetIO().DeltaTime);
-					if (ImTextureID PreviewTexture = m_PreviewScene.GetTextureId())
+					PreviewScene.UpdateViewportSize(static_cast<UINT32>(PreviewWidth), static_cast<UINT32>(PreviewHeight));
+					PreviewScene.Tick(ImGui::GetIO().DeltaTime);
+					if (ImTextureID PreviewTexture = PreviewScene.GetTextureId())
 					{
 						ImGui::Image(PreviewTexture, ImVec2(PreviewWidth, PreviewHeight));
 					}
@@ -256,12 +256,12 @@ namespace PigeonEngine
 				}
 				ImGui::EndChild();
 
-				ImGui::BeginChild("MeshEditorDataPanel", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_None);
+				ImGui::BeginChild("MeshEditorDataPanel", ImVec2(0.0f, 0.0f), TRUE, ImGuiWindowFlags_None);
 				{
-					DrawIndexSection(*m_MeshResource);
-					DrawVertexSection(*m_MeshResource);
-					DrawSubmeshSection(*m_MeshResource);
-					if (m_MeshType == static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN))
+					DrawIndexSection(*MeshResource);
+					DrawVertexSection(*MeshResource);
+					DrawSubmeshSection(*MeshResource);
+					if (MeshType == static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN))
 					{
 						DrawSkinnedMeshSection();
 					}
@@ -274,23 +274,23 @@ namespace PigeonEngine
 
 	void EMeshEditor::OpenMeshAsset(const EString& InAssetFullPath)
 	{
-		m_ShowEditor = TRUE;
+		bShowEditor = TRUE;
 		ResetLoadedAsset();
-		m_LastOpenError = EString();
+		LastOpenError = EString();
 
-		m_OpenedAssetFullPath = InAssetFullPath.Replace("\\", "/");
-		const EString AssetName = EPath::GetFileNameWithoutExtension(m_OpenedAssetFullPath);
-		const EString AssetDirectory = NormalizeAssetDirectory(EPath::GetFileFolderPath(m_OpenedAssetFullPath));
+		OpenedAssetFullPath = InAssetFullPath.Replace("\\", "/");
+		const EString AssetName = EPath::GetFileNameWithoutExtension(OpenedAssetFullPath);
+		const EString AssetDirectory = NormalizeAssetDirectory(EPath::GetFileFolderPath(OpenedAssetFullPath));
 		if ((AssetName.Length() <= 0u) || (AssetDirectory.Length() <= 0u))
 		{
-			m_LastOpenError = EString("Mesh editor cannot parse asset path: ") + m_OpenedAssetFullPath;
+			LastOpenError = EString("Mesh editor cannot parse asset path: ") + OpenedAssetFullPath;
 			return;
 		}
 
 		EMeshType AssetMeshType = EMeshType::MESH_TYPE_COUNT;
-		if (!(ReadMeshTypeFromAssetFile(m_OpenedAssetFullPath, AssetMeshType)))
+		if (!(ReadMeshTypeFromAssetFile(OpenedAssetFullPath, AssetMeshType)))
 		{
-			m_LastOpenError = EString("Mesh editor failed to read mesh type from asset: ") + m_OpenedAssetFullPath;
+			LastOpenError = EString("Mesh editor failed to read mesh type from asset: ") + OpenedAssetFullPath;
 			return;
 		}
 
@@ -301,12 +301,12 @@ namespace PigeonEngine
 				const EStaticMeshAsset* LoadedAsset = nullptr;
 				if (!(EMeshAssetManager::GetManagerSingleton()->LoadStaticMeshAsset(AssetDirectory, AssetName, LoadedAsset)) || (!LoadedAsset))
 				{
-					m_LastOpenError = EString("Mesh editor failed to load static mesh asset: ") + m_OpenedAssetFullPath;
+					LastOpenError = EString("Mesh editor failed to load static mesh asset: ") + OpenedAssetFullPath;
 					return;
 				}
-				m_StaticMeshAsset = LoadedAsset;
-				m_MeshResource = LoadedAsset->GetStoragedResource();
-				m_MeshType = static_cast<UINT32>(EMeshType::MESH_TYPE_STATIC);
+				StaticMeshAsset = LoadedAsset;
+				MeshResource = LoadedAsset->GetStoragedResource();
+				MeshType = static_cast<UINT32>(EMeshType::MESH_TYPE_STATIC);
 			}
 			break;
 		case EMeshType::MESH_TYPE_SKIN:
@@ -314,24 +314,24 @@ namespace PigeonEngine
 				const ESkinnedMeshAsset* LoadedAsset = nullptr;
 				if (!(EMeshAssetManager::GetManagerSingleton()->LoadSkinnedMeshAsset(AssetDirectory, AssetName, LoadedAsset)) || (!LoadedAsset))
 				{
-					m_LastOpenError = EString("Mesh editor failed to load skinned mesh asset: ") + m_OpenedAssetFullPath;
+					LastOpenError = EString("Mesh editor failed to load skinned mesh asset: ") + OpenedAssetFullPath;
 					return;
 				}
-				m_SkinnedMeshAsset = LoadedAsset;
-				m_MeshResource = LoadedAsset->GetStoragedResource();
-				m_MeshType = static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN);
+				SkinnedMeshAsset = LoadedAsset;
+				MeshResource = LoadedAsset->GetStoragedResource();
+				MeshType = static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN);
 			}
 			break;
 		default:
-			m_LastOpenError = EString("Mesh editor does not support this mesh type: ") + m_OpenedAssetFullPath;
+			LastOpenError = EString("Mesh editor does not support this mesh type: ") + OpenedAssetFullPath;
 			return;
 		}
 
-		if (!m_MeshResource)
+		if (!MeshResource)
 		{
-			m_LastOpenError = EString("Mesh editor loaded an asset without mesh resource: ") + m_OpenedAssetFullPath;
+			LastOpenError = EString("Mesh editor loaded an asset without mesh resource: ") + OpenedAssetFullPath;
 			ResetLoadedAsset();
-			m_PreviewScene.ClearPreview();
+			PreviewScene.ClearPreview();
 			return;
 		}
 
@@ -341,22 +341,22 @@ namespace PigeonEngine
 
 	void EMeshEditor::ResetLoadedAsset()
 	{
-		m_StaticMeshAsset = nullptr;
-		m_SkinnedMeshAsset = nullptr;
-		m_MeshResource = nullptr;
-		m_MeshType = static_cast<UINT32>(EMeshType::MESH_TYPE_COUNT);
-		m_AvailableSkeletonAssetPaths.Empty();
-		m_PreviewSkeletonAsset = nullptr;
-		m_SelectedPreviewSkeletonIndex = -1;
+		StaticMeshAsset = nullptr;
+		SkinnedMeshAsset = nullptr;
+		MeshResource = nullptr;
+		MeshType = static_cast<UINT32>(EMeshType::MESH_TYPE_COUNT);
+		AvailableSkeletonAssetPaths.Empty();
+		PreviewSkeletonAsset = nullptr;
+		SelectedPreviewSkeletonIndex = -1;
 	}
 
 	void EMeshEditor::RefreshPreviewSkeletonOptions()
 	{
-		m_AvailableSkeletonAssetPaths.Empty();
-		m_PreviewSkeletonAsset = nullptr;
-		m_SelectedPreviewSkeletonIndex = -1;
+		AvailableSkeletonAssetPaths.Empty();
+		PreviewSkeletonAsset = nullptr;
+		SelectedPreviewSkeletonIndex = -1;
 
-		if (m_MeshType != static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN))
+		if (MeshType != static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN))
 		{
 			return;
 		}
@@ -382,79 +382,79 @@ namespace PigeonEngine
 			EAssetType AssetType = EAssetType::ASSET_TYPE_UNKNOWN;
 			if (ReadAssetTypeFromAssetFile(AssetPath, AssetType) && (AssetType == EAssetType::ASSET_TYPE_SKELETON))
 			{
-				m_AvailableSkeletonAssetPaths.Add(AssetPath);
+				AvailableSkeletonAssetPaths.Add(AssetPath);
 			}
 		}
 
-		if (m_AvailableSkeletonAssetPaths.Num() > 0)
+		if (AvailableSkeletonAssetPaths.Num() > 0)
 		{
-			const EString MeshName = EPath::GetFileNameWithoutExtension(m_OpenedAssetFullPath);
-			m_SelectedPreviewSkeletonIndex = FindClosestSkeletonIndex(m_AvailableSkeletonAssetPaths, MeshName);
+			const EString MeshName = EPath::GetFileNameWithoutExtension(OpenedAssetFullPath);
+			SelectedPreviewSkeletonIndex = FindClosestSkeletonIndex(AvailableSkeletonAssetPaths, MeshName);
 		}
 	}
 
 	void EMeshEditor::UpdatePreviewScene()
 	{
-		m_PreviewSkeletonAsset = nullptr;
-		if (m_MeshType == static_cast<UINT32>(EMeshType::MESH_TYPE_STATIC))
+		PreviewSkeletonAsset = nullptr;
+		if (MeshType == static_cast<UINT32>(EMeshType::MESH_TYPE_STATIC))
 		{
-			m_PreviewScene.SetStaticMesh(m_StaticMeshAsset);
+			PreviewScene.SetStaticMesh(StaticMeshAsset);
 			return;
 		}
 
-		if ((m_MeshType != static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN)) || (!m_SkinnedMeshAsset))
+		if ((MeshType != static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN)) || (!SkinnedMeshAsset))
 		{
-			m_PreviewScene.ClearPreview();
+			PreviewScene.ClearPreview();
 			return;
 		}
 
-		if ((m_SelectedPreviewSkeletonIndex >= 0) && (m_SelectedPreviewSkeletonIndex < m_AvailableSkeletonAssetPaths.Num()))
+		if ((SelectedPreviewSkeletonIndex >= 0) && (SelectedPreviewSkeletonIndex < AvailableSkeletonAssetPaths.Num()))
 		{
-			LoadSkeletonAssetFromFullPath(m_AvailableSkeletonAssetPaths[m_SelectedPreviewSkeletonIndex], m_PreviewSkeletonAsset);
+			LoadSkeletonAssetFromFullPath(AvailableSkeletonAssetPaths[SelectedPreviewSkeletonIndex], PreviewSkeletonAsset);
 		}
 
-		if (m_PreviewSkeletonAsset)
+		if (PreviewSkeletonAsset)
 		{
-			m_PreviewScene.SetSkinnedMesh(m_SkinnedMeshAsset, m_PreviewSkeletonAsset);
+			PreviewScene.SetSkinnedMesh(SkinnedMeshAsset, PreviewSkeletonAsset);
 		}
 		else
 		{
-			m_PreviewScene.ClearPreview();
+			PreviewScene.ClearPreview();
 		}
 	}
 
 	void EMeshEditor::DrawMeshSummary() const
 	{
-		const EBoundAABB& Bound = m_MeshResource->GetBoundAABB();
-		const EMesh::EIndexPart& IndexPart = m_MeshResource->GetIndexPart();
-		const EMesh::EVertexPart& VertexPart = m_MeshResource->GetVertexPart();
-		const EMesh::ESubmeshPart& SubmeshPart = m_MeshResource->GetSubmeshPart();
+		const EBoundAABB& Bound = MeshResource->GetBoundAABB();
+		const EMesh::EIndexPart& IndexPart = MeshResource->GetIndexPart();
+		const EMesh::EVertexPart& VertexPart = MeshResource->GetVertexPart();
+		const EMesh::ESubmeshPart& SubmeshPart = MeshResource->GetSubmeshPart();
 
 		BOOL32 bRenderResourceValid = FALSE;
 		BOOL32 bAssetValid = FALSE;
 		BOOL32 bHoldResource = FALSE;
-		if (m_StaticMeshAsset)
+		if (StaticMeshAsset)
 		{
-			bRenderResourceValid = m_StaticMeshAsset->IsRenderResourceValid();
-			bAssetValid = m_StaticMeshAsset->IsValid();
+			bRenderResourceValid = StaticMeshAsset->IsRenderResourceValid();
+			bAssetValid = StaticMeshAsset->IsValid();
 			// The asset lifecycle no longer carries a "holds cold data" flag: the stored
 			// resource is the cold data, so its presence is the answer.
-			bHoldResource = (m_StaticMeshAsset->GetStoragedResource() != nullptr);
+			bHoldResource = (StaticMeshAsset->GetStoragedResource() != nullptr);
 		}
-		else if (m_SkinnedMeshAsset)
+		else if (SkinnedMeshAsset)
 		{
-			bRenderResourceValid = m_SkinnedMeshAsset->IsRenderResourceValid();
-			bAssetValid = m_SkinnedMeshAsset->IsValid();
-			bHoldResource = (m_SkinnedMeshAsset->GetStoragedResource() != nullptr);
+			bRenderResourceValid = SkinnedMeshAsset->IsRenderResourceValid();
+			bAssetValid = SkinnedMeshAsset->IsValid();
+			bHoldResource = (SkinnedMeshAsset->GetStoragedResource() != nullptr);
 		}
 
-		ImGui::Text("Mesh Name: %s", *m_MeshResource->GetMeshName());
-		ImGui::Text("Mesh Type: %s", MeshTypeAsString(static_cast<EMeshType>(m_MeshType)));
+		ImGui::Text("Mesh Name: %s", *MeshResource->GetMeshName());
+		ImGui::Text("Mesh Type: %s", MeshTypeAsString(static_cast<EMeshType>(MeshType)));
 		ImGui::Text("Asset Valid: %s", bAssetValid ? "True" : "False");
-		ImGui::Text("Resource Valid: %s", m_MeshResource->IsResourceValid() ? "True" : "False");
+		ImGui::Text("Resource Valid: %s", MeshResource->IsResourceValid() ? "True" : "False");
 		ImGui::Text("Render Resource Valid: %s", bRenderResourceValid ? "True" : "False");
 		ImGui::Text("Hold CPU Resource: %s", bHoldResource ? "True" : "False");
-		ImGui::Text("Vertex Layout Mask: 0x%08X", m_MeshResource->GetVertexLayout());
+		ImGui::Text("Vertex Layout Mask: 0x%08X", MeshResource->GetVertexLayout());
 		ImGui::Text("Index Count: %u", IndexPart.ElementNum);
 		ImGui::Text("Vertex Stream Count: %d", VertexPart.Num());
 		ImGui::Text("Submesh Count: %d", SubmeshPart.Num());
@@ -538,7 +538,7 @@ namespace PigeonEngine
 
 	void EMeshEditor::DrawSkinnedMeshSection() const
 	{
-		if ((!m_SkinnedMeshAsset) || (!m_MeshResource) || (m_MeshType != static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN)))
+		if ((!SkinnedMeshAsset) || (!MeshResource) || (MeshType != static_cast<UINT32>(EMeshType::MESH_TYPE_SKIN)))
 		{
 			return;
 		}
@@ -548,7 +548,7 @@ namespace PigeonEngine
 			return;
 		}
 
-		const ESkinnedMesh* SkinnedMesh = m_MeshResource->AsType<ESkinnedMesh>();
+		const ESkinnedMesh* SkinnedMesh = MeshResource->AsType<ESkinnedMesh>();
 		if (!SkinnedMesh)
 		{
 			ImGui::Text("Skinned mesh resource is unavailable.");
@@ -557,12 +557,12 @@ namespace PigeonEngine
 
 		const ESkinnedMesh::EBindPoseValue& BindPoseValues = SkinnedMesh->GetBindPoseValue();
 		const ESkinnedMesh::ESkinPart& SkinPart = SkinnedMesh->GetSkinPart();
-		ImGui::Text("Linked Skeleton: %s", m_SkinnedMeshAsset->GetSkeleton() ? "True" : "False");
+		ImGui::Text("Linked Skeleton: %s", SkinnedMeshAsset->GetSkeleton() ? "True" : "False");
 		ImGui::Text("Bind Pose Count: %d", BindPoseValues.Num());
 		ImGui::Text("Effect Bone Num: %u", static_cast<UINT32>(SkinnedMesh->GetEffectBoneNum()));
 		ImGui::Text("Skin Stream Count: %d", SkinPart.Num());
 
-		const ESkinnedMeshRenderResource* RenderResource = m_SkinnedMeshAsset->GetRenderResource();
+		const ESkinnedMeshRenderResource* RenderResource = SkinnedMeshAsset->GetRenderResource();
 		if (RenderResource)
 		{
 			ImGui::Text("Skin Render Resource Count: %d", RenderResource->GetSkinRenderResource().Num());

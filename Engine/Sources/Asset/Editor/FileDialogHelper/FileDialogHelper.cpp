@@ -8,7 +8,7 @@ namespace PigeonEngine
 #define FILE_DIALOG_HELPER_MAX_STRLEN 256
 #endif
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	CHAR* GetPath(PathSet* pathSet, size_t index)
 	{

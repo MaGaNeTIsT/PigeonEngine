@@ -24,14 +24,14 @@ namespace PigeonEngine
 	class PMovementComponent :public PActorComponent
 	{
 	public:
-		PMovementComponent() :m_Character(nullptr) { POBJ_DEBUGNAME_SET(this, "MovementComponent"); }
-		PMovementComponent(PCharacter* InCharacter) :m_Character(InCharacter) {};
+		PMovementComponent() :CharacterActor(nullptr) { POBJ_DEBUGNAME_SET(this, "MovementComponent"); }
+		PMovementComponent(PCharacter* InCharacter) :CharacterActor(InCharacter) {};
 		virtual ~PMovementComponent();
 
 		virtual void Init() override;
 		virtual void Uninit() override;
 
-		void SetCharacter(PCharacter* InCharacter) { m_Character = InCharacter; };
+		void SetCharacter(PCharacter* InCharacter) { CharacterActor = InCharacter; };
 
 		void HandleInput(const ECharacterMoveInput& Input);
 
@@ -47,7 +47,7 @@ namespace PigeonEngine
 
 
 	private:
-		PCharacter* m_Character = nullptr;
+		PCharacter* CharacterActor = nullptr;
 		TFunction<void(FLOAT)> PostPhysicsTickHandler;
 		BOOL32 bPostPhysicsTickRegistered = FALSE;
 		BOOL32 bHasSyncedTransform = FALSE;

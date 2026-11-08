@@ -9,7 +9,7 @@
 namespace PigeonEngine
 {
 
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 
 #define PE_BREAKPOINT	{debug_break();}
 
@@ -38,9 +38,9 @@ namespace PigeonEngine
 			if (!(InExpressionFunction()))
 			{
 				DWindowsMessage::__DummyAlert_(InExpressionString, InMessage, InFile, InLine, InCaption);
-				return false;
+				return FALSE;
 			}
-			return true;
+			return TRUE;
 		}
 
 		template<typename TExpressionLambdaType>
@@ -50,9 +50,9 @@ namespace PigeonEngine
 			if (!(InExpressionFunction()))
 			{
 				DWindowsMessage::__DummyAlert_(InExpressionString, nullptr, InFile, InLine, InCaption);
-				return false;
+				return FALSE;
 			}
-			return true;
+			return TRUE;
 		}
 
 		template<typename TExpressionLambdaType>
@@ -62,9 +62,9 @@ namespace PigeonEngine
 			if (!(InExpressionFunction()))
 			{
 				DWindowsMessage::__DummyAlert_(InExpressionString, nullptr, InFile, InLine, (ENGINE_UNKNOWN_ERROR));
-				return false;
+				return FALSE;
 			}
-			return true;
+			return TRUE;
 		}
 	protected:
 		static INT32 __WindowsMessageBox_(const CHAR* OutText, const CHAR* OutCaption, const UINT32 InType);
@@ -78,7 +78,7 @@ namespace PigeonEngine
 	};
 
 
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 
 #define PE_ASSERT(__Expression, ...) \
 	if (!DWindowsMessage::__Check_(\

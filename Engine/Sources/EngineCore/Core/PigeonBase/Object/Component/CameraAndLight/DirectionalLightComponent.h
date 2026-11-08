@@ -96,15 +96,15 @@ namespace PigeonEngine
 	public:
 		RDirectionalLightSceneProxy*	CreateSceneProxy();
 	protected:
-		virtual void	AddToRenderScene()override;
-		virtual void	RemoveFromRenderScene()override;
-		virtual void	UpdateInRenderScene()override;
+		virtual void	AddToRenderScene() override;
+		virtual void	RemoveFromRenderScene() override;
+		virtual void	UpdateInRenderScene() override;
 		// Render proxy functions END
 	protected:
 		ECascadeShadowData*	CascadeShadowData;
 
 	// ImGui
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 #endif

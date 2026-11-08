@@ -50,9 +50,9 @@ namespace PigeonEngine
 		// Places a tile of InSize edge at the shelf cursor. FALSE when it does not fit.
 		BOOL32	AllocateTile(const UINT32 InSize, FShadowTile& OutTile);
 	public:
-		PE_NODISCARD IRRHITexture*	GetTexture()const { return (DepthTexture.IsRenderResourceValid() ? DepthTexture.Texture : nullptr); }
-		PE_NODISCARD UINT32			GetAtlasSize()const { return AtlasSize; }
-		PE_NODISCARD UINT32			GetDepthBits()const { return DepthBits; }
+		PE_NODISCARD IRRHITexture*	GetTexture() const { return (DepthTexture.IsRenderResourceValid() ? DepthTexture.Texture : nullptr); }
+		PE_NODISCARD UINT32			GetAtlasSize() const { return AtlasSize; }
+		PE_NODISCARD UINT32			GetDepthBits() const { return DepthBits; }
 	private:
 		RRHITexture2D	DepthTexture;
 		TArray<FShadowTile>	Tiles;
@@ -78,7 +78,7 @@ namespace PigeonEngine
 		void	BeginFrame();
 		// Finds the view built for a key, or null. The renderer rebuilds a view through this on
 		// every frame so its ViewParams block survives across frames.
-		PE_NODISCARD RShadowViewProxy*	FindShadowView(const UINT64 InKey)const;
+		PE_NODISCARD RShadowViewProxy*	FindShadowView(const UINT64 InKey) const;
 		// Adds a freshly allocated view and returns it. Ownership stays here.
 		RShadowViewProxy*				AddShadowView(RShadowViewProxy* InView);
 		// Deletes every view that was not marked used this frame.

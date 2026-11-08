@@ -1,0 +1,29 @@
+{
+	"Name": "SWEInitialize",
+	"Template": "Compute/Fluid/SWEInitialize.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "SWEParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "InverseResolutionX", "Format": "float", "Default": [0.0] },
+				{ "Name": "InverseResolutionZ", "Format": "float", "Default": [0.0] },
+				{ "Name": "ResolutionX", "Format": "float", "Default": [0.0] },
+				{ "Name": "ResolutionZ", "Format": "float", "Default": [0.0] },
+				{ "Name": "CaptureY", "Format": "float", "Default": [0.0] },
+				{ "Name": "InitialDepth", "Format": "float", "Default": [1.0] },
+				{ "Name": "PixelAnchor", "Format": "int2", "Default": [0, 0] }
+			]
+		}
+	],
+	"Textures": [
+		{ "Name": "GroundTex", "Type": "2D", "Format": "float", "SamplerName": "SamplerLinearClamp", "Slot": 0 }
+	],
+	"RWTextures": [
+		{ "Name": "OutState", "Type": "2D", "Format": "float4", "Slot": 0 },
+		{ "Name": "OutHeightWet", "Type": "2D", "Format": "float2", "Slot": 1 }
+	],
+	"Replaces": [
+		{ "Name": "COMPUTE_BODY", "Element": "#include \"Compute/Fluid/SWEInitialize.hlsl\"" }
+	]
+}

@@ -67,7 +67,7 @@ namespace PigeonEngine
 		UINT8		UpdateState;
 
 	// ImGui
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 #endif
@@ -118,7 +118,7 @@ namespace PigeonEngine
 		virtual void	UpdateInRenderScene() override;
 
 	// ImGui
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 #endif

@@ -1,6 +1,6 @@
 #include "AnimationEditor.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 
@@ -141,78 +141,78 @@ namespace PigeonEngine
 	void EAnimationEditor::EditorInit()
 	{
 		ResetSelection();
-		m_AnimationAsset = nullptr;
-		m_OpenedAssetFullPath = EString();
-		m_LastOpenError = EString();
-		m_ShowEditor = FALSE;
-		m_LastBindingSkeletonAsset = nullptr;
-		m_BindingValid = FALSE;
-		m_BindingMissingBoneNum = 0;
-		m_PreviewScene.Initialize("AnimationEditorPreview", Vector3(36000.0f, 32000.0f, 32000.0f));
+		AnimationAsset = nullptr;
+		OpenedAssetFullPath = EString();
+		LastOpenError = EString();
+		bShowEditor = FALSE;
+		LastBindingSkeletonAsset = nullptr;
+		bBindingValid = FALSE;
+		BindingMissingBoneNum = 0;
+		PreviewScene.Initialize("AnimationEditorPreview", Vector3(36000.0f, 32000.0f, 32000.0f));
 	}
 
 	void EAnimationEditor::OpenAnimationAsset(const EString& InAssetFullPath)
 	{
-		m_ShowEditor = TRUE;
-		m_AnimationAsset = nullptr;
-		m_LastOpenError = EString();
-		m_LastBindingSkeletonAsset = nullptr;
-		m_BindingValid = FALSE;
-		m_BindingMissingBoneNum = 0;
+		bShowEditor = TRUE;
+		AnimationAsset = nullptr;
+		LastOpenError = EString();
+		LastBindingSkeletonAsset = nullptr;
+		bBindingValid = FALSE;
+		BindingMissingBoneNum = 0;
 
 		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
 		const EString AssetName = EPath::GetFileNameWithoutExtension(NormalizedAssetPath);
 		const EString AssetDirectory = NormalizeAssetDirectory(EPath::GetFileFolderPath(NormalizedAssetPath));
 		if ((AssetName.Length() <= 0u) || (AssetDirectory.Length() <= 0u))
 		{
-			m_LastOpenError = EString("Animation editor cannot parse asset path: ") + NormalizedAssetPath;
+			LastOpenError = EString("Animation editor cannot parse asset path: ") + NormalizedAssetPath;
 			return;
 		}
 
 		const ESkeletonAnimationAsset* LoadedAsset = nullptr;
 		if (!(EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(AssetDirectory, AssetName, LoadedAsset)) || (!LoadedAsset))
 		{
-			m_LastOpenError = EString("Animation editor failed to load asset: ") + NormalizedAssetPath;
+			LastOpenError = EString("Animation editor failed to load asset: ") + NormalizedAssetPath;
 			return;
 		}
 
-		m_AnimationAsset = LoadedAsset;
-		m_OpenedAssetFullPath = NormalizedAssetPath;
+		AnimationAsset = LoadedAsset;
+		OpenedAssetFullPath = NormalizedAssetPath;
 		ResetSelection();
 		RefreshPreviewOptions();
 	}
 
 	void EAnimationEditor::EditorUpdate()
 	{
-		if (!m_ShowEditor)
+		if (!bShowEditor)
 		{
 			return;
 		}
 
 		const ESkeletonAnimation* Animation = nullptr;
-		if (m_AnimationAsset)
+		if (AnimationAsset)
 		{
-			Animation = m_AnimationAsset->GetStoragedResource();
+			Animation = AnimationAsset->GetStoragedResource();
 		}
 
 		ImGui::SetNextWindowSize(ImVec2(960.0f, 640.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(420.0f, 40.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Animation Editor", &m_ShowEditor, ImGuiWindowFlags_None);
+		ImGui::Begin("Animation Editor", &bShowEditor, ImGuiWindowFlags_None);
 		{
-			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
+			if (ImGui::Button("Reload") && (OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenAnimationAsset(m_OpenedAssetFullPath);
+				OpenAnimationAsset(OpenedAssetFullPath);
 			}
 			ImGui::SameLine();
-			ImGui::TextWrapped("%s", m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No animation asset selected.");
+			ImGui::TextWrapped("%s", OpenedAssetFullPath.Length() > 0u ? *OpenedAssetFullPath : "No animation asset selected.");
 
-			if (m_LastOpenError.Length() > 0u)
+			if (LastOpenError.Length() > 0u)
 			{
 				ImGui::Separator();
-				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastOpenError);
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *LastOpenError);
 			}
 
-			if (!m_AnimationAsset)
+			if (!AnimationAsset)
 			{
 				ImGui::Separator();
 				ImGui::Text("No animation asset selected.");
@@ -225,12 +225,12 @@ namespace PigeonEngine
 			else
 			{
 				ImGui::Separator();
-				DrawAssetSummary(m_AnimationAsset, Animation);
+				DrawAssetSummary(AnimationAsset, Animation);
 			}
 		}
 		ImGui::End();
 
-		if ((!m_ShowEditor) || (!Animation))
+		if ((!bShowEditor) || (!Animation))
 		{
 			return;
 		}
@@ -249,8 +249,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		m_SelectedClipIndex = ClampSelectionIndex(m_SelectedClipIndex, ClipNum);
-		const ESkeletonAnimationClip* SelectedClip = Animation->GetAnimationClip(m_SelectedClipIndex);
+		SelectedClipIndex = ClampSelectionIndex(SelectedClipIndex, ClipNum);
+		const ESkeletonAnimationClip* SelectedClip = Animation->GetAnimationClip(SelectedClipIndex);
 		if (!SelectedClip)
 		{
 			return;
@@ -260,22 +260,22 @@ namespace PigeonEngine
 		ImGui::SetNextWindowPos(ImVec2(1360.0f, 40.0f), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Animation Preview", nullptr, ImGuiWindowFlags_None);
 		{
-			if (m_AvailablePreviewMeshPaths.Num() > 0)
+			if (AvailablePreviewMeshPaths.Num() > 0)
 			{
 				// The label has to stay alive for the whole BeginCombo call: taking the pointer
 				// from a temporary EString leaves ImGui reading freed text, which flickers.
-				const EString CurrentMeshName = (m_SelectedPreviewMeshIndex >= 0)
-					? EPath::GetFileNameWithoutExtension(m_AvailablePreviewMeshPaths[m_SelectedPreviewMeshIndex])
+				const EString CurrentMeshName = (SelectedPreviewMeshIndex >= 0)
+					? EPath::GetFileNameWithoutExtension(AvailablePreviewMeshPaths[SelectedPreviewMeshIndex])
 					: EString("None");
 				if (ImGui::BeginCombo("Preview Mesh", *CurrentMeshName))
 				{
-					for (INT32 MeshIndex = 0, MeshNum = m_AvailablePreviewMeshPaths.Num(); MeshIndex < MeshNum; MeshIndex++)
+					for (INT32 MeshIndex = 0, MeshNum = AvailablePreviewMeshPaths.Num(); MeshIndex < MeshNum; MeshIndex++)
 					{
-						const BOOL8 bSelected = (m_SelectedPreviewMeshIndex == MeshIndex);
-						const EString AssetName = EPath::GetFileNameWithoutExtension(m_AvailablePreviewMeshPaths[MeshIndex]);
+						const BOOL8 bSelected = (SelectedPreviewMeshIndex == MeshIndex);
+						const EString AssetName = EPath::GetFileNameWithoutExtension(AvailablePreviewMeshPaths[MeshIndex]);
 						if (ImGui::Selectable(*AssetName, bSelected))
 						{
-							m_SelectedPreviewMeshIndex = MeshIndex;
+							SelectedPreviewMeshIndex = MeshIndex;
 							UpdatePreviewScene(SelectedClip);
 						}
 						if (bSelected)
@@ -291,20 +291,20 @@ namespace PigeonEngine
 				ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "No skinned mesh asset found in current folder.");
 			}
 
-			if (m_AvailablePreviewSkeletonPaths.Num() > 0)
+			if (AvailablePreviewSkeletonPaths.Num() > 0)
 			{
-				const EString CurrentSkeletonName = (m_SelectedPreviewSkeletonIndex >= 0)
-					? EPath::GetFileNameWithoutExtension(m_AvailablePreviewSkeletonPaths[m_SelectedPreviewSkeletonIndex])
+				const EString CurrentSkeletonName = (SelectedPreviewSkeletonIndex >= 0)
+					? EPath::GetFileNameWithoutExtension(AvailablePreviewSkeletonPaths[SelectedPreviewSkeletonIndex])
 					: EString("None");
 				if (ImGui::BeginCombo("Preview Skeleton", *CurrentSkeletonName))
 				{
-					for (INT32 SkeletonIndex = 0, SkeletonNum = m_AvailablePreviewSkeletonPaths.Num(); SkeletonIndex < SkeletonNum; SkeletonIndex++)
+					for (INT32 SkeletonIndex = 0, SkeletonNum = AvailablePreviewSkeletonPaths.Num(); SkeletonIndex < SkeletonNum; SkeletonIndex++)
 					{
-						const BOOL8 bSelected = (m_SelectedPreviewSkeletonIndex == SkeletonIndex);
-						const EString AssetName = EPath::GetFileNameWithoutExtension(m_AvailablePreviewSkeletonPaths[SkeletonIndex]);
+						const BOOL8 bSelected = (SelectedPreviewSkeletonIndex == SkeletonIndex);
+						const EString AssetName = EPath::GetFileNameWithoutExtension(AvailablePreviewSkeletonPaths[SkeletonIndex]);
 						if (ImGui::Selectable(*AssetName, bSelected))
 						{
-							m_SelectedPreviewSkeletonIndex = SkeletonIndex;
+							SelectedPreviewSkeletonIndex = SkeletonIndex;
 							UpdatePreviewScene(SelectedClip);
 						}
 						if (bSelected)
@@ -322,36 +322,36 @@ namespace PigeonEngine
 
 			UpdatePreviewScene(SelectedClip);
 
-			ImGui::Checkbox("Auto Rotate", reinterpret_cast<bool*>(&m_PreviewAutoRotate));
+			ImGui::Checkbox("Auto Rotate", reinterpret_cast<bool*>(&bPreviewAutoRotate));
 			ImGui::SameLine();
-			ImGui::Checkbox("Play", reinterpret_cast<bool*>(&m_PreviewPlayAnimation));
-			ImGui::SliderFloat("Play Rate", &m_PreviewPlaybackRate, 0.0f, 3.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+			ImGui::Checkbox("Play", reinterpret_cast<bool*>(&bPreviewPlayAnimation));
+			ImGui::SliderFloat("Play Rate", &PreviewPlaybackRate, 0.0f, 3.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
 
-			const FLOAT ClipDurationSeconds = m_PreviewScene.GetClipDurationSeconds();
+			const FLOAT ClipDurationSeconds = PreviewScene.GetClipDurationSeconds();
 			if (ClipDurationSeconds > 0.0f)
 			{
-				FLOAT PlaybackTimeSeconds = m_PreviewScene.GetPlaybackTimeSeconds();
+				FLOAT PlaybackTimeSeconds = PreviewScene.GetPlaybackTimeSeconds();
 				if (ImGui::SliderFloat("Position", &PlaybackTimeSeconds, 0.0f, ClipDurationSeconds, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 				{
-					m_PreviewScene.SetPlaybackTimeSeconds(PlaybackTimeSeconds);
+					PreviewScene.SetPlaybackTimeSeconds(PlaybackTimeSeconds);
 				}
 			}
 
-			m_PreviewScene.SetAutoRotate(m_PreviewAutoRotate);
-			m_PreviewScene.SetPlayAnimation(m_PreviewPlayAnimation);
-			m_PreviewScene.SetPlaybackRate(m_PreviewPlaybackRate);
+			PreviewScene.SetAutoRotate(bPreviewAutoRotate);
+			PreviewScene.SetPlayAnimation(bPreviewPlayAnimation);
+			PreviewScene.SetPlaybackRate(PreviewPlaybackRate);
 
 			ImGui::Separator();
-			ImGui::Text("Binding: %s", (m_BindingValid ? "OK" : "Failed"));
-			ImGui::Text("Missing Bones: %d", m_BindingMissingBoneNum);
+			ImGui::Text("Binding: %s", (bBindingValid ? "OK" : "Failed"));
+			ImGui::Text("Missing Bones: %d", BindingMissingBoneNum);
 
 			ImGui::Separator();
 			ImVec2 AvailableRegion = ImGui::GetContentRegionAvail();
 			const FLOAT PreviewWidth = EMath::Max(AvailableRegion.x, 64.0f);
 			const FLOAT PreviewHeight = EMath::Max(AvailableRegion.y, 64.0f);
-			m_PreviewScene.UpdateViewportSize(static_cast<UINT32>(PreviewWidth), static_cast<UINT32>(PreviewHeight));
-			m_PreviewScene.Tick(ImGui::GetIO().DeltaTime);
-			if (ImTextureID PreviewTexture = m_PreviewScene.GetTextureId())
+			PreviewScene.UpdateViewportSize(static_cast<UINT32>(PreviewWidth), static_cast<UINT32>(PreviewHeight));
+			PreviewScene.Tick(ImGui::GetIO().DeltaTime);
+			if (ImTextureID PreviewTexture = PreviewScene.GetTextureId())
 			{
 				ImGui::Image(PreviewTexture, ImVec2(PreviewWidth, PreviewHeight));
 			}
@@ -385,37 +385,37 @@ namespace PigeonEngine
 			return;
 		}
 
-		m_SelectedCurveIndex = ClampSelectionIndex(m_SelectedCurveIndex, CurveNum);
+		SelectedCurveIndex = ClampSelectionIndex(SelectedCurveIndex, CurveNum);
 		ImGui::SetNextWindowSize(ImVec2(420.0f, 300.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(1148.0f, 540.0f), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Animation Curve Details", nullptr, ImGuiWindowFlags_None);
 		{
-			DrawCurveDetails(SelectedClip->AnimationCurves[m_SelectedCurveIndex]);
+			DrawCurveDetails(SelectedClip->AnimationCurves[SelectedCurveIndex]);
 		}
 		ImGui::End();
 	}
 
 	void EAnimationEditor::ResetSelection()
 	{
-		m_SelectedClipIndex = 0;
-		m_SelectedCurveIndex = 0;
+		SelectedClipIndex = 0;
+		SelectedCurveIndex = 0;
 	}
 
 	void EAnimationEditor::RefreshPreviewOptions()
 	{
-		m_AvailablePreviewMeshPaths.Empty();
-		m_AvailablePreviewSkeletonPaths.Empty();
-		m_PreviewMeshAsset = nullptr;
-		m_PreviewSkeletonAsset = nullptr;
-		m_SelectedPreviewMeshIndex = -1;
-		m_SelectedPreviewSkeletonIndex = -1;
-		m_LastBindingSkeletonAsset = nullptr;
-		m_BindingValid = FALSE;
-		m_BindingMissingBoneNum = 0;
+		AvailablePreviewMeshPaths.Empty();
+		AvailablePreviewSkeletonPaths.Empty();
+		PreviewMeshAsset = nullptr;
+		PreviewSkeletonAsset = nullptr;
+		SelectedPreviewMeshIndex = -1;
+		SelectedPreviewSkeletonIndex = -1;
+		LastBindingSkeletonAsset = nullptr;
+		bBindingValid = FALSE;
+		BindingMissingBoneNum = 0;
 
-		if (m_OpenedAssetFullPath.Length() <= 0u)
+		if (OpenedAssetFullPath.Length() <= 0u)
 		{
-			m_PreviewScene.ClearPreview();
+			PreviewScene.ClearPreview();
 			return;
 		}
 
@@ -451,36 +451,36 @@ namespace PigeonEngine
 
 			if (AssetType == EAssetType::ASSET_TYPE_SKELETON)
 			{
-				m_AvailablePreviewSkeletonPaths.Add(AssetPath);
+				AvailablePreviewSkeletonPaths.Add(AssetPath);
 			}
 			else if (AssetType == EAssetType::ASSET_TYPE_MESH)
 			{
 				EMeshType MeshType = EMeshType::MESH_TYPE_COUNT;
 				if (ReadMeshTypeFromAssetFile(AssetPath, MeshType) && (MeshType == EMeshType::MESH_TYPE_SKIN))
 				{
-					m_AvailablePreviewMeshPaths.Add(AssetPath);
+					AvailablePreviewMeshPaths.Add(AssetPath);
 				}
 			}
 		}
 
-		if (m_AvailablePreviewMeshPaths.Num() > 0)
+		if (AvailablePreviewMeshPaths.Num() > 0)
 		{
-			m_SelectedPreviewMeshIndex = 0;
+			SelectedPreviewMeshIndex = 0;
 		}
-		if (m_AvailablePreviewSkeletonPaths.Num() > 0)
+		if (AvailablePreviewSkeletonPaths.Num() > 0)
 		{
-			m_SelectedPreviewSkeletonIndex = 0;
+			SelectedPreviewSkeletonIndex = 0;
 
 			// Prefer the skeleton the asset records over whichever file happened to be first.
-			const ESkeletonAnimation* Animation = (m_AnimationAsset ? m_AnimationAsset->GetStoragedResource() : nullptr);
+			const ESkeletonAnimation* Animation = (AnimationAsset ? AnimationAsset->GetStoragedResource() : nullptr);
 			const EString BindSkeletonName = (Animation ? Animation->GetSkeletonName() : EString());
 			if ((BindSkeletonName.Length() > 0u) && (BindSkeletonName != EString(EEngineSettings::ENGINE_DEFAULT_NAME)))
 			{
-				for (INT32 SkeletonIndex = 0; SkeletonIndex < m_AvailablePreviewSkeletonPaths.Num(); SkeletonIndex++)
+				for (INT32 SkeletonIndex = 0; SkeletonIndex < AvailablePreviewSkeletonPaths.Num(); SkeletonIndex++)
 				{
-					if (EPath::GetFileNameWithoutExtension(m_AvailablePreviewSkeletonPaths[SkeletonIndex]) == BindSkeletonName)
+					if (EPath::GetFileNameWithoutExtension(AvailablePreviewSkeletonPaths[SkeletonIndex]) == BindSkeletonName)
 					{
-						m_SelectedPreviewSkeletonIndex = SkeletonIndex;
+						SelectedPreviewSkeletonIndex = SkeletonIndex;
 						break;
 					}
 				}
@@ -490,45 +490,45 @@ namespace PigeonEngine
 
 	void EAnimationEditor::UpdatePreviewScene(const ESkeletonAnimationClip* InSelectedClip)
 	{
-		m_PreviewMeshAsset = nullptr;
-		m_PreviewSkeletonAsset = nullptr;
-		if ((m_SelectedPreviewMeshIndex >= 0) && (m_SelectedPreviewMeshIndex < m_AvailablePreviewMeshPaths.Num()))
+		PreviewMeshAsset = nullptr;
+		PreviewSkeletonAsset = nullptr;
+		if ((SelectedPreviewMeshIndex >= 0) && (SelectedPreviewMeshIndex < AvailablePreviewMeshPaths.Num()))
 		{
-			LoadSkinnedMeshAssetFromFullPath(m_AvailablePreviewMeshPaths[m_SelectedPreviewMeshIndex], m_PreviewMeshAsset);
+			LoadSkinnedMeshAssetFromFullPath(AvailablePreviewMeshPaths[SelectedPreviewMeshIndex], PreviewMeshAsset);
 		}
-		if ((m_SelectedPreviewSkeletonIndex >= 0) && (m_SelectedPreviewSkeletonIndex < m_AvailablePreviewSkeletonPaths.Num()))
+		if ((SelectedPreviewSkeletonIndex >= 0) && (SelectedPreviewSkeletonIndex < AvailablePreviewSkeletonPaths.Num()))
 		{
-			LoadSkeletonAssetFromFullPath(m_AvailablePreviewSkeletonPaths[m_SelectedPreviewSkeletonIndex], m_PreviewSkeletonAsset);
+			LoadSkeletonAssetFromFullPath(AvailablePreviewSkeletonPaths[SelectedPreviewSkeletonIndex], PreviewSkeletonAsset);
 		}
 
 		// Rebuild the compatibility report only when the skeleton selection changed. Bind
 		// resolves every curve once and reports the curves the target skeleton cannot serve.
-		if (m_PreviewSkeletonAsset != m_LastBindingSkeletonAsset)
+		if (PreviewSkeletonAsset != LastBindingSkeletonAsset)
 		{
-			m_LastBindingSkeletonAsset = m_PreviewSkeletonAsset;
-			m_BindingValid = FALSE;
-			m_BindingMissingBoneNum = 0;
-			if ((m_PreviewSkeletonAsset) && (m_AnimationAsset))
+			LastBindingSkeletonAsset = PreviewSkeletonAsset;
+			bBindingValid = FALSE;
+			BindingMissingBoneNum = 0;
+			if ((PreviewSkeletonAsset) && (AnimationAsset))
 			{
 				ESkeletonBinding Binding;
-				m_BindingValid = Binding.Bind(m_PreviewSkeletonAsset->GetStoragedResource(), m_AnimationAsset->GetStoragedResource());
-				m_BindingMissingBoneNum = Binding.GetMissingBoneNum();
+				bBindingValid = Binding.Bind(PreviewSkeletonAsset->GetStoragedResource(), AnimationAsset->GetStoragedResource());
+				BindingMissingBoneNum = Binding.GetMissingBoneNum();
 			}
 		}
 
-		m_PreviewScene.SetAutoRotate(m_PreviewAutoRotate);
-		m_PreviewScene.SetPlayAnimation(m_PreviewPlayAnimation);
-		m_PreviewScene.SetPlaybackRate(m_PreviewPlaybackRate);
-		m_PreviewScene.SetAnimationClip(InSelectedClip);
+		PreviewScene.SetAutoRotate(bPreviewAutoRotate);
+		PreviewScene.SetPlayAnimation(bPreviewPlayAnimation);
+		PreviewScene.SetPlaybackRate(PreviewPlaybackRate);
+		PreviewScene.SetAnimationClip(InSelectedClip);
 
-		if ((m_PreviewMeshAsset) && (m_PreviewSkeletonAsset))
+		if ((PreviewMeshAsset) && (PreviewSkeletonAsset))
 		{
-			m_PreviewScene.SetSkinnedMesh(m_PreviewMeshAsset, m_PreviewSkeletonAsset);
-			m_PreviewScene.SetAnimationClip(InSelectedClip);
+			PreviewScene.SetSkinnedMesh(PreviewMeshAsset, PreviewSkeletonAsset);
+			PreviewScene.SetAnimationClip(InSelectedClip);
 		}
 		else
 		{
-			m_PreviewScene.ClearPreview();
+			PreviewScene.ClearPreview();
 		}
 	}
 
@@ -567,19 +567,19 @@ namespace PigeonEngine
 	{
 		const TArray<ESkeletonAnimationClip>& AnimationClips = InAnimation->GetAnimationClips();
 		const INT32 ClipNum = AnimationClips.Num();
-		m_SelectedClipIndex = ClampSelectionIndex(m_SelectedClipIndex, ClipNum);
+		SelectedClipIndex = ClampSelectionIndex(SelectedClipIndex, ClipNum);
 
 		ImGui::Text("Clips");
 		ImGui::Separator();
 		for (INT32 ClipIndex = 0; ClipIndex < ClipNum; ClipIndex++)
 		{
 			const ESkeletonAnimationClip& Clip = AnimationClips[ClipIndex];
-			const BOOL8 bIsSelected = (m_SelectedClipIndex == ClipIndex);
+			const BOOL8 bIsSelected = (SelectedClipIndex == ClipIndex);
 			ImGui::PushID(ClipIndex);
 			if (ImGui::Selectable(*Clip.ClipName, bIsSelected))
 			{
-				m_SelectedClipIndex = ClipIndex;
-				m_SelectedCurveIndex = 0;
+				SelectedClipIndex = ClipIndex;
+				SelectedCurveIndex = 0;
 			}
 			ImGui::PopID();
 		}
@@ -604,15 +604,15 @@ namespace PigeonEngine
 
 		if (ImGui::Button("Save Animation Asset"))
 		{
-			if (m_AnimationAsset)
+			if (AnimationAsset)
 			{
-				if (EAnimationManager::GetManagerSingleton()->SaveSkeletonAnimationAsset(m_AnimationAsset))
+				if (EAnimationManager::GetManagerSingleton()->SaveSkeletonAnimationAsset(AnimationAsset))
 				{
-					PE_LOG_LOG(EString("Saved animation asset: ") + m_AnimationAsset->GetAssetFullPathName());
+					PE_LOG_LOG(EString("Saved animation asset: ") + AnimationAsset->GetAssetFullPathName());
 				}
 				else
 				{
-					PE_LOG_WARN(EString("Failed to save animation asset: ") + m_AnimationAsset->GetAssetFullPathName());
+					PE_LOG_WARN(EString("Failed to save animation asset: ") + AnimationAsset->GetAssetFullPathName());
 				}
 			}
 		}
@@ -783,18 +783,18 @@ namespace PigeonEngine
 	void EAnimationEditor::DrawCurveList(const ESkeletonAnimationClip& InClip)
 	{
 		const INT32 CurveNum = InClip.AnimationCurves.Num();
-		m_SelectedCurveIndex = ClampSelectionIndex(m_SelectedCurveIndex, CurveNum);
+		SelectedCurveIndex = ClampSelectionIndex(SelectedCurveIndex, CurveNum);
 
 		ImGui::Text("Bone Curves");
 		ImGui::Separator();
 		for (INT32 CurveIndex = 0; CurveIndex < CurveNum; CurveIndex++)
 		{
 			const EBoneAnimationCurve& Curve = InClip.AnimationCurves[CurveIndex];
-			const BOOL8 bIsSelected = (m_SelectedCurveIndex == CurveIndex);
+			const BOOL8 bIsSelected = (SelectedCurveIndex == CurveIndex);
 			ImGui::PushID(CurveIndex);
 			if (ImGui::Selectable(*Curve.BoneName, bIsSelected))
 			{
-				m_SelectedCurveIndex = CurveIndex;
+				SelectedCurveIndex = CurveIndex;
 			}
 			ImGui::PopID();
 		}

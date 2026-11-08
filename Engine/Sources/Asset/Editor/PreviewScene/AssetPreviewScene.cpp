@@ -1,10 +1,8 @@
 #include "AssetPreviewScene.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <Animation/AnimationSampler.h>
-
-#include <cmath>
 
 #include <AnimationAsset/AnimationAsset.h>
 #include <MeshAsset/MeshAsset.h>
@@ -15,14 +13,7 @@
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <PigeonBase/Object/World/PreviewWorld.h>
 #include <Main/MainManager.h>
-#include <Development/GPUProfiler.h>
-#include <RHI/IRRHIDevice.h>
-#include <RHI/IRCommandList.h>
 #include <RenderCore/Renderer/SceneRenderer.h>
-#include <RenderCore/RenderProxy/ViewProxy.h>
-#include <ShaderAsset/ShaderAsset.h>
-#include <Shader/ShaderAssetBinding.h>
-#include <Shader/ShaderParameter.h>
 #include <imGUI/Headers/imGUIManager.h>
 
 namespace PigeonEngine
@@ -41,278 +32,6 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraFarRatio = 10.0f;
 		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraHeightScale = 0.35f;
 
-		class RAssetPreviewSceneRenderer final : public RSceneRenderer
-		{
-		public:
-			// Records the preview's frame on the render thread.
-			//
-			// The main renderer owns the window, the final blit, the ImGui overlay and the
-			// frame's GPU profiling slice; this renderer owns one offscreen view. So it repeats
-			// the parts of RSceneRenderer::Render that build and shade a view - drain the scene
-			// commands, build the targets, bind the frame wide state, record the base stage and
-			// the per view shading tail - and deliberately records none of the parts that belong
-			// to the window.
-			void RenderPreview_RenderThread()
-			{
-				IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-				if (!RenderDevice)
-				{
-					return;
-				}
-
-				// The primitives this pass draws reach the engine blocks through whichever
-				// renderer publishes itself here, and they must reach this one: their
-				// BindEngineParameters binds the view of the renderer it finds, and this pass
-				// is the only place the preview's view is current. Falling back to the main
-				// renderer would read its current view, which is null until the main scene
-				// records - so the preview's ViewParams would never be bound, every vertex
-				// would collapse into one point, and the panel would be black with the
-				// geometry drawing all along.
-				EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(this);
-
-				// The frame's timing slice was opened and closed by the main renderer, so this
-				// renderer's passes are not part of it and are dropped instead of charged to it.
-				EGPUProfiler::GetManagerSingleton()->SetPassRecordingEnabled(FALSE);
-
-				// Publishes this frame's commands, culls against the preview camera, builds the
-				// per-view targets. A viewport change is picked up here.
-				InitNewFrame();
-
-				FrameData.BeginFrame(RenderDevice->GetCurrentFrameIndex());
-				FrameData.SetRenderDevice(RenderDevice);
-				RecordScheduler.BeginFrame(FrameData);
-
-				EnsureEnginePassPipelineStates();
-				// The shading tail records the lighting pass, which reads this view's light
-				// lists. They have to exist and be uploaded before the frame records, in the
-				// same order the main renderer uses.
-				UploadLightListsForViews();
-				UpdateGlobalParameters();
-
-				PassStatePlan.Reset();
-				TArray<FPassViewInstance> PassInstances;
-				BuildPassInstances(PassInstances);
-				PreparePassInstances(PassInstances);
-				FrameData.EndPrepare();
-
-				// A preview records the base stage but no shadow stage: it has no shadow casters
-				// to record, and the view then shades unshadowed. The sync list carries the
-				// renderer wide sampler table and the environment bake, because that list is
-				// submitted before the stage's item lists - the same place the main renderer
-				// records them for its first stage.
-				TArray<FRecordTask> BaseTasks;
-				BuildStageTasks(PassInstances, ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks);
-				RecordScheduler.ExecuteStage(ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks
-					, [this](IRCommandList* InList) -> void
-					{
-						CurrentCommandList = InList;
-						BindSamplerTable(InList);
-						// A preview world has no sky, which is exactly what this publishes: no
-						// environment, so the indirect term contributes nothing.
-						RenderEnvironmentSH();
-						CurrentCommandList = nullptr;
-						RecordStageSync(ERenderPassStageType::RENDER_PASS_STAGE_BASE, InList);
-					});
-
-				// The shading tail and the display copy run on their own list, submitted after
-				// the base stage lists, so they read the scene colour those lists wrote. The
-				// index is the one the main renderer reserves for its own tail passes.
-				const UINT32 TailListIndex = ((RenderDevice->GetMaxRecordThreadNum() <= 1u)
-					? 0u : (RHI_MAX_RECORD_LIST_NUM - 1u));
-				IRCommandList* TailList = RenderDevice->AcquireCommandList(TailListIndex);
-				if (TailList)
-				{
-					TailList->SetRecordMode(ERHIRecordModeType::RHI_RECORD_MODE_IMMEDIATE);
-					CurrentCommandList = TailList;
-
-					// The visible term of the scene is not in the base stage: for a DefaultLit
-					// material that stage writes only emission into the scene colour, and the
-					// lighting pass adds the shaded result on top. Recording only the base stage
-					// and copying the scene colour is what made the panel black while the
-					// geometry was drawing all along. The tail is the same one the main renderer
-					// records: sky (a preview world has none), directional shadow mask (skipped,
-					// since no shadow stage ran), lighting and forward.
-					RecordViewTailPasses(TailList);
-
-					// The shading tail leaves the scene colour as a render target. The display copy
-					// reads it, so it has to be readable first - the main renderer makes the same
-					// transition in its final output pass.
-					if (RViewProxy* PreviewView = FindViewProxy(FinalOutputView))
-					{
-						RSceneTextures** SceneTextures = ViewSceneTextures.FindValueAsPtr(PreviewView->GetUniqueID());
-						if (SceneTextures && (*SceneTextures))
-						{
-							TransitionToShaderReadable((*SceneTextures)->SceneColor.GetResolvedRHITexture());
-						}
-					}
-
-					// Scene colour is scene referred and its alpha is not a display alpha: the base
-					// pass writes the emissive with alpha 0 and the lighting pass preserves the
-					// destination alpha. The engine's final output pass is what turns that into
-					// something an image can show - exposure, tone mapping, alpha 1 - so the preview
-					// runs it into an offscreen target instead of into the window.
-					RenderDisplayTarget();
-
-					TailList->Close();
-					CurrentCommandList = nullptr;
-				}
-
-				// Resolved once per recorded frame and read by the editor on the next one.
-				UpdateTextureId();
-
-				EGPUProfiler::GetManagerSingleton()->SetPassRecordingEnabled(TRUE);
-				EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(nullptr);
-
-				TArray<IRCommandList*> AllLists = RecordScheduler.GetRecordedLists();
-				if (TailList)
-				{
-					AllLists.Add(TailList);
-				}
-				RenderDevice->SubmitCommandLists(AllLists.GetData(), AllLists.Num<UINT32>());
-				RecordScheduler.EndFrame();
-				FrameData.EndFrame();
-			}
-
-			ImTextureID GetTextureId() const
-			{
-				return PreviewTextureId;
-			}
-
-		private:
-			// The renderer wide sampler table, bound once per frame for the same reason the main
-			// renderer binds it there: the register is the array index and no draw changes it.
-			// This is the one piece of state the two renderers must agree on, because their
-			// shaders are the same shaders.
-			void BindSamplerTable(IRCommandList* InCommandList)
-			{
-				for (UINT32 SamplerIndex = 0u; SamplerIndex < RSamplerType::SAMPLER_TYPE_COUNT; SamplerIndex++)
-				{
-					IRRHISampler* SamplerPtr = Samplers[SamplerIndex].RHISampler
-						? Samplers[SamplerIndex].RHISampler
-						: static_cast<IRRHISampler*>(&Samplers[SamplerIndex]);
-					InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_VERTEX, SamplerIndex, SamplerPtr);
-					InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, SamplerIndex, SamplerPtr);
-					InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, SamplerIndex, SamplerPtr);
-				}
-			}
-
-			// The display-referred copy of the view: what ImGui can actually show.
-			//
-			// This is the engine's final output pass, recorded into an offscreen target instead
-			// of into the window: the same program (Copy), the same pipeline state, the same view
-			// exposure block, and therefore the same image the main window shows. It is not
-			// optional for a preview - scene colour is scene referred (cd/m2, 16F) and its alpha
-			// is not a display alpha, so handing it to ImGui directly is what made the panel
-			// look black while the geometry was drawing all along.
-			void RenderDisplayTarget()
-			{
-				IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-				IRRHIPipelineState* DisplayState = PipelineStates[PIPELINE_STATE_FINAL_OUTPUT];
-				if ((!RenderDevice) || (!DisplayState) || (!FullScreenProgram))
-				{
-					return;
-				}
-
-				RViewProxy* PreviewView = FindViewProxy(FinalOutputView);
-				if (!PreviewView)
-				{
-					return;
-				}
-				RSceneTextures** SceneTextures = ViewSceneTextures.FindValueAsPtr(PreviewView->GetUniqueID());
-				if ((!SceneTextures) || (!(*SceneTextures)) || (!(*SceneTextures)->SceneColor.IsRenderResourceValid()))
-				{
-					return;
-				}
-
-				const EViewport& Viewport = PreviewView->GetRenderViewport();
-				const UINT32 DisplayWidth = static_cast<UINT32>(EMath::Max(Viewport.Width, 2.f));
-				const UINT32 DisplayHeight = static_cast<UINT32>(EMath::Max(Viewport.Height, 2.f));
-				if ((PreviewDisplay.IsRenderResourceValid() == FALSE)
-					|| (PreviewDisplaySize.x != static_cast<INT32>(DisplayWidth))
-					|| (PreviewDisplaySize.y != static_cast<INT32>(DisplayHeight)))
-				{
-					PreviewDisplay.ReleaseRenderResource();
-					if (PreviewDisplay.InitFromRHI(RenderDevice,
-						RTextureDesc(DisplayWidth, DisplayHeight,
-							RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
-							RFormatType::FORMAT_R8G8B8A8_UNORM)) == FALSE)
-					{
-						return;
-					}
-					PreviewDisplaySize = Vector2Int(static_cast<INT32>(DisplayWidth), static_cast<INT32>(DisplayHeight));
-				}
-
-				// The pass table's final output row states R8G8B8A8_UNORM, so the target above is
-				// created with exactly that format and the pipeline state's render target matches.
-				RRHIRenderPassDesc Pass;
-				Pass.RenderTargetCount				= 1u;
-				Pass.RenderTargets[0].Target		= PreviewDisplay.GetResolvedRHITexture();
-				Pass.RenderTargets[0].LoadOp		= ERHILoadOp::RHI_LOAD_OP_DONT_CARE;
-				Pass.RenderTargets[0].StoreOp		= ERHIStoreOp::RHI_STORE_OP_STORE;
-				Pass.RenderTargets[0].ClearColor	= Color4(0.f, 0.f, 0.f, 1.f);
-				Pass.DepthStencil.Target			= nullptr;
-				Pass.PassName						= PE_TEXT("PreviewDisplay");
-				CurrentCommandList->BeginRenderPass(Pass);
-
-				// D3D12 has no implicit viewport or scissor from the render targets, and for a
-				// full target the two are simply its size.
-				const EViewport DisplayViewport(0.f, 0.f, static_cast<FLOAT>(DisplayWidth), static_cast<FLOAT>(DisplayHeight), 0.f, 1.f);
-				CurrentCommandList->SetViewports(&DisplayViewport, 1u);
-				const ERect DisplayScissor(0.f, 0.f, static_cast<FLOAT>(DisplayWidth), static_cast<FLOAT>(DisplayHeight));
-				CurrentCommandList->SetScissorRects(&DisplayScissor, 1u);
-
-				CurrentCommandList->SetPipelineState(DisplayState);
-
-				// The copy program reads the view's exposure, so the view block is published and
-				// bound after the state - the same order the main renderer uses, because switching
-				// a signature voids the roots. The view has to be passed explicitly: the default
-				// argument binds only the frame block, which leaves ExposureParams unbound and
-				// exposes the image by a zero gain, i.e. black regardless of the scene colour.
-				CurrentViewProxy = PreviewView;
-				CurrentViewProxy->UpdateRenderResource();
-				BindEngineParameters(CurrentCommandList, *FullScreenProgram, PreviewView);
-				FullScreenTriangle.BindPrimitiveBuffers(CurrentCommandList, *FullScreenProgram);
-
-				const EShaderStageEntry* PixelEntry = ResolveShaderStageEntry(*FullScreenProgram, EShaderStageType::SHADER_STAGE_PIXEL);
-				if (PixelEntry)
-				{
-					EShaderParameterSet Parameters;
-					Parameters.SetTexture(EName(), EName(PE_TEXT("CopySourceTexture")), (*SceneTextures)->SceneColor.GetResolvedRHITexture());
-					BindShaderResources(CurrentCommandList, Parameters
-						, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL
-						, EName(SHADER_BINDING_SCOPE_COPY));
-				}
-
-				CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
-				CurrentViewProxy = nullptr;
-
-				CurrentCommandList->EndRenderPass();
-
-				// ImGui samples it later in this frame, so it has to be readable before the list
-				// is submitted.
-				TransitionToShaderReadable(PreviewDisplay.GetResolvedRHITexture());
-			}
-
-			// The id handed to ImGui is the bindless index the overlay resolves, not a native
-			// view: that is what keeps this code indifferent to the active back-end. It is
-			// recomputed when the display target is rebuilt, at which point the texture object
-			// (and with it the index) can be a new one.
-			void UpdateTextureId()
-			{
-				PreviewTextureId = ImTextureID_Invalid;
-				if (PreviewDisplay.IsRenderResourceValid())
-				{
-					PreviewTextureId = EngineTextureToImgui(PreviewDisplay.GetResolvedRHITexture());
-				}
-			}
-
-		private:
-			ImTextureID				PreviewTextureId = ImTextureID_Invalid;
-			// Display-referred copy of the view's scene colour, and the size it was built for.
-			RRenderTexture2D		PreviewDisplay;
-			Vector2Int				PreviewDisplaySize = Vector2Int::Zero();
-		};
-
 	}
 
 	EAssetPreviewScene::~EAssetPreviewScene()
@@ -322,23 +41,32 @@ namespace PigeonEngine
 
 	void EAssetPreviewScene::Initialize(const EString& InDebugLabel, const Vector3& InZoneOrigin)
 	{
-		m_DebugLabel = InDebugLabel;
-		m_ZoneOrigin = InZoneOrigin;
-		if (!m_PreviewRenderer)
+		DebugLabel = InDebugLabel;
+		ZoneOrigin = InZoneOrigin;
+		if (!PreviewRenderer)
 		{
-			RAssetPreviewSceneRenderer* PreviewRenderer = new RAssetPreviewSceneRenderer();
-			PreviewRenderer->SetManageDebugWireframe(FALSE);
-			PreviewRenderer->SetRenderDebugWireframe(FALSE);
-			PreviewRenderer->Initialize();
-			m_PreviewRenderer = PreviewRenderer;
+			// The preview is an ordinary scene renderer whose final image lands in a target
+			// the renderer owns instead of the back buffer. It records the same pipeline as
+			// the main window - every stage, every pass, the same shaders - so a pipeline
+			// change reaches the preview without an edit here.
+			RSceneRenderer* NewPreviewRenderer = new RSceneRenderer();
+			FRendererOutputDescription OutputDescription;
+			OutputDescription.Type = RRendererOutputType::RENDERER_OUTPUT_OFFSCREEN;
+			NewPreviewRenderer->SetOutputDescription(OutputDescription);
+			// The preview does not own the process wide debug primitive frame or the editor
+			// overlay, so it neither drains that frame nor draws it.
+			NewPreviewRenderer->SetManageDebugWireframe(FALSE);
+			NewPreviewRenderer->SetRenderDebugWireframe(FALSE);
+			NewPreviewRenderer->Initialize();
+			PreviewRenderer = NewPreviewRenderer;
 		}
-		if (!m_PreviewWorld)
+		if (!PreviewWorld)
 		{
-			m_PreviewWorld = new PPreviewWorld();
-			m_PreviewWorld->BindRenderScene(m_PreviewRenderer->GetRenderScene());
-			m_PreviewWorld->Init();
+			PreviewWorld = new PPreviewWorld();
+			PreviewWorld->BindRenderScene(PreviewRenderer->GetRenderScene());
+			PreviewWorld->Init();
 		}
-		m_Initialized = TRUE;
+		bInitialized = TRUE;
 		EnsureCameraActor();
 		// From here on the render thread records this preview's frame. Registration is what
 		// puts it in the frame at all: nothing else knows the preview world exists.
@@ -352,76 +80,77 @@ namespace PigeonEngine
 		// render thread stopped (engine shutdown), so neither can race this.
 		EMainManager::GetManagerSingleton()->UnregisterFrameRenderer(this);
 		DestroyPreviewActor();
-		if (m_CameraActor)
+		if (CameraActor)
 		{
-			m_CameraActor->Destroy();
-			m_CameraActor = nullptr;
-			m_CameraComponent = nullptr;
+			CameraActor->Destroy();
+			CameraActor = nullptr;
+			CameraComponent = nullptr;
 		}
-		if (m_PreviewWorld)
+		if (PreviewWorld)
 		{
-			m_PreviewWorld->Destroy();
-			m_PreviewWorld = nullptr;
+			PreviewWorld->Destroy();
+			PreviewWorld = nullptr;
 		}
-		if (m_PreviewRenderer)
+		if (PreviewRenderer)
 		{
-			m_PreviewRenderer->InitNewFrame();
-			m_PreviewRenderer->ShutDown();
-			delete m_PreviewRenderer;
-			m_PreviewRenderer = nullptr;
+			PreviewRenderer->InitNewFrame();
+			PreviewRenderer->ShutDown();
+			delete PreviewRenderer;
+			PreviewRenderer = nullptr;
 		}
-		m_StaticMeshAsset = nullptr;
-		m_SkinnedMeshAsset = nullptr;
-		m_SkeletonAsset = nullptr;
-		m_AnimationClip = nullptr;
-		m_Initialized = FALSE;
+		StaticMeshAsset = nullptr;
+		SkinnedMeshAsset = nullptr;
+		SkeletonAsset = nullptr;
+		AnimationClip = nullptr;
+		PreviewTextureId = ImTextureID_Invalid;
+		bInitialized = FALSE;
 	}
 
 	void EAssetPreviewScene::UpdateViewportSize(UINT32 InWidth, UINT32 InHeight)
 	{
-		m_ViewportWidth = EMath::Max(InWidth, 64u);
-		m_ViewportHeight = EMath::Max(InHeight, 64u);
+		ViewportWidth = EMath::Max(InWidth, 64u);
+		ViewportHeight = EMath::Max(InHeight, 64u);
 		EnsureCameraActor();
-		if (m_CameraComponent)
+		if (CameraComponent)
 		{
-			m_CameraComponent->SetViewport(0.0f, 0.0f, static_cast<FLOAT>(m_ViewportWidth), static_cast<FLOAT>(m_ViewportHeight));
+			CameraComponent->SetViewport(0.0f, 0.0f, static_cast<FLOAT>(ViewportWidth), static_cast<FLOAT>(ViewportHeight));
 		}
 	}
 
 	void EAssetPreviewScene::Tick(FLOAT InDeltaSeconds)
 	{
-		if (!m_Initialized)
+		if (!bInitialized)
 		{
 			return;
 		}
 
 		EnsureCameraActor();
-		if (m_AutoRotate)
+		if (bAutoRotate)
 		{
-			m_OrbitRadians += InDeltaSeconds * 0.6f;
+			OrbitRadians += InDeltaSeconds * 0.6f;
 		}
 		UpdateCameraTransform();
 		ApplyAnimation(InDeltaSeconds);
-		if (m_PreviewWorld)
+		if (PreviewWorld)
 		{
-			m_PreviewWorld->Tick(InDeltaSeconds);
+			PreviewWorld->Tick(InDeltaSeconds);
 		}
 		// The recording itself happens on the render thread; this only publishes that this
 		// frame has something to record. A panel that stops ticking (closed) costs one more
 		// frame, which RenderFrame consumes.
-		m_bRenderRequested = ((m_PreviewRenderer != nullptr) && (GetPreviewMeshResource() != nullptr)) ? TRUE : FALSE;
+		bRenderRequested = ((PreviewRenderer != nullptr) && (GetPreviewMeshResource() != nullptr)) ? TRUE : FALSE;
 	}
 
 	void EAssetPreviewScene::PublishFrameCommands()
 	{
-		if ((!m_bRenderRequested) || (!m_PreviewRenderer))
+		if ((!bRenderRequested) || (!PreviewRenderer))
 		{
 			return;
 		}
 		// The preview scene is double buffered like the main one, and this is the only reader
 		// it has: flipping at the same boundary is what makes what Tick queued visible to the
 		// render thread in this frame.
-		if (RScene* PreviewScene = m_PreviewRenderer->GetRenderScene())
+		if (RScene* PreviewScene = PreviewRenderer->GetRenderScene())
 		{
 			PreviewScene->SwapCommandSlots();
 		}
@@ -429,70 +158,86 @@ namespace PigeonEngine
 
 	void EAssetPreviewScene::RenderFrame()
 	{
-		if ((!m_bRenderRequested) || (!m_PreviewRenderer))
+		if ((!bRenderRequested) || (!PreviewRenderer))
 		{
 			return;
 		}
 		// Cleared on this side: one published frame is one recorded frame.
-		m_bRenderRequested = FALSE;
-		static_cast<RAssetPreviewSceneRenderer*>(m_PreviewRenderer)->RenderPreview_RenderThread();
+		bRenderRequested = FALSE;
+		// The renderer records the same frame the main scene records; only its output target
+		// differs, which is what keeps the preview on the current pipeline.
+		PreviewRenderer->InitNewFrame();
+		PreviewRenderer->Render();
+
+		// The image exists now. Converting it here keeps the bindless registration on the
+		// render thread, which is where the device is allowed to be touched.
+		IRRHITexture* OutputTexture = PreviewRenderer->GetOutputColorTexture();
+		PreviewTextureId = (OutputTexture ? EngineTextureToImgui(OutputTexture) : ImTextureID_Invalid);
+	}
+
+	void EAssetPreviewScene::OnShaderAssetReplaced(const EName& InShaderName)
+	{
+		if (PreviewRenderer)
+		{
+			PreviewRenderer->OnShaderAssetReplaced(InShaderName);
+		}
 	}
 
 	void EAssetPreviewScene::SetStaticMesh(const EStaticMeshAsset* InStaticMeshAsset)
 	{
-		if ((m_StaticMeshAsset == InStaticMeshAsset) && (!m_SkinnedMeshAsset))
+		if ((StaticMeshAsset == InStaticMeshAsset) && (!SkinnedMeshAsset))
 		{
 			return;
 		}
-		m_StaticMeshAsset = InStaticMeshAsset;
-		m_SkinnedMeshAsset = nullptr;
-		m_SkeletonAsset = nullptr;
-		m_AnimationClip = nullptr;
+		StaticMeshAsset = InStaticMeshAsset;
+		SkinnedMeshAsset = nullptr;
+		SkeletonAsset = nullptr;
+		AnimationClip = nullptr;
 		ResetPlayback();
 		RecreatePreviewActor();
 	}
 
 	void EAssetPreviewScene::SetSkinnedMesh(const ESkinnedMeshAsset* InSkinnedMeshAsset, const ESkeletonAsset* InSkeletonAsset)
 	{
-		if ((m_SkinnedMeshAsset == InSkinnedMeshAsset) && (m_SkeletonAsset == InSkeletonAsset) && (!m_StaticMeshAsset))
+		if ((SkinnedMeshAsset == InSkinnedMeshAsset) && (SkeletonAsset == InSkeletonAsset) && (!StaticMeshAsset))
 		{
 			return;
 		}
-		m_StaticMeshAsset = nullptr;
-		m_SkinnedMeshAsset = InSkinnedMeshAsset;
-		m_SkeletonAsset = InSkeletonAsset;
+		StaticMeshAsset = nullptr;
+		SkinnedMeshAsset = InSkinnedMeshAsset;
+		SkeletonAsset = InSkeletonAsset;
 		ResetPlayback();
 		RecreatePreviewActor();
 	}
 
 	void EAssetPreviewScene::SetAnimationClip(const ESkeletonAnimationClip* InAnimationClip)
 	{
-		if (m_AnimationClip == InAnimationClip)
+		if (AnimationClip == InAnimationClip)
 		{
 			return;
 		}
-		m_AnimationClip = InAnimationClip;
+		AnimationClip = InAnimationClip;
 		ResetPlayback();
 	}
 
 	void EAssetPreviewScene::SetAutoRotate(BOOL8 InAutoRotate)
 	{
-		m_AutoRotate = InAutoRotate;
+		bAutoRotate = InAutoRotate;
 	}
 
 	void EAssetPreviewScene::SetPlayAnimation(BOOL8 InPlayAnimation)
 	{
-		m_PlayAnimation = InPlayAnimation;
+		bPlayAnimation = InPlayAnimation;
 	}
 
 	void EAssetPreviewScene::SetPlaybackRate(FLOAT InPlaybackRate)
 	{
-		m_PlaybackRate = EMath::Max(InPlaybackRate, 0.0f);
+		PlaybackRate = EMath::Max(InPlaybackRate, 0.0f);
 	}
 
 	void EAssetPreviewScene::ResetPlayback()
 	{
-		m_PlaybackTimeSeconds = 0.0f;
+		PlaybackTimeSeconds = 0.0f;
 	}
 
 	void EAssetPreviewScene::SetPlaybackTimeSeconds(FLOAT InTimeSeconds)
@@ -500,35 +245,35 @@ namespace PigeonEngine
 		const FLOAT DurationSeconds = GetClipDurationSeconds();
 		if (DurationSeconds <= 0.0f)
 		{
-			m_PlaybackTimeSeconds = 0.0f;
+			PlaybackTimeSeconds = 0.0f;
 			return;
 		}
-		m_PlaybackTimeSeconds = EMath::Clamp(InTimeSeconds, 0.0f, DurationSeconds);
+		PlaybackTimeSeconds = EMath::Clamp(InTimeSeconds, 0.0f, DurationSeconds);
 	}
 
-	FLOAT EAssetPreviewScene::GetPlaybackTimeSeconds()const
+	FLOAT EAssetPreviewScene::GetPlaybackTimeSeconds() const
 	{
-		return m_PlaybackTimeSeconds;
+		return PlaybackTimeSeconds;
 	}
 
-	FLOAT EAssetPreviewScene::GetClipDurationSeconds()const
+	FLOAT EAssetPreviewScene::GetClipDurationSeconds() const
 	{
-		if ((!m_AnimationClip) || (m_AnimationClip->Duration <= 0.0f))
+		if ((!AnimationClip) || (AnimationClip->Duration <= 0.0f))
 		{
 			return 0.0f;
 		}
-		const FLOAT TicksPerSecond = (m_AnimationClip->TicksPerSecond > 1e-3f)
-			? m_AnimationClip->TicksPerSecond
+		const FLOAT TicksPerSecond = (AnimationClip->TicksPerSecond > 1e-3f)
+			? AnimationClip->TicksPerSecond
 			: EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
-		return ((TicksPerSecond > 0.0f) ? (m_AnimationClip->Duration / TicksPerSecond) : 0.0f);
+		return ((TicksPerSecond > 0.0f) ? (AnimationClip->Duration / TicksPerSecond) : 0.0f);
 	}
 
 	void EAssetPreviewScene::ClearPreview()
 	{
-		m_StaticMeshAsset = nullptr;
-		m_SkinnedMeshAsset = nullptr;
-		m_SkeletonAsset = nullptr;
-		m_AnimationClip = nullptr;
+		StaticMeshAsset = nullptr;
+		SkinnedMeshAsset = nullptr;
+		SkeletonAsset = nullptr;
+		AnimationClip = nullptr;
 		DestroyPreviewActor();
 	}
 
@@ -536,11 +281,11 @@ namespace PigeonEngine
 	{
 		// Nothing published means nothing recorded: no mesh selected, or the first frame after
 		// one was, whose image only exists once the render thread has recorded it.
-		if ((!m_PreviewRenderer) || (!m_bRenderRequested))
+		if ((!PreviewRenderer) || (!bRenderRequested))
 		{
 			return ImTextureID_Invalid;
 		}
-		return static_cast<const RAssetPreviewSceneRenderer*>(m_PreviewRenderer)->GetTextureId();
+		return PreviewTextureId;
 	}
 
 	BOOL8 EAssetPreviewScene::HasPreviewMesh() const
@@ -550,36 +295,36 @@ namespace PigeonEngine
 
 	const ESkinnedMeshAsset* EAssetPreviewScene::GetPreviewSkinnedMeshAsset() const
 	{
-		return m_SkinnedMeshAsset;
+		return SkinnedMeshAsset;
 	}
 
 	const ESkeletonAsset* EAssetPreviewScene::GetPreviewSkeletonAsset() const
 	{
-		return m_SkeletonAsset;
+		return SkeletonAsset;
 	}
 
 	void EAssetPreviewScene::EnsureCameraActor()
 	{
-		if ((!m_Initialized) || m_CameraActor)
+		if ((!bInitialized) || CameraActor)
 		{
 			return;
 		}
 
-		if (!m_PreviewWorld)
+		if (!PreviewWorld)
 		{
 			return;
 		}
 
 		PActor* NewCameraActor = new PActor();
 		NewCameraActor->SetIsTickable(TRUE);
-		m_CameraComponent = new PCameraComponent(0.0f, 0.0f, static_cast<FLOAT>(m_ViewportWidth), static_cast<FLOAT>(m_ViewportHeight));
+		CameraComponent = new PCameraComponent(0.0f, 0.0f, static_cast<FLOAT>(ViewportWidth), static_cast<FLOAT>(ViewportHeight));
 		// BasePass records only the view that is the main one: it exists to skip secondary
 		// editor cameras. This camera is the only view of the preview world, so it has to be
 		// marked before the actor is added - the flag is read when the proxy is created.
-		m_CameraComponent->SetIsMainCamera(TRUE);
-		NewCameraActor->SetRootComponent(m_CameraComponent);
-		m_PreviewWorld->AddActor(NewCameraActor);
-		m_CameraActor = NewCameraActor;
+		CameraComponent->SetIsMainCamera(TRUE);
+		NewCameraActor->SetRootComponent(CameraComponent);
+		PreviewWorld->AddActor(NewCameraActor);
+		CameraActor = NewCameraActor;
 		UpdateCameraTransform();
 	}
 
@@ -587,29 +332,29 @@ namespace PigeonEngine
 	{
 		DestroyPreviewActor();
 
-		if ((!m_PreviewWorld) || ((!m_StaticMeshAsset) && ((!m_SkinnedMeshAsset) || (!m_SkeletonAsset))))
+		if ((!PreviewWorld) || ((!StaticMeshAsset) && ((!SkinnedMeshAsset) || (!SkeletonAsset))))
 		{
 			return;
 		}
 
 		PActor* NewPreviewActor = new PActor();
 		NewPreviewActor->SetIsTickable(TRUE);
-		m_PreviewWorld->AddActor(NewPreviewActor);
-		m_PreviewActor = NewPreviewActor;
+		PreviewWorld->AddActor(NewPreviewActor);
+		PreviewActor = NewPreviewActor;
 
-		if (m_StaticMeshAsset)
+		if (StaticMeshAsset)
 		{
-			m_StaticMeshComponent = new PStaticMeshComponent();
-			m_PreviewActor->AddComponent(m_StaticMeshComponent);
-			m_StaticMeshComponent->SetMeshAsset(m_StaticMeshAsset);
+			StaticMeshComponent = new PStaticMeshComponent();
+			PreviewActor->AddComponent(StaticMeshComponent);
+			StaticMeshComponent->SetMeshAsset(StaticMeshAsset);
 		}
-		else if ((m_SkinnedMeshAsset) && (m_SkeletonAsset))
+		else if ((SkinnedMeshAsset) && (SkeletonAsset))
 		{
-			m_SkeletalMeshComponent = new PSkeletalMeshComponent();
-			m_PreviewActor->AddComponent(m_SkeletalMeshComponent);
-			m_SkeletalMeshComponent->SetMeshAsset(m_SkinnedMeshAsset);
-			m_SkeletalMeshComponent->SetSkeletonAsset(m_SkeletonAsset);
-			m_SkeletalMeshComponent->SetComponentRotation(GetPreviewMeshRotation());
+			SkeletalMeshComponent = new PSkeletalMeshComponent();
+			PreviewActor->AddComponent(SkeletalMeshComponent);
+			SkeletalMeshComponent->SetMeshAsset(SkinnedMeshAsset);
+			SkeletalMeshComponent->SetSkeletonAsset(SkeletonAsset);
+			SkeletalMeshComponent->SetComponentRotation(GetPreviewMeshRotation());
 		}
 
 		UpdatePreviewPlacement();
@@ -617,19 +362,19 @@ namespace PigeonEngine
 
 	void EAssetPreviewScene::DestroyPreviewActor()
 	{
-		if (m_PreviewActor)
+		if (PreviewActor)
 		{
-			m_PreviewActor->Destroy();
-			m_PreviewActor = nullptr;
+			PreviewActor->Destroy();
+			PreviewActor = nullptr;
 		}
-		m_StaticMeshComponent = nullptr;
-		m_SkeletalMeshComponent = nullptr;
+		StaticMeshComponent = nullptr;
+		SkeletalMeshComponent = nullptr;
 	}
 
 	void EAssetPreviewScene::UpdatePreviewPlacement()
 	{
 		const EMesh* PreviewMesh = GetPreviewMeshResource();
-		if ((!m_PreviewActor) || (!PreviewMesh))
+		if ((!PreviewActor) || (!PreviewMesh))
 		{
 			return;
 		}
@@ -663,18 +408,18 @@ namespace PigeonEngine
 		// vertical centre is kept for framing.
 		const Vector3 PreviewPivot = GetPreviewPivot(LocalBoundsCenter);
 		const Vector3 RotatedPivot = QuaternionTransformVector(PreviewRotation, PreviewPivot);
-		m_CameraFocusOffset = Vector3(0.0f, WorldBoundsCenter.y - RotatedPivot.y, 0.0f);
-		m_CameraDistance = MaxExtent * PreviewCameraDistanceExtentScale;
+		CameraFocusOffset = Vector3(0.0f, WorldBoundsCenter.y - RotatedPivot.y, 0.0f);
+		CameraDistance = MaxExtent * PreviewCameraDistanceExtentScale;
 
-		m_PreviewActor->SetActorLocation(m_ZoneOrigin - RotatedPivot);
-		m_PreviewActor->SetActorScale(Vector3::One());
+		PreviewActor->SetActorLocation(ZoneOrigin - RotatedPivot);
+		PreviewActor->SetActorScale(Vector3::One());
 		UpdateCameraProjection();
 		UpdateCameraTransform();
 	}
 
 	void EAssetPreviewScene::UpdateCameraProjection()
 	{
-		if (!m_CameraComponent)
+		if (!CameraComponent)
 		{
 			return;
 		}
@@ -682,17 +427,17 @@ namespace PigeonEngine
 		// The preview world contains only the mesh and this camera, so the clip planes can track
 		// the framing distance instead of the world defaults. The 1:1000 near/far ratio keeps
 		// depth precision sane for both centimetre characters and tiny props.
-		const FLOAT NearDist = EMath::Max(m_CameraDistance * PreviewCameraNearRatio, 1e-4f);
-		const FLOAT FarDist = EMath::Max(m_CameraDistance * PreviewCameraFarRatio, NearDist * 100.0f);
-		const FLOAT FovAngleY = m_CameraComponent->GetCameraViewInfo().FovAngleY;
-		m_CameraComponent->SetCameraViewInfo(0.0f, 0.0f
-			, static_cast<FLOAT>(m_ViewportWidth), static_cast<FLOAT>(m_ViewportHeight)
+		const FLOAT NearDist = EMath::Max(CameraDistance * PreviewCameraNearRatio, 1e-4f);
+		const FLOAT FarDist = EMath::Max(CameraDistance * PreviewCameraFarRatio, NearDist * 100.0f);
+		const FLOAT FovAngleY = CameraComponent->GetCameraViewInfo().FovAngleY;
+		CameraComponent->SetCameraViewInfo(0.0f, 0.0f
+			, static_cast<FLOAT>(ViewportWidth), static_cast<FLOAT>(ViewportHeight)
 			, FovAngleY, FarDist, NearDist);
 	}
 
 	Quaternion EAssetPreviewScene::GetPreviewMeshRotation() const
 	{
-		if ((m_SkeletalMeshComponent) && (m_SkeletonAsset))
+		if ((SkeletalMeshComponent) && (SkeletonAsset))
 		{
 			return MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(PreviewSkeletalMeshPitchDegrees));
 		}
@@ -701,12 +446,12 @@ namespace PigeonEngine
 
 	Vector3 EAssetPreviewScene::GetPreviewPivot(const Vector3& InBoundsCenter) const
 	{
-		if ((!m_SkeletalMeshComponent) || (!m_SkeletonAsset))
+		if ((!SkeletalMeshComponent) || (!SkeletonAsset))
 		{
 			return InBoundsCenter;
 		}
 
-		const ESkeleton* SkeletonResource = m_SkeletonAsset->GetStoragedResource();
+		const ESkeleton* SkeletonResource = SkeletonAsset->GetStoragedResource();
 		if (!SkeletonResource)
 		{
 			return InBoundsCenter;
@@ -728,43 +473,43 @@ namespace PigeonEngine
 	void EAssetPreviewScene::UpdateCameraTransform()
 	{
 		EnsureCameraActor();
-		if (!m_CameraActor)
+		if (!CameraActor)
 		{
 			return;
 		}
 
-		const Vector3 FocusPoint = m_ZoneOrigin + m_CameraFocusOffset;
-		const FLOAT CameraHeight = m_CameraDistance * PreviewCameraHeightScale;
+		const Vector3 FocusPoint = ZoneOrigin + CameraFocusOffset;
+		const FLOAT CameraHeight = CameraDistance * PreviewCameraHeightScale;
 		const Vector3 CameraPosition(
-			FocusPoint.x + std::cos(m_OrbitRadians) * m_CameraDistance,
+			FocusPoint.x + EMath::Cos(OrbitRadians) * CameraDistance,
 			FocusPoint.y + CameraHeight,
-			FocusPoint.z + std::sin(m_OrbitRadians) * m_CameraDistance);
+			FocusPoint.z + EMath::Sin(OrbitRadians) * CameraDistance);
 
-		m_CameraActor->SetActorLocation(CameraPosition);
-		m_CameraActor->SetActorRotation(LookAtTargetQuaternionRotation(FocusPoint, CameraPosition, Vector3::YVector()));
+		CameraActor->SetActorLocation(CameraPosition);
+		CameraActor->SetActorRotation(LookAtTargetQuaternionRotation(FocusPoint, CameraPosition, Vector3::YVector()));
 	}
 
 	void EAssetPreviewScene::ApplyAnimation(FLOAT InDeltaSeconds)
 	{
-		if ((!m_SkeletalMeshComponent) || (!m_SkeletonAsset))
+		if ((!SkeletalMeshComponent) || (!SkeletonAsset))
 		{
 			return;
 		}
 
-		const ESkeleton* SkeletonResource = m_SkeletonAsset->GetStoragedResource();
+		const ESkeleton* SkeletonResource = SkeletonAsset->GetStoragedResource();
 		if (!SkeletonResource)
 		{
 			return;
 		}
 
-		ESkeletonBoneMemoryPool& BoneMemoryPool = m_SkeletalMeshComponent->GetBoneMemoryPool();
+		ESkeletonBoneMemoryPool& BoneMemoryPool = SkeletalMeshComponent->GetBoneMemoryPool();
 		BoneMemoryPool.GenerateFromSkeleton(SkeletonResource);
 
-		if (m_AnimationClip)
+		if (AnimationClip)
 		{
-			if (m_PlayAnimation)
+			if (bPlayAnimation)
 			{
-				m_PlaybackTimeSeconds += InDeltaSeconds * m_PlaybackRate;
+				PlaybackTimeSeconds += InDeltaSeconds * PlaybackRate;
 
 				// Wrap the editor clock too, not just the sampled key time: otherwise the
 				// Position slider sticks at the clip end while the mesh keeps looping, and the
@@ -772,12 +517,12 @@ namespace PigeonEngine
 				const FLOAT DurationSeconds = GetClipDurationSeconds();
 				if (DurationSeconds > 0.0f)
 				{
-					m_PlaybackTimeSeconds = std::fmod(m_PlaybackTimeSeconds, DurationSeconds);
+					PlaybackTimeSeconds = EMath::FMod(PlaybackTimeSeconds, DurationSeconds);
 				}
 			}
 
-			const FLOAT TicksPerSecond = (m_AnimationClip->TicksPerSecond > 1e-3f) ? m_AnimationClip->TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
-			const FLOAT KeyTime = EAnimationSampler::WrapKeyTime(m_PlaybackTimeSeconds * TicksPerSecond, m_AnimationClip->Duration);
+			const FLOAT TicksPerSecond = (AnimationClip->TicksPerSecond > 1e-3f) ? AnimationClip->TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
+			const FLOAT KeyTime = EAnimationSampler::WrapKeyTime(PlaybackTimeSeconds * TicksPerSecond, AnimationClip->Duration);
 			auto VectorLerp = [](const Vector3& InValue0, const Vector3& InValue1, FLOAT InAlpha)->Vector3
 			{
 				return Vector3::Lerp(InValue0, InValue1, InAlpha);
@@ -788,9 +533,9 @@ namespace PigeonEngine
 			};
 
 			const TMap<EString, USHORT>& BoneMapping = SkeletonResource->GetBoneMapping();
-			for (INT32 CurveIndex = 0, CurveNum = m_AnimationClip->AnimationCurves.Num(); CurveIndex < CurveNum; CurveIndex++)
+			for (INT32 CurveIndex = 0, CurveNum = AnimationClip->AnimationCurves.Num(); CurveIndex < CurveNum; CurveIndex++)
 			{
-				const EBoneAnimationCurve& Curve = m_AnimationClip->AnimationCurves[CurveIndex];
+				const EBoneAnimationCurve& Curve = AnimationClip->AnimationCurves[CurveIndex];
 				if (!(BoneMapping.ContainsKey(Curve.BoneName)))
 				{
 					continue;
@@ -805,18 +550,18 @@ namespace PigeonEngine
 		}
 
 		BoneMemoryPool.RecursionToRootTransforms();
-		m_SkeletalMeshComponent->MarkBoneMemoryPoolDirty();
+		SkeletalMeshComponent->MarkBoneMemoryPoolDirty();
 	}
 
 	const EMesh* EAssetPreviewScene::GetPreviewMeshResource() const
 	{
-		if (m_StaticMeshAsset)
+		if (StaticMeshAsset)
 		{
-			return m_StaticMeshAsset->GetStoragedResource();
+			return StaticMeshAsset->GetStoragedResource();
 		}
-		if (m_SkinnedMeshAsset)
+		if (SkinnedMeshAsset)
 		{
-			return m_SkinnedMeshAsset->GetStoragedResource();
+			return SkinnedMeshAsset->GetStoragedResource();
 		}
 		return nullptr;
 	}

@@ -20,7 +20,7 @@ namespace PigeonEngine
 		/// <typeparam name="_TType"></typeparam>
 		/// <returns></returns>
 		template<typename _TType>
-		size_t GetClassHashCode()const
+		size_t GetClassHashCode() const
 		{
 			return (typeid(_TType).hash_code());
 		}
@@ -32,7 +32,7 @@ namespace PigeonEngine
 		/// <param name="InTypePtr"></param>
 		/// <returns></returns>
 		template<typename _TType>
-		size_t GetClassHashCode(const _TType* InTypePtr)const
+		size_t GetClassHashCode(const _TType* InTypePtr) const
 		{
 			return (typeid((*InTypePtr)).hash_code());
 		}
@@ -42,9 +42,9 @@ namespace PigeonEngine
 		/// </summary>
 		/// <param name="InClassName"></param>
 		/// <returns></returns>
-		size_t GetClassHashCodeByName(const CHAR* InClassName)const
+		size_t GetClassHashCodeByName(const CHAR* InClassName) const
 		{
-			if (auto It = ClassNameToHash.find(InClassName); It != ClassNameToHash.end())
+			if (std::map<std::string, size_t>::const_iterator It = ClassNameToHash.find(InClassName); It != ClassNameToHash.end())
 			{
 				return (It->second);
 			}
@@ -56,9 +56,9 @@ namespace PigeonEngine
 		/// </summary>
 		/// <param name="InClassHashCode"></param>
 		/// <returns></returns>
-		const CHAR* GetClassNameByHashCode(const size_t& InClassHashCode)const
+		const CHAR* GetClassNameByHashCode(const size_t& InClassHashCode) const
 		{
-			if (auto It = ClassHashToName.find(InClassHashCode); It != ClassHashToName.end())
+			if (std::map<size_t, std::string>::const_iterator It = ClassHashToName.find(InClassHashCode); It != ClassHashToName.end())
 			{
 				return (It->second.c_str());
 			}
@@ -97,7 +97,7 @@ namespace PigeonEngine
 		/// <returns></returns>
 		void* CreateClassObject(const size_t& InHashCode)
 		{
-			if (auto It = ClassFactories.find(InHashCode); It != ClassFactories.end())
+			if (std::map<size_t, ERawPtrFunctionType>::const_iterator It = ClassFactories.find(InHashCode); It != ClassFactories.end())
 			{
 				void* NewObject = (It->second)();
 				return (NewObject);
@@ -112,7 +112,7 @@ namespace PigeonEngine
 		/// <returns></returns>
 		void* CreateClassObject(const CHAR* InClassName)
 		{
-			if (auto It = ClassFactories.find(GetClassHashCodeByName(InClassName)); It != ClassFactories.end())
+			if (std::map<size_t, ERawPtrFunctionType>::const_iterator It = ClassFactories.find(GetClassHashCodeByName(InClassName)); It != ClassFactories.end())
 			{
 				void* NewObject = (It->second)();
 				return (NewObject);
@@ -128,7 +128,7 @@ namespace PigeonEngine
 		template<typename _TType>
 		_TType* CreateClassObject(const size_t& InHashCode)
 		{
-			if (auto It = ClassFactories.find(InHashCode); It != ClassFactories.end())
+			if (std::map<size_t, ERawPtrFunctionType>::const_iterator It = ClassFactories.find(InHashCode); It != ClassFactories.end())
 			{
 				class ERTTIObject* NewObject = (class ERTTIObject*)((It->second)());
 				if (IsChildClassType(GetClassHashCode<_TType>(), typeid(*NewObject).hash_code()))
@@ -148,7 +148,7 @@ namespace PigeonEngine
 		template<typename _TType>
 		_TType* CreateClassObject(const CHAR* InClassName)
 		{
-			if (auto It = ClassFactories.find(GetClassHashCodeByName(InClassName)); It != ClassFactories.end())
+			if (std::map<size_t, ERawPtrFunctionType>::const_iterator It = ClassFactories.find(GetClassHashCodeByName(InClassName)); It != ClassFactories.end())
 			{
 				class ERTTIObject* NewObject = (class ERTTIObject*)((It->second)());
 				if (IsChildClassType(GetClassHashCode<_TType>(), typeid(*NewObject).hash_code()))
@@ -167,7 +167,7 @@ namespace PigeonEngine
 		/// <param name="InTypeHash"></param>
 		/// <param name="InTestTypeHash"></param>
 		/// <returns></returns>
-		BOOL32 IsChildClassType(const size_t& InTypeHash, const size_t& InTestTypeHash)const
+		BOOL32 IsChildClassType(const size_t& InTypeHash, const size_t& InTestTypeHash) const
 		{
 			BOOL32 Result = FALSE;
 			BOOL32 NeedContinueRecursion = TRUE;
@@ -194,7 +194,7 @@ namespace PigeonEngine
 		/// </summary>
 		/// <param name="InTypeHash"></param>
 		/// <param name="InTestTypeHash"></param>
-		BOOL32 IsParentClassType(const size_t& InTypeHash, const size_t& InTestTypeHash)const
+		BOOL32 IsParentClassType(const size_t& InTypeHash, const size_t& InTestTypeHash) const
 		{
 			BOOL32 Result = FALSE;
 			BOOL32 NeedContinueRecursion = TRUE;
@@ -222,7 +222,7 @@ namespace PigeonEngine
 		/// <typeparam name="_TTestType"></typeparam>
 		/// <returns></returns>
 		template<typename _TInType, typename _TTestType>
-		BOOL32 IsChildClassType()const
+		BOOL32 IsChildClassType() const
 		{
 			BOOL32 Result = FALSE;
 			BOOL32 NeedContinueRecursion = TRUE;
@@ -249,7 +249,7 @@ namespace PigeonEngine
 		/// <typeparam name="_TInType"></typeparam>
 		/// <typeparam name="_TTestType"></typeparam>
 		template<typename _TInType, typename _TTestType>
-		BOOL32 IsParentClassType()const
+		BOOL32 IsParentClassType() const
 		{
 			BOOL32 Result = FALSE;
 			BOOL32 NeedContinueRecursion = TRUE;
@@ -271,18 +271,18 @@ namespace PigeonEngine
 		}
 
 		template<typename _TClassType>
-		const CHAR* GetStaticClassName()const
+		const CHAR* GetStaticClassName() const
 		{
-			if (auto It = ClassTypeInfos.find(GetClassHashCode<_TClassType>()); It != ClassTypeInfos.end())
+			if (std::map<size_t, EClassTypeInfo>::const_iterator It = ClassTypeInfos.find(GetClassHashCode<_TClassType>()); It != ClassTypeInfos.end())
 			{
 				return (It->second.TypeName.c_str());
 			}
 			return ("EngineUnknownClassName");
 		}
 
-		const CHAR* GetStaticClassName(const size_t& InClassTypeHash)const
+		const CHAR* GetStaticClassName(const size_t& InClassTypeHash) const
 		{
-			if (auto It = ClassTypeInfos.find(InClassTypeHash); It != ClassTypeInfos.end())
+			if (std::map<size_t, EClassTypeInfo>::const_iterator It = ClassTypeInfos.find(InClassTypeHash); It != ClassTypeInfos.end())
 			{
 				return (It->second.TypeName.c_str());
 			}
@@ -290,9 +290,9 @@ namespace PigeonEngine
 		}
 
 		template<typename _TClassType>
-		const CHAR* GetStaticClassName(const _TClassType* InClassTypePtr)const
+		const CHAR* GetStaticClassName(const _TClassType* InClassTypePtr) const
 		{
-			if (auto It = ClassTypeInfos.find(GetClassHashCode<_TClassType>(InClassTypePtr)); It != ClassTypeInfos.end())
+			if (std::map<size_t, EClassTypeInfo>::const_iterator It = ClassTypeInfos.find(GetClassHashCode<_TClassType>(InClassTypePtr)); It != ClassTypeInfos.end())
 			{
 				return (It->second.TypeName.c_str());
 			}
@@ -305,11 +305,11 @@ namespace PigeonEngine
 			EClassTypeInfo(const std::string& InTypeName, const size_t& InTypeHashCode) : TypeName(InTypeName), TypeHashCode(InTypeHashCode) {}
 			EClassTypeInfo(const EClassTypeInfo& Other) : TypeName(Other.TypeName), TypeHashCode(Other.TypeHashCode)
 			{
-				for (auto It = Other.ParentHashCodes.begin(); It != Other.ParentHashCodes.end(); It++)
+				for (std::set<size_t>::const_iterator It = Other.ParentHashCodes.begin(); It != Other.ParentHashCodes.end(); It++)
 				{
 					ParentHashCodes.insert((*It));
 				}
-				for (auto It = Other.ChildHashCodes.begin(); It != Other.ChildHashCodes.end(); It++)
+				for (std::set<size_t>::const_iterator It = Other.ChildHashCodes.begin(); It != Other.ChildHashCodes.end(); It++)
 				{
 					ChildHashCodes.insert((*It));
 				}
@@ -326,11 +326,11 @@ namespace PigeonEngine
 				{
 					ChildHashCodes.clear();
 				}
-				for (auto It = Other.ParentHashCodes.begin(); It != Other.ParentHashCodes.end(); It++)
+				for (std::set<size_t>::const_iterator It = Other.ParentHashCodes.begin(); It != Other.ParentHashCodes.end(); It++)
 				{
 					ParentHashCodes.insert((*It));
 				}
-				for (auto It = Other.ChildHashCodes.begin(); It != Other.ChildHashCodes.end(); It++)
+				for (std::set<size_t>::const_iterator It = Other.ChildHashCodes.begin(); It != Other.ChildHashCodes.end(); It++)
 				{
 					ChildHashCodes.insert((*It));
 				}
@@ -348,7 +348,7 @@ namespace PigeonEngine
 		{
 			size_t TypeHashCode = typeid(_TType).hash_code();
 			std::string TypeName = typeid(_TType).name();
-			auto Item = ClassTypeInfos.find(TypeHashCode);
+			std::map<size_t, EClassTypeInfo>::const_iterator Item = ClassTypeInfos.find(TypeHashCode);
 			if (Item == ClassTypeInfos.end())
 			{
 				EClassTypeInfo TempData(TypeName, TypeHashCode);
@@ -387,9 +387,9 @@ namespace PigeonEngine
 			ProcessClassInfoInternal<_TType, _RestParentTypes...>();
 		}
 		template<typename TFunctionType, typename TConditionType>
-		void ForwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond)const
+		void ForwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond) const
 		{
-			auto CurrentItem = ClassTypeInfos.find(InHashCode);
+			std::map<size_t, EClassTypeInfo>::const_iterator CurrentItem = ClassTypeInfos.find(InHashCode);
 			if (CurrentItem == ClassTypeInfos.end())
 			{
 				return;
@@ -400,7 +400,7 @@ namespace PigeonEngine
 				InFunc(TempInfo);
 				if (TempInfo.ChildHashCodes.size() > 0u)
 				{
-					for (auto It = TempInfo.ChildHashCodes.begin(); It != TempInfo.ChildHashCodes.end(); It++)
+					for (std::set<size_t>::const_iterator It = TempInfo.ChildHashCodes.begin(); It != TempInfo.ChildHashCodes.end(); It++)
 					{
 						ForwardRecursion<TFunctionType, TConditionType>(*It, InFunc, InCond);
 					}
@@ -408,9 +408,9 @@ namespace PigeonEngine
 			}
 		}
 		template<typename TFunctionType, typename TConditionType>
-		void BackwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond)const
+		void BackwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond) const
 		{
-			auto CurrentItem = ClassTypeInfos.find(InHashCode);
+			std::map<size_t, EClassTypeInfo>::const_iterator CurrentItem = ClassTypeInfos.find(InHashCode);
 			if (CurrentItem == ClassTypeInfos.end())
 			{
 				return;
@@ -421,7 +421,7 @@ namespace PigeonEngine
 				InFunc(TempInfo);
 				if (TempInfo.ParentHashCodes.size() > 0u)
 				{
-					for (auto It = TempInfo.ParentHashCodes.begin(); It != TempInfo.ParentHashCodes.end(); It++)
+					for (std::set<size_t>::const_iterator It = TempInfo.ParentHashCodes.begin(); It != TempInfo.ParentHashCodes.end(); It++)
 					{
 						BackwardRecursion<TFunctionType, TConditionType>(*It, InFunc, InCond);
 					}

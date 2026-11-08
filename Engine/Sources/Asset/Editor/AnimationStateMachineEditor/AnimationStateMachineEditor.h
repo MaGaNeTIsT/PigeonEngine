@@ -1,6 +1,6 @@
 #pragma once
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Array.h>
@@ -52,17 +52,17 @@ namespace PigeonEngine
 		void ReplaceJsonBuffer(const EString& InJsonText);
 
 	private:
-		BOOL8							m_ShowEditor = FALSE;
-		const EAnimStateMachineAsset*	m_Asset = nullptr;
-		EString							m_OpenedAssetFullPath;
-		EString							m_LastError;
-		TArray<CHAR>					m_JsonBuffer;
-		TMap<EString, ImVec2>			m_NodePositions;
-		INT32							m_SelectedStateIndex = 0;
-		INT32							m_SelectedTransitionIndex = -1;
+		BOOL8							bShowEditor = FALSE;
+		const EAnimStateMachineAsset*	Asset = nullptr;
+		EString							OpenedAssetFullPath;
+		EString							LastError;
+		TArray<CHAR>					JsonBuffer;
+		TMap<EString, ImVec2>			NodePositions;
+		INT32							SelectedStateIndex = 0;
+		INT32							SelectedTransitionIndex = -1;
 		// -1 means the "Any" pseudo state.
-		INT32							m_TransitionFromIndex = -1;
-		INT32							m_TransitionToIndex = 0;
+		INT32							TransitionFromIndex = -1;
+		INT32							TransitionToIndex = 0;
 	};
 
 }

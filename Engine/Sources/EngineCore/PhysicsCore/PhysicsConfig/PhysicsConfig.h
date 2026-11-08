@@ -17,7 +17,7 @@ namespace PigeonEngine
 
 		//Runtime Parameters
 		PE_CONSTEXPR_STATIC INT32 PHYSICS_COLLISION_STEPS			= 1;						// Do n collision step per cDeltaTime
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// Editor only: draws every physics body's collision shape through the debug wireframe
 		// primitives. Off by default because a scene with many bodies fills the view with
 		// boxes; the Display Settings panel owns the checkbox.

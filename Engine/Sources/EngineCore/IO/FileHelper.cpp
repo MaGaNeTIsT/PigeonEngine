@@ -134,15 +134,15 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		for (const auto& entry : std::filesystem::directory_iterator(dirPath))
+		for (const std::filesystem::directory_entry& Entry : std::filesystem::directory_iterator(dirPath))
 		{
-			if (std::filesystem::is_directory(entry))
+			if (std::filesystem::is_directory(Entry))
 			{
-				OutFolders.Add(entry.path().string());
+				OutFolders.Add(Entry.path().string());
 			}
-			else if (std::filesystem::is_regular_file(entry))
+			else if (std::filesystem::is_regular_file(Entry))
 			{
-				OutFiles.Add(entry.path().string());
+				OutFiles.Add(Entry.path().string());
 			}
 		}
 		return TRUE;

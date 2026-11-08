@@ -12,13 +12,13 @@ namespace PigeonEngine
 	{
 	public:
 		EAnimMontageAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~EAnimMontageAsset();
 	public:
-		virtual BOOL32 InitResource()override;
+		virtual BOOL32 InitResource() override;
 	public:
 		EAnimMontageAsset() = delete;
 
@@ -30,11 +30,11 @@ namespace PigeonEngine
 	public:
 		typedef TAssetManager<EString, EAnimMontageAsset>	EAnimMontageAssetManager;
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		BOOL32	ImportMontage(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath);
 #endif
 		BOOL32	LoadMontageAsset(const EString& InLoadPath, const EString& InLoadName, const EAnimMontageAsset*& OutAsset);

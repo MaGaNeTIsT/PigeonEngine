@@ -36,25 +36,25 @@ namespace PigeonEngine
 	protected:
 		// The two pieces only a concrete mesh kind can supply. The shared draw path needs
 		// nothing else from the asset.
-		PE_NODISCARD virtual const EMesh*				GetMeshColdData()const;
-		PE_NODISCARD virtual const EMeshRenderResource*	GetMeshRenderResource()const;
+		PE_NODISCARD virtual const EMesh*				GetMeshColdData() const;
+		PE_NODISCARD virtual const EMeshRenderResource*	GetMeshRenderResource() const;
 		// The skin streams, or null for a mesh without them. InIsIndexStream selects the blend
 		// index stream, otherwise the blend weight stream.
-		PE_NODISCARD virtual const RVertexBufferResource*	GetSkinVertexStream(const BOOL32 InIsIndexStream)const;
+		PE_NODISCARD virtual const RVertexBufferResource*	GetSkinVertexStream(const BOOL32 InIsIndexStream) const;
 		// TRUE when this mesh carries the two skin streams. It is what decides whether the
 		// pipeline state has to declare the index stream's data format.
-		PE_NODISCARD virtual BOOL32	HasSkinVertexStreams()const;
+		PE_NODISCARD virtual BOOL32	HasSkinVertexStreams() const;
 	protected:
-		virtual const EShaderInstance*	ResolveFallbackInstance(const UINT32 InSlotIndex)const override;
+		virtual const EShaderInstance*	ResolveFallbackInstance(const UINT32 InSlotIndex) const override;
 		// The mesh asset's own AABB, transformed into world space. It is the conservative bound a
 		// shadow caster cull needs; a skinned mesh uses its bind pose bound, which can only be
 		// smaller than the posed one, so the caller keeps a small safety margin in mind.
-		virtual BOOL32	GetWorldBound(Vector3& OutMin, Vector3& OutMax)const override;
+		virtual BOOL32	GetWorldBound(Vector3& OutMin, Vector3& OutMax) const override;
 		virtual const RInputLayoutDesc*	GetPipelineStateInputLayouts(UINT32& OutCount) const override;
-		virtual UINT32	GetDrawGroupNum()const override;
-		virtual BOOL32	GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex)const override;
-		virtual BOOL32	ResolveGeometryBinding(FPrimitivePassData& InOutData)const override;
-		virtual BOOL32	BindGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData)const override;
+		virtual UINT32	GetDrawGroupNum() const override;
+		virtual BOOL32	GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex) const override;
+		virtual BOOL32	ResolveGeometryBinding(FPrimitivePassData& InOutData) const override;
+		virtual BOOL32	BindGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData) const override;
 
 		RENDER_PROXY_CLASS_BODY(RMeshSceneProxy)
 

@@ -78,7 +78,7 @@ namespace PigeonEngine
 			return (GetData()[InIndex]);
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD PE_FORCEINLINE const TElementType& operator[](_TOtherIndexType InIndex)const
+		PE_NODISCARD PE_FORCEINLINE const TElementType& operator[](_TOtherIndexType InIndex) const
 		{
 			Check(((InIndex >= (_TOtherIndexType)0) && ((_TSizeType)(InIndex) < ElementNum)));
 			return (GetData()[InIndex]);
@@ -209,7 +209,7 @@ namespace PigeonEngine
 			return ((*this)[InIndex]);
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD PE_FORCEINLINE const TElementType& GetRef(_TOtherIndexType InIndex)const
+		PE_NODISCARD PE_FORCEINLINE const TElementType& GetRef(_TOtherIndexType InIndex) const
 		{
 			return ((*this)[InIndex]);
 		}
@@ -217,7 +217,7 @@ namespace PigeonEngine
 		{
 			return ((*this)[0]);
 		}
-		PE_NODISCARD PE_FORCEINLINE const TElementType& FirstRef()const
+		PE_NODISCARD PE_FORCEINLINE const TElementType& FirstRef() const
 		{
 			return ((*this)[0]);
 		}
@@ -225,7 +225,7 @@ namespace PigeonEngine
 		{
 			return ((*this)[ElementNum - (_TSizeType)1]);
 		}
-		PE_NODISCARD PE_FORCEINLINE const TElementType& LastRef()const
+		PE_NODISCARD PE_FORCEINLINE const TElementType& LastRef() const
 		{
 			return ((*this)[ElementNum - (_TSizeType)1]);
 		}
@@ -380,7 +380,7 @@ namespace PigeonEngine
 			EmptyInternal(InElementNum);
 		}
 		template<typename _TOtherIndexType = _TSizeType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD _TOtherIndexType Find(const TElementType& InElement)const
+		PE_NODISCARD _TOtherIndexType Find(const TElementType& InElement) const
 		{
 			for (_TOtherIndexType i = (_TOtherIndexType)0, n = ((_TOtherIndexType)(ElementNum)); i < n; i++)
 			{
@@ -392,7 +392,7 @@ namespace PigeonEngine
 			return ((_TOtherIndexType)(-1));
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		BOOL8 Find(const TElementType& InElement, _TOtherIndexType& OutIndex)const
+		BOOL8 Find(const TElementType& InElement, _TOtherIndexType& OutIndex) const
 		{
 			for (_TOtherIndexType i = (_TOtherIndexType)0, n = ((_TOtherIndexType)(ElementNum)); i < n; i++)
 			{
@@ -404,7 +404,7 @@ namespace PigeonEngine
 			}
 			return FALSE;
 		}
-		PE_NODISCARD BOOL8 Contains(const TElementType& InElement)const
+		PE_NODISCARD BOOL8 Contains(const TElementType& InElement) const
 		{
 			for (_TSizeType i = (_TSizeType)0, n = ElementNum; i < n; i++)
 			{
@@ -421,7 +421,7 @@ namespace PigeonEngine
 			//TODO
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		TArray<TElementType, _TOtherSizeType, _TOtherAllocator> Reverse()const
+		TArray<TElementType, _TOtherSizeType, _TOtherAllocator> Reverse() const
 		{
 			TArray<TElementType, _TOtherSizeType, _TOtherAllocator> NewReverseArray;
 			const _TOtherSizeType UsedElementNum = (_TOtherSizeType)(ElementNum);
@@ -464,17 +464,17 @@ namespace PigeonEngine
 		{
 			EmptyInternal();
 		}
-		PE_FORCEINLINE TArray()noexcept
+		PE_FORCEINLINE TArray() noexcept
 			: ElementNum((_TSizeType)0)
 		{
 		}
 		template<typename _TOtherSizeType, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
-		PE_FORCEINLINE TArray(_TOtherSizeType InElementNum)noexcept
+		PE_FORCEINLINE TArray(_TOtherSizeType InElementNum) noexcept
 			: ElementNum((_TSizeType)0)
 		{
 			AppendElementInternal(InElementNum);
 		}
-		TArray(TInitializerList<TElementType> InInitList)noexcept
+		TArray(TInitializerList<TElementType> InInitList) noexcept
 			: ElementNum((_TSizeType)0)
 		{
 			const _TSizeType NumList = InitializerListSize<TElementType, _TSizeType>(InInitList);
@@ -503,50 +503,50 @@ namespace PigeonEngine
 			ElementNum = (_TSizeType)(InNum);
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		PE_FORCEINLINE explicit TArray(const TArray<TElementType, _TOtherSizeType, _TOtherAllocator>& Other)noexcept
+		PE_FORCEINLINE explicit TArray(const TArray<TElementType, _TOtherSizeType, _TOtherAllocator>& Other) noexcept
 			: ElementNum((_TSizeType)0)
 		{
 			CopyFromInternal<_TOtherSizeType, _TOtherAllocator>(Other);
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		PE_FORCEINLINE explicit TArray(TArray<TElementType, _TOtherSizeType, _TOtherAllocator>&& Other)noexcept
+		PE_FORCEINLINE explicit TArray(TArray<TElementType, _TOtherSizeType, _TOtherAllocator>&& Other) noexcept
 			: ElementNum((_TSizeType)0)
 		{
 			MoveFromInternal<_TOtherSizeType, _TOtherAllocator>(EMemory::Forward<TArray<TElementType, _TOtherSizeType, _TOtherAllocator>>(Other));
 		}
-		PE_FORCEINLINE TArray(const TArray& Other)noexcept
+		PE_FORCEINLINE TArray(const TArray& Other) noexcept
 			: ElementNum((_TSizeType)0)
 		{
 			CopyFromInternal<_TSizeType, TAllocatorType>(Other);
 		}
-		PE_FORCEINLINE TArray(TArray&& Other)noexcept
+		PE_FORCEINLINE TArray(TArray&& Other) noexcept
 			: ElementNum((_TSizeType)0)
 		{
 			MoveFromInternal<_TSizeType, TAllocatorType>(EMemory::Forward<TArray>(Other));
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		TArray& operator=(const TArray<TElementType, _TOtherSizeType, _TOtherAllocator>& Other)noexcept
+		TArray& operator=(const TArray<TElementType, _TOtherSizeType, _TOtherAllocator>& Other) noexcept
 		{
 			CopyFrom<_TOtherSizeType, _TOtherAllocator>(Other);
 			return (*this);
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		TArray& operator=(TArray<TElementType, _TOtherSizeType, _TOtherAllocator>&& Other)noexcept
+		TArray& operator=(TArray<TElementType, _TOtherSizeType, _TOtherAllocator>&& Other) noexcept
 		{
 			MoveFrom<_TOtherSizeType, _TOtherAllocator>(EMemory::Forward<TArray<TElementType, _TOtherSizeType, _TOtherAllocator>>(Other));
 			return (*this);
 		}
-		TArray& operator=(const TArray& Other)noexcept
+		TArray& operator=(const TArray& Other) noexcept
 		{
 			CopyFrom<_TSizeType, TAllocatorType>(Other);
 			return (*this);
 		}
-		TArray& operator=(TArray&& Other)noexcept
+		TArray& operator=(TArray&& Other) noexcept
 		{
 			MoveFrom<_TSizeType, TAllocatorType>(EMemory::Forward<TArray>(Other));
 			return (*this);
 		}
-		TArray& operator=(TInitializerList<TElementType> InInitList)noexcept
+		TArray& operator=(TInitializerList<TElementType> InInitList) noexcept
 		{
 			EmptyInternal();
 			const _TSizeType NumList = InitializerListSize<TElementType, _TSizeType>(InInitList);
@@ -581,12 +581,12 @@ namespace PigeonEngine
 			EmptyInternal();
 			MoveFromInternal<_TOtherSizeType, _TOtherAllocator>(EMemory::Forward<TArray<TElementType, _TOtherSizeType, _TOtherAllocator>>(Other));
 		}
-		PE_NODISCARD BOOL8 IsEmpty()const
+		PE_NODISCARD BOOL8 IsEmpty() const
 		{
 			return (ElementNum == (_TSizeType)0);
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD PE_FORCEINLINE BOOL8 IsValidIndex(_TOtherIndexType InIndex)const
+		PE_NODISCARD PE_FORCEINLINE BOOL8 IsValidIndex(_TOtherIndexType InIndex) const
 		{
 			if PE_CONSTEXPR(TIsSame<_TOtherIndexType, _TSizeType>::value)
 			{
@@ -601,12 +601,12 @@ namespace PigeonEngine
 		{
 			return (Allocator.HeapData());
 		}
-		PE_NODISCARD PE_FORCEINLINE const TElementType* GetData()const
+		PE_NODISCARD PE_FORCEINLINE const TElementType* GetData() const
 		{
 			return (Allocator.HeapData());
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType Num()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType Num() const
 		{
 			if PE_CONSTEXPR(TIsSame<_TResultType, _TSizeType>::value)
 			{
@@ -618,12 +618,12 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType AllocateSize()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType AllocateSize() const
 		{
 			return (Allocator.HeapSize<_TResultType>());
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType Capacity()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType Capacity() const
 		{
 			return (Allocator.HeapSize<_TResultType>() / TArray::ElementTypeSize<_TResultType>);
 		}
@@ -832,19 +832,19 @@ namespace PigeonEngine
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
 		PE_FORCEINLINE TIterator                begin()         { return (GetData()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
-		PE_FORCEINLINE TConstIterator           begin()const    { return (GetData()); }
+		PE_FORCEINLINE TConstIterator           begin() const    { return (GetData()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
 		PE_FORCEINLINE TIterator                end()           { return (GetData() + Num<_TSizeType>()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
-		PE_FORCEINLINE TConstIterator           end()const      { return (GetData() + Num<_TSizeType>()); }
+		PE_FORCEINLINE TConstIterator           end() const      { return (GetData() + Num<_TSizeType>()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
 		PE_FORCEINLINE TReverseIterator         rbegin()        { return TReverseIterator(GetData() + Num<_TSizeType>()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
-		PE_FORCEINLINE TConstReverseIterator    rbegin()const   { return TConstReverseIterator(GetData() + Num<_TSizeType>()); }
+		PE_FORCEINLINE TConstReverseIterator    rbegin() const   { return TConstReverseIterator(GetData() + Num<_TSizeType>()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
 		PE_FORCEINLINE TReverseIterator         rend()          { return TReverseIterator(GetData()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
-		PE_FORCEINLINE TConstReverseIterator    rend()const     { return TConstReverseIterator(GetData()); }
+		PE_FORCEINLINE TConstReverseIterator    rend() const     { return TConstReverseIterator(GetData()); }
 	private:
 		_TSizeType      ElementNum;
 		TAllocatorType  Allocator;
@@ -871,7 +871,7 @@ namespace PigeonEngine
 		~TArray() = default;
 
 		T&          operator[](const UINT32& Index);
-		const T&    operator[](const UINT32& Index)const;
+		const T&    operator[](const UINT32& Index) const;
 		TArray<T>&  operator= (const TArray<T>& Other);
 		TArray<T>&  operator= (TArray<T>&& Other) noexcept;
 		TArray<T>&  operator= (std::vector<T>&& Other);
@@ -887,7 +887,7 @@ namespace PigeonEngine
 		}
 
 		T&          GetRef    (const UINT32& Index);
-		const T&    Get       (const UINT32& Index)const;
+		const T&    Get       (const UINT32& Index) const;
 		const T&    Last      ();
 		// Find the index of given Element, return array's Length if the Element doesn't exist.
 		UINT32 Find      (const T& Element) const;
@@ -913,7 +913,7 @@ namespace PigeonEngine
 		{
 			return Elements.begin();
 		}
-		typename TConstIterator Begin()const
+		typename TConstIterator Begin() const
 		{
 			return Elements.begin();
 		}
@@ -921,7 +921,7 @@ namespace PigeonEngine
 		{
 			return Elements.end();
 		}
-		typename TConstIterator End()const
+		typename TConstIterator End() const
 		{
 			return Elements.end();
 		}
@@ -938,16 +938,16 @@ namespace PigeonEngine
 		* DO NOT USE DIRECTLY
 		* STL-like iterators to enable range-based for loop support.
 		*/
-		typename TConstIterator begin()const{return Elements.begin();}
-		typename TConstIterator end()const{return Elements.end();}
+		typename TConstIterator begin() const{return Elements.begin();}
+		typename TConstIterator end() const{return Elements.end();}
 		typename TIterator      begin(){return Elements.begin();}
 		typename TIterator      end(){return Elements.end();}
 
-		PE_NODISCARD UINT32 Length()const
+		PE_NODISCARD UINT32 Length() const
 		{
 			return static_cast<UINT32>(this->Elements.size());
 		}
-		PE_NODISCARD UINT32 LastIndex    ()const;
+		PE_NODISCARD UINT32 LastIndex    () const;
 
 
 	private:
@@ -995,7 +995,7 @@ namespace PigeonEngine
 	template <typename T>
 	T& TArray<T>::operator[](const UINT32& Index)
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		UINT32 NumElements = Length();
 		PE_CHECK(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
@@ -1003,9 +1003,9 @@ namespace PigeonEngine
 	}
 
 	template <typename T>
-	const T& TArray<T>::operator[](const UINT32& Index)const
+	const T& TArray<T>::operator[](const UINT32& Index) const
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		UINT32 NumElements = Length();
 		PE_CHECK(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
@@ -1058,7 +1058,7 @@ namespace PigeonEngine
 	template <typename T>
 	T& TArray<T>::GetRef(const UINT32& Index)
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		UINT32 NumElements = Length();
 		PE_CHECK(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
@@ -1066,9 +1066,9 @@ namespace PigeonEngine
 	}
 
 	template <typename T>
-	const T& TArray<T>::Get(const UINT32& Index)const
+	const T& TArray<T>::Get(const UINT32& Index) const
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		UINT32 NumElements = Length();
 		PE_CHECK(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
@@ -1130,7 +1130,7 @@ namespace PigeonEngine
 	{
 		const UINT32 Size = Length() + Other.Length();
 		Recapacity(Size * 2);
-		for(const auto& elem:Other)
+		for (const T& elem : Other)
 		{
 			Add(elem);
 		}
@@ -1180,7 +1180,7 @@ namespace PigeonEngine
 	template <typename T>
 	BOOL32 TArray<T>::Contains(const T& Element) const
 	{
-		for(const auto& elem : Elements)
+		for (const T& elem : Elements)
 		{
 			if(elem == Element)
 			{

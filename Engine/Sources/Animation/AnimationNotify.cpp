@@ -129,7 +129,7 @@ namespace PigeonEngine
 	{
 		TArray<EString> Result;
 		TMap<EString, EAnimNotifyFactory>& Registry = GetNotifyRegistry();
-		for (auto It = Registry.Begin(); It != Registry.End(); It++)
+		for (TMap<EString, EAnimNotifyFactory>::TIterator It = Registry.Begin(); It != Registry.End(); It++)
 		{
 			Result.Add(It->first);
 		}

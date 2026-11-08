@@ -39,7 +39,7 @@ namespace PigeonEngine
 			AnimInstance = nullptr;
 		}
 	}
-	const ESkinnedMeshAsset* PSkeletalMeshComponent::GetMeshAsset()const
+	const ESkinnedMeshAsset* PSkeletalMeshComponent::GetMeshAsset() const
 	{
 		return MeshAsset;
 	}
@@ -65,14 +65,18 @@ namespace PigeonEngine
 		}
 		// The bone matrices are animation state, so they are re-reported with every snapshot
 		// rather than cached: the pool is what the animation system writes into.
-		const auto& BoneToRootTransforms = BoneMemoryPool.GetBoneToRootTransforms();
+		#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
+		const TArray<Matrix4x4>& BoneToRootTransforms = BoneMemoryPool.GetBoneToRootTransforms();
+		#else
+		const TArray<EBoneTransform>& BoneToRootTransforms = BoneMemoryPool.GetBoneToRootTransforms();
+		#endif
 		const UINT32 MatrixNum = BoneToRootTransforms.Num<UINT32>();
 		if (MatrixNum > 0u)
 		{
 			OutSnapshot.BoneToRootMatrices.SetNum(MatrixNum);
 			for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
 			{
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 				OutSnapshot.BoneToRootMatrices[MatrixIndex] = BoneToRootTransforms[MatrixIndex];
 #else
 				OutSnapshot.BoneToRootMatrices[MatrixIndex] = BoneToRootTransforms[MatrixIndex].ToMatrix4x4();
@@ -88,7 +92,7 @@ namespace PigeonEngine
 		if (!!InMeshAsset)
 		{
 			const ESkinnedMesh* Mesh = InMeshAsset->GetStoragedResource();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skinned mesh asset does not contain mesh resource."), (!!Mesh));
 			if (Mesh)
 #endif
@@ -101,7 +105,7 @@ namespace PigeonEngine
 		// the pass slots rather than only rewriting values.
 		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS);
 	}
-	const ESkeletonAsset* PSkeletalMeshComponent::GetSkeletonAsset()const
+	const ESkeletonAsset* PSkeletalMeshComponent::GetSkeletonAsset() const
 	{
 		return SkeletonAsset;
 	}
@@ -175,11 +179,11 @@ namespace PigeonEngine
 	}
 
 	// Animation START
-	const ESkeletonAnimationAsset* PSkeletalMeshComponent::GetAnimationAsset()const
+	const ESkeletonAnimationAsset* PSkeletalMeshComponent::GetAnimationAsset() const
 	{
 		return (AnimInstance ? AnimInstance->GetAnimationAsset() : nullptr);
 	}
-	EAnimInstance* PSkeletalMeshComponent::GetAnimInstance()const
+	EAnimInstance* PSkeletalMeshComponent::GetAnimInstance() const
 	{
 		return AnimInstance;
 	}
@@ -282,7 +286,7 @@ namespace PigeonEngine
 			AnimInstance->SetLoopMode(InLoopMode);
 		}
 	}
-	EAnimationLoopMode PSkeletalMeshComponent::GetAnimationLoopMode()const
+	EAnimationLoopMode PSkeletalMeshComponent::GetAnimationLoopMode() const
 	{
 		return (AnimInstance ? AnimInstance->GetLoopMode() : ANIMATION_LOOP_ONCE);
 	}
@@ -307,7 +311,7 @@ namespace PigeonEngine
 			AnimInstance->ClearStateMachine();
 		}
 	}
-	EAnimStateMachineInstance* PSkeletalMeshComponent::GetStateMachineInstance()const
+	EAnimStateMachineInstance* PSkeletalMeshComponent::GetStateMachineInstance() const
 	{
 		return (AnimInstance ? AnimInstance->GetStateMachineInstance() : nullptr);
 	}
@@ -360,27 +364,27 @@ namespace PigeonEngine
 			AnimInstance->ResumeMontage(InSlotName);
 		}
 	}
-	BOOL32 PSkeletalMeshComponent::IsMontagePlaying()const
+	BOOL32 PSkeletalMeshComponent::IsMontagePlaying() const
 	{
 		return (AnimInstance ? AnimInstance->IsMontagePlaying() : FALSE);
 	}
-	BOOL32 PSkeletalMeshComponent::IsMontagePlaying(const EString& InSlotName)const
+	BOOL32 PSkeletalMeshComponent::IsMontagePlaying(const EString& InSlotName) const
 	{
 		return (AnimInstance ? AnimInstance->IsMontagePlaying(InSlotName) : FALSE);
 	}
-	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstance()const
+	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstance() const
 	{
 		return (AnimInstance ? AnimInstance->GetMontageInstance() : nullptr);
 	}
-	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstanceBySlot(const EString& InSlotName)const
+	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstanceBySlot(const EString& InSlotName) const
 	{
 		return (AnimInstance ? AnimInstance->GetMontageInstanceBySlot(InSlotName) : nullptr);
 	}
-	INT32 PSkeletalMeshComponent::GetMontageInstanceCount()const
+	INT32 PSkeletalMeshComponent::GetMontageInstanceCount() const
 	{
 		return (AnimInstance ? AnimInstance->GetMontageInstanceCount() : 0);
 	}
-	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstanceAt(INT32 InIndex)const
+	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstanceAt(INT32 InIndex) const
 	{
 		return (AnimInstance ? AnimInstance->GetMontageInstanceAt(InIndex) : nullptr);
 	}
@@ -394,7 +398,7 @@ namespace PigeonEngine
 			AnimInstance->SetRootMotionEnabled(bInEnabled);
 		}
 	}
-	BOOL32 PSkeletalMeshComponent::IsRootMotionEnabled()const
+	BOOL32 PSkeletalMeshComponent::IsRootMotionEnabled() const
 	{
 		return (AnimInstance ? AnimInstance->IsRootMotionEnabled() : FALSE);
 	}
@@ -405,13 +409,13 @@ namespace PigeonEngine
 			AnimInstance->SetRootMotionBoneIndex(InBoneIndex);
 		}
 	}
-	INT32 PSkeletalMeshComponent::GetRootMotionBoneIndex()const
+	INT32 PSkeletalMeshComponent::GetRootMotionBoneIndex() const
 	{
 		return (AnimInstance ? AnimInstance->GetRootMotionBoneIndex() : 0);
 	}
 	// Root motion END
 
-	const ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool()const
+	const ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool() const
 	{
 		return BoneMemoryPool;
 	}
@@ -447,9 +451,9 @@ namespace PigeonEngine
 		{
 			SendUpdateRenderState();
 		}
-		for (const auto& elem : ChildrenComponents)
+		for (PSceneComponent* Component : ChildrenComponents)
 		{
-			elem->TickRender();
+			Component->TickRender();
 		}
 	}
 

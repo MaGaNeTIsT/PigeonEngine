@@ -76,9 +76,9 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(EAnimStateMachine)
 
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 
 	public:
 		EString								Name;
@@ -95,9 +95,9 @@ namespace PigeonEngine
 	public:
 		void Reset();
 		BOOL32 RebuildMappings();
-		BOOL32 IsValid()const;
-		PE_NODISCARD INT32 FindState(const EString& InName)const;
-		PE_NODISCARD INT32 FindParameter(const EString& InName)const;
+		BOOL32 IsValid() const;
+		PE_NODISCARD INT32 FindState(const EString& InName) const;
+		PE_NODISCARD INT32 FindParameter(const EString& InName) const;
 	};
 
 	/*
@@ -110,15 +110,15 @@ namespace PigeonEngine
 	public:
 		BOOL32 SetMachine(const EAnimStateMachine* InMachine);
 		void Clear();
-		PE_NODISCARD const EAnimStateMachine* GetMachine()const;
-		PE_NODISCARD INT32 GetCurrentStateIndex()const;
-		PE_NODISCARD FLOAT GetTimeInState()const;
+		PE_NODISCARD const EAnimStateMachine* GetMachine() const;
+		PE_NODISCARD INT32 GetCurrentStateIndex() const;
+		PE_NODISCARD FLOAT GetTimeInState() const;
 
 		void SetFloat(const EString& InName, FLOAT InValue);
 		void SetBool(const EString& InName, BOOL32 InValue);
 		void SetTrigger(const EString& InName);
-		PE_NODISCARD FLOAT GetFloat(const EString& InName)const;
-		PE_NODISCARD BOOL32 GetBool(const EString& InName)const;
+		PE_NODISCARD FLOAT GetFloat(const EString& InName) const;
+		PE_NODISCARD BOOL32 GetBool(const EString& InName) const;
 
 		/*
 		* Advances the state machine and enters a state when a transition fires. The caller
@@ -129,8 +129,8 @@ namespace PigeonEngine
 
 	private:
 		BOOL32 EnterState(EAnimInstance& InAnimInstance, INT32 InStateIndex, FLOAT InBlendSeconds);
-		PE_NODISCARD BOOL32 EvaluateCondition(const EAnimStateMachineCondition& InCondition)const;
-		PE_NODISCARD BOOL32 EvaluateTransition(const EAnimStateMachineTransition& InTransition)const;
+		PE_NODISCARD BOOL32 EvaluateCondition(const EAnimStateMachineCondition& InCondition) const;
+		PE_NODISCARD BOOL32 EvaluateTransition(const EAnimStateMachineTransition& InTransition) const;
 		void ConsumeTriggers(const EAnimStateMachineTransition& InTransition);
 
 	private:

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <Base/DataStructure/BuiltInType.h>
 
 
 struct IDxcUtils;
@@ -49,7 +50,7 @@ namespace MC
 		std::vector<MCDxcCbLayout>	CBuffers;			// Constant buffer layout reported by the compiler reflection.
 		std::vector<MCDxcBinding>	Bindings;			// Resources the compiled shader actually binds.
 		std::string			Errors;
-		bool				Success		= false;
+		bool				Success		= FALSE;
 	};
 
 	struct MCCompileParams
@@ -62,8 +63,8 @@ namespace MC
 		std::string						EntryName;					// "main", "VSMain", etc.
 		std::vector<std::string>		IncludeDirs;				// Unified include search paths (engine shaders, templates, material source, etc.)
 		std::vector<TDefine>			Defines;
-		bool							bDebug		= false;		// Emit debug info (Zi + Qembed_debug) + PDB
-		bool							bDx11		= false;		// true -> D3DCompile (DXBC), false -> DXC (DXIL)
+		bool							bDebug		= FALSE;		// Emit debug info (Zi + Qembed_debug) + PDB
+		bool							bDx11		= FALSE;		// true -> D3DCompile (DXBC), false -> DXC (DXIL)
 	};
 
 	class MCDxcCompiler final

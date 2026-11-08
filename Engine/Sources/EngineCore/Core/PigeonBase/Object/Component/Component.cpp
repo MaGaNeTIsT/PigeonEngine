@@ -44,7 +44,7 @@ namespace PigeonEngine
 	{
 
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PComponent::EditorTick(FLOAT deltaTime)
 	{
 

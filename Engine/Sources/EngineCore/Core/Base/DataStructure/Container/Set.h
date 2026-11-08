@@ -21,7 +21,7 @@ namespace PigeonEngine
 		~TSet();
 
 		T&          operator[](const UINT32& Index);
-		const T&    operator[](const UINT32& Index)const;
+		const T&    operator[](const UINT32& Index) const;
 
 		BOOL32 Add     (const T& Element);
 		T&   GetRef     (const UINT32& Index) const;
@@ -54,17 +54,17 @@ namespace PigeonEngine
 		* DO NOT USE DIRECTLY
 		* STL-like iterators to enable range-based for loop support.
 		*/
-		typename TConstIterator begin()const{return Elements.begin();}
-		typename TConstIterator end()const{return Elements.end();}
+		typename TConstIterator begin() const{return Elements.begin();}
+		typename TConstIterator end() const{return Elements.end();}
 		typename TIterator      begin(){return Elements.begin();}
 		typename TIterator      end(){return Elements.end();}
 
 		template<typename _TOtherSizeType = INT32, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
-		PE_NODISCARD _TOtherSizeType Num()const
+		PE_NODISCARD _TOtherSizeType Num() const
 		{
 			return static_cast<_TOtherSizeType>(Elements.size());
 		}
-		UINT32 Last    ()const;
+		UINT32 Last    () const;
 
 
 	private:
@@ -103,7 +103,7 @@ namespace PigeonEngine
 	}
 
 	template <typename T>
-	const T& TSet<T>::operator[](const UINT32& Index)const
+	const T& TSet<T>::operator[](const UINT32& Index) const
 	{
 		return GetRef(Index);
 	}
@@ -119,29 +119,29 @@ namespace PigeonEngine
 	{
 		PE_CHECK(ENGINE_SET_ERROR, "Set has no such index", Index < Num<UINT32>());
 
-		auto it = Elements.begin();
+		TConstIterator It = Elements.begin();
 		UINT32 iIndex = 0;
-		while (iIndex < Index && it != Elements.end())
+		while (iIndex < Index && It != Elements.end())
 		{
-			++it;
+			++It;
 			++iIndex;
 		}
 
-		return const_cast<T&>(*it);
+		return const_cast<T&>(*It);
 	}
 
 	template <typename T>
 	UINT32 TSet<T>::Find(const T& Element) const
 	{
 		UINT32 iIndex = 0;
-		auto it = Elements.begin();
-		while(it!=Elements.end())
+		TConstIterator It = Elements.begin();
+		while(It!=Elements.end())
 		{
-			if(*it == Element)
+			if(*It == Element)
 			{
 				return iIndex;
 			}
-			++it;
+			++It;
 			iIndex++;
 		}
 		return ((UINT32)(-1));
@@ -150,7 +150,7 @@ namespace PigeonEngine
 	template <typename T>
 	BOOL32 TSet<T>::Contains(const T& Element) const
 	{
-		for(const auto& elem : Elements)
+		for (const T& elem : Elements)
 		{
 			if(elem == Element)
 			{
@@ -168,15 +168,15 @@ namespace PigeonEngine
 			return;
 		}
 		UINT32 iIndex = 0;
-		auto it = Elements.begin();
-		while(iIndex < Index && it != Elements.end())
+		TIterator It = Elements.begin();
+		while(iIndex < Index && It != Elements.end())
 		{
-			++it;
+			++It;
 			++iIndex;
 		}
-		if (it != Elements.end())
+		if (It != Elements.end())
 		{
-			this->Elements.erase(it);
+			this->Elements.erase(It);
 		}
 	}
 
@@ -196,7 +196,7 @@ namespace PigeonEngine
 	template <typename T>
 	void TSet<T>::Append(const TSet<T>& Other)
 	{
-		for(const auto& elem: Other)
+		for (const T& elem : Other)
 		{
 			Add(elem);
 		}

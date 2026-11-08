@@ -57,7 +57,7 @@ namespace PigeonEngine
 	{
 		FPhysicsCommonSettings* CommonSettings = FPhysicsCommonSettings::GetSingleton();
 		PhysicsData->PhysicsSystem->Update(InDeltaTime, CommonSettings->PHYSICS_COLLISION_STEPS, PhysicsData->TempAllocator, PhysicsData->JobSystem);
-		for (const auto& Character : m_Characters)
+		for (const auto& Character : Characters)
 		{
 			PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Has a Character been destory but not removed!"), !!Character);
 			Character->PostSimulation(InDeltaTime);
@@ -66,7 +66,7 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::UninitPhysics()
 	{
-		for (const auto& bodyGroup : m_Bodys)
+		for (const auto& bodyGroup : Bodies)
 		{
 			for (const auto& bodyId : bodyGroup.second)
 			{
@@ -75,7 +75,7 @@ namespace PigeonEngine
 			}
 		}
 
-		for (const auto& shape : m_Shapes)
+		for (const auto& shape : Shapes)
 		{
 			delete shape.second;
 		}
@@ -103,9 +103,9 @@ namespace PigeonEngine
 		// Destroy the factory
 		delete Factory::sInstance;
 		Factory::sInstance = nullptr;
-		m_Bodys.Empty();
-		m_BodyToObjectIds.Empty();
-		m_Shapes.Empty();
+		Bodies.Empty();
+		BodyToObjectIds.Empty();
+		Shapes.Empty();
 		delete PhysicsData;
 		PhysicsData = nullptr;
 	}
@@ -120,12 +120,12 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::AddCharacter(FCharacterVirtual* Character)
 	{
-		m_Characters.Add(Character);
+		Characters.Add(Character);
 	}
 
 	void FPhysics_Jolt::RemoveCharacter(FCharacterVirtual* Character)
 	{
-		m_Characters.Remove(Character);
+		Characters.Remove(Character);
 	}
 
 	void FPhysics_Jolt::AddPhysicsListener(FBodyActivationEventListenerInterface* InListener)
@@ -184,7 +184,7 @@ namespace PigeonEngine
 		if (body)
 		{
 			outBodyID.ID = body->GetID();
-			m_Shapes.Add(outBodyID, inShape);
+			Shapes.Add(outBodyID, inShape);
 			return TRUE;
 		}
 		return FALSE;
@@ -194,45 +194,45 @@ namespace PigeonEngine
 	{
 		PhysicsData->BodyInterface->AddBody(inBodyID.ID, inActivationMode == EActivate::Activate? EActivation::Activate : EActivation::DontActivate);
 
-		TArray<FPhysicsBodyId>* BodyIds = m_Bodys.FindValueAsPtr(GameObjectId);
+		TArray<FPhysicsBodyId>* BodyIds = Bodies.FindValueAsPtr(GameObjectId);
 		if (!BodyIds)
 		{
 			TArray<FPhysicsBodyId> NewBodyIds;
 			NewBodyIds.Add(inBodyID);
-			m_Bodys.Add(GameObjectId, NewBodyIds);
+			Bodies.Add(GameObjectId, NewBodyIds);
 		}
 		else if (!BodyIds->Contains(inBodyID))
 		{
 			BodyIds->Add(inBodyID);
 		}
 
-		m_BodyToObjectIds.Add(inBodyID, GameObjectId);
+		BodyToObjectIds.Add(inBodyID, GameObjectId);
 	}
 
 	BOOL32 FPhysics_Jolt::FindObjectIdentityByBodyId(const FPhysicsBodyId& inBodyID, ObjectIdentityType& outGameObjectId) const
 	{
-		return m_BodyToObjectIds.FindValue(inBodyID, outGameObjectId);
+		return BodyToObjectIds.FindValue(inBodyID, outGameObjectId);
 	}
 
 	void FPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape/* = TRUE*/)
 	{
 		TArray<FPhysicsBodyId> BodyIds;
-		if (m_Bodys.FindValue(GameObjectId, BodyIds))
+		if (Bodies.FindValue(GameObjectId, BodyIds))
 		{
 			for (const auto& ID : BodyIds)
 			{
 				PhysicsData->BodyInterface->RemoveBody(ID.ID);
-				m_BodyToObjectIds.Remove(ID);
+				BodyToObjectIds.Remove(ID);
 				FShape* Shape;
-				if (m_Shapes.FindValue(ID, Shape))
+				if (Shapes.FindValue(ID, Shape))
 				{
-					m_Shapes.Remove(ID);
+					Shapes.Remove(ID);
 					if (bDeleteShape)
 						delete Shape;
 				}
 			}
 
-			m_Bodys.Remove(GameObjectId);
+			Bodies.Remove(GameObjectId);
 		}
 	}
 

@@ -10,7 +10,7 @@ namespace PigeonEngine
 	class EResourceInterface
 	{
 	public:
-		virtual BOOL32 IsResourceValid()const = 0;
+		virtual BOOL32 IsResourceValid() const = 0;
 		virtual BOOL32 InitResource() = 0;
 		virtual void ReleaseResource() = 0;
 	public:
@@ -121,8 +121,8 @@ namespace PigeonEngine
 	};
 	struct EBoundAABB
 	{
-		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(TRUE) {}
-		EBoundAABB(const EBoundAABB& Other)noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax), IsValid(Other.IsValid)  {}
+		EBoundAABB() noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(TRUE) {}
+		EBoundAABB(const EBoundAABB& Other) noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax), IsValid(Other.IsValid)  {}
 		EBoundAABB(const Vector3& Min, const Vector3& Max, const BOOL32& Valid) noexcept :  AABBMin(Min), AABBMax(Max), IsValid(Valid)  {}
 		EBoundAABB& operator+=(const EBoundAABB& Other)
 		{
@@ -213,16 +213,16 @@ namespace PigeonEngine
 	};
 	struct EBox
 	{
-		EBox()noexcept : Origin(Vector3(0.f, 0.f, 0.f)), Extent(Vector3(0.5f, 0.5f, 0.5f)) {}
-		EBox(const EBox& Other)noexcept : Origin(Other.Origin), Extent(Other.Extent) {}
+		EBox() noexcept : Origin(Vector3(0.f, 0.f, 0.f)), Extent(Vector3(0.5f, 0.5f, 0.5f)) {}
+		EBox(const EBox& Other) noexcept : Origin(Other.Origin), Extent(Other.Extent) {}
 
 		Vector3	Origin;
 		Vector3	Extent;
 	};
 	struct ESphere
 	{
-		ESphere()noexcept : Origin(Vector3(0.f, 0.f, 0.f)), Radius(0.5f) {}
-		ESphere(const ESphere& Other)noexcept : Origin(Other.Origin), Radius(Other.Radius) {}
+		ESphere() noexcept : Origin(Vector3(0.f, 0.f, 0.f)), Radius(0.5f) {}
+		ESphere(const ESphere& Other) noexcept : Origin(Other.Origin), Radius(Other.Radius) {}
 
 		Vector3	Origin;
 		FLOAT	Radius;
@@ -233,9 +233,9 @@ namespace PigeonEngine
 
 	struct ERect
 	{
-		ERect()noexcept : Left(0.f), Top(0.f), Right(0.f), Bottom(0.f) {}
-		ERect(const ERect& Other)noexcept : Left(Other.Left), Top(Other.Top), Right(Other.Right), Bottom(Other.Bottom) {}
-		constexpr ERect(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom)noexcept : Left(InLeft), Top(InTop), Right(InRight), Bottom(InBottom) {}
+		ERect() noexcept : Left(0.f), Top(0.f), Right(0.f), Bottom(0.f) {}
+		ERect(const ERect& Other) noexcept : Left(Other.Left), Top(Other.Top), Right(Other.Right), Bottom(Other.Bottom) {}
+		constexpr ERect(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom) noexcept : Left(InLeft), Top(InTop), Right(InRight), Bottom(InBottom) {}
 
 		union
 		{
@@ -251,14 +251,14 @@ namespace PigeonEngine
 	};
 	struct EFrustum
 	{
-		EFrustum()noexcept
+		EFrustum() noexcept
 			: PlaneTop(Vector4::Zero()), PlaneBottom(Vector4::Zero()), PlaneLeft(Vector4::Zero()), PlaneRight(Vector4::Zero())
 			, FarPlaneTopLeft(Vector3::Zero()), FarPlaneTopRight(Vector3::Zero())
 			, FarPlaneBottomLeft(Vector3::Zero()), FarPlaneBottomRight(Vector3::Zero())
 			, NearPlaneTopLeft(Vector3::Zero()), NearPlaneTopRight(Vector3::Zero())
 			, NearPlaneBottomLeft(Vector3::Zero()), NearPlaneBottomRight(Vector3::Zero())
 			, SeparateProjectionX(Vector2::Zero()), SeparateProjectionY(Vector2::Zero()), SeparateProjectionZ(Vector2::Zero()) {}
-		EFrustum(const EFrustum& Other)noexcept
+		EFrustum(const EFrustum& Other) noexcept
 			: PlaneTop(Other.PlaneTop), PlaneBottom(Other.PlaneBottom), PlaneLeft(Other.PlaneLeft), PlaneRight(Other.PlaneRight)
 			, FarPlaneTopLeft(Other.FarPlaneTopLeft), FarPlaneTopRight(Other.FarPlaneTopRight)
 			, FarPlaneBottomLeft(Other.FarPlaneBottomLeft), FarPlaneBottomRight(Other.FarPlaneBottomRight)
@@ -422,7 +422,7 @@ namespace PigeonEngine
 		* Builds the near and far planes from the corner points. They are not stored: only the four
 		* side planes are members, and the two caps are cheap enough to derive per test.
 		*/
-		BOOL32 BuildNearFarPlanesWorldSpace(Vector4& OutNearPlane, Vector4& OutFarPlane)const
+		BOOL32 BuildNearFarPlanesWorldSpace(Vector4& OutNearPlane, Vector4& OutFarPlane) const
 		{
 			const Vector3 NearNormalRaw = Vector3::Cross(NearPlaneBottomLeft - NearPlaneTopLeft, NearPlaneTopRight - NearPlaneTopLeft);
 			const Vector3 FarNormalRaw = Vector3::Cross(FarPlaneTopRight - FarPlaneTopLeft, FarPlaneBottomLeft - FarPlaneTopLeft);
@@ -443,7 +443,7 @@ namespace PigeonEngine
 		* caps are appended only when they could be built, so a caller's loop over the returned
 		* count is always valid.
 		*/
-		UINT32 BuildWorldPlanes(Vector4 OutPlanes[6])const
+		UINT32 BuildWorldPlanes(Vector4 OutPlanes[6]) const
 		{
 			OutPlanes[0] = Plane[0];
 			OutPlanes[1] = Plane[1];
@@ -465,7 +465,7 @@ namespace PigeonEngine
 		* farthest along a plane's inward normal is behind that plane; every other corner is then
 		* behind it too. Zero planes (degenerate) are skipped, which leans towards "visible".
 		*/
-		BOOL32 IntersectsWorldAABB(const Vector3& InMin, const Vector3& InMax)const
+		BOOL32 IntersectsWorldAABB(const Vector3& InMin, const Vector3& InMax) const
 		{
 			Vector4 Planes[6] = {};
 			const UINT32 PlaneNum = BuildWorldPlanes(Planes);
@@ -491,7 +491,7 @@ namespace PigeonEngine
 		}
 		// Sphere counterpart of IntersectsWorldAABB: a sphere is outside when its center is more
 		// than one radius behind any plane.
-		BOOL32 IntersectsSphere(const Vector3& InCenter, FLOAT InRadius)const
+		BOOL32 IntersectsSphere(const Vector3& InCenter, FLOAT InRadius) const
 		{
 			Vector4 Planes[6] = {};
 			const UINT32 PlaneNum = BuildWorldPlanes(Planes);
@@ -593,8 +593,8 @@ namespace PigeonEngine
 	{
 		struct EViewPart
 		{
-			EViewPart()noexcept : ViewMatrix(Matrix4x4::Identity()), InverseViewMatrix(Matrix4x4::Identity()) {}
-			EViewPart(const EViewPart& Other)noexcept : ViewMatrix(Other.ViewMatrix), InverseViewMatrix(Other.InverseViewMatrix) {}
+			EViewPart() noexcept : ViewMatrix(Matrix4x4::Identity()), InverseViewMatrix(Matrix4x4::Identity()) {}
+			EViewPart(const EViewPart& Other) noexcept : ViewMatrix(Other.ViewMatrix), InverseViewMatrix(Other.InverseViewMatrix) {}
 			EViewPart& operator=(const EViewPart& Other)
 			{
 				ViewMatrix			= Other.ViewMatrix;
@@ -607,8 +607,8 @@ namespace PigeonEngine
 		};
 		struct EProjectionPart
 		{
-			EProjectionPart()noexcept : ProjectionMatrix(Matrix4x4::Identity()), InverseProjectionMatrix(Matrix4x4::Identity()), DeviceZToViewZMulAdd(Vector2::XVector()) {}
-			EProjectionPart(const EProjectionPart& Other)noexcept : ProjectionMatrix(Other.ProjectionMatrix), InverseProjectionMatrix(Other.InverseProjectionMatrix), DeviceZToViewZMulAdd(Other.DeviceZToViewZMulAdd) {}
+			EProjectionPart() noexcept : ProjectionMatrix(Matrix4x4::Identity()), InverseProjectionMatrix(Matrix4x4::Identity()), DeviceZToViewZMulAdd(Vector2::XVector()) {}
+			EProjectionPart(const EProjectionPart& Other) noexcept : ProjectionMatrix(Other.ProjectionMatrix), InverseProjectionMatrix(Other.InverseProjectionMatrix), DeviceZToViewZMulAdd(Other.DeviceZToViewZMulAdd) {}
 			EProjectionPart& operator=(const EProjectionPart& Other)
 			{
 				ProjectionMatrix		= Other.ProjectionMatrix;
@@ -621,8 +621,8 @@ namespace PigeonEngine
 			Matrix4x4	InverseProjectionMatrix;
 			Vector2		DeviceZToViewZMulAdd;
 		};
-		EViewMatrix()noexcept : ViewProjectionMatrix(Matrix4x4::Identity()), InverseViewProjectionMatrix(Matrix4x4::Identity()) {}
-		EViewMatrix(const EViewMatrix& Other)noexcept : ViewPart(Other.ViewPart), ProjectionPart(Other.ProjectionPart), ViewProjectionMatrix(Other.ViewProjectionMatrix), InverseViewProjectionMatrix(Other.InverseViewProjectionMatrix) {}
+		EViewMatrix() noexcept : ViewProjectionMatrix(Matrix4x4::Identity()), InverseViewProjectionMatrix(Matrix4x4::Identity()) {}
+		EViewMatrix(const EViewMatrix& Other) noexcept : ViewPart(Other.ViewPart), ProjectionPart(Other.ProjectionPart), ViewProjectionMatrix(Other.ViewProjectionMatrix), InverseViewProjectionMatrix(Other.InverseViewProjectionMatrix) {}
 		EViewMatrix& operator=(const EViewMatrix& Other)
 		{
 			ViewPart					= Other.ViewPart;
@@ -631,11 +631,11 @@ namespace PigeonEngine
 			InverseViewProjectionMatrix	= Other.InverseViewProjectionMatrix;
 			return (*this);
 		}
-		void TransformWorldPointToView(const Vector3& InPositionWS, Vector3& OutPositionVS)const
+		void TransformWorldPointToView(const Vector3& InPositionWS, Vector3& OutPositionVS) const
 		{
 			OutPositionVS = Matrix4x4TransformPosition(ViewPart.ViewMatrix, InPositionWS);
 		}
-		void TransformViewPointToWorld(const Vector3& InPositionVS, Vector3& OutPositionWS)const
+		void TransformViewPointToWorld(const Vector3& InPositionVS, Vector3& OutPositionWS) const
 		{
 			OutPositionWS = Matrix4x4TransformPosition(ViewPart.InverseViewMatrix, InPositionVS);
 		}
@@ -644,7 +644,7 @@ namespace PigeonEngine
 		* Params InPosition[SpaceName] : specific space position of the point.
 		* Params output : [0.f, screen max] range of screen coord which has anchor(zero point) in left top of RECT.
 		*/
-		BOOL32 TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector2& OutPositionSS)const
+		BOOL32 TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector2& OutPositionSS) const
 		{
 			const Vector2 PointScl(0.5f, -0.5f);
 			const Vector2 PointAdd(0.5f, 0.5f);
@@ -675,7 +675,7 @@ namespace PigeonEngine
 
 			return (!bIfOutScreen);
 		}
-		BOOL32 TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector3& OutPositionSS)const
+		BOOL32 TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector3& OutPositionSS) const
 		{
 			PE_CONSTEXPR_STATIC Vector2 PointScl(0.5f, -0.5f);
 			PE_CONSTEXPR_STATIC Vector2 PointAdd(0.5f, 0.5f);
@@ -703,7 +703,7 @@ namespace PigeonEngine
 
 			return (!bIfOutScreen);
 		}
-		BOOL32 TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector2& OutPositionSS)const
+		BOOL32 TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector2& OutPositionSS) const
 		{
 			const Vector2 PointScl(0.5f, -0.5f);
 			const Vector2 PointAdd(0.5f, 0.5f);
@@ -734,7 +734,7 @@ namespace PigeonEngine
 
 			return (!bIfOutScreen);
 		}
-		BOOL32 TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector3& OutPositionSS)const
+		BOOL32 TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector3& OutPositionSS) const
 		{
 			PE_CONSTEXPR_STATIC Vector2 PointScl(0.5f, -0.5f);
 			PE_CONSTEXPR_STATIC Vector2 PointAdd(0.5f, 0.5f);
@@ -766,7 +766,7 @@ namespace PigeonEngine
 		* Params input X Y : screen space position of the point (range : [0.f, screen max]).
 		* Params output : output space direction from view to point. WARNING! output direction is NOT normalized.
 		*/
-		void TransformScreenPointToWorld(const EViewport& InViewport, const Vector2& InPositionSS, Vector3& OutPositionWS)const
+		void TransformScreenPointToWorld(const EViewport& InViewport, const Vector2& InPositionSS, Vector3& OutPositionWS) const
 		{
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
@@ -776,7 +776,7 @@ namespace PigeonEngine
 			TempPoint /= TempPoint.w;
 			OutPositionWS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
-		void TransformScreenPointToWorld(const EViewport& InViewport, const Vector3& InPositionSS, Vector3& OutPositionWS)const
+		void TransformScreenPointToWorld(const EViewport& InViewport, const Vector3& InPositionSS, Vector3& OutPositionWS) const
 		{
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
@@ -786,7 +786,7 @@ namespace PigeonEngine
 			TempPoint /= TempPoint.w;
 			OutPositionWS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
-		void TransformScreenPointToView(const EViewport& InViewport, const Vector2& InPositionSS, Vector3& OutPositionVS)const
+		void TransformScreenPointToView(const EViewport& InViewport, const Vector2& InPositionSS, Vector3& OutPositionVS) const
 		{
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
@@ -796,7 +796,7 @@ namespace PigeonEngine
 			TempPoint /= TempPoint.w;
 			OutPositionVS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
-		void TransformScreenPointToView(const EViewport& InViewport, const Vector3& InPositionSS, Vector3& OutPositionVS)const
+		void TransformScreenPointToView(const EViewport& InViewport, const Vector3& InPositionSS, Vector3& OutPositionVS) const
 		{
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
@@ -962,7 +962,7 @@ namespace PigeonEngine
 	struct ECascadeShadowData
 	{
 		ECascadeShadowData() : IsUseShadow(FALSE) {}
-		ECascadeShadowData(const ECascadeShadowData& Other)noexcept : IsUseShadow(Other.IsUseShadow), Layers(Other.Layers), Borders(Other.Borders) {}
+		ECascadeShadowData(const ECascadeShadowData& Other) noexcept : IsUseShadow(Other.IsUseShadow), Layers(Other.Layers), Borders(Other.Borders) {}
 		ECascadeShadowData(const BOOL32 InIsUseShadow, const FLOAT* InLayers, const FLOAT* InBorders, const UINT32 InCascadeNum)
 			: IsUseShadow(InIsUseShadow)
 		{
@@ -973,7 +973,7 @@ namespace PigeonEngine
 			PE_CHECK((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((!!InLayers) && (!!InBorders) && (InCascadeNum > 0u)));
 			for (UINT32 i = 0u; i < InCascadeNum; i++)
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				if (InLayers)
 #endif
 				{
@@ -981,7 +981,7 @@ namespace PigeonEngine
 				}
 				if (i < (InCascadeNum - 1u))
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					if (InBorders)
 #endif
 					{

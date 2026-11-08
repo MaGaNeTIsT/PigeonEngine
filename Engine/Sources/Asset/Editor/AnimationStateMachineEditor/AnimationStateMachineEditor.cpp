@@ -1,6 +1,6 @@
 #include "AnimationStateMachineEditor.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 
@@ -8,7 +8,6 @@
 #include <Base/DataStructure/Text/Path.h>
 #include <Editor/EditorLogManager.h>
 #include <RapidJson/Headers/JsonObject.h>
-#include <cmath>
 
 namespace PigeonEngine
 {
@@ -99,7 +98,7 @@ namespace PigeonEngine
 		{
 			for (INT32 StateIndex = 0; StateIndex < InStates.Num(); StateIndex++)
 			{
-				if ((InStates[StateIndex]) && (GetJsonObjectString(*InStates[StateIndex], EString("name")) == InName))
+				if ((InStates[StateIndex]) && (GetJsonObjectString(*InStates[StateIndex], EString("Name")) == InName))
 				{
 					return TRUE;
 				}
@@ -110,23 +109,23 @@ namespace PigeonEngine
 
 	void EAnimStateMachineEditor::EditorInit()
 	{
-		m_ShowEditor = FALSE;
-		m_Asset = nullptr;
-		m_OpenedAssetFullPath = EString();
-		m_LastError = EString();
-		m_JsonBuffer.Empty();
-		m_NodePositions.Empty();
-		m_SelectedStateIndex = 0;
-		m_SelectedTransitionIndex = -1;
-		m_TransitionFromIndex = -1;
-		m_TransitionToIndex = 0;
+		bShowEditor = FALSE;
+		Asset = nullptr;
+		OpenedAssetFullPath = EString();
+		LastError = EString();
+		JsonBuffer.Empty();
+		NodePositions.Empty();
+		SelectedStateIndex = 0;
+		SelectedTransitionIndex = -1;
+		TransitionFromIndex = -1;
+		TransitionToIndex = 0;
 	}
 
 	void EAnimStateMachineEditor::OpenStateMachineAsset(const EString& InAssetFullPath)
 	{
-		m_ShowEditor = TRUE;
-		m_Asset = nullptr;
-		m_LastError = EString();
+		bShowEditor = TRUE;
+		Asset = nullptr;
+		LastError = EString();
 
 		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
 		const EString AssetName = EPath::GetFileNameWithoutExtension(NormalizedAssetPath);
@@ -137,25 +136,25 @@ namespace PigeonEngine
 		}
 		if ((AssetName.Length() <= 0u) || (AssetDirectory.Length() <= 0u))
 		{
-			m_LastError = EString("State machine editor cannot parse asset path: ") + NormalizedAssetPath;
+			LastError = EString("State machine editor cannot parse asset path: ") + NormalizedAssetPath;
 			return;
 		}
 
 		const EAnimStateMachineAsset* LoadedAsset = nullptr;
 		if (!(EAnimStateMachineManager::GetManagerSingleton()->LoadStateMachineAsset(AssetDirectory, AssetName, LoadedAsset)) || (!LoadedAsset))
 		{
-			m_LastError = EString("State machine editor failed to load asset: ") + NormalizedAssetPath;
+			LastError = EString("State machine editor failed to load asset: ") + NormalizedAssetPath;
 			return;
 		}
 
-		m_Asset = LoadedAsset;
-		m_OpenedAssetFullPath = NormalizedAssetPath;
-		m_SelectedStateIndex = 0;
-		m_SelectedTransitionIndex = -1;
-		m_TransitionFromIndex = -1;
-		m_TransitionToIndex = 0;
+		Asset = LoadedAsset;
+		OpenedAssetFullPath = NormalizedAssetPath;
+		SelectedStateIndex = 0;
+		SelectedTransitionIndex = -1;
+		TransitionFromIndex = -1;
+		TransitionToIndex = 0;
 		LoadJsonBufferFromAsset();
-		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 		if (Machine)
 		{
 			LoadNodePositionsFromJson(*Machine);
@@ -165,62 +164,62 @@ namespace PigeonEngine
 
 	void EAnimStateMachineEditor::EditorUpdate()
 	{
-		if (!m_ShowEditor)
+		if (!bShowEditor)
 		{
 			return;
 		}
 
 		ImGui::SetNextWindowSize(ImVec2(900.0f, 720.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(420.0f, 40.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("State Machine Editor", &m_ShowEditor, ImGuiWindowFlags_None);
+		ImGui::Begin("State Machine Editor", &bShowEditor, ImGuiWindowFlags_None);
 		{
-			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
+			if (ImGui::Button("Reload") && (OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenStateMachineAsset(m_OpenedAssetFullPath);
+				OpenStateMachineAsset(OpenedAssetFullPath);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Apply"))
 			{
-				if (m_Asset)
+				if (Asset)
 				{
 					WriteNodePositionsToJson();
 					EString Error;
-					const EString JsonText(m_JsonBuffer.GetData());
-					if (EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, JsonText, Error))
+					const EString JsonText(JsonBuffer.GetData());
+					if (EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(Asset, JsonText, Error))
 					{
-						m_LastError = EString();
+						LastError = EString();
 					}
 					else
 					{
-						m_LastError = Error;
+						LastError = Error;
 					}
 				}
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Save"))
 			{
-				if (m_Asset)
+				if (Asset)
 				{
 					WriteNodePositionsToJson();
 					EString Error;
-					const EString JsonText(m_JsonBuffer.GetData());
-					if (EAnimStateMachineManager::GetManagerSingleton()->SaveStateMachineAsset(m_Asset, JsonText, Error))
+					const EString JsonText(JsonBuffer.GetData());
+					if (EAnimStateMachineManager::GetManagerSingleton()->SaveStateMachineAsset(Asset, JsonText, Error))
 					{
-						m_LastError = EString();
+						LastError = EString();
 					}
 					else
 					{
-						m_LastError = Error;
+						LastError = Error;
 					}
 				}
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Reset Layout"))
 			{
-				m_NodePositions.Empty();
-				if (m_Asset)
+				NodePositions.Empty();
+				if (Asset)
 				{
-					const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+					const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 					if (Machine)
 					{
 						AutoLayoutGraph(*Machine);
@@ -228,17 +227,17 @@ namespace PigeonEngine
 				}
 			}
 			ImGui::SameLine();
-			ImGui::TextWrapped("%s", (m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No state machine selected."));
+			ImGui::TextWrapped("%s", (OpenedAssetFullPath.Length() > 0u ? *OpenedAssetFullPath : "No state machine selected."));
 
-			if (m_LastError.Length() > 0u)
+			if (LastError.Length() > 0u)
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastError);
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *LastError);
 			}
 
 			ImGui::Separator();
-			if (m_Asset)
+			if (Asset)
 			{
-				const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+				const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 				if (Machine)
 				{
 					ImGui::Text("Name: %s", *Machine->Name);
@@ -250,15 +249,15 @@ namespace PigeonEngine
 					DrawStructureControls(*Machine);
 					ImGui::Separator();
 					ImGui::TextDisabled("Drag nodes to move them; Apply/Save writes nodeX/nodeY into the JSON.");
-					ImGui::BeginChild("StateMachineGraph", ImVec2(0.0f, 340.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+					ImGui::BeginChild("StateMachineGraph", ImVec2(0.0f, 340.0f), TRUE, ImGuiWindowFlags_HorizontalScrollbar);
 					DrawGraph(*Machine);
 					ImGui::EndChild();
 				}
 			}
 
-			if (m_JsonBuffer.Num() > 0)
+			if (JsonBuffer.Num() > 0)
 			{
-				ImGui::InputTextMultiline("JSON", m_JsonBuffer.GetData(), static_cast<int>(m_JsonBuffer.Num())
+				ImGui::InputTextMultiline("JSON", JsonBuffer.GetData(), static_cast<int>(JsonBuffer.Num())
 					, ImVec2(-1.0f, -1.0f), ImGuiInputTextFlags_AllowTabInput);
 			}
 		}
@@ -285,7 +284,7 @@ namespace PigeonEngine
 
 		auto GetNodePosition = [this](const EString& InName) -> ImVec2
 		{
-			const ImVec2* Stored = m_NodePositions.FindValueAsPtr(InName);
+			const ImVec2* Stored = NodePositions.FindValueAsPtr(InName);
 			return (Stored ? *Stored : ImVec2(40.0f, 80.0f));
 		};
 		auto MakeScreenPosition = [&Origin](const ImVec2& InLocal) -> ImVec2
@@ -297,7 +296,7 @@ namespace PigeonEngine
 			DrawList->AddLine(InFrom, InTo, InColor, 2.0f);
 			const FLOAT DeltaX = InTo.x - InFrom.x;
 			const FLOAT DeltaY = InTo.y - InFrom.y;
-			const FLOAT Length = std::sqrt(DeltaX * DeltaX + DeltaY * DeltaY);
+			const FLOAT Length = EMath::Sqrt(DeltaX * DeltaX + DeltaY * DeltaY);
 			if (Length > 0.001f)
 			{
 				const FLOAT DirectionX = DeltaX / Length;
@@ -387,7 +386,7 @@ namespace PigeonEngine
 		for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
 		{
 			const EAnimStateMachineState& State = InMachine.States[StateIndex];
-			ImVec2* StoredPosition = m_NodePositions.FindValueAsPtr(State.Name);
+			ImVec2* StoredPosition = NodePositions.FindValueAsPtr(State.Name);
 			const ImVec2 Local = (StoredPosition ? *StoredPosition : ImVec2(40.0f, 80.0f));
 			const ImVec2 Position = MakeScreenPosition(Local);
 			MaxX = EMath::Max(MaxX, Local.x + NodeWidth);
@@ -436,19 +435,19 @@ namespace PigeonEngine
 
 	void EAnimStateMachineEditor::LoadNodePositionsFromJson(const EAnimStateMachine& InMachine)
 	{
-		m_NodePositions.Empty();
-		if ((m_JsonBuffer.Num() <= 0) || (InMachine.States.Num() <= 0))
+		NodePositions.Empty();
+		if ((JsonBuffer.Num() <= 0) || (InMachine.States.Num() <= 0))
 		{
 			return;
 		}
 
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
 			return;
 		}
 		TArray<CJsonObject*> StateObjects;
-		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		Root.GetObjectArrayField(PE_TEXT("States"), StateObjects);
 		FJsonObjectArrayOwner StateOwner(StateObjects);
 		for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 		{
@@ -460,12 +459,12 @@ namespace PigeonEngine
 			EString StateName;
 			FLOAT NodeX = 0.0f;
 			FLOAT NodeY = 0.0f;
-			if (StateObject->GetStringField(PE_TEXT("name"), StateName)
-				&& StateObject->GetFloatField(PE_TEXT("nodeX"), NodeX)
-				&& StateObject->GetFloatField(PE_TEXT("nodeY"), NodeY)
+			if (StateObject->GetStringField(PE_TEXT("Name"), StateName)
+				&& StateObject->GetFloatField(PE_TEXT("NodeX"), NodeX)
+				&& StateObject->GetFloatField(PE_TEXT("NodeY"), NodeY)
 				&& (StateName.Length() > 0u))
 			{
-				m_NodePositions.Add(StateName, ImVec2(NodeX, NodeY));
+				NodePositions.Add(StateName, ImVec2(NodeX, NodeY));
 			}
 		}
 	}
@@ -475,29 +474,29 @@ namespace PigeonEngine
 		for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
 		{
 			const EString& StateName = InMachine.States[StateIndex].Name;
-			if (!m_NodePositions.ContainsKey(StateName))
+			if (!NodePositions.ContainsKey(StateName))
 			{
 				const FLOAT Column = static_cast<FLOAT>(StateIndex % 3);
 				const FLOAT Row = static_cast<FLOAT>(StateIndex / 3);
-				m_NodePositions.Add(StateName, ImVec2(40.0f + Column * 260.0f, 80.0f + Row * 150.0f));
+				NodePositions.Add(StateName, ImVec2(40.0f + Column * 260.0f, 80.0f + Row * 150.0f));
 			}
 		}
 	}
 
 	void EAnimStateMachineEditor::WriteNodePositionsToJson()
 	{
-		if (m_JsonBuffer.Num() <= 0)
+		if (JsonBuffer.Num() <= 0)
 		{
 			return;
 		}
 
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
 			return;
 		}
 		TArray<CJsonObject*> StateObjects;
-		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		Root.GetObjectArrayField(PE_TEXT("States"), StateObjects);
 		FJsonObjectArrayOwner StateOwner(StateObjects);
 		for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 		{
@@ -507,19 +506,19 @@ namespace PigeonEngine
 				continue;
 			}
 			EString StateName;
-			if (!StateObject->GetStringField(PE_TEXT("name"), StateName))
+			if (!StateObject->GetStringField(PE_TEXT("Name"), StateName))
 			{
 				continue;
 			}
-			const ImVec2* Position = m_NodePositions.FindValueAsPtr(StateName);
+			const ImVec2* Position = NodePositions.FindValueAsPtr(StateName);
 			if (!Position)
 			{
 				continue;
 			}
-			StateObject->SetFloatField(PE_TEXT("nodeX"), Position->x);
-			StateObject->SetFloatField(PE_TEXT("nodeY"), Position->y);
+			StateObject->SetFloatField(PE_TEXT("NodeX"), Position->x);
+			StateObject->SetFloatField(PE_TEXT("NodeY"), Position->y);
 		}
-		Root.SetObjectArrayField(PE_TEXT("states"), StateObjects);
+		Root.SetObjectArrayField(PE_TEXT("States"), StateObjects);
 		ReplaceJsonBuffer(Root.ToString());
 	}
 
@@ -531,8 +530,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		m_SelectedStateIndex = EMath::Clamp(m_SelectedStateIndex, 0, InMachine.States.Num() - 1);
-		const EString& SelectedStateName = InMachine.States[m_SelectedStateIndex].Name;
+		SelectedStateIndex = EMath::Clamp(SelectedStateIndex, 0, InMachine.States.Num() - 1);
+		const EString& SelectedStateName = InMachine.States[SelectedStateIndex].Name;
 
 		if (ImGui::Button("Add State"))
 		{
@@ -546,10 +545,10 @@ namespace PigeonEngine
 		{
 			for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
 			{
-				const BOOL8 bSelected = (StateIndex == m_SelectedStateIndex);
+				const BOOL8 bSelected = (StateIndex == SelectedStateIndex);
 				if (ImGui::Selectable(*InMachine.States[StateIndex].Name, bSelected))
 				{
-					m_SelectedStateIndex = StateIndex;
+					SelectedStateIndex = StateIndex;
 				}
 				if (bSelected)
 				{
@@ -569,7 +568,7 @@ namespace PigeonEngine
 		{
 			if (InMachine.States.Num() <= 1)
 			{
-				m_LastError = EString("Cannot delete the last state.");
+				LastError = EString("Cannot delete the last state.");
 			}
 			else
 			{
@@ -578,15 +577,15 @@ namespace PigeonEngine
 			return;
 		}
 
-		m_TransitionFromIndex = EMath::Clamp(m_TransitionFromIndex, -1, InMachine.States.Num() - 1);
-		m_TransitionToIndex = EMath::Clamp(m_TransitionToIndex, 0, InMachine.States.Num() - 1);
-		const EString FromLabel = ((m_TransitionFromIndex < 0) ? EString("Any") : InMachine.States[m_TransitionFromIndex].Name);
+		TransitionFromIndex = EMath::Clamp(TransitionFromIndex, -1, InMachine.States.Num() - 1);
+		TransitionToIndex = EMath::Clamp(TransitionToIndex, 0, InMachine.States.Num() - 1);
+		const EString FromLabel = ((TransitionFromIndex < 0) ? EString("Any") : InMachine.States[TransitionFromIndex].Name);
 		if (ImGui::BeginCombo("From", *FromLabel))
 		{
-			const BOOL8 bAnySelected = (m_TransitionFromIndex < 0);
+			const BOOL8 bAnySelected = (TransitionFromIndex < 0);
 			if (ImGui::Selectable("Any", bAnySelected))
 			{
-				m_TransitionFromIndex = -1;
+				TransitionFromIndex = -1;
 			}
 			if (bAnySelected)
 			{
@@ -594,10 +593,10 @@ namespace PigeonEngine
 			}
 			for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
 			{
-				const BOOL8 bSelected = (StateIndex == m_TransitionFromIndex);
+				const BOOL8 bSelected = (StateIndex == TransitionFromIndex);
 				if (ImGui::Selectable(*InMachine.States[StateIndex].Name, bSelected))
 				{
-					m_TransitionFromIndex = StateIndex;
+					TransitionFromIndex = StateIndex;
 				}
 				if (bSelected)
 				{
@@ -607,15 +606,15 @@ namespace PigeonEngine
 			ImGui::EndCombo();
 		}
 		ImGui::SameLine();
-		const EString& ToLabel = InMachine.States[m_TransitionToIndex].Name;
+		const EString& ToLabel = InMachine.States[TransitionToIndex].Name;
 		if (ImGui::BeginCombo("To", *ToLabel))
 		{
 			for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
 			{
-				const BOOL8 bSelected = (StateIndex == m_TransitionToIndex);
+				const BOOL8 bSelected = (StateIndex == TransitionToIndex);
 				if (ImGui::Selectable(*InMachine.States[StateIndex].Name, bSelected))
 				{
-					m_TransitionToIndex = StateIndex;
+					TransitionToIndex = StateIndex;
 				}
 				if (bSelected)
 				{
@@ -627,12 +626,12 @@ namespace PigeonEngine
 		ImGui::SameLine();
 		if (ImGui::Button("Add Transition"))
 		{
-			const EString FromName = ((m_TransitionFromIndex < 0) ? EString() : InMachine.States[m_TransitionFromIndex].Name);
-			AddTransition(FromName, InMachine.States[m_TransitionToIndex].Name);
+			const EString FromName = ((TransitionFromIndex < 0) ? EString() : InMachine.States[TransitionFromIndex].Name);
+			AddTransition(FromName, InMachine.States[TransitionToIndex].Name);
 			return;
 		}
 
-		ImGui::BeginChild("TransitionList", ImVec2(0.0f, 100.0f), true);
+		ImGui::BeginChild("TransitionList", ImVec2(0.0f, 100.0f), TRUE);
 		INT32 RemoveTransitionIndex = -1;
 		for (INT32 TransitionIndex = 0; TransitionIndex < InMachine.Transitions.Num(); TransitionIndex++)
 		{
@@ -647,7 +646,7 @@ namespace PigeonEngine
 			ImGui::SameLine();
 			if (ImGui::Button("Select"))
 			{
-				m_SelectedTransitionIndex = TransitionIndex;
+				SelectedTransitionIndex = TransitionIndex;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Remove"))
@@ -660,7 +659,7 @@ namespace PigeonEngine
 		if (RemoveTransitionIndex >= 0)
 		{
 			DeleteTransition(RemoveTransitionIndex);
-			m_SelectedTransitionIndex = -1;
+			SelectedTransitionIndex = -1;
 			return;
 		}
 
@@ -673,14 +672,14 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		m_SelectedTransitionIndex = EMath::Clamp(m_SelectedTransitionIndex, -1, InMachine.Transitions.Num() - 1);
-		if (m_SelectedTransitionIndex < 0)
+		SelectedTransitionIndex = EMath::Clamp(SelectedTransitionIndex, -1, InMachine.Transitions.Num() - 1);
+		if (SelectedTransitionIndex < 0)
 		{
 			ImGui::TextDisabled("Select a transition above to edit its conditions.");
 			return;
 		}
 
-		const EAnimStateMachineTransition& Transition = InMachine.Transitions[m_SelectedTransitionIndex];
+		const EAnimStateMachineTransition& Transition = InMachine.Transitions[SelectedTransitionIndex];
 		const EString FromName = ((Transition.FromStateIndex < 0)
 			? EString("Any") : InMachine.States[Transition.FromStateIndex].Name);
 		const EString ToName = ((Transition.ToStateIndex >= 0) && (Transition.ToStateIndex < InMachine.States.Num())
@@ -723,7 +722,7 @@ namespace PigeonEngine
 				ImGui::EndCombo();
 				if (NewParameterIndex >= 0)
 				{
-					UpdateTransitionCondition(m_SelectedTransitionIndex, ConditionIndex, NewParameterIndex
+					UpdateTransitionCondition(SelectedTransitionIndex, ConditionIndex, NewParameterIndex
 						, EString(GetDefaultConditionOp(InMachine.Parameters[NewParameterIndex].Type)), 0.0f);
 					ImGui::PopID();
 					return;
@@ -749,7 +748,7 @@ namespace PigeonEngine
 				ImGui::EndCombo();
 				if (NewOp.Length() > 0u)
 				{
-					UpdateTransitionCondition(m_SelectedTransitionIndex, ConditionIndex
+					UpdateTransitionCondition(SelectedTransitionIndex, ConditionIndex
 						, Condition.ParameterIndex, NewOp, Condition.Value);
 					ImGui::PopID();
 					return;
@@ -761,7 +760,7 @@ namespace PigeonEngine
 			ImGui::InputFloat("Value", &Value, 0.0f, 0.0f, "%.3f");
 			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
-				UpdateTransitionCondition(m_SelectedTransitionIndex, ConditionIndex
+				UpdateTransitionCondition(SelectedTransitionIndex, ConditionIndex
 					, Condition.ParameterIndex, EString(OpText), Value);
 				ImGui::PopID();
 				return;
@@ -769,7 +768,7 @@ namespace PigeonEngine
 			ImGui::SameLine();
 			if (ImGui::Button("Remove"))
 			{
-				RemoveTransitionCondition(m_SelectedTransitionIndex, ConditionIndex);
+				RemoveTransitionCondition(SelectedTransitionIndex, ConditionIndex);
 				ImGui::PopID();
 				return;
 			}
@@ -778,134 +777,134 @@ namespace PigeonEngine
 
 		if (ImGui::Button("Add Condition"))
 		{
-			AddTransitionCondition(m_SelectedTransitionIndex, 0);
+			AddTransitionCondition(SelectedTransitionIndex, 0);
 			return;
 		}
 	}
 
 	BOOL32 EAnimStateMachineEditor::AddTransitionCondition(INT32 InTransitionIndex, INT32 InParameterIndex)
 	{
-		if (!m_Asset)
+		if (!Asset)
 		{
 			return FALSE;
 		}
-		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 		if ((!Machine) || (InTransitionIndex < 0) || (InTransitionIndex >= Machine->Transitions.Num())
 			|| (InParameterIndex < 0) || (InParameterIndex >= Machine->Parameters.Num()))
 		{
-			m_LastError = EString("Transition or parameter index is invalid.");
+			LastError = EString("Transition or parameter index is invalid.");
 			return FALSE;
 		}
 
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
 		TArray<CJsonObject*> TransitionObjects;
-		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
 		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()) || (!TransitionObjects[InTransitionIndex]))
 		{
-			m_LastError = EString("JSON transition index is invalid.");
+			LastError = EString("JSON transition index is invalid.");
 			return FALSE;
 		}
 
 		CJsonObject* Transition = TransitionObjects[InTransitionIndex];
 		TArray<CJsonObject*> ConditionObjects;
-		Transition->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		Transition->GetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
 		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
 		const EAnimStateMachineParameter& Parameter = Machine->Parameters[InParameterIndex];
 		CJsonObject* Condition = new CJsonObject();
-		Condition->SetStringField(PE_TEXT("param"), Parameter.Name);
-		Condition->SetStringField(PE_TEXT("op"), EString(GetDefaultConditionOp(Parameter.Type)));
-		Condition->SetFloatField(PE_TEXT("value"), 0.0f);
+		Condition->SetStringField(PE_TEXT("Param"), Parameter.Name);
+		Condition->SetStringField(PE_TEXT("Op"), EString(GetDefaultConditionOp(Parameter.Type)));
+		Condition->SetFloatField(PE_TEXT("Value"), 0.0f);
 		ConditionObjects.Add(Condition);
 
-		Transition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
-		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Transition->SetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
+		Root.SetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::UpdateTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex
 		, INT32 InParameterIndex, const EString& InOp, FLOAT InValue)
 	{
-		if (!m_Asset)
+		if (!Asset)
 		{
 			return FALSE;
 		}
-		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 		if ((!Machine) || (InTransitionIndex < 0) || (InTransitionIndex >= Machine->Transitions.Num())
 			|| (InParameterIndex < 0) || (InParameterIndex >= Machine->Parameters.Num()))
 		{
-			m_LastError = EString("Transition or parameter index is invalid.");
+			LastError = EString("Transition or parameter index is invalid.");
 			return FALSE;
 		}
 
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
 		TArray<CJsonObject*> TransitionObjects;
-		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
 		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()) || (!TransitionObjects[InTransitionIndex]))
 		{
-			m_LastError = EString("JSON transition index is invalid.");
+			LastError = EString("JSON transition index is invalid.");
 			return FALSE;
 		}
 
 		CJsonObject* Transition = TransitionObjects[InTransitionIndex];
 		TArray<CJsonObject*> ConditionObjects;
-		Transition->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		Transition->GetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
 		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
 		if ((InConditionIndex < 0) || (InConditionIndex >= ConditionObjects.Num()) || (!ConditionObjects[InConditionIndex]))
 		{
-			m_LastError = EString("JSON condition index is invalid.");
+			LastError = EString("JSON condition index is invalid.");
 			return FALSE;
 		}
 
 		CJsonObject* Condition = ConditionObjects[InConditionIndex];
-		Condition->SetStringField(PE_TEXT("param"), Machine->Parameters[InParameterIndex].Name);
-		Condition->SetStringField(PE_TEXT("op"), InOp);
-		Condition->SetFloatField(PE_TEXT("value"), InValue);
+		Condition->SetStringField(PE_TEXT("Param"), Machine->Parameters[InParameterIndex].Name);
+		Condition->SetStringField(PE_TEXT("Op"), InOp);
+		Condition->SetFloatField(PE_TEXT("Value"), InValue);
 
-		Transition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
-		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Transition->SetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
+		Root.SetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::RemoveTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex)
 	{
-		if (!m_Asset)
+		if (!Asset)
 		{
 			return FALSE;
 		}
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
 		TArray<CJsonObject*> TransitionObjects;
-		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
 		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()) || (!TransitionObjects[InTransitionIndex]))
 		{
-			m_LastError = EString("JSON transition index is invalid.");
+			LastError = EString("JSON transition index is invalid.");
 			return FALSE;
 		}
 
 		CJsonObject* Transition = TransitionObjects[InTransitionIndex];
 		TArray<CJsonObject*> ConditionObjects;
-		Transition->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		Transition->GetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
 		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
 		if ((InConditionIndex < 0) || (InConditionIndex >= ConditionObjects.Num()))
 		{
-			m_LastError = EString("JSON condition index is invalid.");
+			LastError = EString("JSON condition index is invalid.");
 			return FALSE;
 		}
 
@@ -913,31 +912,31 @@ namespace PigeonEngine
 		ConditionObjects.RemoveAt(InConditionIndex);
 		delete Removed;
 
-		Transition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
-		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Transition->SetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
+		Root.SetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::AddState(const EAnimStateMachine& InMachine)
 	{
-		if ((!m_Asset) || (InMachine.States.Num() <= 0))
+		if ((!Asset) || (InMachine.States.Num() <= 0))
 		{
-			m_LastError = EString("Cannot add a state to an empty machine.");
+			LastError = EString("Cannot add a state to an empty machine.");
 			return FALSE;
 		}
 
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
 		TArray<CJsonObject*> StateObjects;
-		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		Root.GetObjectArrayField(PE_TEXT("States"), StateObjects);
 		FJsonObjectArrayOwner StateOwner(StateObjects);
 		if (StateObjects.Num() <= 0)
 		{
-			m_LastError = EString("JSON has no states array.");
+			LastError = EString("JSON has no states array.");
 			return FALSE;
 		}
 
@@ -951,65 +950,65 @@ namespace PigeonEngine
 		EString ClipName;
 		if (StateObjects[0])
 		{
-			StateObjects[0]->GetStringField(PE_TEXT("clip"), ClipName);
+			StateObjects[0]->GetStringField(PE_TEXT("Clip"), ClipName);
 		}
 		CJsonObject* NewState = new CJsonObject();
-		NewState->SetStringField(PE_TEXT("name"), NewName);
-		NewState->SetStringField(PE_TEXT("clip"), ClipName);
-		NewState->SetStringField(PE_TEXT("loop"), EString("Repeat"));
-		NewState->SetFloatField(PE_TEXT("rate"), 1.0f);
-		NewState->SetFloatField(PE_TEXT("blend"), 0.2f);
+		NewState->SetStringField(PE_TEXT("Name"), NewName);
+		NewState->SetStringField(PE_TEXT("Clip"), ClipName);
+		NewState->SetStringField(PE_TEXT("Loop"), EString("Repeat"));
+		NewState->SetFloatField(PE_TEXT("Rate"), 1.0f);
+		NewState->SetFloatField(PE_TEXT("Blend"), 0.2f);
 		StateObjects.Add(NewState);
 
-		Root.SetObjectArrayField(PE_TEXT("states"), StateObjects);
+		Root.SetObjectArrayField(PE_TEXT("States"), StateObjects);
 		EString EntryName;
 		if ((StateObjects.Num() == 1)
-			&& ((!Root.GetStringField(PE_TEXT("entry"), EntryName)) || (EntryName.Length() == 0u)))
+			&& ((!Root.GetStringField(PE_TEXT("Entry"), EntryName)) || (EntryName.Length() == 0u)))
 		{
-			Root.SetStringField(PE_TEXT("entry"), NewName);
+			Root.SetStringField(PE_TEXT("Entry"), NewName);
 		}
 
 		if (!CommitJsonText(Root.ToString()))
 		{
 			return FALSE;
 		}
-		const EAnimStateMachine* Rebuilt = m_Asset->GetStoragedResource();
-		m_SelectedStateIndex = (Rebuilt ? Rebuilt->FindState(NewName) : 0);
-		m_TransitionFromIndex = -1;
-		m_TransitionToIndex = 0;
-		m_LastError = EString();
+		const EAnimStateMachine* Rebuilt = Asset->GetStoragedResource();
+		SelectedStateIndex = (Rebuilt ? Rebuilt->FindState(NewName) : 0);
+		TransitionFromIndex = -1;
+		TransitionToIndex = 0;
+		LastError = EString();
 		return TRUE;
 	}
 
 	BOOL32 EAnimStateMachineEditor::DeleteState(const EString& InStateName)
 	{
-		if (!m_Asset)
+		if (!Asset)
 		{
 			return FALSE;
 		}
-		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 		if ((!Machine) || (Machine->States.Num() <= 1))
 		{
-			m_LastError = EString("Cannot delete the last state.");
+			LastError = EString("Cannot delete the last state.");
 			return FALSE;
 		}
 		// The input may alias an element of Machine->States; keep a value copy because the
 		// rebuild replaces that array before we touch the name again.
 		const EString DeletedStateName = InStateName;
 
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
 		TArray<CJsonObject*> StateObjects;
-		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		Root.GetObjectArrayField(PE_TEXT("States"), StateObjects);
 		FJsonObjectArrayOwner StateOwner(StateObjects);
 		INT32 RemovedStateIndex = -1;
 		for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 		{
-			if ((StateObjects[StateIndex]) && (GetJsonObjectString(*StateObjects[StateIndex], EString("name")) == DeletedStateName))
+			if ((StateObjects[StateIndex]) && (GetJsonObjectString(*StateObjects[StateIndex], EString("Name")) == DeletedStateName))
 			{
 				RemovedStateIndex = StateIndex;
 				break;
@@ -1017,7 +1016,7 @@ namespace PigeonEngine
 		}
 		if (RemovedStateIndex < 0)
 		{
-			m_LastError = EString("State not found in JSON: ") + DeletedStateName;
+			LastError = EString("State not found in JSON: ") + DeletedStateName;
 			return FALSE;
 		}
 		CJsonObject* RemovedState = StateObjects[RemovedStateIndex];
@@ -1025,7 +1024,7 @@ namespace PigeonEngine
 		delete RemovedState;
 
 		TArray<CJsonObject*> TransitionObjects;
-		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
 		TArray<CJsonObject*> KeptTransitions;
 		for (INT32 TransitionIndex = 0; TransitionIndex < TransitionObjects.Num(); TransitionIndex++)
@@ -1035,28 +1034,28 @@ namespace PigeonEngine
 			{
 				continue;
 			}
-			if ((GetJsonObjectString(*Transition, EString("from")) == DeletedStateName)
-				|| (GetJsonObjectString(*Transition, EString("to")) == DeletedStateName))
+			if ((GetJsonObjectString(*Transition, EString("From")) == DeletedStateName)
+				|| (GetJsonObjectString(*Transition, EString("To")) == DeletedStateName))
 			{
 				continue;
 			}
 			KeptTransitions.Add(Transition);
 		}
-		Root.SetObjectArrayField(PE_TEXT("states"), StateObjects);
-		Root.SetObjectArrayField(PE_TEXT("transitions"), KeptTransitions);
+		Root.SetObjectArrayField(PE_TEXT("States"), StateObjects);
+		Root.SetObjectArrayField(PE_TEXT("Transitions"), KeptTransitions);
 
 		EString EntryName;
-		if ((!Root.GetStringField(PE_TEXT("entry"), EntryName))
+		if ((!Root.GetStringField(PE_TEXT("Entry"), EntryName))
 			|| (EntryName == DeletedStateName) || (EntryName.Length() == 0u))
 		{
 			EString FirstStateName;
 			if ((StateObjects.Num() > 0) && (StateObjects[0]))
 			{
-				StateObjects[0]->GetStringField(PE_TEXT("name"), FirstStateName);
+				StateObjects[0]->GetStringField(PE_TEXT("Name"), FirstStateName);
 			}
 			if (FirstStateName.Length() > 0u)
 			{
-				Root.SetStringField(PE_TEXT("entry"), FirstStateName);
+				Root.SetStringField(PE_TEXT("Entry"), FirstStateName);
 			}
 		}
 
@@ -1064,36 +1063,36 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		m_NodePositions.Remove(DeletedStateName);
-		m_SelectedStateIndex = 0;
-		m_SelectedTransitionIndex = -1;
-		m_TransitionFromIndex = -1;
-		m_TransitionToIndex = 0;
-		m_LastError = EString();
+		NodePositions.Remove(DeletedStateName);
+		SelectedStateIndex = 0;
+		SelectedTransitionIndex = -1;
+		TransitionFromIndex = -1;
+		TransitionToIndex = 0;
+		LastError = EString();
 		return TRUE;
 	}
 
 	BOOL32 EAnimStateMachineEditor::AddTransition(const EString& InFromStateName, const EString& InToStateName)
 	{
-		if ((!m_Asset) || (InToStateName.Length() <= 0u))
+		if ((!Asset) || (InToStateName.Length() <= 0u))
 		{
-			m_LastError = EString("A transition needs a target state.");
+			LastError = EString("A transition needs a target state.");
 			return FALSE;
 		}
 
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
 		TArray<CJsonObject*> TransitionObjects;
-		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
 
 		TArray<CJsonObject*> ConditionObjects;
 		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
-		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 		if (Machine)
 		{
 			for (INT32 ParameterIndex = 0; ParameterIndex < Machine->Parameters.Num(); ParameterIndex++)
@@ -1103,110 +1102,110 @@ namespace PigeonEngine
 					continue;
 				}
 				CJsonObject* Condition = new CJsonObject();
-				Condition->SetStringField(PE_TEXT("param"), Machine->Parameters[ParameterIndex].Name);
-				Condition->SetStringField(PE_TEXT("op"), EString(">"));
-				Condition->SetFloatField(PE_TEXT("value"), 1000000000.0f);
+				Condition->SetStringField(PE_TEXT("Param"), Machine->Parameters[ParameterIndex].Name);
+				Condition->SetStringField(PE_TEXT("Op"), EString(">"));
+				Condition->SetFloatField(PE_TEXT("Value"), 1000000000.0f);
 				ConditionObjects.Add(Condition);
 				break;
 			}
 		}
 
 		CJsonObject* NewTransition = new CJsonObject();
-		NewTransition->SetStringField(PE_TEXT("from"), InFromStateName);
-		NewTransition->SetStringField(PE_TEXT("to"), InToStateName);
-		NewTransition->SetIntField(PE_TEXT("priority"), 0);
-		NewTransition->SetFloatField(PE_TEXT("blend"), 0.2f);
-		NewTransition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		NewTransition->SetStringField(PE_TEXT("From"), InFromStateName);
+		NewTransition->SetStringField(PE_TEXT("To"), InToStateName);
+		NewTransition->SetIntField(PE_TEXT("Priority"), 0);
+		NewTransition->SetFloatField(PE_TEXT("Blend"), 0.2f);
+		NewTransition->SetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
 		TransitionObjects.Add(NewTransition);
-		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.SetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 
 		if (!CommitJsonText(Root.ToString()))
 		{
 			return FALSE;
 		}
-		m_LastError = ((ConditionObjects.Num() > 0)
+		LastError = ((ConditionObjects.Num() > 0)
 			? EString() : EString("Transition added without conditions; edit the JSON before it runs."));
 		return TRUE;
 	}
 
 	BOOL32 EAnimStateMachineEditor::DeleteTransition(INT32 InTransitionIndex)
 	{
-		if (!m_Asset)
+		if (!Asset)
 		{
 			return FALSE;
 		}
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
 		TArray<CJsonObject*> TransitionObjects;
-		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
 		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()))
 		{
-			m_LastError = EString("Transition index is invalid.");
+			LastError = EString("Transition index is invalid.");
 			return FALSE;
 		}
 
 		CJsonObject* Removed = TransitionObjects[InTransitionIndex];
 		TransitionObjects.RemoveAt(InTransitionIndex);
 		delete Removed;
-		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		Root.SetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::SetEntryState(const EString& InStateName)
 	{
-		if ((!m_Asset) || (InStateName.Length() <= 0u))
+		if ((!Asset) || (InStateName.Length() <= 0u))
 		{
-			m_LastError = EString("No entry state selected.");
+			LastError = EString("No entry state selected.");
 			return FALSE;
 		}
-		CJsonObject Root(m_JsonBuffer.GetData());
+		CJsonObject Root(JsonBuffer.GetData());
 		if (!Root.IsValid())
 		{
-			m_LastError = EString("JSON cannot be parsed.");
+			LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		Root.SetStringField(PE_TEXT("entry"), InStateName);
+		Root.SetStringField(PE_TEXT("Entry"), InStateName);
 		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::CommitJsonText(const EString& InJsonText)
 	{
 		EString Error;
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, InJsonText, Error))
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(Asset, InJsonText, Error))
 		{
-			m_LastError = Error;
+			LastError = Error;
 			return FALSE;
 		}
 		ReplaceJsonBuffer(InJsonText);
-		m_LastError = EString();
+		LastError = EString();
 		return TRUE;
 	}
 
 	void EAnimStateMachineEditor::ReplaceJsonBuffer(const EString& InJsonText)
 	{
-		m_JsonBuffer.Empty();
+		JsonBuffer.Empty();
 		const INT32 Length = static_cast<INT32>(InJsonText.Length()) + StateMachineEditorBufferHeadroom + 1;
-		m_JsonBuffer.SetNum(Length);
-		::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(Length));
+		JsonBuffer.SetNum(Length);
+		::memset(JsonBuffer.GetData(), 0, static_cast<size_t>(Length));
 		if (InJsonText.Length() > 0u)
 		{
-			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(Length), *InJsonText, InJsonText.Length());
+			::memcpy_s(JsonBuffer.GetData(), static_cast<rsize_t>(Length), *InJsonText, InJsonText.Length());
 		}
 	}
 
 	void EAnimStateMachineEditor::LoadJsonBufferFromAsset()
 	{
-		m_JsonBuffer.Empty();
-		if (!m_Asset)
+		JsonBuffer.Empty();
+		if (!Asset)
 		{
 			return;
 		}
-		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		const EAnimStateMachine* Machine = Asset->GetStoragedResource();
 		if (!Machine)
 		{
 			return;
@@ -1214,11 +1213,11 @@ namespace PigeonEngine
 
 		const EString& SourceJson = Machine->SourceJson;
 		const INT32 BufferLength = static_cast<INT32>(SourceJson.Length()) + StateMachineEditorBufferHeadroom + 1;
-		m_JsonBuffer.SetNum(BufferLength);
-		::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
+		JsonBuffer.SetNum(BufferLength);
+		::memset(JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
 		if (SourceJson.Length() > 0u)
 		{
-			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *SourceJson, SourceJson.Length());
+			::memcpy_s(JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *SourceJson, SourceJson.Length());
 		}
 	}
 

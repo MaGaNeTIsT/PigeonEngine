@@ -314,7 +314,7 @@ namespace PigeonEngine
 		{
 			if (RetiredObjects[Index].Object == InObject)
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				PE_LOG_ERROR(EString(PE_TEXT("[RRenderResourceManager] '")) + InObject->GetDebugName()
 					+ EString(PE_TEXT("' was retired twice; the second request is dropped.")));
 #endif
@@ -327,7 +327,7 @@ namespace PigeonEngine
 		// before this point is still allowed to read it.
 		Entry.RetireFrameIndex = DrainedFrameIndex.Load();
 		RetiredObjects.Add(Entry);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// The name is logged here, where the object is still known to be alive: the release
 		// below logs only the frame stamp, because a damaged entry must not be dereferenced to
 		// find out what it was.
@@ -377,7 +377,7 @@ namespace PigeonEngine
 		for (UINT32 Index = 0u, Num = DueObjects.Num<UINT32>(); Index < Num; Index++)
 		{
 			const FRetiredObject& Entry = DueObjects[Index];
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			// Only what a damaged entry can still be trusted for. The object's name was logged
 			// when it was parked, which is also where the pair it prints here can be looked up.
 			PE_LOG_LOG(EString(PE_TEXT("[RRenderResourceManager] Releasing a retired object parked at frame "))
@@ -399,30 +399,30 @@ namespace PigeonEngine
 
 	void RRenderResourceManager::CheckEngineLifetime()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const BOOL8 bInLifetime = ((EMainManager::GetManagerSingleton()->IsEngineLifetimeActive() != 0) ? TRUE : FALSE);
 		Check(bInLifetime, (ENGINE_RENDER_CORE_ERROR)
 			, (PE_TEXT("[RRenderResourceManager] A render resource was created or retained outside the engine lifetime. A file scope object touching an asset before EMainManager::Initialize is the usual cause.")));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 
 	void RRenderResourceManager::CheckShutDownResidue(const UINT32 InDestroyedNum)
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		EString LogText(PE_TEXT("[RRenderResourceManager] Shutdown released "));
 		LogText = LogText + ToString(InDestroyedNum) + PE_TEXT(" resource(s) the registry still held.");
 		PE_LOG_LOG(LogText);
 		Check((InDestroyedNum == 0u), (ENGINE_RENDER_CORE_ERROR)
 			, (PE_TEXT("[RRenderResourceManager] Shutdown found live render resources. An asset owner was not torn down: register its manager with EMainManager and release it in ShutDown.")));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 
 	void RRenderResourceManager::CheckRetiredObjectResidue()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		Check((GetRetiredObjectNum() == 0u), (ENGINE_RENDER_CORE_ERROR)
 			, (PE_TEXT("[RRenderResourceManager] Retired objects were never released. RetireObject callers must go through a manager that EMainManager shuts down.")));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 
 } // namespace PigeonEngine

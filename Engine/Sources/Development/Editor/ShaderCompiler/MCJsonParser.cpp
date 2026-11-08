@@ -25,12 +25,12 @@ namespace MC
 		if (!FileStream.is_open())
 		{
 			MCLog.Error("Cannot open: " + InPath);
-			return false;
+			return FALSE;
 		}
 		std::ostringstream StrStream;
 		StrStream << FileStream.rdbuf();
 		OutContent = StrStream.str();
-		return true;
+		return TRUE;
 	}
 
 	static bool LoadHlsl(const std::string& InHlslFilePath, std::string& OutContent)
@@ -41,7 +41,7 @@ namespace MC
 			return ReadFile(InHlslFilePath, OutContent);
 		}
 		MCLog.Error("Invalid HLSL file extension (expected .hlsl): " + InHlslFilePath);
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseDoc(const std::string& InRaw, rapidjson::Document& OutDoc)
@@ -51,18 +51,18 @@ namespace MC
 		if (OutDoc.HasParseError())
 		{
 			MCLog.Error(std::string("JSON parse error: ") + rapidjson::GetParseError_En(OutDoc.GetParseError()));
-			return false;
+			return FALSE;
 		}
-		return true;
+		return TRUE;
 	}
 
 	static std::set<std::string> ExtractTemplatePlaceholders(const std::string& InSource)
 	{
 		std::set<std::string> Keys;
 		std::regex Pattern(R"(\{[ \t]*([A-Za-z_][A-Za-z0-9_]*)[ \t]*\})");
-		auto Begin = std::sregex_iterator(InSource.begin(), InSource.end(), Pattern);
-		auto End = std::sregex_iterator();
-		for (auto It = Begin; It != End; ++It)
+		std::sregex_iterator Begin = std::sregex_iterator(InSource.begin(), InSource.end(), Pattern);
+		std::sregex_iterator End = std::sregex_iterator();
+		for (std::sregex_iterator It = Begin; It != End; ++It)
 		{
 			Keys.insert((*It)[1].str());
 		}
@@ -77,15 +77,15 @@ namespace MC
 			return;
 		}
 
-		bool bAnyReplaced = false;
-		for (const auto& [Key, Value] : InReplaceRules)
+		bool bAnyReplaced = FALSE;
+		for (const std::pair<const std::string, std::string>& ReplaceRule : InReplaceRules)
 		{
 			size_t Pos = 0;
-			while ((Pos = InOutStr.find(Key, Pos)) != std::string::npos)
+			while ((Pos = InOutStr.find(ReplaceRule.first, Pos)) != std::string::npos)
 			{
-				InOutStr.replace(Pos, Key.size(), Value);
-				Pos += Value.size();
-				bAnyReplaced = true;
+				InOutStr.replace(Pos, ReplaceRule.first.size(), ReplaceRule.second);
+				Pos += ReplaceRule.second.size();
+				bAnyReplaced = TRUE;
 			}
 		}
 
@@ -106,18 +106,18 @@ namespace MC
 		std::regex Pattern(R"(\{[ \t]*([A-Za-z_][A-Za-z0-9_]*)[ \t]*\})");
 
 		std::string Result;
-		bool bAnyReplaced = false;
+		bool bAnyReplaced = FALSE;
 		size_t LastPos = 0;
 
-		auto Begin = std::sregex_iterator(InOutStr.begin(), InOutStr.end(), Pattern);
-		auto End = std::sregex_iterator();
+		std::sregex_iterator Begin = std::sregex_iterator(InOutStr.begin(), InOutStr.end(), Pattern);
+		std::sregex_iterator End = std::sregex_iterator();
 
-		for (auto It = Begin; It != End; ++It)
+		for (std::sregex_iterator It = Begin; It != End; ++It)
 		{
 			std::smatch Match = *It;
 			std::string Key = Match[1].str();
 
-			auto RuleIt = InReplaceRules.find(Key);
+			std::map<std::string, std::string>::const_iterator RuleIt = InReplaceRules.find(Key);
 			if (RuleIt == InReplaceRules.end())
 			{
 				continue;
@@ -130,7 +130,7 @@ namespace MC
 			Result.append(InOutStr, LastPos, Match.position() - LastPos);
 			Result.append(RuleIt->second);                // whole {  KEY  } -> value
 			LastPos = Match.position() + Match.length();
-			bAnyReplaced = true;
+			bAnyReplaced = TRUE;
 		}
 
 		if (!bAnyReplaced)
@@ -181,34 +181,34 @@ namespace MC
 		if (InStr == "==")
 		{
 			OutOp = MCConditionOpType::Equal;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "!=")
 		{
 			OutOp = MCConditionOpType::NotEqual;
-			return true;
+			return TRUE;
 		}
 		if (InStr == ">")
 		{
 			OutOp = MCConditionOpType::Greater;
-			return true;
+			return TRUE;
 		}
 		if (InStr == ">=")
 		{
 			OutOp = MCConditionOpType::GreaterEqual;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "<")
 		{
 			OutOp = MCConditionOpType::Less;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "<=")
 		{
 			OutOp = MCConditionOpType::LessEqual;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseConditionOpEnum(MCConditionOpType InOp, std::string& OutStr)
@@ -218,35 +218,35 @@ namespace MC
 			case MCConditionOpType::Equal:
 			{
 				OutStr = "==";
-				return true;
+				return TRUE;
 			}
 			case MCConditionOpType::NotEqual:
 			{
 				OutStr = "!=";
-				return true;
+				return TRUE;
 			}
 			case MCConditionOpType::Greater:
 			{
 				OutStr = ">";
-				return true;
+				return TRUE;
 			}
 			case MCConditionOpType::GreaterEqual:
 			{
 				OutStr = ">=";
-				return true;
+				return TRUE;
 			}
 			case MCConditionOpType::Less:
 			{
 				OutStr = "<";
-				return true;
+				return TRUE;
 			}
 			case MCConditionOpType::LessEqual:
 			{
 				OutStr = "<=";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool EvaluateCondition(MCConditionOpType InOp, int InLhs, int InRhs)
@@ -278,7 +278,7 @@ namespace MC
 				return (InLhs <= InRhs);
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseConditionField(const rapidjson::Value& InJson, MCConditionField& OutField)
@@ -297,33 +297,33 @@ namespace MC
 				if (!ParseConditionOpStr(InJson[DefineOpTxt].GetString(), OutField.Op))
 				{
 					MCLog.Error(std::string("ParseConditionField unknown condition op '") + InJson[DefineOpTxt].GetString() + "' for Define '" + OutField.DefineName + "'");
-					return false;
+					return FALSE;
 				}
 			}
 			OutField.Ref = (InJson.HasMember(DefineRefTxt) && InJson[DefineRefTxt].IsInt()) ? (InJson[DefineRefTxt].GetInt()) : 0;
 		}
 
 		MCLog.Verbose("ParseConditionField Define='" + OutField.DefineName + "' op=" + (OutField.DefineName.empty() ? "none" : std::to_string(static_cast<int>(OutField.Op))) + " ref=" + std::to_string(OutField.Ref));
-		return true;
+		return TRUE;
 	}
 
 	static bool CheckConditionField(const MCConditionField& InField, const std::vector<MCDefine>& InDefs)
 	{
 		if (InField.DefineName.empty())
 		{
-			return true;		// unconditional
+			return TRUE;		// unconditional
 		}
 
 		MCLogger& MCLog = MCLogger::Get();
 
-		bool		bFound = false;
+		bool		bFound = FALSE;
 		int			DefineVal = 0;			// No defines mean the value is 0
-		for (const auto& Def : InDefs)
+		for (const MCDefine& Def : InDefs)
 		{
 			if (Def.Name == InField.DefineName)
 			{
 				DefineVal = Def.Value;
-				bFound = true;
+				bFound = TRUE;
 				MCLog.Verbose("CheckConditionField found condition name: " + Def.Name + ", value = " + std::to_string(DefineVal));
 				break;
 			}
@@ -337,14 +337,14 @@ namespace MC
 			std::string OpStr;
 			ParseConditionOpEnum(InField.Op, OpStr);
 			MCLog.Verbose("CheckConditionField condition not met for define '" + InField.DefineName + "' ref value = " + std::to_string(InField.Ref) + " op = '" + OpStr + "' does not match define value = " + std::to_string(DefineVal));
-			return false;
+			return FALSE;
 		}
-		return true;
+		return TRUE;
 	}
 
 	static void SplitVariableFormatStr(const std::string& InStr, std::string& OutPrefix, std::string& OutSuffix)
 	{
-		auto It = std::find_if(InStr.begin(), InStr.end(), [](char InChr) { return ((InChr >= '0') && (InChr <= '9')); });
+		std::string::const_iterator It = std::find_if(InStr.begin(), InStr.end(), [](char InChr) { return ((InChr >= '0') && (InChr <= '9')); });
 		OutPrefix.assign(InStr.begin(), It);
 		OutSuffix.assign(It, InStr.end());
 	}
@@ -356,20 +356,20 @@ namespace MC
 			case MCVarFormatPrefixType::Var_Int:
 			{
 				OutStr = "int";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatPrefixType::Var_Uint:
 			{
 				OutStr = "uint";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatPrefixType::Var_Float:
 			{
 				OutStr = "float";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseVariableFormatSuffixEnum(MCVarFormatSuffixType InFormat, std::string& OutStr)
@@ -379,70 +379,70 @@ namespace MC
 			case MCVarFormatSuffixType::Var_1:
 			{
 				OutStr = "";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2:
 			{
 				OutStr = "2";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3:
 			{
 				OutStr = "3";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4:
 			{
 				OutStr = "4";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2x2:
 			{
 				OutStr = "2x2";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3x2:
 			{
 				OutStr = "3x2";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2x3:
 			{
 				OutStr = "2x3";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3x3:
 			{
 				OutStr = "3x3";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4x2:
 			{
 				OutStr = "4x2";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2x4:
 			{
 				OutStr = "2x4";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4x3:
 			{
 				OutStr = "4x3";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3x4:
 			{
 				OutStr = "3x4";
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4x4:
 			{
 				OutStr = "4x4";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseVariableFormatSuffixElems(MCVarFormatSuffixType InFormat, int& OutNumElems)
@@ -452,70 +452,70 @@ namespace MC
 			case MCVarFormatSuffixType::Var_1:
 			{
 				OutNumElems = 1;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2:
 			{
 				OutNumElems = 2;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3:
 			{
 				OutNumElems = 3;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4:
 			{
 				OutNumElems = 4;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2x2:
 			{
 				OutNumElems = 4;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3x2:
 			{
 				OutNumElems = 6;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2x3:
 			{
 				OutNumElems = 6;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3x3:
 			{
 				OutNumElems = 9;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4x2:
 			{
 				OutNumElems = 8;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_2x4:
 			{
 				OutNumElems = 8;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4x3:
 			{
 				OutNumElems = 12;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_3x4:
 			{
 				OutNumElems = 12;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatSuffixType::Var_4x4:
 			{
 				OutNumElems = 16;
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseVariableFormatPrefixStr(const std::string& InStr, MCVarFormatPrefixType& OutFormat)
@@ -523,19 +523,19 @@ namespace MC
 		if (InStr == "int")
 		{
 			OutFormat = MCVarFormatPrefixType::Var_Int;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "uint")
 		{
 			OutFormat = MCVarFormatPrefixType::Var_Uint;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "float")
 		{
 			OutFormat = MCVarFormatPrefixType::Var_Float;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseVariableFormatSuffixStr(const std::string& InStr, MCVarFormatSuffixType& OutFormat)
@@ -543,69 +543,69 @@ namespace MC
 		if (InStr == "")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_1;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "2")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_2;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "3")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_3;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "4")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_4;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "2x2")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_2x2;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "3x2")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_3x2;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "2x3")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_2x3;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "3x3")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_3x3;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "4x2")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_4x2;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "2x4")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_2x4;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "4x3")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_4x3;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "3x4")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_3x4;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "4x4")
 		{
 			OutFormat = MCVarFormatSuffixType::Var_4x4;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	union PrefixVariableToUint32
@@ -625,24 +625,24 @@ namespace MC
 				PrefixVariableToUint32 DefaultVal;
 				DefaultVal._IntVal = 0;
 				OutVal = DefaultVal.StorageVal;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatPrefixType::Var_Uint:
 			{
 				PrefixVariableToUint32 DefaultVal;
 				DefaultVal._UintVal = 0u;
 				OutVal = DefaultVal.StorageVal;
-				return true;
+				return TRUE;
 			}
 			case MCVarFormatPrefixType::Var_Float:
 			{
 				PrefixVariableToUint32 DefaultVal;
 				DefaultVal._FloatVal = 0.0f;
 				OutVal = DefaultVal.StorageVal;
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	//	Example 1 JSON:
@@ -696,7 +696,7 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseVFInputTemplate input template contains invalid name");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Input.Name = InJson[NameTxt].GetString();
 		if (!(InJson.HasMember(SemanticTxt) && InJson[SemanticTxt].IsString()) ||
@@ -712,7 +712,7 @@ namespace MC
 			{
 				MCLog.Error("ParseVFInputTemplate '" + OutTmpl.Input.Name + "' input template missing 'Semantic' or 'Format' or 'SemanticIdx'");
 			}
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Input.Semantic = InJson[SemanticTxt].GetString();
 		{
@@ -720,7 +720,7 @@ namespace MC
 			if (SemanticIdx < 0 || SemanticIdx > 15)
 			{
 				MCLog.Error("ParseVFInputTemplate '" + OutTmpl.Input.Name + "' input template contains invalid semantic index number: " + std::to_string(SemanticIdx));
-				return false;
+				return FALSE;
 			}
 			OutTmpl.Input.SemanticIdx = SemanticIdx;
 		}
@@ -729,42 +729,42 @@ namespace MC
 		if (StrPrefix == "color")
 		{
 			MCLog.Error("ParseVFInputTemplate '" + OutTmpl.Input.Name + "' can not use 'color' input stream format");
-			return false;
+			return FALSE;
 		}
 		if (!ParseVariableFormatPrefixStr(StrPrefix, OutTmpl.Input.Format.Prefix))
 		{
 			MCLog.Error("ParseVFInputTemplate '" + OutTmpl.Input.Name + "' input template FormatPrefix = " + StrPrefix + " not valid");
-			return false;
+			return FALSE;
 		}
 		if (!ParseVariableFormatSuffixStr(StrSuffix, OutTmpl.Input.Format.Suffix))
 		{
 			MCLog.Error("ParseVFInputTemplate '" + OutTmpl.Input.Name + "' input template FormatSuffix = " + StrSuffix + " not valid");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Input.Slot = (InJson.HasMember(SlotTxt)) ? (InJson[SlotTxt].GetInt()) : InSlot;
 		if ((OutTmpl.Input.Slot < 0) || (OutTmpl.Input.Slot > 15))
 		{
 			MCLog.Error("ParseVFInputTemplate '" + OutTmpl.Input.Name + "' input template contains invalid slot number: " + std::to_string(OutTmpl.Input.Slot));
-			return false;
+			return FALSE;
 		}
 
 		// Define + op + ref
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
 		{
-			return false;
+			return FALSE;
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	static bool ExpandVFInputTemplate(const MCVFInputTemplate& InTmpl, const std::vector<MCDefine>& InDefs, MCVFInput& OutInput)
 	{
 		if (!CheckConditionField(InTmpl.Condition, InDefs))
 		{
-			return false;
+			return FALSE;
 		}
 		OutInput = InTmpl.Input;
-		return true;
+		return TRUE;
 	}
 
 	static bool ParseVariableInputTemplate(const rapidjson::Value& InJson, MCVariableInputTemplate& OutTmpl)
@@ -780,43 +780,43 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseVariableInputTemplate input template missing valid 'Name'");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Input.Name = InJson[NameTxt].GetString();
 		if (!(InJson.HasMember(FormatTxt) && InJson[FormatTxt].IsString()))
 		{
 			MCLog.Error("ParseVariableInputTemplate '" + OutTmpl.Input.Name + "' input template missing valid 'Format'");
-			return false;
+			return FALSE;
 		}
 		std::string StrPrefix, StrSuffix;
 		SplitVariableFormatStr(InJson[FormatTxt].GetString(), StrPrefix, StrSuffix);
-		OutTmpl.Input.bColor = false;
+		OutTmpl.Input.bColor = FALSE;
 		if (StrPrefix == "color")
 		{
-			OutTmpl.Input.bColor = true;
+			OutTmpl.Input.bColor = TRUE;
 			if (!ParseVariableFormatPrefixEnum(MCVarFormatPrefixType::Var_Float, StrPrefix))
 			{
 				MCLog.Error("ParseVariableInputTemplate '" + OutTmpl.Input.Name + "' something wrong in color check phase");
-				return false;
+				return FALSE;
 			}
 		}
 		if (!ParseVariableFormatPrefixStr(StrPrefix, OutTmpl.Input.Format.Prefix))
 		{
 			MCLog.Error("ParseVariableInputTemplate '" + OutTmpl.Input.Name + "' input template FormatPrefix = " + StrPrefix + " not valid");
-			return false;
+			return FALSE;
 		}
 		if (!ParseVariableFormatSuffixStr(StrSuffix, OutTmpl.Input.Format.Suffix))
 		{
 			MCLog.Error("ParseVariableInputTemplate '" + OutTmpl.Input.Name + "' input template FormatSuffix = " + StrSuffix + " not valid");
-			return false;
+			return FALSE;
 		}
-		OutTmpl.Input.bArray = false;
+		OutTmpl.Input.bArray = FALSE;
 		if (InJson.HasMember(ArrayElementTxt))
 		{
 			int ArrayElems = InJson[ArrayElementTxt].GetInt();
 			if (ArrayElems > 0)
 			{
-				OutTmpl.Input.bArray = true;
+				OutTmpl.Input.bArray = TRUE;
 				OutTmpl.Input.ArrayNumElems = ArrayElems;
 			}
 		}
@@ -824,18 +824,18 @@ namespace MC
 		if (!DefaultVariableFormatValue(OutTmpl.Input.Format.Prefix, InitVal))
 		{
 			MCLog.Error("ParseVariableInputTemplate '" + OutTmpl.Input.Name + "' something wrong in get default value phase");
-			return false;
+			return FALSE;
 		}
 		int FormatElems;
 		if (!ParseVariableFormatSuffixElems(OutTmpl.Input.Format.Suffix, FormatElems))
 		{
 			MCLog.Error("ParseVariableInputTemplate '" + OutTmpl.Input.Name + "' something wrong in get suffix elements phase");
-			return false;
+			return FALSE;
 		}
 		if (InJson.HasMember(DefaultTxt) && InJson[DefaultTxt].IsArray())
 		{
 			OutTmpl.Input.Default.clear();
-			for (const auto& DefaultVal : InJson[DefaultTxt].GetArray())
+			for (const rapidjson::Value& DefaultVal : InJson[DefaultTxt].GetArray())
 			{
 				PrefixVariableToUint32 ValRef;
 				switch (OutTmpl.Input.Format.Prefix)
@@ -873,33 +873,33 @@ namespace MC
 		{
 			MCLog.Info("ParseVariableInputTemplate '" + OutTmpl.Input.Name + "' does not contain valid 'Default' field so use default value instead");
 			OutTmpl.Input.Default.resize(static_cast<size_t>(FormatElems * (OutTmpl.Input.bArray ? OutTmpl.Input.ArrayNumElems : 1)));
-			for (auto& Elem : OutTmpl.Input.Default)
+			for (uint32_t& Elem : OutTmpl.Input.Default)
 			{
 				Elem = InitVal;
 			}
 		}
-		OutTmpl.Input.bExposure = false;
+		OutTmpl.Input.bExposure = FALSE;
 		if (InJson.HasMember(ExposureTxt) && InJson[ExposureTxt].IsBool() && InJson[ExposureTxt].GetBool())
 		{
-			OutTmpl.Input.bExposure = true;
+			OutTmpl.Input.bExposure = TRUE;
 		}
 
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
 		{
-			return false;
+			return FALSE;
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	static bool ExpandVariableInputTemplate(const MCVariableInputTemplate& InTmpl, const std::vector<MCDefine>& InDefs, MCVariableInput& OutInput)
 	{
 		if (!CheckConditionField(InTmpl.Condition, InDefs))
 		{
-			return false;
+			return FALSE;
 		}
 		OutInput = InTmpl.Input;
-		return true;
+		return TRUE;
 	}
 
 	static bool ParseConstantBuffer(const rapidjson::Value& InJson, const std::vector<MCDefine>& InDefs, int InSlot, MCConstantBuffer& OutCB)
@@ -914,37 +914,37 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseConstantBuffer does not contain valid 'Name'");
-			return false;
+			return FALSE;
 		}
 		OutCB.Name = InJson[NameTxt].GetString();
 		if (!(InJson.HasMember(FieldsTxt) && InJson[FieldsTxt].IsArray()))
 		{
 			MCLog.Error("ParseConstantBuffer '" + OutCB.Name + "' does not contain valid 'Fields'");
-			return false;
+			return FALSE;
 		}
 		if ((InSlot < 0) && (!InJson.HasMember(SlotTxt)))
 		{
 			MCLog.Error("ParseConstantBuffer '" + OutCB.Name + "' does not contain valid 'Slot'");
-			return false;
+			return FALSE;
 		}
 		OutCB.Slot = (InJson.HasMember(SlotTxt)) ? (InJson[SlotTxt].GetInt()) : InSlot;
 		if ((OutCB.Slot < 0) || (OutCB.Slot > 13))
 		{
 			MCLog.Error("ParseConstantBuffer '" + OutCB.Name + "' slot=" + std::to_string(OutCB.Slot) + " out of range [0, 13]");
-			return false;
+			return FALSE;
 		}
-		OutCB.bRootConstant = false;
+		OutCB.bRootConstant = FALSE;
 		if (InJson.HasMember(RootConstantTxt) && InJson[RootConstantTxt].IsBool() && InJson[RootConstantTxt].GetBool())
 		{
-			OutCB.bRootConstant = true;
+			OutCB.bRootConstant = TRUE;
 			MCLog.Info("ParseConstantBuffer '" + OutCB.Name + "' is marked 'RootConstant'");
 		}
-		for (const auto& Field : InJson[FieldsTxt].GetArray())
+		for (const rapidjson::Value& Field : InJson[FieldsTxt].GetArray())
 		{
 			MCVariableInputTemplate InputTmpl{};
 			if (!ParseVariableInputTemplate(Field, InputTmpl))
 			{
-				return false;
+				return FALSE;
 			}
 			MCVariableInput Input{};
 			if (ExpandVariableInputTemplate(InputTmpl, InDefs, Input))
@@ -980,20 +980,20 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseVFInputStream does not contain valid 'Name'");
-			return false;
+			return FALSE;
 		}
 		OutStream.Name = InJson[NameTxt].GetString();
 		if (!(InJson.HasMember(InputsTxt) && InJson[InputsTxt].IsArray()))
 		{
 			MCLog.Error("ParseVFInputStream '" + OutStream.Name + "' does not contain valid 'Inputs'");
-			return false;
+			return FALSE;
 		}
-		for (const auto& Elem : InJson[InputsTxt].GetArray())
+		for (const rapidjson::Value& Elem : InJson[InputsTxt].GetArray())
 		{
 			MCVFInputTemplate InputTmpl{};
 			if (!ParseVFInputTemplate(Elem, InSlot, InputTmpl))
 			{
-				return false;
+				return FALSE;
 			}
 			MCVFInput Input{};
 			if (ExpandVFInputTemplate(InputTmpl, InDefs, Input))
@@ -1013,24 +1013,24 @@ namespace MC
 		if (InStr == "Point")
 		{
 			OutFilter = MCTextureSamplerFilterType::Tex_Filter_Point;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "MinMagLinear")
 		{
 			OutFilter = MCTextureSamplerFilterType::Tex_Filter_MinMagLinear;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "MinMagMipLinear")
 		{
 			OutFilter = MCTextureSamplerFilterType::Tex_Filter_MinMagMipLinear;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Anisotropic")
 		{
 			OutFilter = MCTextureSamplerFilterType::Tex_Filter_Anisotropic;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseTextureSamplerFilterEnum(MCTextureSamplerFilterType InFilter, std::string& OutStr)
@@ -1040,25 +1040,25 @@ namespace MC
 			case MCTextureSamplerFilterType::Tex_Filter_Point:
 			{
 				OutStr = "Point";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerFilterType::Tex_Filter_MinMagLinear:
 			{
 				OutStr = "MinMagLinear";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerFilterType::Tex_Filter_MinMagMipLinear:
 			{
 				OutStr = "MinMagMipLinear";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerFilterType::Tex_Filter_Anisotropic:
 			{
 				OutStr = "Anisotropic";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseTextureSamplerAddressStr(const std::string& InStr, MCTexSamplerAddressModeType& OutMode)
@@ -1066,29 +1066,29 @@ namespace MC
 		if (InStr == "Wrap")
 		{
 			OutMode = MCTexSamplerAddressModeType::Tex_Sampler_Wrap;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Mirror")
 		{
 			OutMode = MCTexSamplerAddressModeType::Tex_Sampler_Mirror;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Clamp")
 		{
 			OutMode = MCTexSamplerAddressModeType::Tex_Sampler_Clamp;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Border")
 		{
 			OutMode = MCTexSamplerAddressModeType::Tex_Sampler_Border;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "MirrorOnce")
 		{
 			OutMode = MCTexSamplerAddressModeType::Tex_Sampler_MirrorOnce;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseTextureSamplerAddressEnum(MCTexSamplerAddressModeType InMode, std::string& OutStr)
@@ -1098,30 +1098,30 @@ namespace MC
 			case MCTexSamplerAddressModeType::Tex_Sampler_Wrap:
 			{
 				OutStr = "Wrap";
-				return true;
+				return TRUE;
 			}
 			case MCTexSamplerAddressModeType::Tex_Sampler_Mirror:
 			{
 				OutStr = "Mirror";
-				return true;
+				return TRUE;
 			}
 			case MCTexSamplerAddressModeType::Tex_Sampler_Clamp:
 			{
 				OutStr = "Clamp";
-				return true;
+				return TRUE;
 			}
 			case MCTexSamplerAddressModeType::Tex_Sampler_Border:
 			{
 				OutStr = "Border";
-				return true;
+				return TRUE;
 			}
 			case MCTexSamplerAddressModeType::Tex_Sampler_MirrorOnce:
 			{
 				OutStr = "MirrorOnce";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseTextureComparisonFuncStr(const std::string& InStr, MCTextureSamplerComparisonFuncType& OutFunc)
@@ -1129,44 +1129,44 @@ namespace MC
 		if (InStr == "Never")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Never;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Less")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Less;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Equal")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Equal;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "LessEqual")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_LessEqual;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Greater")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Greater;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "NotEqual")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_NotEqual;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "GreaterEqual")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_GreaterEqual;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Always")
 		{
 			OutFunc = MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Always;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseTextureComparisonFuncEnum(MCTextureSamplerComparisonFuncType InFunc, std::string& OutStr)
@@ -1176,45 +1176,45 @@ namespace MC
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Never:
 			{
 				OutStr = "Never";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Less:
 			{
 				OutStr = "Less";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Equal:
 			{
 				OutStr = "Equal";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_LessEqual:
 			{
 				OutStr = "LessEqual";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Greater:
 			{
 				OutStr = "Greater";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_NotEqual:
 			{
 				OutStr = "NotEqual";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_GreaterEqual:
 			{
 				OutStr = "GreaterEqual";
-				return true;
+				return TRUE;
 			}
 			case MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Always:
 			{
 				OutStr = "Always";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseTextureTypeStr(const std::string& InStr, MCTextureType& OutType)
@@ -1222,44 +1222,44 @@ namespace MC
 		if (InStr == "1D")
 		{
 			OutType = MCTextureType::Tex_1D;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "2D")
 		{
 			OutType = MCTextureType::Tex_2D;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "3D")
 		{
 			OutType = MCTextureType::Tex_3D;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "1DArray")
 		{
 			OutType = MCTextureType::Tex_1DArray;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "2DArray")
 		{
 			OutType = MCTextureType::Tex_2DArray;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "3DArray")
 		{
 			OutType = MCTextureType::Tex_3DArray;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "Cube")
 		{
 			OutType = MCTextureType::Tex_Cube;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "CubeArray")
 		{
 			OutType = MCTextureType::Tex_CubeArray;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseTextureTypeEnum(MCTextureType InType, std::string& OutStr)
@@ -1269,45 +1269,45 @@ namespace MC
 			case MCTextureType::Tex_1D:
 			{
 				OutStr = "1D";
-				return true;
+				return TRUE;
 			}
 			case MCTextureType::Tex_2D:
 			{
 				OutStr = "2D";
-				return true;
+				return TRUE;
 			}
 			case MCTextureType::Tex_3D:
 			{
 				OutStr = "3D";
-				return true;
+				return TRUE;
 			}
 			case MCTextureType::Tex_1DArray:
 			{
 				OutStr = "1DArray";
-				return true;
+				return TRUE;
 			}
 			case MCTextureType::Tex_2DArray:
 			{
 				OutStr = "2DArray";
-				return true;
+				return TRUE;
 			}
 			case MCTextureType::Tex_3DArray:
 			{
 				OutStr = "3DArray";
-				return true;
+				return TRUE;
 			}
 			case MCTextureType::Tex_Cube:
 			{
 				OutStr = "Cube";
-				return true;
+				return TRUE;
 			}
 			case MCTextureType::Tex_CubeArray:
 			{
 				OutStr = "CubeArray";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1354,36 +1354,36 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseTextureSamplerTemplate sampler template missing valid 'Name'");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Sampler.Name = InJson[NameTxt].GetString();
 		if ((InSlot < 0) && (!(InJson.HasMember(SlotTxt))))
 		{
 			MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' does not contain valid 'Slot'");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Sampler.Slot = (InJson.HasMember(SlotTxt)) ? (InJson[SlotTxt].GetInt()) : InSlot;
 		if ((OutTmpl.Sampler.Slot < 0) || (OutTmpl.Sampler.Slot > 15))
 		{
 			MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' sampler template Slot = " + std::to_string(OutTmpl.Sampler.Slot) + " out of range [0, 15]");
-			return false;
+			return FALSE;
 		}
 		if (!(InJson.HasMember(FilterTxt) && InJson[FilterTxt].IsString()))
 		{
 			MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' sampler template missing valid 'Filter'");
-			return false;
+			return FALSE;
 		}
 		if (!ParseTextureSamplerFilterStr(InJson[FilterTxt].GetString(), OutTmpl.Sampler.Filter))
 		{
 			MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' sampler template Filter = '" + std::string(InJson[FilterTxt].GetString()) + "' not valid");
-			return false;
+			return FALSE;
 		}
 		if (InJson.HasMember(AddressUTxt) && InJson[AddressUTxt].IsString())
 		{
 			if (!ParseTextureSamplerAddressStr(InJson[AddressUTxt].GetString(), OutTmpl.Sampler.AddressU))
 			{
 				MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' sampler template AddressU = '" + std::string(InJson[AddressUTxt].GetString()) + "' not valid");
-				return false;
+				return FALSE;
 			}
 		}
 		else
@@ -1396,7 +1396,7 @@ namespace MC
 			if (!ParseTextureSamplerAddressStr(InJson[AddressVTxt].GetString(), OutTmpl.Sampler.AddressV))
 			{
 				MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' sampler template AddressV = '" + std::string(InJson[AddressVTxt].GetString()) + "' not valid");
-				return false;
+				return FALSE;
 			}
 		}
 		else
@@ -1409,7 +1409,7 @@ namespace MC
 			if (!ParseTextureSamplerAddressStr(InJson[AddressWTxt].GetString(), OutTmpl.Sampler.AddressW))
 			{
 				MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' sampler template AddressW = '" + std::string(InJson[AddressWTxt].GetString()) + "' not valid");
-				return false;
+				return FALSE;
 			}
 		}
 		else
@@ -1422,7 +1422,7 @@ namespace MC
 			if (!ParseTextureComparisonFuncStr(InJson[ComparisonFuncTxt].GetString(), OutTmpl.Sampler.ComparisonFunc))
 			{
 				MCLog.Error("ParseTextureSamplerTemplate '" + OutTmpl.Sampler.Name + "' sampler template ComparisonFunc = '" + std::string(InJson[ComparisonFuncTxt].GetString()) + "' not valid");
-				return false;
+				return FALSE;
 			}
 		}
 		else
@@ -1432,7 +1432,7 @@ namespace MC
 		if (InJson.HasMember(BorderColorTxt) && InJson[BorderColorTxt].IsArray())
 		{
 			int Idx = 0;
-			for (const auto& Elem : InJson[BorderColorTxt].GetArray())
+			for (const rapidjson::Value& Elem : InJson[BorderColorTxt].GetArray())
 			{
 				if (Idx < 4)
 				{
@@ -1490,17 +1490,17 @@ namespace MC
 		{
 			OutTmpl.Sampler.Anisotropy = 1;
 		}
-		OutTmpl.Sampler.bExposure = false;
+		OutTmpl.Sampler.bExposure = FALSE;
 		if (InJson.HasMember(ExposureTxt) && InJson[ExposureTxt].IsBool() && InJson[ExposureTxt].GetBool())
 		{
-			OutTmpl.Sampler.bExposure = true;
+			OutTmpl.Sampler.bExposure = TRUE;
 		}
 		// Bindless: the sampler asks for a descriptor heap index field of its own, declared in the
 		// constant buffer it names. Both are recorded exactly as declared; the engine decides from
 		// the target whether the field is emitted, and the reflection reports both either way.
 		if (InJson.HasMember("PreferBindless") && InJson["PreferBindless"].IsBool() && InJson["PreferBindless"].GetBool())
 		{
-			OutTmpl.Sampler.bPreferBindless = true;
+			OutTmpl.Sampler.bPreferBindless = TRUE;
 		}
 		if (InJson.HasMember("BindConstantBuffer") && InJson["BindConstantBuffer"].IsString())
 		{
@@ -1509,20 +1509,20 @@ namespace MC
 
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
 		{
-			return false;
+			return FALSE;
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	static bool ExpandTextureSamplerTemplate(const MCTextureSamplerTemplate& InTmpl, const std::vector<MCDefine>& InDefs, MCTextureSampler& OutSampler)
 	{
 		if (!CheckConditionField(InTmpl.Condition, InDefs))
 		{
-			return false;
+			return FALSE;
 		}
 		OutSampler = InTmpl.Sampler;
-		return true;
+		return TRUE;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1553,19 +1553,19 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseTextureTemplate texture template missing valid 'Name'");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Texture.Name = InJson[NameTxt].GetString();
 		if ((InSlot < 0) && (!(InJson.HasMember(SlotTxt))))
 		{
 			MCLog.Error("ParseTextureTemplate '" + OutTmpl.Texture.Name + "' texture template missing valid 'Slot'");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Texture.Slot = (InJson.HasMember(SlotTxt)) ? (InJson[SlotTxt].GetInt()) : InSlot;
 		if ((OutTmpl.Texture.Slot < 0) || (OutTmpl.Texture.Slot > (InIsOutput ? 15 : 127)))
 		{
 			MCLog.Error("ParseTextureTemplate '" + OutTmpl.Texture.Name + "' texture template Slot = " + std::to_string(OutTmpl.Texture.Slot) + " out of range [0, " + std::to_string(InIsOutput ? 15 : 127) + "]");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Texture.SamplerName = "DefaultSampler";
 		if (InJson.HasMember(SamplerNameTxt) && InJson[SamplerNameTxt].IsString())
@@ -1589,23 +1589,23 @@ namespace MC
 			if (!ParseVariableFormatPrefixStr(PrefixStr, OutTmpl.Texture.Format.Prefix))
 			{
 				MCLog.Error("ParseTextureTemplate '" + OutTmpl.Texture.Name + "' texture format '" + FormatStr + "' prefix '" + PrefixStr + "' invalid");
-				return false;
+				return FALSE;
 			}
 			if (!ParseVariableFormatSuffixStr(SuffixStr, OutTmpl.Texture.Format.Suffix))
 			{
 				MCLog.Error("ParseTextureTemplate '" + OutTmpl.Texture.Name + "' texture format '" + FormatStr + "' suffix '" + SuffixStr + "' invalid");
-				return false;
+				return FALSE;
 			}
 		}
 		if (!(InJson.HasMember(TypeTxt) && InJson[TypeTxt].IsString()))
 		{
 			MCLog.Error("ParseTextureTemplate '" + OutTmpl.Texture.Name + "' texture template missing valid 'Type'");
-			return false;
+			return FALSE;
 		}
 		if (!ParseTextureTypeStr(InJson[TypeTxt].GetString(), OutTmpl.Texture.Type))
 		{
 			MCLog.Error("ParseTextureTemplate '" + OutTmpl.Texture.Name + "' texture template Type = '" + std::string(InJson[TypeTxt].GetString()) + "' not valid");
-			return false;
+			return FALSE;
 		}
 		const bool bIsOutputType = (OutTmpl.Texture.Type == MCTextureType::Tex_1D) ||
 			(OutTmpl.Texture.Type == MCTextureType::Tex_1DArray) ||
@@ -1617,19 +1617,19 @@ namespace MC
 			std::string TypeStr = "";
 			ParseTextureTypeEnum(OutTmpl.Texture.Type, TypeStr);
 			MCLog.Error("ParseTextureTemplate '" + OutTmpl.Texture.Name + "' texture type '" + TypeStr + "' can not be bound as output (RW) resource");
-			return false;
+			return FALSE;
 		}
-		OutTmpl.Texture.bExposure = false;
+		OutTmpl.Texture.bExposure = FALSE;
 		if (InJson.HasMember(ExposureTxt) && InJson[ExposureTxt].IsBool() && InJson[ExposureTxt].GetBool())
 		{
-			OutTmpl.Texture.bExposure = true;
+			OutTmpl.Texture.bExposure = TRUE;
 		}
 		// Bindless: the texture asks for a descriptor heap index field of its own, declared in the
 		// constant buffer it names. Both are recorded exactly as declared; the engine decides from
 		// the target whether the field is emitted, and the reflection reports both either way.
 		if (InJson.HasMember("PreferBindless") && InJson["PreferBindless"].IsBool() && InJson["PreferBindless"].GetBool())
 		{
-			OutTmpl.Texture.bPreferBindless = true;
+			OutTmpl.Texture.bPreferBindless = TRUE;
 		}
 		if (InJson.HasMember("BindConstantBuffer") && InJson["BindConstantBuffer"].IsString())
 		{
@@ -1638,20 +1638,20 @@ namespace MC
 
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
 		{
-			return false;
+			return FALSE;
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	static bool ExpandTextureTemplate(const MCTextureTemplate& InTmpl, const std::vector<MCDefine>& InDefs, MCTexture& OutTexture)
 	{
 		if (!CheckConditionField(InTmpl.Condition, InDefs))
 		{
-			return false;
+			return FALSE;
 		}
 		OutTexture = InTmpl.Texture;
-		return true;
+		return TRUE;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1663,19 +1663,19 @@ namespace MC
 		if (InStr == "Buffer")
 		{
 			OutType = MCShaderResourceType::Buff_Buffer;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "ByteAddressBuffer")
 		{
 			OutType = MCShaderResourceType::Buff_ByteAddressBuffer;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "StructuredBuffer")
 		{
 			OutType = MCShaderResourceType::Buff_StructuredBuffer;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	static bool ParseShaderResourceTypeEnum(MCShaderResourceType InType, std::string& OutStr)
@@ -1685,20 +1685,20 @@ namespace MC
 			case MCShaderResourceType::Buff_Buffer:
 			{
 				OutStr = "Buffer";
-				return true;
+				return TRUE;
 			}
 			case MCShaderResourceType::Buff_ByteAddressBuffer:
 			{
 				OutStr = "ByteAddressBuffer";
-				return true;
+				return TRUE;
 			}
 			case MCShaderResourceType::Buff_StructuredBuffer:
 			{
 				OutStr = "StructuredBuffer";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1740,50 +1740,50 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseShaderResourceTemplate resource template missing valid 'Name'");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Resource.Name = InJson[NameTxt].GetString();
 		if ((InSlot < 0) && (!(InJson.HasMember(SlotTxt))))
 		{
 			MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' does not contain valid 'Slot'");
-			return false;
+			return FALSE;
 		}
 		OutTmpl.Resource.Slot = (InJson.HasMember(SlotTxt)) ? (InJson[SlotTxt].GetInt()) : InSlot;
 		if ((OutTmpl.Resource.Slot < 0) || (OutTmpl.Resource.Slot > (InIsOutput ? 15 : 127)))
 		{
 			MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' resource template Slot = " + std::to_string(OutTmpl.Resource.Slot) + " out of range [0, " + std::to_string(InIsOutput ? 15 : 127) + "]");
-			return false;
+			return FALSE;
 		}
 		if (!(InJson.HasMember(TypeTxt) && InJson[TypeTxt].IsString()))
 		{
 			MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' resource template missing valid 'Type'");
-			return false;
+			return FALSE;
 		}
 		if (!ParseShaderResourceTypeStr(InJson[TypeTxt].GetString(), OutTmpl.Resource.Type))
 		{
 			MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' resource template Type = '" + std::string(InJson[TypeTxt].GetString()) + "' not valid");
-			return false;
+			return FALSE;
 		}
 		if (OutTmpl.Resource.Type == MCShaderResourceType::Buff_Buffer)
 		{
 			if (!(InJson.HasMember(ElementTypeTxt) && InJson[ElementTypeTxt].IsString()))
 			{
 				MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' Buffer type requires 'ElementType'");
-				return false;
+				return FALSE;
 			}
 			std::string StrPrefix, StrSuffix;
 			SplitVariableFormatStr(InJson[ElementTypeTxt].GetString(), StrPrefix, StrSuffix);
 			if (!ParseVariableFormatPrefixStr(StrPrefix, OutTmpl.Resource.ElemFmt.Prefix))
 			{
 				MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' ElementType prefix = '" + StrPrefix + "' not valid");
-				return false;
+				return FALSE;
 			}
 			if (!ParseVariableFormatSuffixStr(StrSuffix, OutTmpl.Resource.ElemFmt.Suffix))
 			{
 				MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' ElementType suffix = '" + StrSuffix + "' not valid");
-				return false;
+				return FALSE;
 			}
-			OutTmpl.Resource.bHasStruct = false;
+			OutTmpl.Resource.bHasStruct = FALSE;
 		}
 		else if (OutTmpl.Resource.Type == MCShaderResourceType::Buff_StructuredBuffer)
 		{
@@ -1795,12 +1795,12 @@ namespace MC
 				{
 					MCLog.Info("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' both 'Struct' and 'ElementType' provided, 'Struct' takes precedence, ignoring 'ElementType'");
 				}
-				for (const auto& Field : InJson[StructTxt].GetArray())
+				for (const rapidjson::Value& Field : InJson[StructTxt].GetArray())
 				{
 					MCVariableInputTemplate InputTmpl{};
 					if (!ParseVariableInputTemplate(Field, InputTmpl))
 					{
-						return false;
+						return FALSE;
 					}
 					MCVariableInput Input{};
 					if (ExpandVariableInputTemplate(InputTmpl, InDefs, Input))
@@ -1811,9 +1811,9 @@ namespace MC
 				if (OutTmpl.Resource.StructFields.empty())
 				{
 					MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' 'Struct' array is empty or all fields filtered by conditions");
-					return false;
+					return FALSE;
 				}
-				OutTmpl.Resource.bHasStruct = true;
+				OutTmpl.Resource.bHasStruct = TRUE;
 			}
 			else if (bHasElementType)
 			{
@@ -1822,33 +1822,33 @@ namespace MC
 				if (!ParseVariableFormatPrefixStr(StrPrefix, OutTmpl.Resource.ElemFmt.Prefix))
 				{
 					MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' ElementType prefix = '" + StrPrefix + "' not valid");
-					return false;
+					return FALSE;
 				}
 				if (!ParseVariableFormatSuffixStr(StrSuffix, OutTmpl.Resource.ElemFmt.Suffix))
 				{
 					MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' ElementType suffix = '" + StrSuffix + "' not valid");
-					return false;
+					return FALSE;
 				}
-				OutTmpl.Resource.bHasStruct = false;
+				OutTmpl.Resource.bHasStruct = FALSE;
 			}
 			else
 			{
 				MCLog.Error("ParseShaderResourceTemplate '" + OutTmpl.Resource.Name + "' StructuredBuffer requires either 'Struct' or 'ElementType'");
-				return false;
+				return FALSE;
 			}
 		}
 		// ByteAddressBuffer: no extra fields needed
-		OutTmpl.Resource.bExposure = false;
+		OutTmpl.Resource.bExposure = FALSE;
 		if (InJson.HasMember(ExposureTxt) && InJson[ExposureTxt].IsBool() && InJson[ExposureTxt].GetBool())
 		{
-			OutTmpl.Resource.bExposure = true;
+			OutTmpl.Resource.bExposure = TRUE;
 		}
 		// Bindless: the buffer asks for a descriptor heap index field of its own, declared in the
 		// constant buffer it names. Both are recorded exactly as declared; the engine decides from
 		// the target whether the field is emitted, and the reflection reports both either way.
 		if (InJson.HasMember("PreferBindless") && InJson["PreferBindless"].IsBool() && InJson["PreferBindless"].GetBool())
 		{
-			OutTmpl.Resource.bPreferBindless = true;
+			OutTmpl.Resource.bPreferBindless = TRUE;
 		}
 		if (InJson.HasMember("BindConstantBuffer") && InJson["BindConstantBuffer"].IsString())
 		{
@@ -1857,20 +1857,20 @@ namespace MC
 
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
 		{
-			return false;
+			return FALSE;
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	static bool ExpandShaderResourceTemplate(const MCShaderResourceTemplate& InTmpl, const std::vector<MCDefine>& InDefs, MCShaderResource& OutResource)
 	{
 		if (!CheckConditionField(InTmpl.Condition, InDefs))
 		{
-			return false;
+			return FALSE;
 		}
 		OutResource = InTmpl.Resource;
-		return true;
+		return TRUE;
 	}
 
 	static bool ParseShaderBindings(const rapidjson::Value& InJson, const std::vector<MCDefine>& InDefs, const std::string& InDebugJsonFilePath, MCShaderBindings& OutBindings)
@@ -1887,12 +1887,12 @@ namespace MC
 		// ConstantBuffers
 		if (InJson.HasMember(ConstantBuffersTxt) && InJson[ConstantBuffersTxt].IsArray())
 		{
-			for (const auto& Elem : InJson[ConstantBuffersTxt].GetArray())
+			for (const rapidjson::Value& Elem : InJson[ConstantBuffersTxt].GetArray())
 			{
 				MCConstantBuffer CB{};
 				if (!ParseConstantBuffer(Elem, InDefs, -1, CB))
 				{
-					return false;
+					return FALSE;
 				}
 				MCLog.Verbose("ParseShaderBindings ConstantBuffer '" + CB.Name + "' slot=" + std::to_string(CB.Slot) + " fields=" + std::to_string(CB.Fields.size()));
 				OutBindings.CBuffers.emplace_back(std::move(CB));
@@ -1906,17 +1906,17 @@ namespace MC
 		// Samplers (TextureSamplers)
 		if (InJson.HasMember(SamplersTxt) && InJson[SamplersTxt].IsArray())
 		{
-			for (const auto& Elem : InJson[SamplersTxt].GetArray())
+			for (const rapidjson::Value& Elem : InJson[SamplersTxt].GetArray())
 			{
 				MCTextureSamplerTemplate Tmpl{};
 				if (!ParseTextureSamplerTemplate(Elem, -1, Tmpl))
 				{
-					return false;
+					return FALSE;
 				}
 				MCTextureSampler Sampler{};
 				if (!ExpandTextureSamplerTemplate(Tmpl, InDefs, Sampler))
 				{
-					return false;
+					return FALSE;
 				}
 				std::string FilterStr;
 				ParseTextureSamplerFilterEnum(Sampler.Filter, FilterStr);
@@ -1933,17 +1933,17 @@ namespace MC
 		{
 			if (InJson.HasMember(InTxt) && InJson[InTxt].IsArray())
 			{
-				for (const auto& Elem : InJson[InTxt].GetArray())
+				for (const rapidjson::Value& Elem : InJson[InTxt].GetArray())
 				{
 					MCTextureTemplate Tmpl{};
 					if (!ParseTextureTemplate(InIsOutput, Elem, -1, Tmpl))
 					{
-						return false;
+						return FALSE;
 					}
 					MCTexture Tex{};
 					if (!ExpandTextureTemplate(Tmpl, InDefs, Tex))
 					{
-						return false;
+						return FALSE;
 					}
 					std::string TypeStr;
 					ParseTextureTypeEnum(Tex.Type, TypeStr);
@@ -1955,24 +1955,24 @@ namespace MC
 			{
 				MCLog.Info("ParseShaderBindings no '" + InPrefixStr + "Textures' section found");
 			}
-			return true;
+			return TRUE;
 		};
 
 		auto ProcessRes = [&InJson, &InDefs, &MCLog](const char* InTxt, bool InIsOutput, const std::string& InPrefixStr, std::vector<MCShaderResource>& Outer)->bool
 		{
 			if (InJson.HasMember(InTxt) && InJson[InTxt].IsArray())
 			{
-				for (const auto& Elem : InJson[InTxt].GetArray())
+				for (const rapidjson::Value& Elem : InJson[InTxt].GetArray())
 				{
 					MCShaderResourceTemplate Tmpl{};
 					if (!ParseShaderResourceTemplate(InIsOutput, Elem, -1, InDefs, Tmpl))
 					{
-						return false;
+						return FALSE;
 					}
 					MCShaderResource Res{};
 					if (!ExpandShaderResourceTemplate(Tmpl, InDefs, Res))
 					{
-						return false;
+						return FALSE;
 					}
 					std::string TypeStr;
 					ParseShaderResourceTypeEnum(Res.Type, TypeStr);
@@ -1984,31 +1984,31 @@ namespace MC
 			{
 				MCLog.Info("ParseShaderBindings no '" + InPrefixStr + "Resources' section found");
 			}
-			return true;
+			return TRUE;
 		};
 
 		// Textures
-		if (!ProcessTex(TexturesTxt, false, "", OutBindings.Textures))
+		if (!ProcessTex(TexturesTxt, FALSE, "", OutBindings.Textures))
 		{
-			return false;
+			return FALSE;
 		}
 
 		// Resources (ShaderResources)
-		if (!ProcessRes(ResourcesTxt, false, "", OutBindings.Resources))
+		if (!ProcessRes(ResourcesTxt, FALSE, "", OutBindings.Resources))
 		{
-			return false;
+			return FALSE;
 		}
 
 		// RWTextures
-		if (!ProcessTex(RWTexturesTxt, true, "RW", OutBindings.RWTextures))
+		if (!ProcessTex(RWTexturesTxt, TRUE, "RW", OutBindings.RWTextures))
 		{
-			return false;
+			return FALSE;
 		}
 
 		// RWResources
-		if (!ProcessRes(RWResourcesTxt, true, "RW", OutBindings.RWResources))
+		if (!ProcessRes(RWResourcesTxt, TRUE, "RW", OutBindings.RWResources))
 		{
-			return false;
+			return FALSE;
 		}
 
 		int TotalCount = static_cast<int>(
@@ -2035,7 +2035,7 @@ namespace MC
 
 		if (InDoc.HasMember(DefinesTxt))
 		{
-			for (const auto& DefElem : InDoc[DefinesTxt].GetArray())
+			for (const rapidjson::Value& DefElem : InDoc[DefinesTxt].GetArray())
 			{
 				std::string DefName = "";
 				if (DefElem.HasMember(DefineNameTxt) && DefElem[DefineNameTxt].IsString())
@@ -2081,7 +2081,7 @@ namespace MC
 
 		if (InDoc.HasMember(ReplacesTxt))
 		{
-			for (const auto& RplElem : InDoc[ReplacesTxt].GetArray())
+			for (const rapidjson::Value& RplElem : InDoc[ReplacesTxt].GetArray())
 			{
 				std::string RplName = "";
 				if (RplElem.HasMember(ReplaceNameTxt) && RplElem[ReplaceNameTxt].IsString())
@@ -2132,7 +2132,7 @@ namespace MC
 			std::vector<MCDefine> TmpDefs;
 			if (ParseDefines(InDebugJsonFilePath, InDoc, TmpDefs))
 			{
-				for (const auto& Def : TmpDefs)
+				for (const MCDefine& Def : TmpDefs)
 				{
 					InOutTotalDefines.DefineMappings[Def.Name] = Def.Value;
 				}
@@ -2144,7 +2144,7 @@ namespace MC
 			std::vector<MCReplace> TmpRpls;
 			if (ParseReplaces(InDebugJsonFilePath, InDoc, TmpRpls))
 			{
-				for (const auto& Rpl : TmpRpls)
+				for (const MCReplace& Rpl : TmpRpls)
 				{
 					InOutTotalReplaces.ReplaceMappings[Rpl.Name] = Rpl.Element;
 				}
@@ -2153,7 +2153,7 @@ namespace MC
 
 		if (InState != MCParseHeaderState::Parse_None)
 		{
-			return true;
+			return TRUE;
 		}
 
 		const char* TemplateTxt = "Template";
@@ -2161,20 +2161,20 @@ namespace MC
 		if (!(InDoc.HasMember(TemplateTxt) && InDoc[TemplateTxt].IsString()))
 		{
 			MCLog.Error("ParseShaderComponent no valid 'Template' section found in JSON: " + InDebugJsonFilePath);
-			return false;
+			return FALSE;
 		}
 		OutShaderComponent.Template.clear();
 		const std::string TemplateHlsl = InDoc[TemplateTxt].GetString();
 		if (!LoadHlsl(InRootDir + TemplateHlsl, OutShaderComponent.Template))
 		{
 			MCLog.Error("ParseShaderComponent failed to load template HLSL file: " + InRootDir + TemplateHlsl + " in JSON: " + InDebugJsonFilePath);
-			return false;
+			return FALSE;
 		}
 		OutShaderComponent.Defines.clear();
 		ParseDefines(InDebugJsonFilePath, InDoc, OutShaderComponent.Defines);
 		OutShaderComponent.Replaces.clear();
 		ParseReplaces(InDebugJsonFilePath, InDoc, OutShaderComponent.Replaces);
-		return true;
+		return TRUE;
 	}
 
 	static bool ParseShaderBase(const std::string& InRootDir, const std::string& InDebugJsonFilePath, const rapidjson::Document& InDoc, MCShaderBase& OutShaderBase, MCFinalDefine& InOutTotalDefines, MCFinalReplace& InOutTotalReplaces, MCParseHeaderState InState)
@@ -2182,11 +2182,11 @@ namespace MC
 		MCLogger& MCLog = MCLogger::Get();
 		if (!ParseShaderComponent(InRootDir, InDebugJsonFilePath, InDoc, OutShaderBase.ShaderComponent, InOutTotalDefines, InOutTotalReplaces, InState))
 		{
-			return false;
+			return FALSE;
 		}
 		if (InState != MCParseHeaderState::Parse_None)
 		{
-			return true;
+			return TRUE;
 		}
 		if (!ParseShaderBindings(InDoc, InOutTotalDefines.Defines, InDebugJsonFilePath, OutShaderBase.Bindings))
 		{
@@ -2196,7 +2196,7 @@ namespace MC
 		{
 			MCLog.Info("ParseShaderBase '" + InDebugJsonFilePath + "' shader bindings parsed successfully");
 		}
-		return true;
+		return TRUE;
 	}
 
 	static bool ParseVertexFactory(const std::string& InRootDir, const std::string& InDebugJsonPath, const rapidjson::Document& InDoc, MCVertexFactory& OutVF, MCFinalDefine& InOutTotalDefines, MCFinalReplace& InOutTotalReplaces, MCParseHeaderState InState)
@@ -2207,17 +2207,17 @@ namespace MC
 
 		if (!ParseShaderBase(InRootDir, InDebugJsonPath, InDoc, OutVF.Shader, InOutTotalDefines, InOutTotalReplaces, InState))
 		{
-			return false;
+			return FALSE;
 		}
 		if (InState != MCParseHeaderState::Parse_None)
 		{
-			return true;
+			return TRUE;
 		}
 
 		if (!(InDoc.HasMember(NameTxt) && InDoc[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseVertexFactory missing valid 'Name' in: " + InDebugJsonPath);
-			return false;
+			return FALSE;
 		}
 		OutVF.Name = InDoc[NameTxt].GetString();
 		MCLog.Info("ParseVertexFactory '" + OutVF.Name + "'");
@@ -2227,7 +2227,7 @@ namespace MC
 			MCLog.Info("ParseVertexFactory '" + OutVF.Name + "' failed to parse InputStream");
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	static bool ParseGeneralShader(const std::string& InRootDir, const std::string& InDebugJsonPath, const rapidjson::Document& InDoc, MCGeneralShader& OutGShader, MCFinalDefine& InOutTotalDefines, MCFinalReplace& InOutTotalReplaces, MCParseHeaderState InState)
@@ -2238,22 +2238,22 @@ namespace MC
 
 		if (!ParseShaderBase(InRootDir, InDebugJsonPath, InDoc, OutGShader.Shader, InOutTotalDefines, InOutTotalReplaces, InState))
 		{
-			return false;
+			return FALSE;
 		}
 		if (InState != MCParseHeaderState::Parse_None)
 		{
-			return true;
+			return TRUE;
 		}
 
 		if (!(InDoc.HasMember(NameTxt) && InDoc[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseGeneralShader missing valid 'Name' in: " + InDebugJsonPath);
-			return false;
+			return FALSE;
 		}
 		OutGShader.Name = InDoc[NameTxt].GetString();
 		MCLog.Info("ParseGeneralShader '" + OutGShader.Name + "'");
 
-		return true;
+		return TRUE;
 	}
 
 	static bool ParseShaderBaseReplaceTypeStr(const std::string& InStr, MCShaderBaseReplaceType& OutType)
@@ -2261,14 +2261,14 @@ namespace MC
 		if (InStr == "VertexFactory")
 		{
 			OutType = MCShaderBaseReplaceType::ShaderReplace_VertexFactory;
-			return true;
+			return TRUE;
 		}
 		if (InStr == "General")
 		{
 			OutType = MCShaderBaseReplaceType::ShaderReplace_General;
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 #if 0	// Not used for now
@@ -2279,15 +2279,15 @@ namespace MC
 			case MCShaderBaseReplaceType::ShaderReplace_VertexFactory:
 			{
 				OutStr = "VertexFactory";
-				return true;
+				return TRUE;
 			}
 			case MCShaderBaseReplaceType::ShaderReplace_General:
 			{
 				OutStr = "General";
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 #endif	// 0 : Not used for now
 
@@ -2304,43 +2304,43 @@ namespace MC
 		if (!(InJson.HasMember(NameTxt) && InJson[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseShaderBaseReplace missing valid 'Name'");
-			return false;
+			return FALSE;
 		}
 		OutShaderRpl.Name = InJson[NameTxt].GetString();
 		if ((InIndex < 0) && (!(InJson.HasMember(IndexTxt))))
 		{
 			MCLog.Error("ParseShaderBaseReplace '" + OutShaderRpl.Name + "' missing valid 'Index'");
-			return false;
+			return FALSE;
 		}
 		OutShaderRpl.Index = InJson.HasMember(IndexTxt) ? (InJson[IndexTxt].GetInt()) : InIndex;
 		if ((OutShaderRpl.Index < 0) || (OutShaderRpl.Index > 12))	// ReplaceTemplateStringRecursive max depth is 16
 		{
 			MCLog.Error("ParseShaderBaseReplace '" + OutShaderRpl.Name + "' Index = " + std::to_string(OutShaderRpl.Index) + " out of range [0, 12]");
-			return false;
+			return FALSE;
 		}
 		if (!(InJson.HasMember(TypeTxt) && InJson[TypeTxt].IsString()))
 		{
 			MCLog.Error("ParseShaderBaseReplace '" + OutShaderRpl.Name + "' missing valid 'Type'");
-			return false;
+			return FALSE;
 		}
 		if (const std::string TypeStr = InJson[TypeTxt].GetString(); !ParseShaderBaseReplaceTypeStr(TypeStr, OutShaderRpl.Type))
 		{
 			MCLog.Error("ParseShaderBaseReplace '" + OutShaderRpl.Name + "' unknown 'Type'=" + TypeStr);
-			return false;
+			return FALSE;
 		}
 		if (!(InJson.HasMember(ReplaceTxt) && InJson[ReplaceTxt].IsString()))
 		{
 			MCLog.Error("ParseShaderBaseReplace '" + OutShaderRpl.Name + "' missing valid 'Replace'");
-			return false;
+			return FALSE;
 		}
 		OutShaderRpl.RplElem = InJson[ReplaceTxt].GetString();
 		if (!(InJson.HasMember(JsonFileTxt) && InJson[JsonFileTxt].IsString()))
 		{
 			MCLog.Error("ParseShaderBaseReplace '" + OutShaderRpl.Name + "' missing valid 'JsonFile'");
-			return false;
+			return FALSE;
 		}
 		OutShaderRpl.JsonFile = InJson[JsonFileTxt].GetString();
-		return true;
+		return TRUE;
 	}
 
 	template<typename _Ty>
@@ -2358,13 +2358,13 @@ namespace MC
 				if (TmpBinding.Slot < InMinSlotIndex || TmpBinding.Slot > InMaxSlotIndex)
 				{
 					MCLog.Error("CombineShaderBindings Name'" + InDebugName + "' Binding'" + TmpBinding.Name + "' FinalSlot'" + std::to_string(TmpBinding.Slot) + "' out of range [" + std::to_string(InMinSlotIndex) + ", " + std::to_string(InMaxSlotIndex) + "]");
-					return false;
+					return FALSE;
 				}
 				OutBindings.emplace_back(std::move(TmpBinding));
 			}
 			OutBindingOffset += Nums;
 		}
-		return true;
+		return TRUE;
 	}
 
 	bool ParseShader(const MCLoadParam& InLoadParam, std::vector<MCDefine>& InOutDefs, const std::vector<MCReplace>& InRpls, std::string& OutHlsl)
@@ -2377,13 +2377,13 @@ namespace MC
 		if (!ReadFile(FullJsonFilePath, RawJson))
 		{
 			MCLog.Error("ParseShader cannot read: " + FullJsonFilePath);
-			return false;
+			return FALSE;
 		}
 		rapidjson::Document Doc;
 		if (!ParseDoc(RawJson, Doc))
 		{
 			MCLog.Error("ParseShader JSON parse error: " + FullJsonFilePath);
-			return false;
+			return FALSE;
 		}
 
 		MCLog.Info("ParseShader: " + FullJsonFilePath);
@@ -2399,13 +2399,13 @@ namespace MC
 		if (!(Doc.HasMember(NameTxt) && Doc[NameTxt].IsString()))
 		{
 			MCLog.Error("ParseShader missing valid 'Name' in: " + FullJsonFilePath);
-			return false;
+			return FALSE;
 		}
 		Shader.Name = Doc[NameTxt].GetString();
 		if (!(Doc.HasMember(EntryTxt) && Doc[EntryTxt].IsString()))
 		{
 			MCLog.Error("ParseShader missing valid 'Entry' in: " + FullJsonFilePath);
-			return false;
+			return FALSE;
 		}
 		Shader.Entry = Doc[EntryTxt].GetString();
 
@@ -2413,7 +2413,7 @@ namespace MC
 		if (Doc.HasMember(ShaderReplacesTxt) && Doc[ShaderReplacesTxt].IsArray())
 		{
 			int ShaderRplIndex = 0;
-			for (const auto& ShaderRpl : Doc[ShaderReplacesTxt].GetArray())
+			for (const rapidjson::Value& ShaderRpl : Doc[ShaderReplacesTxt].GetArray())
 			{
 				MCShaderBaseReplace Rpl{};
 				if (ParseShaderBaseReplace(ShaderRpl, ShaderRplIndex, Rpl))
@@ -2473,29 +2473,29 @@ namespace MC
 		{
 			if (!CombineShaderBindings<MCConstantBuffer>(InDebugName, InBindings.CBuffers, 0, 13, ReflectIndex.CBufferSlotOffset, FinalBindings.CBuffers))
 			{
-				return false;
+				return FALSE;
 			}
 			if (!CombineShaderBindings<MCTextureSampler>(InDebugName, InBindings.TexSamplers, 0, 15, ReflectIndex.TexSamplerSlotOffset, FinalBindings.TexSamplers))
 			{
-				return false;
+				return FALSE;
 			}
 			if (!CombineShaderBindings<MCTexture>(InDebugName, InBindings.Textures, 0, 127, ReflectIndex.ResourceSlotOffset, FinalBindings.Textures))
 			{
-				return false;
+				return FALSE;
 			}
 			if (!CombineShaderBindings<MCShaderResource>(InDebugName, InBindings.Resources, 0, 127, ReflectIndex.ResourceSlotOffset, FinalBindings.Resources))
 			{
-				return false;
+				return FALSE;
 			}
 			if (!CombineShaderBindings<MCTexture>(InDebugName, InBindings.RWTextures, 0, 15, ReflectIndex.RWResourceSlotOffset, FinalBindings.RWTextures))
 			{
-				return false;
+				return FALSE;
 			}
 			if (!CombineShaderBindings<MCShaderResource>(InDebugName, InBindings.RWResources, 0, 15, ReflectIndex.RWResourceSlotOffset, FinalBindings.RWResources))
 			{
-				return false;
+				return FALSE;
 			}
-			return true;
+			return TRUE;
 		};
 
 		for (int Iter = 0; Iter < 2; ++Iter)
@@ -2504,12 +2504,12 @@ namespace MC
 
 			if (!(Shader.ShaderRpls.empty()))
 			{
-				for (const auto& ShaderRpl : Shader.ShaderRpls)
+				for (const MCShaderBaseReplace& ShaderRpl : Shader.ShaderRpls)
 				{
 					if (ShaderRpl.RplElem.empty() || ShaderRpl.JsonFile.empty())
 					{
 						MCLog.Error("ParseShader 'ShaderReplace' contains invalid content 'Name'=" + ShaderRpl.Name);
-						return false;
+						return FALSE;
 					}
 
 					const std::string RplJsonFilePath = InLoadParam.RootDir + ShaderRpl.JsonFile;
@@ -2517,13 +2517,13 @@ namespace MC
 					if (!ReadFile(RplJsonFilePath, RplRawJson))
 					{
 						MCLog.Error("ParseShader cannot read: " + RplJsonFilePath);
-						return false;
+						return FALSE;
 					}
 					rapidjson::Document RplDoc;
 					if (!ParseDoc(RplRawJson, RplDoc))
 					{
 						MCLog.Error("ParseShader JSON parse error: " + RplJsonFilePath);
-						return false;
+						return FALSE;
 					}
 
 					switch (ShaderRpl.Type)
@@ -2533,7 +2533,7 @@ namespace MC
 							MCVertexFactory VF{};
 							if (!ParseVertexFactory(InLoadParam.RootDir, RplJsonFilePath, RplDoc, VF, FinalDef, FinalRpl, bParseOnce ? MCParseHeaderState::Parse_All : MCParseHeaderState::Parse_None))
 							{
-								return false;
+								return FALSE;
 							}
 							if (!bParseOnce)
 							{
@@ -2543,7 +2543,7 @@ namespace MC
 									for (size_t InputIdx = 0, NumInputs = VF.InputStream.Inputs.size(); InputIdx < NumInputs; ++InputIdx)
 									{
 										const MCVFInput& TmpInputRef = VF.InputStream.Inputs[InputIdx];
-										auto IterInput = FinalInStream.Inputs.find(TmpInputRef.Slot);
+										std::map<int, std::vector<MCVFInput>>::iterator IterInput = FinalInStream.Inputs.find(TmpInputRef.Slot);
 										if (IterInput == FinalInStream.Inputs.end())
 										{
 											FinalInStream.Inputs.insert_or_assign(TmpInputRef.Slot, std::vector<MCVFInput>{});
@@ -2556,7 +2556,7 @@ namespace MC
 										if (IterInput == FinalInStream.Inputs.end())
 										{
 											MCLog.Error("ParseShader 'ShaderReplace' VF'" + VF.Name + "' contains invalid 'Slot'=" + std::to_string(TmpInputRef.Slot) + " for VFInput '" + TmpInputRef.Name + "' in '" + RplJsonFilePath + "' add to final input stream failed");
-											return false;
+											return FALSE;
 										}
 										for (size_t ExistIdx = 0, NumExists = IterInput->second.size(); ExistIdx < NumExists; ++ExistIdx)
 										{
@@ -2564,7 +2564,7 @@ namespace MC
 											if (ExistInputRef.Semantic == TmpInputRef.Semantic)
 											{
 												MCLog.Error("ParseShader 'ShaderReplace' VF'" + VF.Name + "' contains duplicate 'Semantic'=" + TmpInputRef.Semantic + " for VFInput '" + TmpInputRef.Name + "' in '" + RplJsonFilePath + "'");
-												return false;
+												return FALSE;
 											}
 										}
 										IterInput->second.push_back(TmpInputRef);
@@ -2572,12 +2572,12 @@ namespace MC
 								}
 								if (!CombineShaderBindingPart(VF.Name, VF.Shader.Bindings))
 								{
-									return false;
+									return FALSE;
 								}
 								if (ShaderRpls.find(ShaderRpl.RplElem) != ShaderRpls.end())
 								{
 									MCLog.Error("ParseShader 'ShaderReplace' contains duplicate 'RplElem'=" + ShaderRpl.RplElem + " for VF'" + VF.Name + "' in '" + RplJsonFilePath + "'");
-									return false;
+									return FALSE;
 								}
 								ShaderRpls.insert_or_assign(ShaderRpl.RplElem, VF.Shader.ShaderComponent.Template);
 							}
@@ -2588,18 +2588,18 @@ namespace MC
 							MCGeneralShader GeneralShader{};
 							if (!ParseGeneralShader(InLoadParam.RootDir, RplJsonFilePath, RplDoc, GeneralShader, FinalDef, FinalRpl, bParseOnce ? MCParseHeaderState::Parse_All : MCParseHeaderState::Parse_None))
 							{
-								return false;
+								return FALSE;
 							}
 							if (!bParseOnce)
 							{
 								if (!CombineShaderBindingPart(GeneralShader.Name, GeneralShader.Shader.Bindings))
 								{
-									return false;
+									return FALSE;
 								}
 								if (ShaderRpls.find(ShaderRpl.RplElem) != ShaderRpls.end())
 								{
 									MCLog.Error("ParseShader 'ShaderReplace' contains duplicate 'RplElem'=" + ShaderRpl.RplElem + " for GeneralShader'" + GeneralShader.Name + "' in '" + RplJsonFilePath + "'");
-									return false;
+									return FALSE;
 								}
 								ShaderRpls.insert_or_assign(ShaderRpl.RplElem, GeneralShader.Shader.ShaderComponent.Template);
 							}
@@ -2608,20 +2608,20 @@ namespace MC
 						default:
 						{
 							MCLog.Error("ParseShader 'ShaderReplace' contains invalid 'Type'=" + std::to_string(static_cast<int>(ShaderRpl.Type)) + " for 'Name'=" + ShaderRpl.Name);
-							return false;
+							return FALSE;
 						}
 					}
 				}
 			}
 			if (!ParseShaderBase(InLoadParam.RootDir, FullJsonFilePath, Doc, Shader.Shader, FinalDef, FinalRpl, bParseOnce ? MCParseHeaderState::Parse_All : MCParseHeaderState::Parse_None))
 			{
-				return false;
+				return FALSE;
 			}
 			if (bParseOnce)
 			{
-				for (const auto& InputDef : InOutDefs)
+				for (const MCDefine& InputDef : InOutDefs)
 				{
-					if (auto IterDef = FinalDef.DefineMappings.find(InputDef.Name); IterDef != FinalDef.DefineMappings.end())
+					if (std::map<std::string, int>::iterator IterDef = FinalDef.DefineMappings.find(InputDef.Name); IterDef != FinalDef.DefineMappings.end())
 					{
 						IterDef->second = InputDef.Value;
 					}
@@ -2630,9 +2630,9 @@ namespace MC
 						FinalDef.DefineMappings.insert_or_assign(InputDef.Name, InputDef.Value);
 					}
 				}
-				for (const auto& InputRpl : InRpls)
+				for (const MCReplace& InputRpl : InRpls)
 				{
-					if (auto IterRpl = FinalRpl.ReplaceMappings.find(InputRpl.Name); IterRpl != FinalRpl.ReplaceMappings.end())
+					if (std::map<std::string, std::string>::iterator IterRpl = FinalRpl.ReplaceMappings.find(InputRpl.Name); IterRpl != FinalRpl.ReplaceMappings.end())
 					{
 						IterRpl->second = InputRpl.Element;
 					}
@@ -2642,7 +2642,7 @@ namespace MC
 					}
 				}
 				FinalDef.Defines.clear();
-				for (const auto& Def : FinalDef.DefineMappings)
+				for (const std::pair<const std::string, int>& Def : FinalDef.DefineMappings)
 				{
 					MCDefine TmpDef;
 					TmpDef.Name = Def.first;
@@ -2650,7 +2650,7 @@ namespace MC
 					FinalDef.Defines.emplace_back(std::move(TmpDef));
 				}
 				FinalRpl.Replaces.clear();
-				for (const auto& Rpl : FinalRpl.ReplaceMappings)
+				for (const std::pair<const std::string, std::string>& Rpl : FinalRpl.ReplaceMappings)
 				{
 					MCReplace TmpRpl;
 					TmpRpl.Name = Rpl.first;
@@ -2663,7 +2663,7 @@ namespace MC
 			{
 				if (!CombineShaderBindingPart(Shader.Name, Shader.Shader.Bindings))
 				{
-					return false;
+					return FALSE;
 				}
 			}
 		}
@@ -2673,7 +2673,7 @@ namespace MC
 		{
 			int NumRootConstantCBuffers = 0;
 			std::string RootConstantCBufferNames = "";
-			for (const auto& RootConstantCandidate : FinalBindings.CBuffers)
+			for (const MCConstantBuffer& RootConstantCandidate : FinalBindings.CBuffers)
 			{
 				if (!RootConstantCandidate.bRootConstant)
 				{
@@ -2685,7 +2685,7 @@ namespace MC
 			if (NumRootConstantCBuffers > 1)
 			{
 				MCLog.Error("ParseShader '" + Shader.Name + "' contains " + std::to_string(NumRootConstantCBuffers) + " constant buffers marked 'RootConstant' but only one is allowed: " + RootConstantCBufferNames);
-				return false;
+				return FALSE;
 			}
 			if (NumRootConstantCBuffers == 1)
 			{
@@ -2708,17 +2708,17 @@ namespace MC
 			{
 				if (!InPreferBindless)
 				{
-					return true;
+					return TRUE;
 				}
 				const std::string Where = (InKindName + " '" + InResourceName + "'");
 				if (InBindConstantBufferName.empty())
 				{
 					MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " declares 'PreferBindless' without 'BindConstantBuffer'");
-					return false;
+					return FALSE;
 				}
 
 				MCConstantBuffer* IndexConstantBuffer = nullptr;
-				for (auto& IndexCandidateConstantBuffer : FinalBindings.CBuffers)
+				for (MCConstantBuffer& IndexCandidateConstantBuffer : FinalBindings.CBuffers)
 				{
 					if (IndexCandidateConstantBuffer.Name == InBindConstantBufferName)
 					{
@@ -2729,14 +2729,14 @@ namespace MC
 				if (IndexConstantBuffer == nullptr)
 				{
 					MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " names 'BindConstantBuffer' = '" + InBindConstantBufferName + "', which this stage does not declare");
-					return false;
+					return FALSE;
 				}
 				if (IndexConstantBuffer->bRootConstant)
 				{
 					// The engine pushes the root constant block itself, per draw, so an index the
 					// material owns has no place inside it.
 					MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " names the root constant buffer '" + IndexConstantBuffer->Name + "' as its index buffer");
-					return false;
+					return FALSE;
 				}
 				if (!bBindlessCompiledShader)
 				{
@@ -2744,7 +2744,7 @@ namespace MC
 					// Bindless = false for the resource and the shader keeps using its register slot,
 					// so a build for an earlier shader model stays correct rather than half switched.
 					MCLog.Info("ParseShader '" + Shader.Name + "' " + Where + " declares 'PreferBindless' but the target cannot express it, so its register slot is kept");
-					return true;
+					return TRUE;
 				}
 
 				MCVariableInput IndexField;
@@ -2752,55 +2752,55 @@ namespace MC
 				IndexField.Format.Prefix = MCVarFormatPrefixType::Var_Uint;
 				IndexField.Format.Suffix = MCVarFormatSuffixType::Var_1;
 				IndexField.Default.assign(1u, 0u);
-				IndexField.bExposure = false;
-				for (const auto& IterField : IndexConstantBuffer->Fields)
+				IndexField.bExposure = FALSE;
+				for (const MCVariableInput& IterField : IndexConstantBuffer->Fields)
 				{
 					if (IterField.Name == IndexField.Name)
 					{
 						MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " needs the index field '" + IndexField.Name + "' in '" + IndexConstantBuffer->Name + "', which already declares a field with that name");
-						return false;
+						return FALSE;
 					}
 				}
 
 				const std::string IndexFieldName = IndexField.Name;
 				IndexConstantBuffer->Fields.emplace_back(std::move(IndexField));
 				MCLog.Info("ParseShader '" + Shader.Name + "' " + Where + " indexes the descriptor heap through '" + IndexConstantBuffer->Name + "." + IndexFieldName + "'");
-				return true;
+				return TRUE;
 			};
 
-			for (const auto& Texture : FinalBindings.Textures)
+			for (const MCTexture& Texture : FinalBindings.Textures)
 			{
 				if (!EmitBindlessIndexField("texture", Texture.Name, Texture.bPreferBindless, Texture.BindConstantBuffer))
 				{
-					return false;
+					return FALSE;
 				}
 			}
-			for (const auto& Resource : FinalBindings.Resources)
+			for (const MCShaderResource& Resource : FinalBindings.Resources)
 			{
 				if (!EmitBindlessIndexField("resource", Resource.Name, Resource.bPreferBindless, Resource.BindConstantBuffer))
 				{
-					return false;
+					return FALSE;
 				}
 			}
-			for (const auto& Texture : FinalBindings.RWTextures)
+			for (const MCTexture& Texture : FinalBindings.RWTextures)
 			{
 				if (!EmitBindlessIndexField("rw texture", Texture.Name, Texture.bPreferBindless, Texture.BindConstantBuffer))
 				{
-					return false;
+					return FALSE;
 				}
 			}
-			for (const auto& Resource : FinalBindings.RWResources)
+			for (const MCShaderResource& Resource : FinalBindings.RWResources)
 			{
 				if (!EmitBindlessIndexField("rw resource", Resource.Name, Resource.bPreferBindless, Resource.BindConstantBuffer))
 				{
-					return false;
+					return FALSE;
 				}
 			}
-			for (const auto& Sampler : FinalBindings.TexSamplers)
+			for (const MCTextureSampler& Sampler : FinalBindings.TexSamplers)
 			{
 				if (!EmitBindlessIndexField("sampler", Sampler.Name, Sampler.bPreferBindless, Sampler.BindConstantBuffer))
 				{
-					return false;
+					return FALSE;
 				}
 			}
 		}
@@ -2810,7 +2810,7 @@ namespace MC
 			{
 				std::set<std::string> VerifyKeys;
 				std::set<std::string> Keys = ExtractTemplatePlaceholders(InSource);
-				for (const auto& Key : Keys)
+				for (const std::string& Key : Keys)
 				{
 					if (InRpls.find(Key) != InRpls.end())
 					{
@@ -2821,7 +2821,7 @@ namespace MC
 						MCLog.Info("CheckReplaceDiff " + InDebugString + " no matching replace rule for Key=" + Key);
 					}
 				}
-				for (const auto& IterRpl : InRpls)
+				for (const std::pair<const std::string, std::string>& IterRpl : InRpls)
 				{
 					if (VerifyKeys.find(IterRpl.first) != VerifyKeys.end())
 					{
@@ -2849,21 +2849,21 @@ namespace MC
 
 		{
 			std::string Header = "\n";
-			for (const auto& IndexCandidateConstantBuffer : FinalBindings.CBuffers)
+			for (const MCConstantBuffer& IndexCandidateConstantBuffer : FinalBindings.CBuffers)
 			{
 				Header += "cbuffer " + IndexCandidateConstantBuffer.Name + " : register(b" + std::to_string(IndexCandidateConstantBuffer.Slot) + ")\n{\n";
-				for (const auto& Field : IndexCandidateConstantBuffer.Fields)
+				for (const MCVariableInput& Field : IndexCandidateConstantBuffer.Fields)
 				{
 					std::string FieldPrefixStr, FieldSuffixStr;
 					if (!ParseVariableFormatPrefixEnum(Field.Format.Prefix, FieldPrefixStr))
 					{
 						MCLog.Error("ParseShader Resource '" + IndexCandidateConstantBuffer.Name + "' ConstantBuffer '" + Field.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(Field.Format.Prefix)));
-						return false;
+						return FALSE;
 					}
 					if (!ParseVariableFormatSuffixEnum(Field.Format.Suffix, FieldSuffixStr))
 					{
 						MCLog.Error("ParseShader Resource '" + IndexCandidateConstantBuffer.Name + "' ConstantBuffer '" + Field.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(Field.Format.Suffix)));
-						return false;
+						return FALSE;
 					}
 					Header += "\t" + FieldPrefixStr + FieldSuffixStr + " " + Field.Name;
 					if (Field.bArray)
@@ -2916,14 +2916,14 @@ namespace MC
 					std::string PrefixStr, SuffixStr;
 					if (!ParseVariableFormatPrefixEnum(InFormat.Prefix, PrefixStr))
 					{
-						return false;
+						return FALSE;
 					}
 					if (!ParseVariableFormatSuffixEnum(InFormat.Suffix, SuffixStr))
 					{
-						return false;
+						return FALSE;
 					}
 					OutTypeToken = (PrefixStr + SuffixStr);
-					return true;
+					return TRUE;
 				};
 				auto AppendBindingMacro = [&Header, &InLoadParam](const std::string& InResourceName
 					, const bool InPreferBindless, const std::string& InCastExpression)->void
@@ -2947,46 +2947,46 @@ namespace MC
 				{
 					if (!(InTexture.bPreferBindless && InLoadParam.bSM66))
 					{
-						AppendBindingMacro(InTexture.Name, false, "");
-						return true;
+						AppendBindingMacro(InTexture.Name, FALSE, "");
+						return TRUE;
 					}
 					const std::string CastMacroName = MakeTextureCastMacroName(InTexture.Type);
 					if (CastMacroName.empty())
 					{
 						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + " '" + InTexture.Name + "' cannot be index driven: ShaderBindless.hlsl declares no cast macro for its type");
-						return false;
+						return FALSE;
 					}
 					std::string TypeToken;
 					if (!MakeFormatTypeToken(InTexture.Format, TypeToken))
 					{
 						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + "'" + InTexture.Name + "' cannot be index driven: its declared format does not name an HLSL type");
-						return false;
+						return FALSE;
 					}
-					AppendBindingMacro(InTexture.Name, true
+					AppendBindingMacro(InTexture.Name, TRUE
 						, (CastMacroName + "(" + TypeToken + ", " + InTexture.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
-					return true;
+					return TRUE;
 				};
 				auto EmitResourceBinding = [&MCLog, &Shader, &InLoadParam, &MakeResourceCastMacroName
 					, &MakeFormatTypeToken, &AppendBindingMacro](const std::string& InKindName, const MCShaderResource& InResource)->bool
 				{
 					if (!(InResource.bPreferBindless && InLoadParam.bSM66))
 					{
-						AppendBindingMacro(InResource.Name, false, "");
-						return true;
+						AppendBindingMacro(InResource.Name, FALSE, "");
+						return TRUE;
 					}
 					const std::string CastMacroName = MakeResourceCastMacroName(InResource.Type);
 					if (CastMacroName.empty())
 					{
 						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + " '" + InResource.Name + "' cannot be index driven: ShaderBindless.hlsl declares no cast macro for its type");
-						return false;
+						return FALSE;
 					}
 					// A byte address buffer carries no element type, every other kind takes one: the
 					// generated struct for a struct element, the declared element format otherwise.
 					if (InResource.Type == MCShaderResourceType::Buff_ByteAddressBuffer)
 					{
-						AppendBindingMacro(InResource.Name, true
+						AppendBindingMacro(InResource.Name, TRUE
 							, (CastMacroName + "(" + InResource.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
-						return true;
+						return TRUE;
 					}
 					std::string TypeTokenForBuffer;
 					if (InResource.bHasStruct)
@@ -2996,42 +2996,42 @@ namespace MC
 					else if (!MakeFormatTypeToken(InResource.ElemFmt, TypeTokenForBuffer))
 					{
 						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + " '" + InResource.Name + "' cannot be index driven: its declared element format does not name an HLSL type");
-						return false;
+						return FALSE;
 					}
-					AppendBindingMacro(InResource.Name, true
+					AppendBindingMacro(InResource.Name, TRUE
 						, (CastMacroName + "(" + TypeTokenForBuffer + ", " + InResource.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
-					return true;
+					return TRUE;
 				};
 
-				for (const auto& Texture : FinalBindings.Textures)
+				for (const MCTexture& Texture : FinalBindings.Textures)
 				{
 					if (!EmitTextureBinding("texture", Texture))
 					{
-						return false;
+						return FALSE;
 					}
 				}
-				for (const auto& Texture : FinalBindings.RWTextures)
+				for (const MCTexture& Texture : FinalBindings.RWTextures)
 				{
 					if (!EmitTextureBinding("rw texture", Texture))
 					{
-						return false;
+						return FALSE;
 					}
 				}
-				for (const auto& Resource : FinalBindings.Resources)
+				for (const MCShaderResource& Resource : FinalBindings.Resources)
 				{
 					if (!EmitResourceBinding("resource", Resource))
 					{
-						return false;
+						return FALSE;
 					}
 				}
-				for (const auto& Resource : FinalBindings.RWResources)
+				for (const MCShaderResource& Resource : FinalBindings.RWResources)
 				{
 					if (!EmitResourceBinding("rw resource", Resource))
 					{
-						return false;
+						return FALSE;
 					}
 				}
-				for (const auto& Sampler : FinalBindings.TexSamplers)
+				for (const MCTextureSampler& Sampler : FinalBindings.TexSamplers)
 				{
 					AppendBindingMacro(Sampler.Name, Sampler.bPreferBindless
 						, ("PE_BINDLESS_SAMPLER_CAST(" + Sampler.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
@@ -3045,36 +3045,36 @@ namespace MC
 			// nominal - that assignment overwrites it.
 			auto ProcessResourceBindings = [&MCLog, &Header](const std::string& InTypePrefixStr, const std::string& InShaderTypePrefixStr, const std::vector<MCTexture>& InTexArr, const std::vector<MCShaderResource>& InResArr)->bool
 			{
-				for (const auto& Tex : InTexArr)
+				for (const MCTexture& Tex : InTexArr)
 				{
 					std::string PrefixStr;
 					if (!ParseVariableFormatPrefixEnum(Tex.Format.Prefix, PrefixStr))
 					{
 						MCLog.Error("ParseShader " + InTypePrefixStr + "Texture '" + Tex.Name + "' unknown PrefixEnum=" + std::to_string(static_cast<int>(Tex.Format.Prefix)));
-						return false;
+						return FALSE;
 					}
 					std::string SuffixStr;
 					if (!ParseVariableFormatSuffixEnum(Tex.Format.Suffix, SuffixStr))
 					{
 						MCLog.Error("ParseShader " + InTypePrefixStr + "Texture '" + Tex.Name + "' unknown SuffixEnum=" + std::to_string(static_cast<int>(Tex.Format.Suffix)));
-						return false;
+						return FALSE;
 					}
 					std::string TexTypeStr;
 					if (!ParseTextureTypeEnum(Tex.Type, TexTypeStr))
 					{
 						MCLog.Error("ParseShader " + InTypePrefixStr + "Texture '" + Tex.Name + "' unknown TypeEnum=" + std::to_string(static_cast<int>(Tex.Type)));
-						return false;
+						return FALSE;
 					}
 					Header += InTypePrefixStr + "Texture" + TexTypeStr + "<" + PrefixStr + SuffixStr + "> " + Tex.Name + " : register(" + InShaderTypePrefixStr + std::to_string(Tex.Slot) + ");\n";
 				}
 				Header += "\n";
-				for (const auto& Res : InResArr)
+				for (const MCShaderResource& Res : InResArr)
 				{
 					std::string ResTypeStr;
 					if (!ParseShaderResourceTypeEnum(Res.Type, ResTypeStr))
 					{
 						MCLog.Error("ParseShader " + InTypePrefixStr + "Resource '" + Res.Name + "' unknown Type Enum=" + std::to_string(static_cast<int>(Res.Type)));
-						return false;
+						return FALSE;
 					}
 
 					if (Res.Type == MCShaderResourceType::Buff_ByteAddressBuffer)
@@ -3086,22 +3086,22 @@ namespace MC
 						if (Res.Type != MCShaderResourceType::Buff_StructuredBuffer)
 						{
 							MCLog.Error("ParseShader " + InTypePrefixStr + "Resource '" + Res.Name + "' unknown Type '" + std::to_string(static_cast<int>(Res.Type)));
-							return false;
+							return FALSE;
 						}
 						std::string StructName = Res.Name + "_Struct";
 						Header += "struct " + StructName + "\n{\n";
-						for (const auto& Field : Res.StructFields)
+						for (const MCVariableInput& Field : Res.StructFields)
 						{
 							std::string FieldPrefixStr, FieldSuffixStr;
 							if (!ParseVariableFormatPrefixEnum(Field.Format.Prefix, FieldPrefixStr))
 							{
 								MCLog.Error("ParseShader " + InTypePrefixStr + "Resource '" + Res.Name + "' StructField '" + Field.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(Field.Format.Prefix)));
-								return false;
+								return FALSE;
 							}
 							if (!ParseVariableFormatSuffixEnum(Field.Format.Suffix, FieldSuffixStr))
 							{
 								MCLog.Error("ParseShader " + InTypePrefixStr + "Resource '" + Res.Name + "' StructField '" + Field.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(Field.Format.Suffix)));
-								return false;
+								return FALSE;
 							}
 							Header += "\t" + FieldPrefixStr + FieldSuffixStr + " " + Field.Name;
 							if (Field.bArray)
@@ -3118,59 +3118,59 @@ namespace MC
 						if (!(Res.Type == MCShaderResourceType::Buff_Buffer || Res.Type == MCShaderResourceType::Buff_StructuredBuffer))
 						{
 							MCLog.Error("ParseShader " + InTypePrefixStr + "Resource '" + Res.Name + "' unknown Type '" + std::to_string(static_cast<int>(Res.Type)));
-							return false;
+							return FALSE;
 						}
 						std::string ElemPrefixStr;
 						if (!ParseVariableFormatPrefixEnum(Res.ElemFmt.Prefix, ElemPrefixStr))
 						{
 							MCLog.Error("ParseShader " + InTypePrefixStr + "Resource '" + Res.Name + "' unknown ElementPrefix Enum=" + std::to_string(static_cast<int>(Res.ElemFmt.Prefix)));
-							return false;
+							return FALSE;
 						}
 						std::string ElemSuffixStr;
 						if (!ParseVariableFormatSuffixEnum(Res.ElemFmt.Suffix, ElemSuffixStr))
 						{
 							MCLog.Error("ParseShader " + InTypePrefixStr + "Resource '" + Res.Name + "' unknown ElementSuffix Enum=" + std::to_string(static_cast<int>(Res.ElemFmt.Suffix)));
-							return false;
+							return FALSE;
 						}
 						Header += InTypePrefixStr + ResTypeStr + "<" + ElemPrefixStr + ElemSuffixStr + "> " + Res.Name + " : register(" + InShaderTypePrefixStr + std::to_string(Res.Slot) + ");\n";
 					}
 				}
-				return true;
+				return TRUE;
 			};
 			if (!ProcessResourceBindings("", "t", FinalBindings.Textures, FinalBindings.Resources))
 			{
-				return false;
+				return FALSE;
 			}
 			Header += "\n";
 
-			for (const auto& IterSampler : FinalBindings.TexSamplers)
+			for (const MCTextureSampler& IterSampler : FinalBindings.TexSamplers)
 			{
 				Header += "SamplerState " + IterSampler.Name + " : register(s" + std::to_string(IterSampler.Slot) + ");\n";
 			}
 			Header += "\n";
 			if (!ProcessResourceBindings("RW", "u", FinalBindings.RWTextures, FinalBindings.RWResources))
 			{
-				return false;
+				return FALSE;
 			}
 			Header += "\n";
 			if (!(FinalInStream.Inputs.empty()))
 			{
 				Header += "struct FinalInputStream\n{\n";
-				for (const auto& IterInput : FinalInStream.Inputs)
+				for (const std::pair<const int, std::vector<MCVFInput>>& IterInput : FinalInStream.Inputs)
 				{
-					for (const auto& Input : IterInput.second)
+					for (const MCVFInput& Input : IterInput.second)
 					{
 						std::string FormatPrefixStr;
 						if (!ParseVariableFormatPrefixEnum(Input.Format.Prefix, FormatPrefixStr))
 						{
 							MCLog.Error("ParseShader FinalInputStream '" + FinalInStream.Name + "' Input '" + Input.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(Input.Format.Prefix)));
-							return false;
+							return FALSE;
 						}
 						std::string FormatSuffixStr;
 						if (!ParseVariableFormatSuffixEnum(Input.Format.Suffix, FormatSuffixStr))
 						{
 							MCLog.Error("ParseShader FinalInputStream '" + FinalInStream.Name + "' Input '" + Input.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(Input.Format.Suffix)));
-							return false;
+							return FALSE;
 						}
 						Header += "\t" + FormatPrefixStr + FormatSuffixStr + " " + Input.Name + " : " + Input.Semantic + std::to_string(Input.SemanticIdx) + ";\n";
 					}
@@ -3190,7 +3190,7 @@ namespace MC
 			}
 			else
 			{
-				for (const auto& Def : FinalRpl.Replaces)
+				for (const MCReplace& Def : FinalRpl.Replaces)
 				{
 					ReplaceComments += "//   " + EscapeCommentText(Def.Name) + " = " + EscapeCommentText(Def.Element) + "\n";
 				}
@@ -3208,7 +3208,7 @@ namespace MC
 			}
 			else
 			{
-				for (const auto& Def : FinalDef.Defines)
+				for (const MCDefine& Def : FinalDef.Defines)
 				{
 					DefineComments += "//   " + EscapeCommentText(Def.Name) + " = " + std::to_string(Def.Value) + "\n";
 				}
@@ -3225,7 +3225,7 @@ namespace MC
 		{
 			rapidjson::Document ReflectionDoc;
 			ReflectionDoc.SetObject();
-			auto& ReflectionAllocator = ReflectionDoc.GetAllocator();
+			rapidjson::Document::AllocatorType& ReflectionAllocator = ReflectionDoc.GetAllocator();
 
 			auto ParseReflectionVariableInput = [&MCLog, &ReflectionAllocator](const std::string& InDebugStr, bool InIsCheckExposure, const MCVariableInput& InVariable, rapidjson::Value& OutJson)->bool
 			{
@@ -3234,13 +3234,13 @@ namespace MC
 				if (!ParseVariableFormatPrefixEnum(InVariable.Format.Prefix, FieldPrefixStr))
 				{
 					MCLog.Error("ParseShader Output Reflection " + InDebugStr + " Field '" + InVariable.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(InVariable.Format.Prefix)));
-					return false;
+					return FALSE;
 				}
 				std::string FieldSuffixStr;
 				if (!ParseVariableFormatSuffixEnum(InVariable.Format.Suffix, FieldSuffixStr))
 				{
 					MCLog.Error("ParseShader Output Reflection " + InDebugStr + " Field '" + InVariable.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(InVariable.Format.Suffix)));
-					return false;
+					return FALSE;
 				}
 				const std::string FormatStr = FieldPrefixStr + FieldSuffixStr;
 				OutJson.AddMember("Format", rapidjson::Value(FormatStr.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3249,7 +3249,7 @@ namespace MC
 				OutJson.AddMember("ByteOffset", 0, ReflectionAllocator);
 				OutJson.AddMember("ContentBytes", 0, ReflectionAllocator);
 				OutJson.AddMember("ArrayStride", 0, ReflectionAllocator);
-				OutJson.AddMember("CompilerCulled", false, ReflectionAllocator);
+				OutJson.AddMember("CompilerCulled", FALSE, ReflectionAllocator);
 				const bool bExposure = InIsCheckExposure && InVariable.bExposure;
 				OutJson.AddMember("Exposure", bExposure, ReflectionAllocator);
 				OutJson.AddMember("IsColor", InVariable.bColor, ReflectionAllocator);
@@ -3261,13 +3261,13 @@ namespace MC
 				if (!(InVariable.Default.empty()))
 				{
 					rapidjson::Value DftArray(rapidjson::kArrayType);
-					for (auto Dft : InVariable.Default)
+					for (uint32_t Dft : InVariable.Default)
 					{
 						DftArray.PushBack(Dft, ReflectionAllocator);
 					}
 					OutJson.AddMember("Default", DftArray, ReflectionAllocator);
 				}
-				return true;
+				return TRUE;
 			};
 
 			ReflectionDoc.AddMember("ShaderName", rapidjson::Value(Shader.Name.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3278,7 +3278,7 @@ namespace MC
 			if (!(FinalBindings.CBuffers.empty()))
 			{
 				rapidjson::Value CBArray(rapidjson::kArrayType);
-				for (const auto& CB : FinalBindings.CBuffers)
+				for (const MCConstantBuffer& CB : FinalBindings.CBuffers)
 				{
 					rapidjson::Value CBObj(rapidjson::kObjectType);
 					CBObj.AddMember("Name", rapidjson::Value(CB.Name.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3286,15 +3286,15 @@ namespace MC
 					CBObj.AddMember("RootConstant", CB.bRootConstant, ReflectionAllocator);
 					// Filled by the shader compiler from its reflection after a successful compile.
 					CBObj.AddMember("ByteSize", 0, ReflectionAllocator);
-					CBObj.AddMember("CompilerCulled", false, ReflectionAllocator);
+					CBObj.AddMember("CompilerCulled", FALSE, ReflectionAllocator);
 
 					rapidjson::Value FieldsArray(rapidjson::kArrayType);
-					for (const auto& Field : CB.Fields)
+					for (const MCVariableInput& Field : CB.Fields)
 					{
 						rapidjson::Value FieldObj(rapidjson::kObjectType);
-						if (!ParseReflectionVariableInput("ConstantBuffer '" + CB.Name + "'", true, Field, FieldObj))
+						if (!ParseReflectionVariableInput("ConstantBuffer '" + CB.Name + "'", TRUE, Field, FieldObj))
 						{
-							return false;
+							return FALSE;
 						}
 						FieldsArray.PushBack(FieldObj, ReflectionAllocator);
 					}
@@ -3316,19 +3316,19 @@ namespace MC
 				if (!ParseVariableFormatPrefixEnum(InTex.Format.Prefix, FormatPrefixStr))
 				{
 					MCLog.Error("ParseShader Output Reflection " + InPrefixStr + "Texture Field '" + InTex.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(InTex.Format.Prefix)));
-					return false;
+					return FALSE;
 				}
 				std::string FormatSuffixStr;
 				if (!ParseVariableFormatSuffixEnum(InTex.Format.Suffix, FormatSuffixStr))
 				{
 					MCLog.Error("ParseShader Output Reflection " + InPrefixStr + "Texture Field '" + InTex.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(InTex.Format.Suffix)));
-					return false;
+					return FALSE;
 				}
 				std::string FormatTypeStr;
 				if (!ParseTextureTypeEnum(InTex.Type, FormatTypeStr))
 				{
 					MCLog.Error("ParseShader Output Reflection " + InPrefixStr + "Texture Field '" + InTex.Name + "' unknown Type Enum=" + std::to_string(static_cast<int>(InTex.Type)));
-					return false;
+					return FALSE;
 				}
 				const std::string FormatStr = FormatPrefixStr + FormatSuffixStr;
 				OutObj.AddMember("Format", rapidjson::Value(FormatStr.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3343,20 +3343,20 @@ namespace MC
 				OutObj.AddMember("PreferBindless", InTex.bPreferBindless, ReflectionAllocator);
 				OutObj.AddMember("Bindless", (InTex.bPreferBindless && bBindlessCompiled), ReflectionAllocator);
 				OutObj.AddMember("BindConstantBuffer", rapidjson::Value(InTex.BindConstantBuffer.c_str(), ReflectionAllocator), ReflectionAllocator);
-				OutObj.AddMember("CompilerCulled", false, ReflectionAllocator);
-				return true;
+				OutObj.AddMember("CompilerCulled", FALSE, ReflectionAllocator);
+				return TRUE;
 			};
 
 			// --- Textures (SRV) ---
 			if (!(FinalBindings.Textures.empty()))
 			{
 				rapidjson::Value TexArray(rapidjson::kArrayType);
-				for (const auto& Tex : FinalBindings.Textures)
+				for (const MCTexture& Tex : FinalBindings.Textures)
 				{
 					rapidjson::Value TexObj(rapidjson::kObjectType);
 					if (!ParseReflectionTexture("", Tex, TexObj))
 					{
-						return false;
+						return FALSE;
 					}
 					TexArray.PushBack(TexObj, ReflectionAllocator);
 				}
@@ -3370,7 +3370,7 @@ namespace MC
 				if (!ParseShaderResourceTypeEnum(InRes.Type, ResTypeStr))
 				{
 					MCLog.Error("ParseShader Output Reflection " + InPrefixStr + "Resource '" + InRes.Name + "' parse unknown TypeName Enum=" + std::to_string(static_cast<int>(InRes.Type)));
-					return false;
+					return FALSE;
 				}
 				OutObj.AddMember("Slot", InRes.Slot, ReflectionAllocator);
 				OutObj.AddMember("IsStruct", InRes.bHasStruct, ReflectionAllocator);
@@ -3383,17 +3383,17 @@ namespace MC
 					if (!((InRes.Type == MCShaderResourceType::Buff_Buffer) || (InRes.Type == MCShaderResourceType::Buff_StructuredBuffer)))
 					{
 						MCLog.Error("ParseShader Output Reflection " + InPrefixStr + "Resource '" + InRes.Name + "' unknown TypeName Enum=" + std::to_string(static_cast<int>(InRes.Type)));
-						return false;
+						return FALSE;
 					}
 					if (InRes.bHasStruct)
 					{
 						rapidjson::Value StructArray(rapidjson::kArrayType);
-						for (const auto& StructField : InRes.StructFields)
+						for (const MCVariableInput& StructField : InRes.StructFields)
 						{
 							rapidjson::Value StructFieldObj(rapidjson::kObjectType);
-							if (!ParseReflectionVariableInput(InPrefixStr + "Resource '" + InRes.Name + "'", false, StructField, StructFieldObj))
+							if (!ParseReflectionVariableInput(InPrefixStr + "Resource '" + InRes.Name + "'", FALSE, StructField, StructFieldObj))
 							{
-								return false;
+								return FALSE;
 							}
 							StructArray.PushBack(StructFieldObj, ReflectionAllocator);
 						}
@@ -3405,13 +3405,13 @@ namespace MC
 						if (!ParseVariableFormatPrefixEnum(InRes.ElemFmt.Prefix, ResPrefixStr))
 						{
 							MCLog.Error("ParseShader Output Reflection " + InPrefixStr + "Resource '" + InRes.Name + "' unknown ElementFormatPrefix Enum=" + std::to_string(static_cast<int>(InRes.ElemFmt.Prefix)));
-							return false;
+							return FALSE;
 						}
 						std::string ResSuffixStr;
 						if (!ParseVariableFormatSuffixEnum(InRes.ElemFmt.Suffix, ResSuffixStr))
 						{
 							MCLog.Error("ParseShader Output Reflection " + InPrefixStr + "Resource '" + InRes.Name + "' unknown ElementFormatSuffix Enum=" + std::to_string(static_cast<int>(InRes.ElemFmt.Suffix)));
-							return false;
+							return FALSE;
 						}
 						const std::string FormatStr = ResPrefixStr + ResSuffixStr;
 						OutObj.AddMember("Format", rapidjson::Value(FormatStr.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3423,20 +3423,20 @@ namespace MC
 				OutObj.AddMember("PreferBindless", InRes.bPreferBindless, ReflectionAllocator);
 				OutObj.AddMember("Bindless", (InRes.bPreferBindless && bBindlessCompiled), ReflectionAllocator);
 				OutObj.AddMember("BindConstantBuffer", rapidjson::Value(InRes.BindConstantBuffer.c_str(), ReflectionAllocator), ReflectionAllocator);
-				OutObj.AddMember("CompilerCulled", false, ReflectionAllocator);
-				return true;
+				OutObj.AddMember("CompilerCulled", FALSE, ReflectionAllocator);
+				return TRUE;
 			};
 
 			// --- Resources (SRV buffers) ---
 			if (!(FinalBindings.Resources.empty()))
 			{
 				rapidjson::Value ResArray(rapidjson::kArrayType);
-				for (const auto& Res : FinalBindings.Resources)
+				for (const MCShaderResource& Res : FinalBindings.Resources)
 				{
 					rapidjson::Value ResObj(rapidjson::kObjectType);
 					if (!ParseReflectionResource("", Res, ResObj))
 					{
-						return false;
+						return FALSE;
 					}
 					ResArray.PushBack(ResObj, ReflectionAllocator);
 				}
@@ -3447,7 +3447,7 @@ namespace MC
 			if (!(FinalBindings.TexSamplers.empty()))
 			{
 				rapidjson::Value SamplerArray(rapidjson::kArrayType);
-				for (const auto& Sampler : FinalBindings.TexSamplers)
+				for (const MCTextureSampler& Sampler : FinalBindings.TexSamplers)
 				{
 					rapidjson::Value SamplerObj(rapidjson::kObjectType);
 					SamplerObj.AddMember("Name", rapidjson::Value(Sampler.Name.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3456,35 +3456,35 @@ namespace MC
 					if (!ParseTextureSamplerFilterEnum(Sampler.Filter, FilterStr))
 					{
 						MCLog.Error("ParseShader Output Reflection Sampler '" + Sampler.Name + "' unknown SamplerFilter Enum=" + std::to_string(static_cast<int>(Sampler.Filter)));
-						return false;
+						return FALSE;
 					}
 					SamplerObj.AddMember("Filter", rapidjson::Value(FilterStr.c_str(), ReflectionAllocator), ReflectionAllocator);
 					std::string AddressUStr;
 					if (!ParseTextureSamplerAddressEnum(Sampler.AddressU, AddressUStr))
 					{
 						MCLog.Error("ParseShader Output Reflection Sampler '" + Sampler.Name + "' unknown SamplerAddressU Enum=" + std::to_string(static_cast<int>(Sampler.AddressU)));
-						return false;
+						return FALSE;
 					}
 					SamplerObj.AddMember("AddressU", rapidjson::Value(AddressUStr.c_str(), ReflectionAllocator), ReflectionAllocator);
 					std::string AddressVStr;
 					if (!ParseTextureSamplerAddressEnum(Sampler.AddressV, AddressVStr))
 					{
 						MCLog.Error("ParseShader Output Reflection Sampler '" + Sampler.Name + "' unknown SamplerAddressV Enum=" + std::to_string(static_cast<int>(Sampler.AddressV)));
-						return false;
+						return FALSE;
 					}
 					SamplerObj.AddMember("AddressV", rapidjson::Value(AddressVStr.c_str(), ReflectionAllocator), ReflectionAllocator);
 					std::string AddressWStr;
 					if (!ParseTextureSamplerAddressEnum(Sampler.AddressW, AddressWStr))
 					{
 						MCLog.Error("ParseShader Output Reflection Sampler '" + Sampler.Name + "' unknown SamplerAddressW Enum=" + std::to_string(static_cast<int>(Sampler.AddressW)));
-						return false;
+						return FALSE;
 					}
 					SamplerObj.AddMember("AddressW", rapidjson::Value(AddressWStr.c_str(), ReflectionAllocator), ReflectionAllocator);
 					std::string ComparisonFuncStr;
 					if (!ParseTextureComparisonFuncEnum(Sampler.ComparisonFunc, ComparisonFuncStr))
 					{
 						MCLog.Error("ParseShader Output Reflection Sampler '" + Sampler.Name + "' unknown SamplerComparisonFunc Enum=" + std::to_string(static_cast<int>(Sampler.ComparisonFunc)));
-						return false;
+						return FALSE;
 					}
 					SamplerObj.AddMember("ComparisonFunc", rapidjson::Value(ComparisonFuncStr.c_str(), ReflectionAllocator), ReflectionAllocator);
 					SamplerObj.AddMember("MinLOD", Sampler.MinLOD, ReflectionAllocator);
@@ -3497,7 +3497,7 @@ namespace MC
 						BorderColorArray.PushBack(Sampler.BorderColor[Index], ReflectionAllocator);
 					}
 					SamplerObj.AddMember("BorderColor", BorderColorArray, ReflectionAllocator);
-					SamplerObj.AddMember("CompilerCulled", false, ReflectionAllocator);
+					SamplerObj.AddMember("CompilerCulled", FALSE, ReflectionAllocator);
 					// Bindless: a sampler that declares it is index driven like a resource, and the
 					// ones that do not are the static samplers the tables still carry. The runtime
 					// reads the effective flag, exactly as it does for a texture or a buffer.
@@ -3513,12 +3513,12 @@ namespace MC
 			if (!(FinalBindings.RWTextures.empty()))
 			{
 				rapidjson::Value RWTexArray(rapidjson::kArrayType);
-				for (const auto& Tex : FinalBindings.RWTextures)
+				for (const MCTexture& Tex : FinalBindings.RWTextures)
 				{
 					rapidjson::Value TexObj(rapidjson::kObjectType);
 					if (!ParseReflectionTexture("RW", Tex, TexObj))
 					{
-						return false;
+						return FALSE;
 					}
 					RWTexArray.PushBack(TexObj, ReflectionAllocator);
 				}
@@ -3527,12 +3527,12 @@ namespace MC
 			if (!(FinalBindings.RWResources.empty()))
 			{
 				rapidjson::Value RWResArray(rapidjson::kArrayType);
-				for (const auto& Res : FinalBindings.RWResources)
+				for (const MCShaderResource& Res : FinalBindings.RWResources)
 				{
 					rapidjson::Value ResObj(rapidjson::kObjectType);
 					if (!ParseReflectionResource("RW", Res, ResObj))
 					{
-						return false;
+						return FALSE;
 					}
 					RWResArray.PushBack(ResObj, ReflectionAllocator);
 				}
@@ -3543,9 +3543,9 @@ namespace MC
 			if (!(FinalInStream.Inputs.empty()))
 			{
 				rapidjson::Value InputLayoutArray(rapidjson::kArrayType);
-				for (const auto& [Slot, Inputs] : FinalInStream.Inputs)
+				for (const std::pair<const int, std::vector<MCVFInput>>& InputSlot : FinalInStream.Inputs)
 				{
-					for (const auto& Input : Inputs)
+					for (const MCVFInput& Input : InputSlot.second)
 					{
 						rapidjson::Value InputObj(rapidjson::kObjectType);
 						InputObj.AddMember("Name", rapidjson::Value(Input.Name.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3553,13 +3553,13 @@ namespace MC
 						if (!ParseVariableFormatPrefixEnum(Input.Format.Prefix, FormatPrefixStr))
 						{
 							MCLog.Error("ParseShader Output Reflection InputLayout '" + Input.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(Input.Format.Prefix)));
-							return false;
+							return FALSE;
 						}
 						std::string FormatSuffixStr;
 						if (!ParseVariableFormatSuffixEnum(Input.Format.Suffix, FormatSuffixStr))
 						{
 							MCLog.Error("ParseShader Output Reflection InputLayout '" + Input.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(Input.Format.Suffix)));
-							return false;
+							return FALSE;
 						}
 						const std::string FormatStr = FormatPrefixStr + FormatSuffixStr;
 						InputObj.AddMember("Format", rapidjson::Value(FormatStr.c_str(), ReflectionAllocator), ReflectionAllocator);
@@ -3587,11 +3587,11 @@ namespace MC
 			else
 			{
 				MCLog.Error("ParseShader cannot write reflection: " + OutJsonPath);
-				return false;
+				return FALSE;
 			}
 		}
 
-		return true;
+		return TRUE;
 	}
 
 }	// namespace MC

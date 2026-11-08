@@ -1,99 +1,99 @@
 {
-  "name": "Boss_UpperBody_Attack",
-  "description": "Sample montage: an upper-body BoneMask overlays Attack and chains into Recover.",
-  "skeleton": "SK_Mannequin_UE4_WithWeapon_Skeleton",
-  "animation": "Boss_Idle",
-  "sections": [
-    {
-      "name": "Attack",
-      "clip": "Unreal Take",
-      "slot": "UpperBody",
-      "next": "Recover",
-      "loop": "Once",
-      "rate": 1.0,
-      "blendIn": 0.1,
-      "blendOut": 0.2,
-      "boneMask": {
-        "name": "UpperBody",
-        "bones": [
-          "spine_01",
-          "spine_02",
-          "spine_03",
-          "neck_01",
-          "head",
-          "clavicle_l",
-          "upperarm_l",
-          "lowerarm_l",
-          "hand_l",
-          "clavicle_r",
-          "upperarm_r",
-          "lowerarm_r",
-          "hand_r"
-        ],
-        "weight": 1.0
-      },
-      "notifies": [
-        {
-          "name": "AttackWindow",
-          "notifyAsset": "Boss_AttackWindow",
-          "time": 0.0
-        },
-        {
-          "name": "AttackStarted",
-          "notifyAsset": "Boss_AttackStarted",
-          "time": 0.1
-        }
-      ]
-    },
-    {
-      "name": "Recover",
-      "clip": "Unreal Take",
-      "slot": "UpperBody",
-      "loop": "Once",
-      "rate": 1.0,
-      "blendIn": 0.1,
-      "blendOut": 0.25,
-      "boneMask": {
-        "name": "UpperBody",
-        "bones": [
-          "spine_01",
-          "spine_02",
-          "spine_03",
-          "neck_01",
-          "head",
-          "clavicle_l",
-          "upperarm_l",
-          "lowerarm_l",
-          "hand_l",
-          "clavicle_r",
-          "upperarm_r",
-          "lowerarm_r",
-          "hand_r"
-        ],
-        "weight": 1.0
-      },
-      "notifies": [
-        {
-          "name": "AttackRecovered",
-          "class": "Log",
-          "time": 0.1,
-          "payload": "{}"
-        }
-      ]
-    },
-    {
-      "name": "BaseIdle",
-      "clip": "Unreal Take",
-      "slot": "Default",
-      "loop": "Once",
-      "rate": 1.0,
-      "blendIn": 0.1,
-      "blendOut": 0.2,
-      "boneMask": {
-        "name": "FullBody",
-        "bones": [],
-        "weight": 1.0
-      }
-    }
-  ]
+	"Name": "Boss_UpperBody_Attack",
+	"Description": "Sample montage: an upper-body BoneMask overlays Attack and chains into Recover.",
+	"Skeleton": "SK_Mannequin_UE4_WithWeapon_Skeleton",
+	"Animation": "Boss_Idle",
+	"Sections": [
+		{
+			"Name": "Attack",
+			"Clip": "Unreal Take",
+			"Slot": "UpperBody",
+			"Next": "Recover",
+			"Loop": "Once",
+			"Rate": 1.0,
+			"BlendIn": 0.1,
+			"BlendOut": 0.2,
+			"BoneMask": {
+				"Name": "UpperBody",
+				"Bones": [
+					"spine_01",
+					"spine_02",
+					"spine_03",
+					"neck_01",
+					"head",
+					"clavicle_l",
+					"upperarm_l",
+					"lowerarm_l",
+					"hand_l",
+					"clavicle_r",
+					"upperarm_r",
+					"lowerarm_r",
+					"hand_r"
+				],
+				"Weight": 1.0
+			},
+			"Notifies": [
+				{
+					"Name": "AttackWindow",
+					"NotifyAsset": "Boss_AttackWindow",
+					"Time": 0.0
+				},
+				{
+					"Name": "AttackStarted",
+					"NotifyAsset": "Boss_AttackStarted",
+					"Time": 0.1
+				}
+			]
+		},
+		{
+			"Name": "Recover",
+			"Clip": "Unreal Take",
+			"Slot": "UpperBody",
+			"Loop": "Once",
+			"Rate": 1.0,
+			"BlendIn": 0.1,
+			"BlendOut": 0.25,
+			"BoneMask": {
+				"Name": "UpperBody",
+				"Bones": [
+					"spine_01",
+					"spine_02",
+					"spine_03",
+					"neck_01",
+					"head",
+					"clavicle_l",
+					"upperarm_l",
+					"lowerarm_l",
+					"hand_l",
+					"clavicle_r",
+					"upperarm_r",
+					"lowerarm_r",
+					"hand_r"
+				],
+				"Weight": 1.0
+			},
+			"Notifies": [
+				{
+					"Name": "AttackRecovered",
+					"Class": "Log",
+					"Time": 0.1,
+					"Payload": "{}"
+				}
+			]
+		},
+		{
+			"Name": "BaseIdle",
+			"Clip": "Unreal Take",
+			"Slot": "Default",
+			"Loop": "Once",
+			"Rate": 1.0,
+			"BlendIn": 0.1,
+			"BlendOut": 0.2,
+			"BoneMask": {
+				"Name": "FullBody",
+				"Bones": [],
+				"Weight": 1.0
+			}
+		}
+	]
 }

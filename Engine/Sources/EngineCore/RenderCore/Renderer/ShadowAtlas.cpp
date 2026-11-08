@@ -118,7 +118,7 @@ namespace PigeonEngine
 			ShadowViews[ViewIndex]->ClearUsed();
 		}
 	}
-	RShadowViewProxy* RViewShadowState::FindShadowView(const UINT64 InKey)const
+	RShadowViewProxy* RViewShadowState::FindShadowView(const UINT64 InKey) const
 	{
 		for (UINT32 ViewIndex = 0u, ViewNum = ShadowViews.Num<UINT32>(); ViewIndex < ViewNum; ViewIndex++)
 		{

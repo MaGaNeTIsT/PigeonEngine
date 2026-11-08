@@ -263,12 +263,12 @@ namespace PigeonEngine
 	// ---------------------------------------------------------------------------
 
 	EShaderAsset::EShaderAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	)
 		: TBaseAsset<EShaderAssetData>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InDebugName
 #endif
 		)
@@ -705,7 +705,7 @@ namespace PigeonEngine
 		}
 
 		EShaderAsset* Asset = new EShaderAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, EString(PE_TEXT("ShaderAsset")) + InLoadName
 #endif
 		);
@@ -749,7 +749,7 @@ namespace PigeonEngine
 		// this replaces leaves the table here and is parked by the table, not freed.
 		if (ShaderAssets.Add(AssetName, Asset, (InIsReload ? TRUE : FALSE)) == 0u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_FAILED((ENGINE_ASSET_ERROR), (PE_TEXT("[ShaderAssetManager] The loaded shader could not be added to the cache.")));
 #endif
 			Asset->UninitResource();
@@ -780,13 +780,13 @@ namespace PigeonEngine
 				PE_FAILED((ENGINE_ASSET_ERROR), (PE_TEXT("[ShaderAssetManager] A shader asset referencing a replaced stage asset could not be republished.")));
 			}
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		PE_LOG_LOG(EString("[ShaderAssetManager] Loaded '") + InLoadName
 			+ EString("' (revision ") + ToString(Asset->GetRevision())
 			+ EString(", variants ") + ToString(Asset->GetProgramNum())
 			+ EString(", culled fields ") + ToString(Asset->GetCulledFieldNum())
 			+ EString(", exposed fields ") + ToString(Asset->GetExposedFieldNum()) + EString(")."));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		return TRUE;
 	}
 
@@ -872,7 +872,7 @@ namespace PigeonEngine
 			return (new EShaderAssetData(*ColdData));
 		};
 		EShaderAsset* NewAsset = new EShaderAsset(InAsset.GetAssetPath(), AssetNameString
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, EString(PE_TEXT("ShaderAsset")) + AssetNameString
 #endif
 		);
@@ -908,10 +908,10 @@ namespace PigeonEngine
 		// render thread to drop what it derived from the previous object is exactly the step a reload of
 		// this name runs. Leaving it out would leave the pointers this rebuild exists to move.
 		REngineShaderInstanceCache::GetManagerSingleton()->PublishShaderAssetSwap(AssetName);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		PE_LOG_LOG(EString("[ShaderAssetManager] Republished '") + AssetNameString
 			+ EString("': a stage asset it references was replaced."));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		return TRUE;
 	}
 	BOOL32 EShaderAssetManager::RequireLoadShaderAsset(const EString& InLoadPath, const EString& InLoadName
@@ -969,7 +969,7 @@ namespace PigeonEngine
 		return Asset->FindProgram(InVariantName);
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	BOOL32 EShaderAssetManager::ImportStageRefs(const EString& InArtifactDirectory, const EShaderManifest& InManifest
 		, const EShaderManifestVariant& InVariant, const EString& InSavePath, EShaderAssetStageRef& OutStageRef)
@@ -1112,6 +1112,6 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 } // namespace PigeonEngine

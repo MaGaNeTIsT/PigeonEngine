@@ -20,7 +20,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	EAssetBase::EAssetBase(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	)
@@ -31,7 +31,7 @@ namespace PigeonEngine
 		// call returned a reference to a temporary.
 		, AssetFullPathName(InAssetPath + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE)
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = InDebugName;
 #endif
 	}

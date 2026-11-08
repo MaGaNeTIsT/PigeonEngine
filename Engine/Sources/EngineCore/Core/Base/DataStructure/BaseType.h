@@ -33,17 +33,17 @@ namespace PigeonEngine
 			FLOAT m00, FLOAT m01, FLOAT m02, FLOAT m03,
 			FLOAT m10, FLOAT m11, FLOAT m12, FLOAT m13,
 			FLOAT m20, FLOAT m21, FLOAT m22, FLOAT m23,
-			FLOAT m30, FLOAT m31, FLOAT m32, FLOAT m33)noexcept :
+			FLOAT m30, FLOAT m31, FLOAT m32, FLOAT m33) noexcept :
 			_11(m00), _12(m01), _13(m02), _14(m03),
 			_21(m10), _22(m11), _23(m12), _24(m13),
 			_31(m20), _32(m21), _33(m22), _34(m23),
 			_41(m30), _42(m31), _43(m32), _44(m33) {}
-		constexpr Matrix4x4(const DirectX::XMFLOAT4X4& xm)noexcept :
+		constexpr Matrix4x4(const DirectX::XMFLOAT4X4& xm) noexcept :
 			_11(xm._11), _12(xm._12), _13(xm._13), _14(xm._14),
 			_21(xm._21), _22(xm._22), _23(xm._23), _24(xm._24),
 			_31(xm._31), _32(xm._32), _33(xm._33), _34(xm._34),
 			_41(xm._41), _42(xm._42), _43(xm._43), _44(xm._44) {}
-		Matrix4x4()noexcept :
+		Matrix4x4() noexcept :
 			_11(0.f), _12(0.f), _13(0.f), _14(0.f),
 			_21(0.f), _22(0.f), _23(0.f), _24(0.f),
 			_31(0.f), _32(0.f), _33(0.f), _34(0.f),
@@ -57,7 +57,7 @@ namespace PigeonEngine
 			_31 = tempM._31; _32 = tempM._32; _33 = tempM._33; _34 = tempM._34;
 			_41 = tempM._41; _42 = tempM._42; _43 = tempM._43; _44 = tempM._44;
 		}
-		Matrix4x4(const Matrix4x4& mm)noexcept :
+		Matrix4x4(const Matrix4x4& mm) noexcept :
 			_11(mm._11), _12(mm._12), _13(mm._13), _14(mm._14),
 			_21(mm._21), _22(mm._22), _23(mm._23), _24(mm._24),
 			_31(mm._31), _32(mm._32), _33(mm._33), _34(mm._34),
@@ -108,7 +108,7 @@ namespace PigeonEngine
 			_31 = xm._31; _32 = xm._32; _33 = xm._33; _34 = xm._34;
 			_41 = xm._41; _42 = xm._42; _43 = xm._43; _44 = xm._44;
 		}
-		DirectX::XMFLOAT4X4 GetDirectXValue4x4()const
+		DirectX::XMFLOAT4X4 GetDirectXValue4x4() const
 		{
 			return (DirectX::XMFLOAT4X4(
 				_11, _12, _13, _14,
@@ -116,22 +116,22 @@ namespace PigeonEngine
 				_31, _32, _33, _34,
 				_41, _42, _43, _44));
 		}
-		DirectX::XMMATRIX GetDirectXMatrix()const
+		DirectX::XMMATRIX GetDirectXMatrix() const
 		{
 			DirectX::XMFLOAT4X4 tempM(GetDirectXValue4x4());
 			return (DirectX::XMLoadFloat4x4(&tempM));
 		}
-		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4()const
+		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4() const
 		{
 			DirectX::XMFLOAT4X4 tempM;
 			DirectX::XMStoreFloat4x4(&tempM, DirectX::XMMatrixTranspose(GetDirectXMatrix()));
 			return tempM;
 		}
 		void Reset() { (*this) = Matrix4x4::Identity(); }
-		Matrix4x4 Inverse()const { return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, GetDirectXMatrix()))); }
-		Matrix4x4 Transpose()const { return (Matrix4x4(DirectX::XMMatrixTranspose(GetDirectXMatrix()))); }
-		FLOAT operator()(UINT32 row, UINT32 column)const noexcept { return m[row][column]; }
-		FLOAT& operator()(UINT32 row, UINT32 column)noexcept { return m[row][column]; }
+		Matrix4x4 Inverse() const { return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, GetDirectXMatrix()))); }
+		Matrix4x4 Transpose() const { return (Matrix4x4(DirectX::XMMatrixTranspose(GetDirectXMatrix()))); }
+		FLOAT operator()(UINT32 row, UINT32 column) const noexcept { return m[row][column]; }
+		FLOAT& operator()(UINT32 row, UINT32 column) noexcept { return m[row][column]; }
 		Matrix4x4& operator=(const Matrix4x4& mm)
 		{
 			_11 = mm._11; _12 = mm._12; _13 = mm._13; _14 = mm._14;
@@ -161,9 +161,9 @@ namespace PigeonEngine
 
 	struct Quaternion
 	{
-		constexpr Quaternion(FLOAT qx, FLOAT qy, FLOAT qz, FLOAT qw)noexcept : x(qx), y(qy), z(qz), w(qw) {}
-		constexpr Quaternion(const DirectX::XMFLOAT4& xq)noexcept : x(xq.x), y(xq.y), z(xq.z), w(xq.w) {}
-		Quaternion()noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
+		constexpr Quaternion(FLOAT qx, FLOAT qy, FLOAT qz, FLOAT qw) noexcept : x(qx), y(qy), z(qz), w(qw) {}
+		constexpr Quaternion(const DirectX::XMFLOAT4& xq) noexcept : x(xq.x), y(xq.y), z(xq.z), w(xq.w) {}
+		Quaternion() noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
 		Quaternion(DirectX::CXMVECTOR xq)
 		{
 			DirectX::XMFLOAT4 tempQ;
@@ -182,7 +182,7 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationMatrix(xm));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		Quaternion(const Quaternion& q)noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
+		Quaternion(const Quaternion& q) noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
 		Quaternion(FLOAT InPitch, FLOAT InYaw, FLOAT InRoll)
 		{
 			DirectX::XMFLOAT4 tempQ;
@@ -235,22 +235,22 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationMatrix(DirectX::XMLoadFloat4x4(&xm)));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		DirectX::XMMATRIX GetDirectXMatrix()const { return (DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(x, y, z, w))); }
-		DirectX::XMFLOAT4X4 GetDirectXValue4x4()const
+		DirectX::XMMATRIX GetDirectXMatrix() const { return (DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(x, y, z, w))); }
+		DirectX::XMFLOAT4X4 GetDirectXValue4x4() const
 		{
 			DirectX::XMFLOAT4X4 tempM;
 			DirectX::XMStoreFloat4x4(&tempM, GetDirectXMatrix());
 			return tempM;
 		}
-		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4()const
+		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4() const
 		{
 			DirectX::XMFLOAT4X4 tempM;
 			DirectX::XMStoreFloat4x4(&tempM, DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(x, y, z, w))));
 			return tempM;
 		}
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, z, w)); }
-		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, z, w)); }
-		Matrix4x4 GetMatrix()const { return (Matrix4x4(GetDirectXValue4x4())); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, z, w)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, w)); }
+		Matrix4x4 GetMatrix() const { return (Matrix4x4(GetDirectXValue4x4())); }
 		void Reset() { (*this) = Quaternion::Identity(); }
 		void Inverse()
 		{
@@ -264,9 +264,9 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionNormalize(DirectX::XMVectorSet(x, y, z, w)));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		BOOL32 IsContainNaN()const
+		BOOL32 IsContainNaN() const
 		{
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z) && EMath::IsNaN(w);
 			Check((!ContainNaN));
 			return ContainNaN;
@@ -299,9 +299,9 @@ namespace PigeonEngine
 
 	struct Euler
 	{
-		constexpr Euler(const FLOAT InPitch, const FLOAT InYaw, const FLOAT InRoll)noexcept : Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
-		Euler()noexcept : Pitch(0.f), Yaw(0.f), Roll(0.f) {}
-		Euler(const Euler& Other)noexcept : Pitch(Other.Pitch), Yaw(Other.Yaw), Roll(Other.Roll) {}
+		constexpr Euler(const FLOAT InPitch, const FLOAT InYaw, const FLOAT InRoll) noexcept : Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
+		Euler() noexcept : Pitch(0.f), Yaw(0.f), Roll(0.f) {}
+		Euler(const Euler& Other) noexcept : Pitch(Other.Pitch), Yaw(Other.Yaw), Roll(Other.Roll) {}
 		static const Euler& Zero()
 		{
 			const static Euler _StaticZeroEuler(0.f, 0.f, 0.f);
@@ -328,9 +328,9 @@ namespace PigeonEngine
 			}
 			return ResultAngle;
 		}
-		BOOL32 IsContainNaN()const
+		BOOL32 IsContainNaN() const
 		{
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 			BOOL32 ContainNaN = EMath::IsNaN(Pitch) && EMath::IsNaN(Yaw) && EMath::IsNaN(Yaw);
 			Check((!ContainNaN));
 			return ContainNaN;
@@ -351,26 +351,26 @@ namespace PigeonEngine
 
 	struct Vector2
 	{
-		constexpr Vector2(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2(const DirectX::XMINT2& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
-		constexpr Vector2(const DirectX::XMINT3& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
-		constexpr Vector2(const DirectX::XMINT4& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
-		constexpr Vector2(FLOAT InValue)noexcept : x(InValue), y(InValue) {}
-		constexpr Vector2(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy) {}
-		constexpr Vector2(INT32 InValue)noexcept : x(EMath::TruncToFloat(InValue)), y(EMath::TruncToFloat(InValue)) {}
-		constexpr Vector2(INT32 vx, INT32 vy)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)) {}
-		constexpr Vector2(DOUBLE InValue)noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)) {}
-		constexpr Vector2(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
-		Vector2()noexcept : x(0.f), y(0.f) {}
+		constexpr Vector2(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2(const DirectX::XMINT2& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
+		constexpr Vector2(const DirectX::XMINT3& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
+		constexpr Vector2(const DirectX::XMINT4& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
+		constexpr Vector2(FLOAT InValue) noexcept : x(InValue), y(InValue) {}
+		constexpr Vector2(FLOAT vx, FLOAT vy) noexcept : x(vx), y(vy) {}
+		constexpr Vector2(INT32 InValue) noexcept : x(EMath::TruncToFloat(InValue)), y(EMath::TruncToFloat(InValue)) {}
+		constexpr Vector2(INT32 vx, INT32 vy) noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)) {}
+		constexpr Vector2(DOUBLE InValue) noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)) {}
+		constexpr Vector2(DOUBLE vx, DOUBLE vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
+		Vector2() noexcept : x(0.f), y(0.f) {}
 		Vector2(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT2 tempV;
 			DirectX::XMStoreFloat2(&tempV, xv);
 			x = tempV.x; y = tempV.y;
 		}
-		Vector2(const Vector2& vv)noexcept : x(vv.x), y(vv.y) {}
+		Vector2(const Vector2& vv) noexcept : x(vv.x), y(vv.y) {}
 		static const Vector2& Zero()
 		{
 			PE_CONSTEXPR_STATIC Vector2 _StaticVector2Zero(0.f, 0.f);
@@ -419,10 +419,10 @@ namespace PigeonEngine
 			x = tempV.x; y = tempV.y;
 		}
 		void SetDirectXValue2(const DirectX::XMFLOAT2& xv) { x = xv.x; y = xv.y; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, 0.f, 0.f)); }
-		DirectX::XMFLOAT2 GetDirectXValue2()const { return (DirectX::XMFLOAT2(x, y)); }
-		DirectX::XMFLOAT3 GetDirectXValue3()const { return (DirectX::XMFLOAT3(x, y, 0.f)); }
-		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, 0.f, 0.f)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, 0.f, 0.f)); }
+		DirectX::XMFLOAT2 GetDirectXValue2() const { return (DirectX::XMFLOAT2(x, y)); }
+		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, 0.f)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, 0.f, 0.f)); }
 		void Reset() { (*this) = Vector2::Zero(); }
 		void Normalize()
 		{
@@ -430,24 +430,24 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat2(&tempV, DirectX::XMVector2Normalize(DirectX::XMVectorSet(x, y, 0.f, 0.f)));
 			x = tempV.x; y = tempV.y;
 		}
-		FLOAT Dot(const Vector2& vv)const { return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(DirectX::XMVectorSet(x, y, 0.f, 0.f), DirectX::XMVectorSet(vv.x, vv.y, 0.f, 0.f)))); }
-		FLOAT Length()const { return (DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
-		FLOAT LengthSquare()const { return (DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
-		FLOAT Distance(const Vector2& vv)const
+		FLOAT Dot(const Vector2& vv) const { return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(DirectX::XMVectorSet(x, y, 0.f, 0.f), DirectX::XMVectorSet(vv.x, vv.y, 0.f, 0.f)))); }
+		FLOAT Length() const { return (DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
+		FLOAT LengthSquare() const { return (DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
+		FLOAT Distance(const Vector2& vv) const
 		{
 			Vector2 tempV(x - vv.x, y - vv.y);
 			return (DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSet(tempV.x, tempV.y, 0.f, 0.f))));
 		}
-		FLOAT DistanceSquare(const Vector2& vv)const
+		FLOAT DistanceSquare(const Vector2& vv) const
 		{
 			Vector2 tempV(x - vv.x, y - vv.y);
 			return (DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSet(tempV.x, tempV.y, 0.f, 0.f))));
 		}
-		Vector2 Lerp(const Vector2& vv, FLOAT t)const { return (Vector2(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t)); }
-		Vector2 Reciprocal()const { return Vector2(1.f / x, 1.f / y); }
-		BOOL32 IsContainNaN()const
+		Vector2 Lerp(const Vector2& vv, FLOAT t) const { return (Vector2(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t)); }
+		Vector2 Reciprocal() const { return Vector2(1.f / x, 1.f / y); }
+		BOOL32 IsContainNaN() const
 		{
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y);
 			Check((!ContainNaN));
 			return ContainNaN;
@@ -455,7 +455,7 @@ namespace PigeonEngine
 			return (EMath::IsNaN(x) && EMath::IsNaN(y));
 #endif
 		}
-		Vector2 operator-()const
+		Vector2 operator-() const
 		{
 			return Vector2(-x, -y);
 		}
@@ -522,29 +522,29 @@ namespace PigeonEngine
 
 	struct Vector3
 	{
-		constexpr Vector3(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y), z(0.f) {}
-		constexpr Vector3(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3(const DirectX::XMINT2& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(0.f) {}
-		constexpr Vector3(const DirectX::XMINT3& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)) {}
-		constexpr Vector3(const DirectX::XMINT4& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)) {}
-		constexpr Vector3(FLOAT InValue)noexcept : x(InValue), y(InValue), z(InValue) {}
-		constexpr Vector3(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f) {}
-		constexpr Vector3(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Vector3(INT32 InValue)noexcept : x(EMath::TruncToFloat(InValue)), y(EMath::TruncToFloat(InValue)), z(EMath::TruncToFloat(InValue)) {}
-		constexpr Vector3(INT32 vx, INT32 vy)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(0.f) {}
-		constexpr Vector3(INT32 vx, INT32 vy, INT32 vz)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)) {}
-		constexpr Vector3(DOUBLE InValue)noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)), z(static_cast<FLOAT>(InValue)) {}
-		constexpr Vector3(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
-		constexpr Vector3(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
-		Vector3()noexcept : x(0.f), y(0.f), z(0.f) {}
+		constexpr Vector3(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y), z(0.f) {}
+		constexpr Vector3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Vector3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Vector3(const DirectX::XMINT2& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(0.f) {}
+		constexpr Vector3(const DirectX::XMINT3& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)) {}
+		constexpr Vector3(const DirectX::XMINT4& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)) {}
+		constexpr Vector3(FLOAT InValue) noexcept : x(InValue), y(InValue), z(InValue) {}
+		constexpr Vector3(FLOAT vx, FLOAT vy) noexcept : x(vx), y(vy), z(0.f) {}
+		constexpr Vector3(FLOAT vx, FLOAT vy, FLOAT vz) noexcept : x(vx), y(vy), z(vz) {}
+		constexpr Vector3(INT32 InValue) noexcept : x(EMath::TruncToFloat(InValue)), y(EMath::TruncToFloat(InValue)), z(EMath::TruncToFloat(InValue)) {}
+		constexpr Vector3(INT32 vx, INT32 vy) noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(0.f) {}
+		constexpr Vector3(INT32 vx, INT32 vy, INT32 vz) noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)) {}
+		constexpr Vector3(DOUBLE InValue) noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)), z(static_cast<FLOAT>(InValue)) {}
+		constexpr Vector3(DOUBLE vx, DOUBLE vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
+		constexpr Vector3(DOUBLE vx, DOUBLE vy, DOUBLE vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		Vector3() noexcept : x(0.f), y(0.f), z(0.f) {}
 		Vector3(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, xv);
 			x = tempV.x; y = tempV.y; z = tempV.z;
 		}
-		Vector3(const Vector3& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		Vector3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Vector3& Zero()
 		{
 			PE_CONSTEXPR_STATIC Vector3 _StaticVector3Zero(0.f, 0.f, 0.f);
@@ -608,10 +608,10 @@ namespace PigeonEngine
 			x = tempV.x; y = tempV.y; z = tempV.z;
 		}
 		void SetDirectXValue3(const DirectX::XMFLOAT3& xv) { x = xv.x; y = xv.y; z = xv.z; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, z, 0.f)); }
-		DirectX::XMFLOAT2 GetDirectXValue2()const { return (DirectX::XMFLOAT2(x, y)); }
-		DirectX::XMFLOAT3 GetDirectXValue3()const { return (DirectX::XMFLOAT3(x, y, z)); }
-		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, z, 0.f)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, z, 0.f)); }
+		DirectX::XMFLOAT2 GetDirectXValue2() const { return (DirectX::XMFLOAT2(x, y)); }
+		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, z)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, 0.f)); }
 		void Reset() { (*this) = Vector3::Zero(); }
 		void Normalize()
 		{
@@ -619,34 +619,34 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat3(&tempV, DirectX::XMVector3Normalize(DirectX::XMVectorSet(x, y, z, 0.f)));
 			x = tempV.x; y = tempV.y; z = tempV.z;
 		}
-		FLOAT Dot(const Vector3& vv)const { return (DirectX::XMVectorGetX(DirectX::XMVector3Dot(DirectX::XMVectorSet(x, y, z, 0.f), DirectX::XMVectorSet(vv.x, vv.y, vv.z, 0.f)))); }
-		FLOAT Length()const { return (DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSet(x, y, z, 0.f)))); }
-		FLOAT LengthSquare()const
+		FLOAT Dot(const Vector3& vv) const { return (DirectX::XMVectorGetX(DirectX::XMVector3Dot(DirectX::XMVectorSet(x, y, z, 0.f), DirectX::XMVectorSet(vv.x, vv.y, vv.z, 0.f)))); }
+		FLOAT Length() const { return (DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSet(x, y, z, 0.f)))); }
+		FLOAT LengthSquare() const
 		{
 			DirectX::XMVECTOR tempV = DirectX::XMVectorSet(x, y, z, 0.f);
 			return (DirectX::XMVectorGetX(DirectX::XMVector3Dot(tempV, tempV)));
 		}
-		FLOAT Distance(const Vector3& vv)const { return (DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSet(x - vv.x, y - vv.y, z - vv.z, 0.f)))); }
-		FLOAT DistanceSquare(const Vector3& vv)const
+		FLOAT Distance(const Vector3& vv) const { return (DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSet(x - vv.x, y - vv.y, z - vv.z, 0.f)))); }
+		FLOAT DistanceSquare(const Vector3& vv) const
 		{
 			DirectX::XMVECTOR tempV = DirectX::XMVectorSet(x - vv.x, y - vv.y, z - vv.z, 0.f);
 			return (DirectX::XMVectorGetX(DirectX::XMVector3Dot(tempV, tempV)));
 		}
-		Vector3 Lerp(const Vector3& vv, FLOAT t)const { return (Vector3(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t)); }
-		Vector3 Lerp(const Vector3& vv, DOUBLE t)const
+		Vector3 Lerp(const Vector3& vv, FLOAT t) const { return (Vector3(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t)); }
+		Vector3 Lerp(const Vector3& vv, DOUBLE t) const
 		{
 			FLOAT ft = static_cast<FLOAT>(t);
 			return (Vector3(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft));
 		}
-		Vector3 Cross(const Vector3& vv)const
+		Vector3 Cross(const Vector3& vv) const
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, DirectX::XMVector3Cross(DirectX::XMVectorSet(x, y, z, 0.f), DirectX::XMVectorSet(vv.x, vv.y, vv.z, 0.f)));
 			return (Vector3(tempV.x, tempV.y, tempV.z));
 		}
-		BOOL32 IsContainNaN()const
+		BOOL32 IsContainNaN() const
 		{
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z);
 			Check((!ContainNaN));
 			return ContainNaN;
@@ -654,7 +654,7 @@ namespace PigeonEngine
 			return (EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z));
 #endif
 		}
-		Vector3 operator-()const
+		Vector3 operator-() const
 		{
 			return Vector3(-x, -y, -z);
 		}
@@ -718,37 +718,37 @@ namespace PigeonEngine
 			FLOAT v[3];
 		};
 
-		class EString AsString()const;
+		class EString AsString() const;
 	};
 
 	struct Vector4
 	{
-		constexpr Vector4(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y), z(0.f), w(0.f) {}
-		constexpr Vector4(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(0.f) {}
-		constexpr Vector4(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Vector4(const DirectX::XMINT2& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(0.f), w(0.f) {}
-		constexpr Vector4(const DirectX::XMINT3& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)), w(0.f) {}
-		constexpr Vector4(const DirectX::XMINT4& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)), w(EMath::TruncToFloat(xv.w)) {}
-		constexpr Vector4(FLOAT InValue)noexcept : x(InValue), y(InValue), z(InValue), w(InValue) {}
-		constexpr Vector4(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f), w(0.f) {}
-		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz), w(0.f) {}
-		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Vector4(INT32 InValue)noexcept : x(EMath::TruncToFloat(InValue)), y(EMath::TruncToFloat(InValue)), z(EMath::TruncToFloat(InValue)), w(EMath::TruncToFloat(InValue)) {}
-		constexpr Vector4(INT32 vx, INT32 vy)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(0.f), w(0.f) {}
-		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)), w(0.f) {}
-		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz, INT32 vw)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)), w(EMath::TruncToFloat(vw)) {}
-		constexpr Vector4(DOUBLE InValue)noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)), z(static_cast<FLOAT>(InValue)), w(static_cast<FLOAT>(InValue)) {}
-		constexpr Vector4(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
-		constexpr Vector4(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
-		constexpr Vector4(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
-		Vector4()noexcept : x(0.f), y(0.f), z(0.f), w(0.f) {}
+		constexpr Vector4(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y), z(0.f), w(0.f) {}
+		constexpr Vector4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(0.f) {}
+		constexpr Vector4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		constexpr Vector4(const DirectX::XMINT2& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(0.f), w(0.f) {}
+		constexpr Vector4(const DirectX::XMINT3& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)), w(0.f) {}
+		constexpr Vector4(const DirectX::XMINT4& xv) noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)), w(EMath::TruncToFloat(xv.w)) {}
+		constexpr Vector4(FLOAT InValue) noexcept : x(InValue), y(InValue), z(InValue), w(InValue) {}
+		constexpr Vector4(FLOAT vx, FLOAT vy) noexcept : x(vx), y(vy), z(0.f), w(0.f) {}
+		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz) noexcept : x(vx), y(vy), z(vz), w(0.f) {}
+		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		constexpr Vector4(INT32 InValue) noexcept : x(EMath::TruncToFloat(InValue)), y(EMath::TruncToFloat(InValue)), z(EMath::TruncToFloat(InValue)), w(EMath::TruncToFloat(InValue)) {}
+		constexpr Vector4(INT32 vx, INT32 vy) noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(0.f), w(0.f) {}
+		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz) noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)), w(0.f) {}
+		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz, INT32 vw) noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)), w(EMath::TruncToFloat(vw)) {}
+		constexpr Vector4(DOUBLE InValue) noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)), z(static_cast<FLOAT>(InValue)), w(static_cast<FLOAT>(InValue)) {}
+		constexpr Vector4(DOUBLE vx, DOUBLE vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
+		constexpr Vector4(DOUBLE vx, DOUBLE vy, DOUBLE vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
+		constexpr Vector4(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		Vector4() noexcept : x(0.f), y(0.f), z(0.f), w(0.f) {}
 		Vector4(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT4 tempV;
 			DirectX::XMStoreFloat4(&tempV, xv);
 			x = tempV.x; y = tempV.y; z = tempV.z; w = tempV.w;
 		}
-		Vector4(const Vector4& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		Vector4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Vector4& Zero()
 		{
 			PE_CONSTEXPR_STATIC Vector4 _StaticVector4Zero(0.f, 0.f, 0.f, 0.f);
@@ -803,10 +803,10 @@ namespace PigeonEngine
 			x = tempV.x; y = tempV.y; z = tempV.z; w = tempV.w;
 		}
 		void SetDirectXValue4(const DirectX::XMFLOAT4& xv) { x = xv.x; y = xv.y; z = xv.z; w = xv.w; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, z, w)); }
-		DirectX::XMFLOAT2 GetDirectXValue2()const { return (DirectX::XMFLOAT2(x, y)); }
-		DirectX::XMFLOAT3 GetDirectXValue3()const { return (DirectX::XMFLOAT3(x, y, z)); }
-		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, z, w)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, z, w)); }
+		DirectX::XMFLOAT2 GetDirectXValue2() const { return (DirectX::XMFLOAT2(x, y)); }
+		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, z)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, w)); }
 		void Reset() { (*this) = Vector4::Zero(); }
 		void Normalize()
 		{
@@ -814,20 +814,20 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempV, DirectX::XMVector4Normalize(DirectX::XMVectorSet(x, y, z, w)));
 			x = tempV.x; y = tempV.y; z = tempV.z; w = tempV.w;
 		}
-		FLOAT Dot(const Vector4& vv)const { return (DirectX::XMVectorGetX(DirectX::XMVector4Dot(DirectX::XMVectorSet(x, y, z, w), DirectX::XMVectorSet(vv.x, vv.y, vv.z, vv.w)))); }
-		FLOAT Length()const { return (DirectX::XMVectorGetX(DirectX::XMVector4Length(DirectX::XMVectorSet(x, y, z, w)))); }
-		FLOAT LengthSquare()const { return (DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(DirectX::XMVectorSet(x, y, z, w)))); }
-		FLOAT Distance(const Vector4& vv)const { return (DirectX::XMVectorGetX(DirectX::XMVector4Length(DirectX::XMVectorSet(x - vv.x, y - vv.y, z - vv.z, w - vv.w)))); }
-		FLOAT DistanceSquare(const Vector4& vv)const { return (DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(DirectX::XMVectorSet(x - vv.x, y - vv.y, z - vv.z, w - vv.w)))); }
-		Vector4 Lerp(const Vector4& vv, FLOAT t)const { return (Vector4(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t, w * (1.f - t) + vv.w * t)); }
-		Vector4 Lerp(const Vector4& vv, DOUBLE t)const
+		FLOAT Dot(const Vector4& vv) const { return (DirectX::XMVectorGetX(DirectX::XMVector4Dot(DirectX::XMVectorSet(x, y, z, w), DirectX::XMVectorSet(vv.x, vv.y, vv.z, vv.w)))); }
+		FLOAT Length() const { return (DirectX::XMVectorGetX(DirectX::XMVector4Length(DirectX::XMVectorSet(x, y, z, w)))); }
+		FLOAT LengthSquare() const { return (DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(DirectX::XMVectorSet(x, y, z, w)))); }
+		FLOAT Distance(const Vector4& vv) const { return (DirectX::XMVectorGetX(DirectX::XMVector4Length(DirectX::XMVectorSet(x - vv.x, y - vv.y, z - vv.z, w - vv.w)))); }
+		FLOAT DistanceSquare(const Vector4& vv) const { return (DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(DirectX::XMVectorSet(x - vv.x, y - vv.y, z - vv.z, w - vv.w)))); }
+		Vector4 Lerp(const Vector4& vv, FLOAT t) const { return (Vector4(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t, w * (1.f - t) + vv.w * t)); }
+		Vector4 Lerp(const Vector4& vv, DOUBLE t) const
 		{
 			FLOAT ft = static_cast<FLOAT>(t);
 			return (Vector4(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft, w * (1.f - ft) + vv.w * ft));
 		}
-		BOOL32 IsContainNaN()const
+		BOOL32 IsContainNaN() const
 		{
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z) && EMath::IsNaN(w);
 			Check((!ContainNaN));
 			return ContainNaN;
@@ -835,7 +835,7 @@ namespace PigeonEngine
 			return (EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z) && EMath::IsNaN(w));
 #endif
 		}
-		Vector4 operator-()const
+		Vector4 operator-() const
 		{
 			return Vector4(-x, -y, -z, -w);
 		}
@@ -902,29 +902,29 @@ namespace PigeonEngine
 
 	struct Vector2Int
 	{
-		constexpr Vector2Int(const DirectX::XMFLOAT2& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT3& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT4& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(FLOAT InValue)noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)) {}
-		constexpr Vector2Int(FLOAT vx, FLOAT vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)) {}
-		constexpr Vector2Int(INT32 InValue)noexcept : x(InValue), y(InValue) {}
-		constexpr Vector2Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy) {}
-		constexpr Vector2Int(UINT32 InValue)noexcept : x(static_cast<INT32>(InValue)), y(static_cast<INT32>(InValue)) {}
-		constexpr Vector2Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
-		constexpr Vector2Int(DOUBLE InValue)noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)) {}
-		constexpr Vector2Int(DOUBLE vx, DOUBLE vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)) {}
-		constexpr Vector2Int(const Vector2& vv)noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)) {}
-		Vector2Int()noexcept : x(0), y(0) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT2& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT3& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT4& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2Int(FLOAT InValue) noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)) {}
+		constexpr Vector2Int(FLOAT vx, FLOAT vy) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)) {}
+		constexpr Vector2Int(INT32 InValue) noexcept : x(InValue), y(InValue) {}
+		constexpr Vector2Int(INT32 vx, INT32 vy) noexcept : x(vx), y(vy) {}
+		constexpr Vector2Int(UINT32 InValue) noexcept : x(static_cast<INT32>(InValue)), y(static_cast<INT32>(InValue)) {}
+		constexpr Vector2Int(UINT32 vx, UINT32 vy) noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
+		constexpr Vector2Int(DOUBLE InValue) noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)) {}
+		constexpr Vector2Int(DOUBLE vx, DOUBLE vy) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)) {}
+		constexpr Vector2Int(const Vector2& vv) noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)) {}
+		Vector2Int() noexcept : x(0), y(0) {}
 		Vector2Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT2 tempV;
 			DirectX::XMStoreFloat2(&tempV, xv);
 			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y);
 		}
-		Vector2Int(const Vector2Int& vv)noexcept : x(vv.x), y(vv.y) {}
+		Vector2Int(const Vector2Int& vv) noexcept : x(vv.x), y(vv.y) {}
 		static const Vector2Int& Zero()
 		{
 			PE_CONSTEXPR_STATIC Vector2Int _StaticVector2IntZero(0, 0);
@@ -942,12 +942,12 @@ namespace PigeonEngine
 			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y);
 		}
 		void SetDirectXValue2(const DirectX::XMINT2& xv) { x = xv.x; y = xv.y; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), 0.f, 0.f)); }
-		DirectX::XMINT2 GetDirectXValue2()const { return (DirectX::XMINT2(x, y)); }
-		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, 0)); }
-		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, 0, 0)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), 0.f, 0.f)); }
+		DirectX::XMINT2 GetDirectXValue2() const { return (DirectX::XMINT2(x, y)); }
+		DirectX::XMINT3 GetDirectXValue3() const { return (DirectX::XMINT3(x, y, 0)); }
+		DirectX::XMINT4 GetDirectXValue4() const { return (DirectX::XMINT4(x, y, 0, 0)); }
 		void Reset() { (*this) = Vector2Int::Zero(); }
-		Vector2Int operator-()const
+		Vector2Int operator-() const
 		{
 			return Vector2Int(-x, -y);
 		}
@@ -1101,33 +1101,33 @@ namespace PigeonEngine
 
 	struct Vector3Int
 	{
-		constexpr Vector3Int(const DirectX::XMFLOAT2& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(0) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT3& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT4& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)) {}
-		constexpr Vector3Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y), z(0) {}
-		constexpr Vector3Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3Int(FLOAT InValue)noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)) {}
-		constexpr Vector3Int(FLOAT vx, FLOAT vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0) {}
-		constexpr Vector3Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)) {}
-		constexpr Vector3Int(INT32 InValue)noexcept : x(InValue), y(InValue), z(InValue) {}
-		constexpr Vector3Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy), z(0) {}
-		constexpr Vector3Int(INT32 vx, INT32 vy, INT32 vz)noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Vector3Int(UINT32 InValue)noexcept : x(static_cast<INT32>(InValue)), y(static_cast<INT32>(InValue)), z(static_cast<INT32>(InValue)) {}
-		constexpr Vector3Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
-		constexpr Vector3Int(UINT32 vx, UINT32 vy, UINT32 vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
-		constexpr Vector3Int(DOUBLE InValue)noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)) {}
-		constexpr Vector3Int(DOUBLE vx, DOUBLE vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0) {}
-		constexpr Vector3Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)) {}
-		constexpr Vector3Int(const Vector3& vv)noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)), z(EMath::TruncToInt32(vv.z)) {}
-		Vector3Int()noexcept : x(0), y(0), z(0) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT2& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(0) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT3& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT4& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)) {}
+		constexpr Vector3Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y), z(0) {}
+		constexpr Vector3Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Vector3Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Vector3Int(FLOAT InValue) noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)) {}
+		constexpr Vector3Int(FLOAT vx, FLOAT vy) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0) {}
+		constexpr Vector3Int(FLOAT vx, FLOAT vy, FLOAT vz) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)) {}
+		constexpr Vector3Int(INT32 InValue) noexcept : x(InValue), y(InValue), z(InValue) {}
+		constexpr Vector3Int(INT32 vx, INT32 vy) noexcept : x(vx), y(vy), z(0) {}
+		constexpr Vector3Int(INT32 vx, INT32 vy, INT32 vz) noexcept : x(vx), y(vy), z(vz) {}
+		constexpr Vector3Int(UINT32 InValue) noexcept : x(static_cast<INT32>(InValue)), y(static_cast<INT32>(InValue)), z(static_cast<INT32>(InValue)) {}
+		constexpr Vector3Int(UINT32 vx, UINT32 vy) noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
+		constexpr Vector3Int(UINT32 vx, UINT32 vy, UINT32 vz) noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
+		constexpr Vector3Int(DOUBLE InValue) noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)) {}
+		constexpr Vector3Int(DOUBLE vx, DOUBLE vy) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0) {}
+		constexpr Vector3Int(DOUBLE vx, DOUBLE vy, DOUBLE vz) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)) {}
+		constexpr Vector3Int(const Vector3& vv) noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)), z(EMath::TruncToInt32(vv.z)) {}
+		Vector3Int() noexcept : x(0), y(0), z(0) {}
 		Vector3Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, xv);
 			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z);
 		}
-		Vector3Int(const Vector3Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		Vector3Int(const Vector3Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Vector3Int& Zero()
 		{
 			PE_CONSTEXPR_STATIC Vector3Int _StaticVector3IntZero(0, 0, 0);
@@ -1145,12 +1145,12 @@ namespace PigeonEngine
 			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z);
 		}
 		void SetDirectXValue3(const DirectX::XMINT3& xv) { x = xv.x; y = xv.y; z = xv.z; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), EMath::TruncToFloat(z), 0.f)); }
-		DirectX::XMINT2 GetDirectXValue2()const { return (DirectX::XMINT2(x, y)); }
-		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, z)); }
-		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, z, 0)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), EMath::TruncToFloat(z), 0.f)); }
+		DirectX::XMINT2 GetDirectXValue2() const { return (DirectX::XMINT2(x, y)); }
+		DirectX::XMINT3 GetDirectXValue3() const { return (DirectX::XMINT3(x, y, z)); }
+		DirectX::XMINT4 GetDirectXValue4() const { return (DirectX::XMINT4(x, y, z, 0)); }
 		void Reset() { (*this) = Vector3Int::Zero(); }
-		Vector3Int operator-()const
+		Vector3Int operator-() const
 		{
 			return Vector3Int(-x, -y, -z);
 		}
@@ -1304,37 +1304,37 @@ namespace PigeonEngine
 
 	struct Vector4Int
 	{
-		constexpr Vector4Int(const DirectX::XMFLOAT2& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(0), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT3& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT4& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)), w(EMath::TruncToInt32(xv.w)) {}
-		constexpr Vector4Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y), z(0), w(0) {}
-		constexpr Vector4Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(0) {}
-		constexpr Vector4Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Vector4Int(FLOAT InValue)noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)), w(EMath::TruncToInt32(InValue)) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0), w(0) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(0) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(EMath::TruncToInt32(vw)) {}
-		constexpr Vector4Int(INT32 InValue)noexcept : x(InValue), y(InValue), z(InValue), w(InValue) {}
-		constexpr Vector4Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy), z(0), w(0) {}
-		constexpr Vector4Int(INT32 vx, INT32 vy, INT32 vz)noexcept : x(vx), y(vy), z(vz), w(0) {}
-		constexpr Vector4Int(INT32 vx, INT32 vy, INT32 vz, INT32 vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Vector4Int(UINT32 InValue)noexcept : x(static_cast<INT32>(InValue)), y(static_cast<INT32>(InValue)), z(static_cast<INT32>(InValue)), w(static_cast<INT32>(InValue)) {}
-		constexpr Vector4Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
-		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz, UINT32 vw)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
-		constexpr Vector4Int(DOUBLE InValue)noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)), w(EMath::TruncToInt32(InValue)) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0), w(0) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(0) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(EMath::TruncToInt32(vw)) {}
-		constexpr Vector4Int(const Vector4& vv)noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)), z(EMath::TruncToInt32(vv.z)), w(EMath::TruncToInt32(vv.w)) {}
-		Vector4Int()noexcept : x(0), y(0), z(0), w(0) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT2& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(0), w(0) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT3& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)), w(0) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT4& xv) noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)), w(EMath::TruncToInt32(xv.w)) {}
+		constexpr Vector4Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y), z(0), w(0) {}
+		constexpr Vector4Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(0) {}
+		constexpr Vector4Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		constexpr Vector4Int(FLOAT InValue) noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)), w(EMath::TruncToInt32(InValue)) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0), w(0) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(0) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(EMath::TruncToInt32(vw)) {}
+		constexpr Vector4Int(INT32 InValue) noexcept : x(InValue), y(InValue), z(InValue), w(InValue) {}
+		constexpr Vector4Int(INT32 vx, INT32 vy) noexcept : x(vx), y(vy), z(0), w(0) {}
+		constexpr Vector4Int(INT32 vx, INT32 vy, INT32 vz) noexcept : x(vx), y(vy), z(vz), w(0) {}
+		constexpr Vector4Int(INT32 vx, INT32 vy, INT32 vz, INT32 vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		constexpr Vector4Int(UINT32 InValue) noexcept : x(static_cast<INT32>(InValue)), y(static_cast<INT32>(InValue)), z(static_cast<INT32>(InValue)), w(static_cast<INT32>(InValue)) {}
+		constexpr Vector4Int(UINT32 vx, UINT32 vy) noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
+		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz) noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
+		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz, UINT32 vw) noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
+		constexpr Vector4Int(DOUBLE InValue) noexcept : x(EMath::TruncToInt32(InValue)), y(EMath::TruncToInt32(InValue)), z(EMath::TruncToInt32(InValue)), w(EMath::TruncToInt32(InValue)) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0), w(0) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(0) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw) noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(EMath::TruncToInt32(vw)) {}
+		constexpr Vector4Int(const Vector4& vv) noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)), z(EMath::TruncToInt32(vv.z)), w(EMath::TruncToInt32(vv.w)) {}
+		Vector4Int() noexcept : x(0), y(0), z(0), w(0) {}
 		Vector4Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT4 tempV;
 			DirectX::XMStoreFloat4(&tempV, xv);
 			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z); w = EMath::TruncToInt32(tempV.w);
 		}
-		Vector4Int(const Vector4Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		Vector4Int(const Vector4Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Vector4Int& Zero()
 		{
 			PE_CONSTEXPR_STATIC Vector4Int _StaticVector4IntZero(0, 0, 0, 0);
@@ -1352,12 +1352,12 @@ namespace PigeonEngine
 			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z); w = EMath::TruncToInt32(tempV.w);
 		}
 		void SetDirectXValue4(const DirectX::XMINT4& xv) { x = xv.x; y = xv.y; z = xv.z; w = xv.w; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), EMath::TruncToFloat(z), EMath::TruncToFloat(w))); }
-		DirectX::XMINT2 GetDirectXValue2()const { return (DirectX::XMINT2(x, y)); }
-		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, z)); }
-		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, z, w)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), EMath::TruncToFloat(z), EMath::TruncToFloat(w))); }
+		DirectX::XMINT2 GetDirectXValue2() const { return (DirectX::XMINT2(x, y)); }
+		DirectX::XMINT3 GetDirectXValue3() const { return (DirectX::XMINT3(x, y, z)); }
+		DirectX::XMINT4 GetDirectXValue4() const { return (DirectX::XMINT4(x, y, z, w)); }
 		void Reset() { (*this) = Vector4Int::Zero(); }
-		Vector4Int operator-()const
+		Vector4Int operator-() const
 		{
 			return Vector4Int(-x, -y, -z, -w);
 		}
@@ -1511,22 +1511,22 @@ namespace PigeonEngine
 
 	struct Color3
 	{
-		constexpr Color3(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Color3(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Color3(FLOAT InValue)noexcept : x(InValue), y(InValue), z(InValue) {}
-		constexpr Color3(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Color3(DOUBLE InValue)noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)), z(static_cast<FLOAT>(InValue)) {}
-		constexpr Color3(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
-		constexpr Color3(const Vector3& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		constexpr Color3(const Vector4& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		Color3()noexcept : x(0.f), y(0.f), z(0.f) {}
+		constexpr Color3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Color3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Color3(FLOAT InValue) noexcept : x(InValue), y(InValue), z(InValue) {}
+		constexpr Color3(FLOAT vx, FLOAT vy, FLOAT vz) noexcept : x(vx), y(vy), z(vz) {}
+		constexpr Color3(DOUBLE InValue) noexcept : x(static_cast<FLOAT>(InValue)), y(static_cast<FLOAT>(InValue)), z(static_cast<FLOAT>(InValue)) {}
+		constexpr Color3(DOUBLE vx, DOUBLE vy, DOUBLE vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		constexpr Color3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		constexpr Color3(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		Color3() noexcept : x(0.f), y(0.f), z(0.f) {}
 		Color3(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, xv);
 			x = tempV.x; y = tempV.y; z = tempV.z;
 		}
-		Color3(const Color3& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		Color3(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Color3& Black()
 		{
 			PE_CONSTEXPR_STATIC Color3 _StaticColor3Black(0.f, 0.f, 0.f);
@@ -1580,9 +1580,9 @@ namespace PigeonEngine
 			x = tempV.x; y = tempV.y; z = tempV.z;
 		}
 		void SetDirectXValue3(const DirectX::XMFLOAT3& xv) { x = xv.x; y = xv.y; z = xv.z; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, z, 1.f)); }
-		DirectX::XMFLOAT3 GetDirectXValue3()const { return (DirectX::XMFLOAT3(x, y, z)); }
-		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, z, 1.f)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, z, 1.f)); }
+		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, z)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, 1.f)); }
 		void Reset() { (*this) = Color3::Black(); }
 		void Normalize()
 		{
@@ -1702,23 +1702,23 @@ namespace PigeonEngine
 
 	struct Color4
 	{
-		constexpr Color4(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(1.f) {}
-		constexpr Color4(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Color4(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz), w(1.f) {}
-		constexpr Color4(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Color4(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(1.f) {}
-		constexpr Color4(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
-		constexpr Color4(const Vector3& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
-		constexpr Color4(const Vector4& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
-		constexpr Color4(const Color3& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
-		Color4()noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
+		constexpr Color4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(1.f) {}
+		constexpr Color4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		constexpr Color4(FLOAT vx, FLOAT vy, FLOAT vz) noexcept : x(vx), y(vy), z(vz), w(1.f) {}
+		constexpr Color4(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		constexpr Color4(DOUBLE vx, DOUBLE vy, DOUBLE vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(1.f) {}
+		constexpr Color4(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		constexpr Color4(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		constexpr Color4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		constexpr Color4(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		Color4() noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
 		Color4(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT4 tempV;
 			DirectX::XMStoreFloat4(&tempV, xv);
 			x = tempV.x; y = tempV.y; z = tempV.z; w = tempV.w;
 		}
-		Color4(const Color4& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		Color4(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Color4& Black()
 		{
 			PE_CONSTEXPR_STATIC Color4 _StaticColor4Black(0.f, 0.f, 0.f, 1.f);
@@ -1772,9 +1772,9 @@ namespace PigeonEngine
 			x = tempV.x; y = tempV.y; z = tempV.z; w = tempV.w;
 		}
 		void SetDirectXValue4(const DirectX::XMFLOAT4& xv) { x = xv.x; y = xv.y; z = xv.z; w = xv.w; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, z, w)); }
-		DirectX::XMFLOAT3 GetDirectXValue3()const { return (DirectX::XMFLOAT3(x, y, z)); }
-		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, z, w)); }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, z, w)); }
+		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, z)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, w)); }
 		void Reset() { (*this) = Color4::Black(); }
 		void Normalize()
 		{
@@ -1785,8 +1785,8 @@ namespace PigeonEngine
 				x = x / maxV; y = y / maxV; z = z / maxV;
 			}
 		}
-		Color4 Lerp(const Color4& vv, FLOAT t)const { return (Color4(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t, w * (1.f - t) + vv.w * t)); }
-		Color4 Lerp(const Color4& vv, DOUBLE t)const
+		Color4 Lerp(const Color4& vv, FLOAT t) const { return (Color4(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t, w * (1.f - t) + vv.w * t)); }
+		Color4 Lerp(const Color4& vv, DOUBLE t) const
 		{
 			FLOAT ft = static_cast<FLOAT>(t);
 			return (Color4(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft, w * (1.f - ft) + vv.w * ft));

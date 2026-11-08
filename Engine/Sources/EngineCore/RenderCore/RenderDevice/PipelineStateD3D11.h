@@ -29,9 +29,9 @@ namespace PigeonEngine
 		RPipelineStateD3D11& operator=(const RPipelineStateD3D11&) = delete;
 
 		// IRRHIPipelineState
-		virtual BOOL8 IsCompute()const noexcept override { return bIsCompute; }
-		virtual IRRHIRootSignature* GetRootSignature()const noexcept override { return RootSignature; }
-		virtual const RRHIPipelineLayoutInfo& GetLayoutInfo()const noexcept override { return LayoutInfo; }
+		virtual BOOL8 IsCompute() const noexcept override { return bIsCompute; }
+		virtual IRRHIRootSignature* GetRootSignature() const noexcept override { return RootSignature; }
+		virtual const RRHIPipelineLayoutInfo& GetLayoutInfo() const noexcept override { return LayoutInfo; }
 
 		// Root signature the PSO was created with. D3D11 has no root signature concept, so
 		// the object carries only the layout hash and this pointer is informational: the

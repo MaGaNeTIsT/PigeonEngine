@@ -689,12 +689,12 @@ namespace PigeonEngine
 		static PE_FORCEINLINE FLOAT		DegreesToRadians(FLOAT const& DegVal) { return DegVal * (PE_PI / 180.f); }
 		static PE_FORCEINLINE DOUBLE	DegreesToRadians(DOUBLE const& DegVal) { return DegVal * (PE_DOUBLE_PI / 180.0); }
 	private:
-		EMath()noexcept {}
-		EMath(const EMath&)noexcept {}
-		EMath(EMath&&)noexcept {}
+		EMath() noexcept {}
+		EMath(const EMath&) noexcept {}
+		EMath(EMath&&) noexcept {}
 		~EMath() {}
-		EMath& operator=(const EMath&)noexcept { return (*this); }
-		EMath& operator=(EMath&&)noexcept { return (*this); }
+		EMath& operator=(const EMath&) noexcept { return (*this); }
+		EMath& operator=(EMath&&) noexcept { return (*this); }
 	public:
 		static EMath* GetSingleton()
 		{

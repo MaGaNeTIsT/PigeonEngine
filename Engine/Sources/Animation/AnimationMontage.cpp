@@ -18,7 +18,7 @@ namespace PigeonEngine
 	{
 	}
 
-	BOOL32 EAnimMontage::IsResourceValid()const
+	BOOL32 EAnimMontage::IsResourceValid() const
 	{
 		return IsValid();
 	}
@@ -71,7 +71,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL32 EAnimMontage::IsValid()const
+	BOOL32 EAnimMontage::IsValid() const
 	{
 		if ((Sections.Num() <= 0) || (SectionMapping.Num() != Sections.Num()) || (SlotGroupMapping.Num() != SlotGroups.Num()))
 		{
@@ -110,21 +110,21 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	INT32 EAnimMontage::FindSection(const EString& InName)const
+	INT32 EAnimMontage::FindSection(const EString& InName) const
 	{
 		INT32 Result = -1;
 		SectionMapping.FindValue(InName, Result);
 		return Result;
 	}
 
-	INT32 EAnimMontage::FindSlotGroup(const EString& InName)const
+	INT32 EAnimMontage::FindSlotGroup(const EString& InName) const
 	{
 		INT32 Result = -1;
 		SlotGroupMapping.FindValue(InName, Result);
 		return Result;
 	}
 
-	BOOL32 EAnimMontage::HasSlot(const EString& InSlotName)const
+	BOOL32 EAnimMontage::HasSlot(const EString& InSlotName) const
 	{
 		for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
 		{
@@ -420,32 +420,32 @@ namespace PigeonEngine
 		}
 	}
 
-	BOOL32 EAnimMontageInstance::IsPlaying()const
+	BOOL32 EAnimMontageInstance::IsPlaying() const
 	{
 		return (((!bFinished) && (!bStopping) && (!bPaused)) ? TRUE : FALSE);
 	}
 
-	BOOL32 EAnimMontageInstance::IsStopping()const
+	BOOL32 EAnimMontageInstance::IsStopping() const
 	{
 		return bStopping;
 	}
 
-	INT32 EAnimMontageInstance::GetSectionIndex()const
+	INT32 EAnimMontageInstance::GetSectionIndex() const
 	{
 		return SectionIndex;
 	}
 
-	FLOAT EAnimMontageInstance::GetLayerWeight()const
+	FLOAT EAnimMontageInstance::GetLayerWeight() const
 	{
 		return LayerWeight;
 	}
 
-	const EAnimationClipPlayer& EAnimMontageInstance::GetClipPlayer()const
+	const EAnimationClipPlayer& EAnimMontageInstance::GetClipPlayer() const
 	{
 		return ClipPlayer;
 	}
 
-	const EAnimMontageSection* EAnimMontageInstance::GetCurrentSection()const
+	const EAnimMontageSection* EAnimMontageInstance::GetCurrentSection() const
 	{
 		if ((!Montage) || (SectionIndex < 0) || (SectionIndex >= Montage->Sections.Num()))
 		{
@@ -454,7 +454,7 @@ namespace PigeonEngine
 		return &Montage->Sections[SectionIndex];
 	}
 
-	INT32 EAnimMontageInstance::GetLayerPriority()const
+	INT32 EAnimMontageInstance::GetLayerPriority() const
 	{
 		return LayerPriority;
 	}
@@ -464,12 +464,12 @@ namespace PigeonEngine
 		return ActiveNotifyStates;
 	}
 
-	const TArray<FActiveAnimNotifyState>& EAnimMontageInstance::GetActiveNotifyStates()const
+	const TArray<FActiveAnimNotifyState>& EAnimMontageInstance::GetActiveNotifyStates() const
 	{
 		return ActiveNotifyStates;
 	}
 
-	BOOL32 EAnimMontageInstance::HasPendingSectionTransition()const
+	BOOL32 EAnimMontageInstance::HasPendingSectionTransition() const
 	{
 		return (((!bFinished) && (!bPaused) && (PendingSectionIndex >= 0)) ? TRUE : FALSE);
 	}

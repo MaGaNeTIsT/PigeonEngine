@@ -21,8 +21,8 @@ namespace PigeonEngine
 	class EMainManager : public EManagerBase
 	{
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
 		void			SetInitializer(HWND hWnd);
 		void			UpdateManager();
 	public:
@@ -45,12 +45,15 @@ namespace PigeonEngine
 		*/
 		void			RegisterFrameRenderer(IEngineFrameRenderer* InRenderer);
 		void			UnregisterFrameRenderer(IEngineFrameRenderer* InRenderer);
+		// RenderThread: forwards a replaced shader to every registered secondary renderer, so
+		// their derived state is dropped together with the main renderer's.
+		void			NotifyFrameRenderersShaderReplaced(const EName& InShaderName);
 		/*
 		* TRUE between Initialize and the end of ShutDown. Render resources assert on it: a
 		* resource may not outlive EMainManager. This is an assertion only, it never changes
 		* behaviour - releasing a resource is the same call inside and outside the window.
 		*/
-		PE_NODISCARD BOOL32	IsEngineLifetimeActive() const { return m_bEngineLifetimeActive; }
+		PE_NODISCARD BOOL32	IsEngineLifetimeActive() const { return bEngineLifetimeActive; }
 	public:
 		void			Init();
 		void			Uninit();
@@ -59,7 +62,7 @@ namespace PigeonEngine
 		void			Draw();
 
 	public:
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		void            EditorInit();
 		void            EditorUpdate();
 #endif
@@ -99,21 +102,21 @@ namespace PigeonEngine
 		BOOL32							GetIsFullscreen() const;
 
 	private:
-		HWND						m_HWND;
-		Vector2Int					m_WindowSize;
-		UINT32						m_GraphicDepth;
-		UINT32						m_FrameRate;
-		EBaseTimer					m_WindowTimer;
-		BOOL32						m_Windowed;
-		EGameTimer*					m_GameTimer			= nullptr;
+		HWND						WindowHandle;
+		Vector2Int					WindowSize;
+		UINT32						GraphicDepth;
+		UINT32						FrameRate;
+		EBaseTimer					WindowTimer;
+		BOOL32						bWindowed;
+		EGameTimer*					GameTimer			= nullptr;
 	private:
-		TArray<RResolutionItem>		m_SupportedResolutions;
-		BOOL32						m_bPendingResize      = FALSE;
-		UINT32						m_PendingResizeWidth  = 0u;
-		UINT32						m_PendingResizeHeight = 0u;
-		BOOL32						m_bIsFullscreen       = FALSE;
+		TArray<RResolutionItem>		SupportedResolutions;
+		BOOL32						bPendingResize      = FALSE;
+		UINT32						PendingResizeWidth  = 0u;
+		UINT32						PendingResizeHeight = 0u;
+		BOOL32						bIsFullscreen       = FALSE;
 	private:
-		class FPhysicsManager*				m_PhysicsManager				= nullptr;
+		class FPhysicsManager*				PhysicsManager				= nullptr;
 
 		// Render region START
 		class IRRHIDevice*					RenderDevice					= nullptr;
@@ -124,34 +127,34 @@ namespace PigeonEngine
 		class RRenderThread*				RenderThread					= nullptr;
 		// Render region END
 
-#if _EDITOR_ONLY
-		class CImGUIManager*				m_ImGUIManager					= nullptr;
-		class CAssimpManager*				m_AssimpManager					= nullptr;
-		class EEditorManager*               m_EditorManager					= nullptr;
-		class EEditorGlobalPanel*			m_EditorGlobalPanel				= nullptr;
-		class EEditorProfilerPanel*			m_EditorProfilerPanel			= nullptr;
+#if ENGINE_EDITOR_ONLY
+		class CImGUIManager*				ImGUIManager					= nullptr;
+		class CAssimpManager*				AssimpManager					= nullptr;
+		class EEditorManager*               EditorManager					= nullptr;
+		class EEditorGlobalPanel*			EditorGlobalPanel				= nullptr;
+		class EEditorProfilerPanel*			EditorProfilerPanel			= nullptr;
 #endif
-		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager		= nullptr;
-		class EClassFactoryRegisterManager*	m_ClassFactoryRegisterManager	= nullptr;
+		class EClassTypeRegisterManager*	ClassTypeRegisterManager		= nullptr;
+		class EClassFactoryRegisterManager*	ClassFactoryRegisterManager	= nullptr;
 
-		class EWorldManager*                m_WorldManager					= nullptr;
-		class EWorldTickManager*			m_WorldTickManager				= nullptr;
-		TFunction<void(FLOAT)>				m_PrePhysicsFixedTickHandler;
-		TFunction<void(FLOAT)>				m_PhysicsFixedTickHandler;
-		TFunction<void(FLOAT)>				m_PostPhysicsFixedTickHandler;
+		class EWorldManager*                WorldManager					= nullptr;
+		class EWorldTickManager*			WorldTickManager				= nullptr;
+		TFunction<void(FLOAT)>				PrePhysicsFixedTickHandler;
+		TFunction<void(FLOAT)>				PhysicsFixedTickHandler;
+		TFunction<void(FLOAT)>				PostPhysicsFixedTickHandler;
 
-		class EMessageManager*				m_MessageManager = nullptr;
+		class EMessageManager*				MessageManager = nullptr;
 
 		/*
 		* Asset managers, in registration order. Shut down in reverse: a manager registered
 		* later may hold references into one registered earlier.
 		*/
-		TArray<class EManagerBase*>			m_AssetManagers;
+		TArray<class EManagerBase*>			AssetManagers;
 		// Secondary frame renderers, in registration order. Read on the render thread inside
 		// the frame callbacks and written on the game thread between frames, never at the same
 		// time - the frame boundary is a handshake between the two threads.
-		TArray<IEngineFrameRenderer*>		m_FrameRenderers;
-		BOOL32								m_bEngineLifetimeActive = FALSE;
+		TArray<IEngineFrameRenderer*>		FrameRenderers;
+		BOOL32								bEngineLifetimeActive = FALSE;
 
 		// Releases every registered manager. Split out so Initialize's failure path and
 		// ShutDown run the same teardown.

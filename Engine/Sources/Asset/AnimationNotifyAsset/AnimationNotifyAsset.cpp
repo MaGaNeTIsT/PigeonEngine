@@ -32,7 +32,7 @@ namespace PigeonEngine
 	{
 	}
 
-	BOOL32 EAnimNotifyDefinition::IsResourceValid()const
+	BOOL32 EAnimNotifyDefinition::IsResourceValid() const
 	{
 		return IsValid();
 	}
@@ -59,7 +59,7 @@ namespace PigeonEngine
 		CachedNotify.reset();
 	}
 
-	BOOL32 EAnimNotifyDefinition::IsValid()const
+	BOOL32 EAnimNotifyDefinition::IsValid() const
 	{
 		if ((NotifyClassName.Length() <= 0u) || (!CachedNotify))
 		{
@@ -92,11 +92,11 @@ namespace PigeonEngine
 	}
 
 	EAnimNotifyAsset::EAnimNotifyAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<EAnimNotifyDefinition>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -119,7 +119,7 @@ namespace PigeonEngine
 
 	EAnimNotifyManager::EAnimNotifyManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = "AnimationNotifyManager";
 #endif
 	}
@@ -152,7 +152,7 @@ namespace PigeonEngine
 		NotifyAssetManager.Clear();
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 EAnimNotifyManager::ImportNotify(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath)
 	{
 		EString JsonText;
@@ -196,7 +196,7 @@ namespace PigeonEngine
 		}
 
 		EAnimNotifyAsset* NewAsset = new EAnimNotifyAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -380,15 +380,15 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		Root.GetStringField(PE_TEXT("name"), OutDefinition.Name);
-		Root.GetStringField(PE_TEXT("description"), OutDefinition.Description);
-		Root.GetStringField(PE_TEXT("class"), OutDefinition.NotifyClassName);
+		Root.GetStringField(PE_TEXT("Name"), OutDefinition.Name);
+		Root.GetStringField(PE_TEXT("Description"), OutDefinition.Description);
+		Root.GetStringField(PE_TEXT("Class"), OutDefinition.NotifyClassName);
 		// Payload is authored either as a JSON string (free-form game data) or as an object
 		// that is serialized back to text for the notify class.
-		if (!Root.GetStringField(PE_TEXT("payload"), OutDefinition.PayloadJson))
+		if (!Root.GetStringField(PE_TEXT("Payload"), OutDefinition.PayloadJson))
 		{
 			CJsonObject PayloadObject;
-			if (Root.GetObjectField(PE_TEXT("payload"), PayloadObject))
+			if (Root.GetObjectField(PE_TEXT("Payload"), PayloadObject))
 			{
 				OutDefinition.PayloadJson = PayloadObject.ToString();
 			}
@@ -399,11 +399,11 @@ namespace PigeonEngine
 		}
 
 		BOOL8 bIsState = FALSE;
-		Root.GetBoolField(PE_TEXT("state"), bIsState);
+		Root.GetBoolField(PE_TEXT("State"), bIsState);
 		OutDefinition.bIsState = ((bIsState != FALSE) ? TRUE : FALSE);
 
 		FLOAT Duration = 0.0f;
-		if (Root.GetFloatField(PE_TEXT("duration"), Duration))
+		if (Root.GetFloatField(PE_TEXT("Duration"), Duration))
 		{
 			OutDefinition.DefaultDuration = EMath::Max(Duration, 0.001f);
 		}

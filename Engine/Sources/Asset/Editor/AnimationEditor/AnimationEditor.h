@@ -1,6 +1,6 @@
 #pragma once
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Container/Array.h>
@@ -36,27 +36,27 @@ namespace PigeonEngine
 		void DrawCurveDetails(const EBoneAnimationCurve& InCurve) const;
 
 	private:
-		BOOL8							m_ShowEditor = FALSE;
-		const ESkeletonAnimationAsset*	m_AnimationAsset = nullptr;
-		EString							m_OpenedAssetFullPath;
-		EString							m_LastOpenError;
-		INT32							m_SelectedClipIndex = 0;
-		INT32							m_SelectedCurveIndex = 0;
-		EAssetPreviewScene				m_PreviewScene;
-		TArray<EString>					m_AvailablePreviewMeshPaths;
-		TArray<EString>					m_AvailablePreviewSkeletonPaths;
-		const ESkinnedMeshAsset*		m_PreviewMeshAsset = nullptr;
-		const ESkeletonAsset*			m_PreviewSkeletonAsset = nullptr;
-		INT32							m_SelectedPreviewMeshIndex = -1;
-		INT32							m_SelectedPreviewSkeletonIndex = -1;
-		BOOL8							m_PreviewAutoRotate = TRUE;
-		BOOL8							m_PreviewPlayAnimation = TRUE;
-		FLOAT							m_PreviewPlaybackRate = 1.0f;
+		BOOL8							bShowEditor = FALSE;
+		const ESkeletonAnimationAsset*	AnimationAsset = nullptr;
+		EString							OpenedAssetFullPath;
+		EString							LastOpenError;
+		INT32							SelectedClipIndex = 0;
+		INT32							SelectedCurveIndex = 0;
+		EAssetPreviewScene				PreviewScene;
+		TArray<EString>					AvailablePreviewMeshPaths;
+		TArray<EString>					AvailablePreviewSkeletonPaths;
+		const ESkinnedMeshAsset*		PreviewMeshAsset = nullptr;
+		const ESkeletonAsset*			PreviewSkeletonAsset = nullptr;
+		INT32							SelectedPreviewMeshIndex = -1;
+		INT32							SelectedPreviewSkeletonIndex = -1;
+		BOOL8							bPreviewAutoRotate = TRUE;
+		BOOL8							bPreviewPlayAnimation = TRUE;
+		FLOAT							PreviewPlaybackRate = 1.0f;
 		// The binding report is rebuilt only when the selected skeleton changes; doing it
 		// every frame would call Bind (and log its warnings) at the UI refresh rate.
-		const ESkeletonAsset*			m_LastBindingSkeletonAsset = nullptr;
-		BOOL8							m_BindingValid = FALSE;
-		INT32							m_BindingMissingBoneNum = 0;
+		const ESkeletonAsset*			LastBindingSkeletonAsset = nullptr;
+		BOOL8							bBindingValid = FALSE;
+		INT32							BindingMissingBoneNum = 0;
 	};
 }
 

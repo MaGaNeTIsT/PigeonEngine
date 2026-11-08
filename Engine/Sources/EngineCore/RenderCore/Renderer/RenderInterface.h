@@ -9,10 +9,10 @@ namespace PigeonEngine
 	class PSkyLightComponent;
 	class PDirectionalLightComponent;
 	class PLocalLightComponent;
+	class PPrimitiveComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
 	class PBezierGrassComponent;
-	class PFluidWaterComponent;
 
 	class RSceneInterface
 	{
@@ -51,9 +51,12 @@ namespace PigeonEngine
 		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent)			= 0;
 		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent)			= 0;
 
-		virtual void	AddFluidWater(PFluidWaterComponent* InComponent)				= 0;
-		virtual void	RemoveFluidWater(PFluidWaterComponent* InComponent)				= 0;
-		virtual void	UpdateFluidWater(PFluidWaterComponent* InComponent)				= 0;
+		// The generic primitive path. A primitive reports what it is made of in a value
+		// snapshot, and the render thread builds its proxy from that snapshot. New primitive
+		// kinds use these instead of a typed entry point.
+		virtual void	AddPrimitive(PPrimitiveComponent* InComponent)					= 0;
+		virtual void	RemovePrimitive(PPrimitiveComponent* InComponent)				= 0;
+		virtual void	UpdatePrimitive(PPrimitiveComponent* InComponent)				= 0;
 	public:
 		RSceneInterface() {}
 		RSceneInterface(const RSceneInterface& Other) {}

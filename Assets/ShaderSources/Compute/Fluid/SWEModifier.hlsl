@@ -40,7 +40,7 @@
 //       - the legacy split one float4 of UCGVectorParams into the aliases
 //         Velocity ( .xy ), VelocityX ( .x ), VelocityY ( .y ), Volume ( .z )
 //         and Mode ( .w ). Here the three the body reads are three fields, and
-//         they are named SourceVelocityX, SourceVelocityY and SourceVolume with
+//         they are named SourceVelocityX, SourceVelocityZ and SourceVolume with
 //         SourceMode for the mode. They are renamed rather than kept because a
 //         constant buffer field named VelocityX or Volume would be shadowed by
 //         the local of that name inside the shared library's FluxAdvectFoam and
@@ -48,19 +48,19 @@
 //         that header. Source is the legacy's own word for what the modifier
 //         injects: the body already calls the injected value SrcValue
 //       - the aliases the body never reads are not declared at all: Velocity,
-//         ModLocX, ModLocY, ModSizeX, ModSizeY, ForwardVectorZ. A field with no
-//         reader is a field a dispatcher has to fill for nothing. ForwardVector
-//         is kept as the float3 the legacy group was, and the body reads its
-//         .xy, which is what the legacy's ForwardVectorX and ForwardVectorY
-//         aliases were
+//         ModifierLocationX, ModifierLocationZ, ModifierSizeX, ModifierSizeZ,
+//         ModifierForwardZ. A field with no reader is a field a dispatcher has
+//         to fill for nothing. ModifierForward is kept as the float3 the legacy
+//         group was, and the body reads its .xz, which is what the legacy's
+//         ForwardVectorX and ForwardVectorY aliases were in the world XZ plane
 //   old the four lines that moved the texel into the modifier's frame, written
 //   out inline here
 //       new a call to FluxModifierTransform in
 //       Public/Fluid/ShallowWaterEquationModifier.hlsl, which is the same
-//       arithmetic in the same order with this pass's ModLoc, ModSize,
-//       ForwardVector.xy, Location and Scale as its arguments. The whirlpool
-//       pass computes the same transform, so the two passes now share one copy
-//       instead of keeping two
+//       arithmetic in the same order with this pass's ModifierLocation,
+//       ModifierSize, ModifierForward.xz, Location and Scale as its arguments.
+//       The whirlpool pass computes the same transform, so the two passes now
+//       share one copy instead of keeping two
 //   old #if SWE_COMPUTE_PATH around the read modify write of the state, with the
 //   pixel branch behind its #else that wrote the injected value alone, and the
 //   MainVS / MainPS fallback pair
@@ -103,27 +103,21 @@ float FluxModifierShape( in float2 InTexcoord, in float InRadius, in float InHar
 
 // The value the modifier injects, before the footprint weight is applied. The
 // two branches are the two ways of expressing the same target: Offset is the
-// water level moved by ZOffset, Height is the water level driven to ZOffset
+// water level moved by YOffset, Height is the water level driven to YOffset
 // above the ground, and Mode selects and blends between them.
 float4 FluxModifierMode( in float InWeight, in float2 InTexcoord, in float InSimulationHeight )
 {
 	float4 Result;
 
 	float GroundValue = PE_SAMPLE_TEX2D_LEVEL( GroundTex, SamplerLinearClamp, InTexcoord, 0 ).r;
-	// GroundRT.R holds the ground's depth RELATIVE to the reference plane
-	// (reference-plane Z - ground world Z), matching the original FluidFlux
-	// ground-capture contract so this subsystem stays data-compatible with the
-	// original plugin. InSimulationHeight is the reference-plane Z (the solver
-	// domain top = component Z), so GroundHeight = InSimulationHeight -
-	// GroundValue converts the relative depth back to the ground's absolute
-	// world Z. If the ground RT ever holds the ABSOLUTE ground world Z instead
-	// (non-original layout), switch to GroundHeight = GroundValue; the formula
-	// below would then fold the ground height in twice and lift the surface by
-	// 2*GroundZ - InSimulationHeight.
+	// GroundTex holds the ground's depth RELATIVE to the reference plane
+	// (reference-plane Y - ground world Y). InSimulationHeight is the reference
+	// plane's world Y, so GroundHeight = InSimulationHeight - GroundValue recovers
+	// the ground's absolute world Y.
 	float GroundHeight = InSimulationHeight - GroundValue;
-	float Offset = min( (ZOffset), (SourceVolume) + GroundHeight ) - GroundHeight;
-	float Height = max( 0, (SourceVolume) + (ZOffset) - GroundHeight );
-	Result = float4( (SourceVelocityX), (SourceVelocityY), lerp( Offset, Height, saturate( (SourceMode) - 1 ) ), saturate( SourceMode ) ) * InWeight;
+	float Offset = min( (YOffset), (SourceVolume) + GroundHeight ) - GroundHeight;
+	float Height = max( 0, (SourceVolume) + (YOffset) - GroundHeight );
+	Result = float4( (SourceVelocityX), (SourceVelocityZ), lerp( Offset, Height, saturate( (SourceMode) - 1 ) ), saturate( SourceMode ) ) * InWeight;
 
 	return Result;
 }
@@ -137,11 +131,11 @@ bool ComputeModifier(
 	in int2		InCoord,
 	out float4	OutValue)
 {
-	float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize; float2 Resolution;
-	FluxSimulationUV( Location, Scale, InvScale, Height, TexelSize, Resolution );
+	float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize; float2 Resolution;
+	FluxSimulationUV( Location, Scale, InvScale, ReferenceY, TexelSize, Resolution );
 
-	int2 LocalCoord = InCoord - asint( PixelAnchor );
-	int2 LocalRes = asint( PixelSize );
+	int2 LocalCoord = InCoord - PixelAnchor;
+	int2 LocalRes = PixelSize;
 	int2 Res = int2( (int)(Resolution.x), (int)(Resolution.y) );
 	// The bounds test is a predicate now and not a return. The early exit below
 	// owns a group barrier, every thread of the group has to reach it, and a
@@ -179,12 +173,12 @@ bool ComputeModifier(
 	float2 Texcoord0 = saturate( (LocalCoord.xy + 0.5) / LocalRes.xy );
 	float Weight = FluxModifierShape( Texcoord0.xy, (Radius), (Hardness) );
 
-	float2 Texcoord1 = FluxModifierTransform( Texcoord0.xy, (ModLoc), (ModSize), ForwardVector.xy, Location.xy, Scale.xy );
-	float4 SrcValue = FluxModifierMode( Weight, Texcoord1.xy, Height );
+	float2 Texcoord1 = FluxModifierTransform( Texcoord0.xy, (ModifierLocation), (ModifierSize), ModifierForward.xz, Location.xy, Scale.xy );
+	float4 SrcValue = FluxModifierMode( Weight, Texcoord1.xy, ReferenceY );
 	float3 SrcXYZ = SrcValue.xyz * (Intensity);
 	float SrcW = SrcValue.w;
 
-	float4 DstValue = OutVelocityHeightFoamTex[ InCoord ];
+	float4 DstValue = PE_LOAD_TEX2D( VelocityHeightFoamTex, int3( InCoord, 0 ) );
 	OutValue = float4( DstValue.xyz * (1 - SrcW) + SrcXYZ.xyz, DstValue.w * (1 - SrcW));
 	return true;
 }
@@ -203,7 +197,7 @@ void CSMain(uint3 InDispatchThreadID : SV_DispatchThreadID
 	}
 	GroupMemoryBarrierWithGroupSync();
 #endif	//SWE_EARLY_EXIT_USES_TILE_MASK
-	int2 Coord = int2( InDispatchThreadID.xy ) + asint( PixelAnchor );
+	int2 Coord = int2( InDispatchThreadID.xy ) + PixelAnchor;
 	float4 Value;
 	if (!(ComputeModifier( Coord, Value )))
 	{

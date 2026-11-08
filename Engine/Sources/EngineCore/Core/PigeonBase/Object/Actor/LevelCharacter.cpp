@@ -91,7 +91,7 @@ PigeonEngine::PMovementComponent* PigeonEngine::PCharacter::GetMovementComponent
 	return MovementComponent;
 }
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 void PigeonEngine::PCharacter::EditorTick(FLOAT deltaTime)
 {
 	if ((Character->GetShape() != nullptr)

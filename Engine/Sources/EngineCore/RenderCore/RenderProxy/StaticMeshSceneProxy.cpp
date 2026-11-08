@@ -40,7 +40,7 @@ namespace PigeonEngine
 	RStaticMeshSceneProxy::~RStaticMeshSceneProxy()
 	{
 	}
-	BOOL32 RStaticMeshSceneProxy::IsRenderValid()const
+	BOOL32 RStaticMeshSceneProxy::IsRenderValid() const
 	{
 		//TODO
 		return TRUE;
@@ -52,11 +52,11 @@ namespace PigeonEngine
 		MeshAsset = static_cast<const EStaticMeshAsset*>(InAssets.GetMeshAsset());
 		RMeshSceneProxy::ApplyAssets(InAssets);
 	}
-	const EMesh* RStaticMeshSceneProxy::GetMeshColdData()const
+	const EMesh* RStaticMeshSceneProxy::GetMeshColdData() const
 	{
 		return (MeshAsset ? MeshAsset->GetStoragedResource() : nullptr);
 	}
-	const EMeshRenderResource* RStaticMeshSceneProxy::GetMeshRenderResource()const
+	const EMeshRenderResource* RStaticMeshSceneProxy::GetMeshRenderResource() const
 	{
 		return (MeshAsset ? MeshAsset->GetRenderResource() : nullptr);
 	}

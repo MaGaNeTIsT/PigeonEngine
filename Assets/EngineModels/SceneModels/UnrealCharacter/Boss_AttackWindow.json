@@ -1,11 +1,11 @@
 {
-  "name": "Boss_AttackWindow",
-  "description": "Boss upper-body attack hit window.",
-  "class": "LogState",
-  "state": true,
-  "duration": 0.8,
-  "payload": {
-    "window": "attack",
-    "damage": 10
-  }
+	"Name": "Boss_AttackWindow",
+	"Description": "Boss upper-body attack hit window.",
+	"Class": "LogState",
+	"State": true,
+	"Duration": 0.8,
+	"Payload": {
+		"Window": "attack",
+		"Damage": 10
+	}
 }

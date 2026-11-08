@@ -1,6 +1,6 @@
 #include "EditorHelper.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>

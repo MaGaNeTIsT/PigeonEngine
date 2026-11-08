@@ -21,10 +21,10 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_WINDOWED														= TRUE;
 
 		// 1 = D3D11, 2 = D3D12 (matches ERHIBackendType enum)
-		PE_CONSTEXPR_STATIC		UINT8			ENGINE_GRAPHICS_API													= 2u;
+		PE_CONSTEXPR_STATIC		UINT8			ENGINE_GRAPHICS_API													= 1u;
 
 		// 1 = SM5_0, 2 = SM6_0, 3 = SM6_6 (matches ERHIShaderModelType enum)
-		PE_CONSTEXPR_STATIC		UINT8			ENGINE_SHADERMODEL_VERSION											= 3u;
+		PE_CONSTEXPR_STATIC		UINT8			ENGINE_SHADERMODEL_VERSION											= 1u;
 
 		// D3D12 validation layer. The layer checks every recorded command and every descriptor
 		// on the CPU, which is what makes a device failure readable - and also what turns a

@@ -2,7 +2,7 @@
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include "../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 

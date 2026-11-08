@@ -12,7 +12,7 @@
 
 namespace PigeonEngine
 {
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 
 	INT32 DWindowsMessage::__WindowsMessageBox_(const CHAR* OutText, const CHAR* OutCaption, const UINT32 InType)
 	{
@@ -21,7 +21,7 @@ namespace PigeonEngine
 
 	void DWindowsMessage::__DummyAlert_(const CHAR* InExpression, const CHAR* InMessage, const CHAR* InFile, const UINT32 InLine, const CHAR* InCaption)
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		{
 			PE_LOG_ERROR(InExpression)
 			EEditorLogManager* EditorLogManager = EEditorLogManager::GetManagerSingleton();
@@ -29,7 +29,7 @@ namespace PigeonEngine
 		}
 #endif
 
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 		{
 			//const UINT32 TempType = MB_OK;
 			//if (DWindowsMessage::__WindowsMessageBox_(InExpression, InCaption, TempType) == IDOK)
@@ -38,7 +38,7 @@ namespace PigeonEngine
 			//}
 			// breakpoint is triggered at the assertion call site via the macro
 		}
-#elif _DEVELOP_MODE
+#elif ENGINE_DEVELOP_MODE
 		{
 			const UINT32 TempType = MB_OK;
 			if (DWindowsMessage::__WindowsMessageBox_(InExpression, InCaption, TempType) == IDOK)
@@ -51,7 +51,7 @@ namespace PigeonEngine
 	void DDebugDump::_Dump_()
 	{
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #ifdef _WINDOWS
 		const int MaxFrames = 62;
 		void* stack[MaxFrames];

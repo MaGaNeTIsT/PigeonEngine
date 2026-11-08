@@ -10,12 +10,12 @@ namespace PigeonEngine
 	class PComponent : public PObject
 	{
 	public:
-		virtual void	Init()override;
-		virtual void	Uninit()override;
-		virtual void	Tick(FLOAT deltaTime)override;
+		virtual void	Init() override;
+		virtual void	Uninit() override;
+		virtual void	Tick(FLOAT deltaTime) override;
 		virtual void	FixedTick(FLOAT deltaTime);
-#if _EDITOR_ONLY
-		virtual void	EditorTick(FLOAT deltaTime)override;
+#if ENGINE_EDITOR_ONLY
+		virtual void	EditorTick(FLOAT deltaTime) override;
 #endif
 
 

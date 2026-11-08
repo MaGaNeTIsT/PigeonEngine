@@ -199,7 +199,7 @@ namespace PigeonEngine
 		};
 		static const RFormatNameEntry FormatNames[] =
 		{
-#define PE_RFORMAT_NAME_ENTRY(_NAME) { RFormatType::FORMAT_##_NAME, PE_TEXT("FORMAT_" #_NAME) },
+#define PE_RFORMAT_NAME_ENTRY(__Name) { RFormatType::FORMAT_##__Name, PE_TEXT("FORMAT_" #__Name) },
 			PE_RFORMAT_TYPE_LIST(PE_RFORMAT_NAME_ENTRY)
 #undef PE_RFORMAT_NAME_ENTRY
 		};

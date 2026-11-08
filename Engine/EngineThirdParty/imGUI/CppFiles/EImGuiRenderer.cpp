@@ -1,6 +1,6 @@
 #include "../Headers/EImGuiRenderer.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 #include <ShaderAsset/ShaderAsset.h>
@@ -883,4 +883,4 @@ namespace PigeonEngine
 
 };
 
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY

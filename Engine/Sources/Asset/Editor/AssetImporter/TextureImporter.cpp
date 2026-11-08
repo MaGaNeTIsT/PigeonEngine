@@ -2,105 +2,104 @@
 #include "TextureAsset/TextureAsset.h"
 #include "Base/DataStructure/Text/Path.h"
 #include "FileHelper.h"
-#if _EDITOR_ONLY
-void PigeonEngine::ETextureImporter::CreateImportEditor(TArray<EString> Paths)
+#if ENGINE_EDITOR_ONLY
+void PigeonEngine::ETextureImporter::CreateImportEditor(TArray<EString> InPaths)
 {
 	NeedUpdate = TRUE;
-	InitializeEditor = FALSE;
-	m_Paths.Empty();
-	m_CubeMapIndex.Empty();
-	for (UINT32 i = 0, n = Paths.Num<UINT32>(); i < n; i++)
+	bInitializeEditor = FALSE;
+	Paths.Empty();
+	CubeMapIndex.Empty();
+	for (UINT32 PathIndex = 0u, PathNum = InPaths.Num<UINT32>(); PathIndex < PathNum; PathIndex++)
 	{
-		m_Paths.Add(Paths[i].Replace("\\", "/"));
-		m_CubeMapIndex.Add(0);
+		Paths.Add(InPaths[PathIndex].Replace("\\", "/"));
+		CubeMapIndex.Add(0);
 	}
-	//m_Paths = Paths;
 }
 
 void PigeonEngine::ETextureImporter::UpdateImportEditor()
 {
 	//Combo Item
-	static const CHAR* type_items[] = { "Texture2D", "TextureCube" };
-	static const CHAR* cube_items[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+	static const CHAR* ImportTypeItems[] = { "Texture2D", "TextureCube" };
+	static const CHAR* CubeFaceItems[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
 
 	//Initialize Data
-	static INT32 type_item_current_idx = 0;
+	static INT32 ImportTypeIndex = 0;
 	static TMap<const CHAR*, EString> CubeMap;
 	static CHAR CopyFileFolder[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
 	static CHAR CubeMapName[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
-	static BOOL8 CheckCopyFile = FALSE;
+	static BOOL8 bCopyFile = FALSE;
 	// Answers for images that declare no colour space of their own (TGA and friends): an image that
 	// does declare one is imported by its own statement regardless of this box. Checked by default
 	// because the files that need it are colour textures far more often than data textures; a
 	// normal map or a mask is the case to untick it for.
-	static BOOL8 CheckFallbackSRGB = TRUE;
-	if (!InitializeEditor)
+	static BOOL8 bFallbackSRGB = TRUE;
+	if (!bInitializeEditor)
 	{
-		type_item_current_idx = 0;
+		ImportTypeIndex = 0;
 		::memset(CopyFileFolder, 0, EPath::MAX_PATH_LENGTH);
 		::memset(CubeMapName, 0, EPath::MAX_PATH_LENGTH);
-		CheckCopyFile = FALSE;
-		CheckFallbackSRGB = TRUE;
+		bCopyFile = FALSE;
+		bFallbackSRGB = TRUE;
 		CubeMap.Empty();
 		//TODO : does this necessary?
 		//const CHAR* cube_items[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
-		//for (UINT32 i = 0; i < m_Paths.Length(); i++)
+		//for (UINT32 i = 0; i < Paths.Length(); i++)
 		//{
-		//	CubeMap.Add(cube_items[i % 6], m_Paths[i]);
+		//	CubeMap.Add(cube_items[i % 6], Paths[i]);
 		//}
-		InitializeEditor = TRUE;
+		bInitializeEditor = TRUE;
 	}
 
 	ImGui::Begin("Texture Importer", &NeedUpdate, ImGuiWindowFlags_::ImGuiWindowFlags_None);
 	{
-		const CHAR* combo_preview_value = type_items[type_item_current_idx];
+		const CHAR* ImportTypePreviewName = ImportTypeItems[ImportTypeIndex];
 		ImGui::PushItemWidth(120);
-		if (ImGui::BeginCombo("Import Type", combo_preview_value))
+		if (ImGui::BeginCombo("Import Type", ImportTypePreviewName))
 		{
-			for (INT32 n = 0; n < IM_ARRAYSIZE(type_items); n++)
+			for (INT32 TypeIndex = 0, TypeNum = IM_ARRAYSIZE(ImportTypeItems); TypeIndex < TypeNum; TypeIndex++)
 			{
-				const BOOL8 is_selected = (type_item_current_idx == n);
-				if (ImGui::Selectable(type_items[n], is_selected))
-					type_item_current_idx = n;
+				const BOOL8 bSelected = (ImportTypeIndex == TypeIndex);
+				if (ImGui::Selectable(ImportTypeItems[TypeIndex], bSelected))
+					ImportTypeIndex = TypeIndex;
 
-				if (is_selected)
+				if (bSelected)
 					ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
 		}
-		if (type_item_current_idx == 0)//Texture2D
+		if (ImportTypeIndex == 0)//Texture2D
 		{
-			for (UINT32 i = 0, n = m_Paths.Num<UINT32>(); i < n; i++)
+			for (UINT32 PathIndex = 0u, PathNum = Paths.Num<UINT32>(); PathIndex < PathNum; PathIndex++)
 			{
 				ImGui::Text("FileName:");
 				ImGui::SameLine();
 				{
-					EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);
+					EString FileName = EPath::GetFileNameWithExtension(Paths[PathIndex]);
 					ImGui::Text(*FileName);
 				}
 			}
 		}
-		else if (type_item_current_idx == 1)//TextureCube
+		else if (ImportTypeIndex == 1)//TextureCube
 		{
 			CubeMap.Empty();
-			for (INT32 i = 0, p = m_Paths.Num(); i < p; i++)
+			for (INT32 PathIndex = 0, PathNum = Paths.Num(); PathIndex < PathNum; PathIndex++)
 			{
-				const CHAR* cube_combo_preview_value = cube_items[m_CubeMapIndex[i]];
-				CubeMap.Add(cube_combo_preview_value, m_Paths[i]);
+				const CHAR* CubeFacePreviewName = CubeFaceItems[CubeMapIndex[PathIndex]];
+				CubeMap.Add(CubeFacePreviewName, Paths[PathIndex]);
 				ImGui::PushItemWidth(50);
-				UINT32 ToChar = i + 65u;
+				UINT32 ToChar = PathIndex + 65u;
 				EString CubeType = EString("Cube Type ") + EString((CHAR*)&(ToChar));
-				if (ImGui::BeginCombo(*CubeType, cube_combo_preview_value))
+				if (ImGui::BeginCombo(*CubeType, CubeFacePreviewName))
 				{
-					for (INT32 n = 0, u = PE_ARRAYSIZE(cube_items); n < u; n++)
+					for (INT32 FaceIndex = 0, FaceNum = PE_ARRAYSIZE(CubeFaceItems); FaceIndex < FaceNum; FaceIndex++)
 					{
-						const BOOL8 is_selected = (m_CubeMapIndex[i] == n);
-						if (ImGui::Selectable(cube_items[n], is_selected))
+						const BOOL8 bSelected = (CubeMapIndex[PathIndex] == FaceIndex);
+						if (ImGui::Selectable(CubeFaceItems[FaceIndex], bSelected))
 						{
-							m_CubeMapIndex[i] = n;
+							CubeMapIndex[PathIndex] = FaceIndex;
 						}
 
-						if (is_selected)
+						if (bSelected)
 							ImGui::SetItemDefaultFocus();
 					}
 					ImGui::EndCombo();
@@ -111,21 +110,21 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 				}
 				ImGui::SameLine();
 				{
-					EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);
+					EString FileName = EPath::GetFileNameWithExtension(Paths[PathIndex]);
 					ImGui::Text(*FileName);
 				}
 			}
 		}
-		ImGui::Checkbox("CopyFile", &CheckCopyFile);
+		ImGui::Checkbox("CopyFile", &bCopyFile);
 		// Untick this for data images (normal maps, masks, height fields) whose files carry no
 		// colour space: with no declaration of their own they would otherwise be read as sRGB
 		// colour and decoded.
-		ImGui::Checkbox("Fallback sRGB (when the file declares no colour space)", &CheckFallbackSRGB);
-		if (CheckCopyFile)
+		ImGui::Checkbox("Fallback sRGB (when the file declares no colour space)", &bFallbackSRGB);
+		if (bCopyFile)
 		{
 			ImGui::PushItemWidth(250);
 			ImGui::InputText("Copy File Path", CopyFileFolder, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
-			if (type_item_current_idx == 1)
+			if (ImportTypeIndex == 1)
 			{
 				ImGui::PushItemWidth(250);
 				ImGui::InputText("Texture Cube Name", CubeMapName, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
@@ -133,80 +132,89 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 		}
 		if (ImGui::Button("Import"))
 		{
+			BOOL32 bAnyImported = FALSE;
 			//Handle Path.
-			if (type_item_current_idx == 0)//Texture2D
+			if (ImportTypeIndex == 0)//Texture2D
 			{
-				for (UINT32 i = 0, n = m_Paths.Num<UINT32>(); i < n; i++)
+				for (UINT32 PathIndex = 0u, PathNum = Paths.Num<UINT32>(); PathIndex < PathNum; PathIndex++)
 				{
 					const ETexture2DAsset* Asset = NULL;
-					EString FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
-					EString FilePath = EPath::GetFileFolderPath(m_Paths[i]) + "/";
-					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &FilePath, &FileName, &EPath::GetExtension(m_Paths[i]), CheckFallbackSRGB);
+					EString FileName = EPath::GetFileNameWithoutExtension(Paths[PathIndex]);
+					EString FilePath = EPath::GetFileFolderPath(Paths[PathIndex]) + "/";
+					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &FilePath, &FileName, &EPath::GetExtension(Paths[PathIndex]), bFallbackSRGB);
+					if (Asset != nullptr)
+					{
+						bAnyImported = TRUE;
+					}
 
 					//CopyFile
-					if (Asset && CheckCopyFile)
+					if (Asset && bCopyFile)
 					{
-						EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EPath::GetFileNameWithExtension(m_Paths[i]));
+						EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EPath::GetFileNameWithExtension(Paths[PathIndex]));
 						//BOOL8 CopySuccess = FALSE;
-						//CopyFile(*m_Paths[i], *CopyPath, CopySuccess);
+						//CopyFile(*Paths[i], *CopyPath, CopySuccess);
 						//PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer copy file error!"), (CopySuccess));
-						if (!EFileHelper::CopyFileToNewPath(m_Paths[i], CopyPath))
+						if (!EFileHelper::CopyFileToNewPath(Paths[PathIndex], CopyPath))
 						{
 							PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer : copy file error!"), (FALSE));
 						}
 					}
 				}
 			}
-			else if (type_item_current_idx == 1)//TextureCube
+			else if (ImportTypeIndex == 1)//TextureCube
 			{
 				const ETextureCubeAsset* Asset = NULL;
 				TArray<EString> Extensions;
 				TArray<EString> FileNames;
-				TArray<EString> Paths;
+				TArray<EString> CubeMapPaths;
 				EString CubeMapPath;
 				if (CubeMap.FindValue("+X", CubeMapPath))
 				{
-					Paths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
+					CubeMapPaths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("-X", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
+					CubeMapPaths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("+Y", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
+					CubeMapPaths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("-Y", CubeMapPath))
 				{
-					Paths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
+					CubeMapPaths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("+Z", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
+					CubeMapPaths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("-Z", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
+					CubeMapPaths.Add(EPath::GetFileFolderPath(CubeMapPath) + "/");
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
-				TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, CubeMapName, Asset, &Paths, &FileNames, &Extensions, CheckFallbackSRGB);
+				TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, CubeMapName, Asset, &CubeMapPaths, &FileNames, &Extensions, bFallbackSRGB);
+				if (Asset != nullptr)
+				{
+					bAnyImported = TRUE;
+				}
 
 				//CopyFile
-				if (Asset && CheckCopyFile)
+				if (Asset && bCopyFile)
 				{
 					EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EString(CubeMapName));
-					for (auto Item = CubeMap.Begin(); Item != CubeMap.End(); Item++)
+					for (TMap<const CHAR*, EString>::TIterator Item = CubeMap.Begin(); Item != CubeMap.End(); Item++)
 					{
 						if (!EFileHelper::CopyFileToNewPath(Item->second, EPath::Combine(CopyPath, EPath::GetFileNameWithExtension(Item->second))))
 						{
@@ -214,6 +222,10 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 						}
 					}
 				}
+			}
+			if (bAnyImported != FALSE)
+			{
+				NotifyImportFinished();
 			}
 			NeedUpdate = FALSE;
 		}

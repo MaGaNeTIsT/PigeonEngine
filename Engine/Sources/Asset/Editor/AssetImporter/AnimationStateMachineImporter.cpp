@@ -2,43 +2,51 @@
 
 #include "AnimationStateMachineAsset/AnimationStateMachineAsset.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
-void PigeonEngine::EAnimStateMachineImporter::CreateImportEditor(TArray<EString> Paths)
+void PigeonEngine::EAnimStateMachineImporter::CreateImportEditor(TArray<EString> InPaths)
 {
 	NeedUpdate = TRUE;
-	InitializeEditor = FALSE;
-	m_Paths.Empty();
-	for (UINT32 Index = 0; Index < Paths.Num<UINT32>(); Index++)
+	bInitializeEditor = FALSE;
+	Paths.Empty();
+	for (UINT32 Index = 0; Index < InPaths.Num<UINT32>(); Index++)
 	{
-		m_Paths.Add(Paths[Index].Replace("\\", "/"));
+		Paths.Add(InPaths[Index].Replace("\\", "/"));
 	}
 }
 
 void PigeonEngine::EAnimStateMachineImporter::UpdateImportEditor()
 {
-	if (!InitializeEditor)
+	if (!bInitializeEditor)
 	{
-		InitializeEditor = TRUE;
+		bInitializeEditor = TRUE;
 	}
 
 	ImGui::Begin("State Machine Importer", &NeedUpdate, ImGuiWindowFlags_::ImGuiWindowFlags_None);
 	{
-		for (UINT32 Index = 0; Index < m_Paths.Num<UINT32>(); Index++)
+		for (UINT32 Index = 0; Index < Paths.Num<UINT32>(); Index++)
 		{
 			ImGui::Text("FileName:");
 			ImGui::SameLine();
-			const EString FileName = EPath::GetFileNameWithExtension(m_Paths[Index]);
+			const EString FileName = EPath::GetFileNameWithExtension(Paths[Index]);
 			ImGui::Text("%s", *FileName);
 		}
 
 		if (ImGui::Button("Import"))
 		{
-			for (UINT32 Index = 0; Index < m_Paths.Num<UINT32>(); Index++)
+			BOOL32 bAnyImported = FALSE;
+			for (UINT32 Index = 0; Index < Paths.Num<UINT32>(); Index++)
 			{
-				EAnimStateMachineManager::GetManagerSingleton()->ImportStateMachine(
-					EPath::GetFileNameWithoutExtension(m_Paths[Index]), m_Paths[Index],
-					EBaseSettings::ENGINE_STATE_MACHINE_PATH);
+				if (EAnimStateMachineManager::GetManagerSingleton()->ImportStateMachine(
+					EPath::GetFileNameWithoutExtension(Paths[Index]), Paths[Index],
+					EBaseSettings::ENGINE_STATE_MACHINE_PATH) != FALSE)
+				{
+					bAnyImported = TRUE;
+				}
+			}
+			if (bAnyImported != FALSE)
+			{
+				NotifyImportFinished();
 			}
 			NeedUpdate = FALSE;
 		}

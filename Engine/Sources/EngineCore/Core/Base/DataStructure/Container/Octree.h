@@ -16,7 +16,7 @@ namespace PigeonEngine
 
 		EOctreeBounds(const EBoundAABB& InBounds);
 
-		PE_NODISCARD EBoundAABB ToBoundAABB()const;
+		PE_NODISCARD EBoundAABB ToBoundAABB() const;
 
 		PE_NODISCARD Vector3 GetMax() const;
 		PE_NODISCARD Vector3 GetMin() const;
@@ -53,7 +53,7 @@ namespace PigeonEngine
 		TOctreeNode<ContentType>* Parent;
 		TArray<TSharedPtr<TOctreeNode<ContentType>>> Children;
 	public:
-		PE_NODISCARD const EOctreeBounds& GetBounds()const;
+		PE_NODISCARD const EOctreeBounds& GetBounds() const;
 	private:
 		EOctreeBounds Bounds;
 

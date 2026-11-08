@@ -40,11 +40,11 @@ bool ComputeIntegrateHeight(
 	in int2		InCoord,
 	out float4	OutValue)
 {
-	float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize; float2 Resolution;
-	FluxSimulationUV( Location, Scale, InvScale, Height, TexelSize, Resolution );
+	float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize; float2 Resolution;
+	FluxSimulationUV( Location, Scale, InvScale, ReferenceY, TexelSize, Resolution );
 
-	int2 LocalCoord = InCoord - asint( PixelAnchor );
-	int2 LocalRes = asint( PixelSize );
+	int2 LocalCoord = InCoord - PixelAnchor;
+	int2 LocalRes = PixelSize;
 	int2 Res = int2( (int)(Resolution.x), (int)(Resolution.y) );
 
 	[branch] if (any(InCoord >= Res) || any(LocalCoord >= LocalRes))
@@ -87,10 +87,10 @@ bool ComputeIntegrateHeight(
 	{
 		float2 TempVel; float TempV; float TempF; float GroundHeight; float GroundHeightLocal; float SurfaceHeight;
 		FluxSample( Texcoord.xy, float2( 0, 0 ), true, TempVel, TempV, TempF, GroundHeight, GroundHeightLocal, SurfaceHeight );
-		NoVolumeValue = (TempV >= (EvaporationHeight)) ? 0 : TempV;
+		NoVolumeValue = (TempV >= (EvaporationDepth)) ? 0 : TempV;
 	}
 
-	Volume = (Volume > (EvaporationHeight)) ? Volume : NoVolumeValue;
+	Volume = (Volume > (EvaporationDepth)) ? Volume : NoVolumeValue;
 	OutValue = float4( Vc.x, Vc.y, Volume, FinalFoam );
 	return true;
 }
@@ -98,7 +98,7 @@ bool ComputeIntegrateHeight(
 [numthreads(SHADER_THREAD_GROUP_X, SHADER_THREAD_GROUP_Y, 1)]
 void CSMain(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-	int2 Coord = int2( DispatchThreadID.xy ) + asint( PixelAnchor );
+	int2 Coord = int2( DispatchThreadID.xy ) + PixelAnchor;
 	float4 Value;
 	const bool IsOutSide = ComputeIntegrateHeight( Coord, Value );
 	if (IsOutSide)

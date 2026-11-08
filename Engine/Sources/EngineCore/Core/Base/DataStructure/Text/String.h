@@ -11,7 +11,7 @@ namespace PigeonEngine
 	{
 	public:
 		// This may not be useful. Because we return UINT32 replace size_t.
-		static constexpr auto NonePos{ std::string::npos };
+		static constexpr std::string::size_type NonePos{ std::string::npos };
 	public:
 		EString();
 		EString(const EString& Other);
@@ -29,22 +29,22 @@ namespace PigeonEngine
 		EString     operator+(const EString& Other) const;
 		EString     operator+(const std::string& Other) const;
 		EString     operator+(const CHAR* Other) const;
-		const CHAR* operator*()const;
+		const CHAR* operator*() const;
 		CHAR        operator[](const UINT32& Index) const;
 
-		BOOL32      operator==(const EString& Other)const;
-		BOOL32      operator!=(const EString& Other)const;
-		BOOL32      operator>(const EString& Other)const;
-		BOOL32      operator<(const EString& Other)const;
-		BOOL32      operator>=(const EString& Other)const;
-		BOOL32      operator<=(const EString& Other)const;
+		BOOL32      operator==(const EString& Other) const;
+		BOOL32      operator!=(const EString& Other) const;
+		BOOL32      operator>(const EString& Other) const;
+		BOOL32      operator<(const EString& Other) const;
+		BOOL32      operator>=(const EString& Other) const;
+		BOOL32      operator<=(const EString& Other) const;
 
 		EString&    operator+=(const EString& Other);
 		EString&    operator+=(const std::string& Other) ;
 		EString&    operator+=(const CHAR* Other) ;
 
-		PE_NODISCARD UINT32  Length   ()const;
-		PE_NODISCARD UINT32  LastIndex()const;
+		PE_NODISCARD UINT32  Length   () const;
+		PE_NODISCARD UINT32  LastIndex() const;
 		PE_NODISCARD BOOL32  StartWith(const EString& SubString) const;
 		PE_NODISCARD INT32   Find     (const EString& SubString) const;
 		PE_NODISCARD INT32   RightFind(const EString& SubString) const;
@@ -55,7 +55,7 @@ namespace PigeonEngine
 
 		PE_NODISCARD BOOL8 Contains(const EString& Substring) const;
 
-		PE_NODISCARD BOOL32  IsNumeric()const;
+		PE_NODISCARD BOOL32  IsNumeric() const;
 		PE_NODISCARD INT32   AtoI() const;
 		PE_NODISCARD DOUBLE  AtoF() const;
 
@@ -63,7 +63,7 @@ namespace PigeonEngine
 		static EString FromFloat(const FLOAT& InValue);
 		static EString FromChar(CHAR InValue);
 		PE_NODISCARD EString ToLower() const;
-		CHAR* GetDataAsCopy()const;
+		CHAR* GetDataAsCopy() const;
 	private:
 		std::string Str;
 	};

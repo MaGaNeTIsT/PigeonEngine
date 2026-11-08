@@ -33,7 +33,7 @@ namespace PigeonEngine
 		* them at these defaults. The asset stores which kind the event is, and Compile()
 		* rejects a class whose kind does not match the event.
 		*/
-		virtual BOOL32 IsStateNotify()const { return FALSE; }
+		virtual BOOL32 IsStateNotify() const { return FALSE; }
 		virtual void NotifyBegin(EAnimInstance& InAnimInstance, const FAnimNotifyEvent& InEvent) {}
 		virtual void NotifyTick(EAnimInstance& InAnimInstance, const FAnimNotifyEvent& InEvent, FLOAT InDeltaSeconds) {}
 		virtual void NotifyEnd(EAnimInstance& InAnimInstance, const FAnimNotifyEvent& InEvent) {}
@@ -46,7 +46,7 @@ namespace PigeonEngine
 	class EAnimNotifyState : public EAnimNotify
 	{
 	public:
-		virtual BOOL32 IsStateNotify()const override { return TRUE; }
+		virtual BOOL32 IsStateNotify() const override { return TRUE; }
 	};
 
 	/*

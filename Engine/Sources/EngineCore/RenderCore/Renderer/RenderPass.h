@@ -44,6 +44,11 @@ namespace PigeonEngine
 		RENDER_PASS_STAGE_FORWARD,
 		RENDER_PASS_STAGE_FINAL,
 		RENDER_PASS_STAGE_OVERLAY,
+		// Appended after the existing stages so no persistent pass data moves. The
+		// simulation stage is executed first by RSceneRenderer::Render; the translucent
+		// stage is currently recorded on the engine tail list after forward.
+		RENDER_PASS_STAGE_SIMULATION,
+		RENDER_PASS_STAGE_TRANSLUCENT,
 		RENDER_PASS_STAGE_COUNT
 	};
 

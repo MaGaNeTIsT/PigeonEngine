@@ -17,7 +17,7 @@ namespace PigeonEngine
 			: Data(InData), Mask(InMask)
 		{
 		}
-		PE_FORCEINLINE operator BOOL8()const
+		PE_FORCEINLINE operator BOOL8() const
 		{
 			return ((Data & Mask) != 0u);
 		}
@@ -63,7 +63,7 @@ namespace PigeonEngine
 			: Data(InData), Mask(InMask)
 		{
 		}
-		PE_FORCEINLINE operator BOOL8()const
+		PE_FORCEINLINE operator BOOL8() const
 		{
 			return ((Data & Mask) != 0u);
 		}
@@ -82,11 +82,11 @@ namespace PigeonEngine
 			: PartIndex(InIndex >> Uint32BitLength), Mask(BitZeroPoint >> ((InIndex)& (31u)))
 		{
 		}
-		PE_FORCEINLINE BOOL8 operator==(const ERelativeBitReference& Other)const
+		PE_FORCEINLINE BOOL8 operator==(const ERelativeBitReference& Other) const
 		{
 			return ((PartIndex == Other.PartIndex) && (Mask == Other.Mask));
 		}
-		PE_FORCEINLINE BOOL8 operator!=(const ERelativeBitReference& Other)const
+		PE_FORCEINLINE BOOL8 operator!=(const ERelativeBitReference& Other) const
 		{
 			return (!((*this) == Other));
 		}
@@ -128,23 +128,23 @@ namespace PigeonEngine
 				}
 				return (*this);
 			}
-			PE_FORCEINLINE EBitReference operator*()const
+			PE_FORCEINLINE EBitReference operator*() const
 			{
 				return GetValue();
 			}
-			PE_FORCEINLINE explicit operator BOOL8()const
+			PE_FORCEINLINE explicit operator BOOL8() const
 			{
 				return (Index < (Array.Num<UINT32>()));
 			}
-			PE_FORCEINLINE BOOL8 operator!()const
+			PE_FORCEINLINE BOOL8 operator!() const
 			{
 				return (!((BOOL8)(*this)));
 			}
-			PE_FORCEINLINE EBitReference GetValue()const
+			PE_FORCEINLINE EBitReference GetValue() const
 			{
 				return EBitReference(Array.GetData()[PartIndex], Mask);
 			}
-			PE_FORCEINLINE UINT32 GetIndex()const
+			PE_FORCEINLINE UINT32 GetIndex() const
 			{
 				return Index;
 			}
@@ -171,23 +171,23 @@ namespace PigeonEngine
 				}
 				return (*this);
 			}
-			PE_FORCEINLINE EConstBitReference operator*()const
+			PE_FORCEINLINE EConstBitReference operator*() const
 			{
 				return GetValue();
 			}
-			PE_FORCEINLINE explicit operator BOOL8()const
+			PE_FORCEINLINE explicit operator BOOL8() const
 			{
 				return (Index < (Array.Num<UINT32>()));
 			}
-			PE_FORCEINLINE BOOL8 operator!()const
+			PE_FORCEINLINE BOOL8 operator!() const
 			{
 				return (!((BOOL8)(*this)));
 			}
-			PE_FORCEINLINE EConstBitReference GetValue()const
+			PE_FORCEINLINE EConstBitReference GetValue() const
 			{
 				return EConstBitReference(Array.GetData()[PartIndex], Mask);
 			}
-			PE_FORCEINLINE UINT32 GetIndex()const
+			PE_FORCEINLINE UINT32 GetIndex() const
 			{
 				return Index;
 			}
@@ -219,27 +219,27 @@ namespace PigeonEngine
 				}
 				return (*this);
 			}
-			PE_FORCEINLINE EConstBitReference operator*()const
+			PE_FORCEINLINE EConstBitReference operator*() const
 			{
 				return GetValue();
 			}
-			PE_FORCEINLINE explicit operator BOOL8()const
+			PE_FORCEINLINE explicit operator BOOL8() const
 			{
 				// Index wraps to the largest value once the walk passes bit zero, and comparing
 				// against Num() is what turns that wrap into the end of the walk.
 				return (Index < Array.Num<UINT32>());
 			}
-			PE_FORCEINLINE BOOL8 operator!()const
+			PE_FORCEINLINE BOOL8 operator!() const
 			{
 				return (!((BOOL8)(*this)));
 			}
 			// A walk that only reads hands out a read only reference, so the bits of an array
 			// this iterator was built from cannot be written through it.
-			PE_FORCEINLINE EConstBitReference GetValue()const
+			PE_FORCEINLINE EConstBitReference GetValue() const
 			{
 				return EConstBitReference(Array.GetData()[PartIndex], Mask);
 			}
-			PE_FORCEINLINE UINT32 GetIndex()const
+			PE_FORCEINLINE UINT32 GetIndex() const
 			{
 				return Index;
 			}
@@ -266,7 +266,7 @@ namespace PigeonEngine
 			return EBitReference(GetData()[UsedIndex / TBitArray::ElementNumBits<UINT32>], ERelativeBitReference::BitZeroPoint >> (UsedIndex % TBitArray::ElementNumBits<UINT32>));
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD EConstBitReference operator[](_TOtherIndexType InIndex)const
+		PE_NODISCARD EConstBitReference operator[](_TOtherIndexType InIndex) const
 		{
 			Check(IsValidIndex(InIndex));
 			const UINT32 UsedIndex = (UINT32)InIndex;
@@ -353,7 +353,7 @@ namespace PigeonEngine
 			return ((*this)[InIndex]);
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD EConstBitReference GetRef(_TOtherIndexType InIndex)const
+		PE_NODISCARD EConstBitReference GetRef(_TOtherIndexType InIndex) const
 		{
 			return ((*this)[InIndex]);
 		}
@@ -361,7 +361,7 @@ namespace PigeonEngine
 		{
 			return ((*this)[0]);
 		}
-		PE_NODISCARD EConstBitReference FirstRef()const
+		PE_NODISCARD EConstBitReference FirstRef() const
 		{
 			return ((*this)[0]);
 		}
@@ -369,7 +369,7 @@ namespace PigeonEngine
 		{
 			return ((*this)[NumBits - (_TSizeType)1]);
 		}
-		PE_NODISCARD EConstBitReference LastRef()const
+		PE_NODISCARD EConstBitReference LastRef() const
 		{
 			return ((*this)[NumBits - (_TSizeType)1]);
 		}
@@ -408,7 +408,7 @@ namespace PigeonEngine
 		}
 		//TODO ^^^^^^^^^
 		template<typename _TOtherIndexType = _TSizeType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD _TOtherIndexType FindFirst(BOOL8 InValue)const
+		PE_NODISCARD _TOtherIndexType FindFirst(BOOL8 InValue) const
 		{
 			for (_TOtherIndexType i = (_TOtherIndexType)0, n = (_TOtherIndexType)(NumBits); i < n; i++)
 			{
@@ -420,7 +420,7 @@ namespace PigeonEngine
 			return ((_TOtherIndexType)(-1));
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		BOOL8 FindFirst(BOOL8 InValue, _TOtherIndexType& OutIndex)const
+		BOOL8 FindFirst(BOOL8 InValue, _TOtherIndexType& OutIndex) const
 		{
 			for (_TOtherIndexType i = (_TOtherIndexType)0, n = (_TOtherIndexType)(NumBits); i < n; i++)
 			{
@@ -432,7 +432,7 @@ namespace PigeonEngine
 			}
 			return FALSE;
 		}
-		PE_NODISCARD BOOL8 Contains(BOOL8 InValue)const
+		PE_NODISCARD BOOL8 Contains(BOOL8 InValue) const
 		{
 			Check((TIsUnsigned<TElementType>::value));
 			// The whole words are read as words, so they are read whole: a word of all ones holds a
@@ -466,17 +466,17 @@ namespace PigeonEngine
 		{
 			EmptyInternal();
 		}
-		PE_FORCEINLINE TBitArray()noexcept
+		PE_FORCEINLINE TBitArray() noexcept
 			: NumBits((_TSizeType)0)
 		{
 		}
 		template<typename _TOtherSizeType, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
-		PE_FORCEINLINE TBitArray(_TOtherSizeType InBitNum)noexcept
+		PE_FORCEINLINE TBitArray(_TOtherSizeType InBitNum) noexcept
 			: NumBits((_TSizeType)0)
 		{
 			AppendElementInternal(InBitNum);
 		}
-		TBitArray(TInitializerList<BOOL8> InInitList)noexcept
+		TBitArray(TInitializerList<BOOL8> InInitList) noexcept
 			: NumBits((_TSizeType)0)
 		{
 			const _TSizeType NumList = InitializerListSize<BOOL8, _TSizeType>(InInitList);
@@ -506,50 +506,50 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		PE_FORCEINLINE explicit TBitArray(const TBitArray<_TOtherSizeType, _TOtherAllocator>& Other)noexcept
+		PE_FORCEINLINE explicit TBitArray(const TBitArray<_TOtherSizeType, _TOtherAllocator>& Other) noexcept
 			: NumBits((_TSizeType)0)
 		{
 			CopyFromInternal<_TOtherSizeType, _TOtherAllocator>(Other);
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		PE_FORCEINLINE explicit TBitArray(TBitArray<_TOtherSizeType, _TOtherAllocator>&& Other)noexcept
+		PE_FORCEINLINE explicit TBitArray(TBitArray<_TOtherSizeType, _TOtherAllocator>&& Other) noexcept
 			: NumBits((_TSizeType)0)
 		{
 			MoveFromInternal<_TOtherSizeType, _TOtherAllocator>(EMemory::Forward<TBitArray<_TOtherSizeType, _TOtherAllocator>>(Other));
 		}
-		PE_FORCEINLINE TBitArray(const TBitArray& Other)noexcept
+		PE_FORCEINLINE TBitArray(const TBitArray& Other) noexcept
 			: NumBits((_TSizeType)0)
 		{
 			CopyFromInternal<_TSizeType, TAllocatorType>(Other);
 		}
-		PE_FORCEINLINE TBitArray(TBitArray&& Other)noexcept
+		PE_FORCEINLINE TBitArray(TBitArray&& Other) noexcept
 			: NumBits((_TSizeType)0)
 		{
 			MoveFromInternal<_TSizeType, TAllocatorType>(EMemory::Forward<TBitArray>(Other));
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		TBitArray& operator=(const TBitArray<_TOtherSizeType, _TOtherAllocator>& Other)noexcept
+		TBitArray& operator=(const TBitArray<_TOtherSizeType, _TOtherAllocator>& Other) noexcept
 		{
 			CopyFrom<_TOtherSizeType, _TOtherAllocator>(Other);
 			return (*this);
 		}
 		template<typename _TOtherSizeType, typename _TOtherAllocator>
-		TBitArray& operator=(TBitArray<_TOtherSizeType, _TOtherAllocator>&& Other)noexcept
+		TBitArray& operator=(TBitArray<_TOtherSizeType, _TOtherAllocator>&& Other) noexcept
 		{
 			MoveFrom<_TOtherSizeType, _TOtherAllocator>(EMemory::Forward<TBitArray<_TOtherSizeType, _TOtherAllocator>>(Other));
 			return (*this);
 		}
-		TBitArray& operator=(const TBitArray& Other)noexcept
+		TBitArray& operator=(const TBitArray& Other) noexcept
 		{
 			CopyFrom<_TSizeType, TAllocatorType>(Other);
 			return (*this);
 		}
-		TBitArray& operator=(TBitArray&& Other)noexcept
+		TBitArray& operator=(TBitArray&& Other) noexcept
 		{
 			MoveFrom<_TSizeType, TAllocatorType>(EMemory::Forward<TBitArray>(Other));
 			return (*this);
 		}
-		TBitArray& operator=(TInitializerList<BOOL8> InInitList)noexcept
+		TBitArray& operator=(TInitializerList<BOOL8> InInitList) noexcept
 		{
 			EmptyInternal();
 			const _TSizeType NumList = InitializerListSize<BOOL8, _TSizeType>(InInitList);
@@ -577,12 +577,12 @@ namespace PigeonEngine
 			EmptyInternal();
 			MoveFromInternal<_TOtherSizeType, _TOtherAllocator>(EMemory::Forward<TBitArray<_TOtherSizeType, _TOtherAllocator>>(Other));
 		}
-		PE_NODISCARD BOOL8 IsEmpty()const
+		PE_NODISCARD BOOL8 IsEmpty() const
 		{
 			return (NumBits == (_TSizeType)0);
 		}
 		template<typename _TOtherIndexType, TEnableIfType<TIsIntegral<_TOtherIndexType>::value, _TOtherIndexType> = 0>
-		PE_NODISCARD PE_FORCEINLINE BOOL8 IsValidIndex(_TOtherIndexType InIndex)const
+		PE_NODISCARD PE_FORCEINLINE BOOL8 IsValidIndex(_TOtherIndexType InIndex) const
 		{
 			if PE_CONSTEXPR(TIsSame<_TOtherIndexType, _TSizeType>::value)
 			{
@@ -597,12 +597,12 @@ namespace PigeonEngine
 		{
 			return (Allocator.HeapData());
 		}
-		PE_NODISCARD PE_FORCEINLINE const TElementType* GetData()const
+		PE_NODISCARD PE_FORCEINLINE const TElementType* GetData() const
 		{
 			return (Allocator.HeapData());
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType Num()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType Num() const
 		{
 			if PE_CONSTEXPR(TIsSame<_TResultType, _TSizeType>::value)
 			{
@@ -614,24 +614,24 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType ElementNum()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType ElementNum() const
 		{
 			const _TSizeType BaseNum = NumBits / TBitArray::ElementNumBits<_TSizeType>;
 			return (BaseNum + (((NumBits - (BaseNum * TBitArray::ElementNumBits<_TSizeType>)) > (_TSizeType)0) ? ((_TSizeType)1) : ((_TSizeType)0)));
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType AllocateSize()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType AllocateSize() const
 		{
 			return (Allocator.HeapSize<_TResultType>());
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType Capacity()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType Capacity() const
 		{
 			// We assum allocate heap is always 1 byte alignment
 			return (Allocator.HeapSize<_TResultType>() * (_TResultType)8);
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_NODISCARD PE_FORCEINLINE _TResultType ElementCapacity()const
+		PE_NODISCARD PE_FORCEINLINE _TResultType ElementCapacity() const
 		{
 			Check(((Allocator.HeapSize<_TSizeType>() % TBitArray::ElementTypeSize<_TSizeType>) == (_TSizeType)0));
 			return (Allocator.HeapSize<_TResultType>() / TBitArray::ElementTypeSize<_TResultType>);
@@ -751,15 +751,15 @@ namespace PigeonEngine
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
 		PE_FORCEINLINE TIterator        begin()         { return TIterator(*this); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
-		PE_FORCEINLINE TConstIterator   begin()const    { return TConstIterator(*this); }
+		PE_FORCEINLINE TConstIterator   begin() const    { return TConstIterator(*this); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
 		PE_FORCEINLINE TIterator        end()           { return TIterator(*this, Num<UINT32>()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.*/
-		PE_FORCEINLINE TConstIterator   end()const      { return TConstIterator(*this, Num<UINT32>()); }
+		PE_FORCEINLINE TConstIterator   end() const      { return TConstIterator(*this, Num<UINT32>()); }
 		/* NEVER USE DIRECTLY !!! STL-like iterators to enable range-based for loop support.
 			The reverse walk starts on the last bit and ends when the iterator reports end, the
 			same way the forward pair is used: for (TConstReverseIterator It = A.rbegin(); It; ++It).*/
-		PE_FORCEINLINE TConstReverseIterator rbegin()const { return TConstReverseIterator(*this); }
+		PE_FORCEINLINE TConstReverseIterator rbegin() const { return TConstReverseIterator(*this); }
 	private:
 		_TSizeType      NumBits;
 		TAllocatorType  Allocator;

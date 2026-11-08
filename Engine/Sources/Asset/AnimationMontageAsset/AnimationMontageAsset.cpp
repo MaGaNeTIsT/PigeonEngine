@@ -57,11 +57,11 @@ namespace PigeonEngine
 	}
 
 	EAnimMontageAsset::EAnimMontageAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<EAnimMontage>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -84,7 +84,7 @@ namespace PigeonEngine
 
 	EAnimMontageManager::EAnimMontageManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = "AnimationMontageManager";
 #endif
 	}
@@ -117,7 +117,7 @@ namespace PigeonEngine
 		MontageAssetManager.Clear();
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 EAnimMontageManager::ImportMontage(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath)
 	{
 		EString JsonText;
@@ -162,7 +162,7 @@ namespace PigeonEngine
 		}
 
 		EAnimMontageAsset* NewAsset = new EAnimMontageAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -390,13 +390,13 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		Root.GetStringField(PE_TEXT("name"), OutMontage.Name);
-		Root.GetStringField(PE_TEXT("skeleton"), OutMontage.SkeletonName);
-		Root.GetStringField(PE_TEXT("animation"), OutMontage.AnimationAssetName);
+		Root.GetStringField(PE_TEXT("Name"), OutMontage.Name);
+		Root.GetStringField(PE_TEXT("Skeleton"), OutMontage.SkeletonName);
+		Root.GetStringField(PE_TEXT("Animation"), OutMontage.AnimationAssetName);
 
 		{
 			TArray<CJsonObject*> GroupObjects;
-			Root.GetObjectArrayField(PE_TEXT("slotGroups"), GroupObjects);
+			Root.GetObjectArrayField(PE_TEXT("SlotGroups"), GroupObjects);
 			FJsonObjectArrayGuard GroupGuard(GroupObjects);
 			for (INT32 GroupIndex = 0; GroupIndex < GroupObjects.Num(); GroupIndex++)
 			{
@@ -406,8 +406,8 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimMontageSlotGroup Group;
-				GroupObject->GetStringField(PE_TEXT("name"), Group.Name);
-				GroupObject->GetStringArrayField(PE_TEXT("slots"), Group.SlotNames);
+				GroupObject->GetStringField(PE_TEXT("Name"), Group.Name);
+				GroupObject->GetStringArrayField(PE_TEXT("Slots"), Group.SlotNames);
 				if (Group.Name.Length() <= 0u || Group.SlotNames.Num() <= 0)
 				{
 					OutError = EString("Every montage slot group needs a name and at least one slot.");
@@ -419,7 +419,7 @@ namespace PigeonEngine
 
 		{
 			TArray<CJsonObject*> SectionObjects;
-			if (!(Root.GetObjectArrayField(PE_TEXT("sections"), SectionObjects)))
+			if (!(Root.GetObjectArrayField(PE_TEXT("Sections"), SectionObjects)))
 			{
 				for (INT32 SectionIndex = 0; SectionIndex < SectionObjects.Num(); SectionIndex++)
 				{
@@ -437,46 +437,46 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimMontageSection Section;
-				SectionObject->GetStringField(PE_TEXT("name"), Section.Name);
-				SectionObject->GetStringField(PE_TEXT("clip"), Section.ClipName);
-				SectionObject->GetStringField(PE_TEXT("slot"), Section.SlotName);
-				SectionObject->GetStringField(PE_TEXT("next"), Section.NextSectionName);
+				SectionObject->GetStringField(PE_TEXT("Name"), Section.Name);
+				SectionObject->GetStringField(PE_TEXT("Clip"), Section.ClipName);
+				SectionObject->GetStringField(PE_TEXT("Slot"), Section.SlotName);
+				SectionObject->GetStringField(PE_TEXT("Next"), Section.NextSectionName);
 				EString LoopText;
-				SectionObject->GetStringField(PE_TEXT("loop"), LoopText);
+				SectionObject->GetStringField(PE_TEXT("Loop"), LoopText);
 				Section.LoopMode = ParseLoopMode(LoopText);
 				FLOAT PlayRate = 1.0f;
-				if (SectionObject->GetFloatField(PE_TEXT("rate"), PlayRate))
+				if (SectionObject->GetFloatField(PE_TEXT("Rate"), PlayRate))
 				{
 					Section.PlayRate = PlayRate;
 				}
 				FLOAT BlendIn = 0.1f;
-				if (SectionObject->GetFloatField(PE_TEXT("blendIn"), BlendIn))
+				if (SectionObject->GetFloatField(PE_TEXT("BlendIn"), BlendIn))
 				{
 					Section.BlendInSeconds = BlendIn;
 				}
 				FLOAT BlendOut = 0.2f;
-				if (SectionObject->GetFloatField(PE_TEXT("blendOut"), BlendOut))
+				if (SectionObject->GetFloatField(PE_TEXT("BlendOut"), BlendOut))
 				{
 					Section.BlendOutSeconds = BlendOut;
 				}
 				BOOL8 bAdditive = FALSE;
-				SectionObject->GetBoolField(PE_TEXT("additive"), bAdditive);
+				SectionObject->GetBoolField(PE_TEXT("Additive"), bAdditive);
 				Section.bAdditive = ((bAdditive != FALSE) ? TRUE : FALSE);
 
 				CJsonObject MaskObject;
-				if (SectionObject->GetObjectField(PE_TEXT("boneMask"), MaskObject))
+				if (SectionObject->GetObjectField(PE_TEXT("BoneMask"), MaskObject))
 				{
-					MaskObject.GetStringField(PE_TEXT("name"), Section.BoneMask.Name);
-					MaskObject.GetStringArrayField(PE_TEXT("bones"), Section.BoneMask.BoneNames);
+					MaskObject.GetStringField(PE_TEXT("Name"), Section.BoneMask.Name);
+					MaskObject.GetStringArrayField(PE_TEXT("Bones"), Section.BoneMask.BoneNames);
 					FLOAT MaskWeight = 1.0f;
-					if (MaskObject.GetFloatField(PE_TEXT("weight"), MaskWeight))
+					if (MaskObject.GetFloatField(PE_TEXT("Weight"), MaskWeight))
 					{
 						Section.BoneMask.Weight = MaskWeight;
 					}
 				}
 
 				TArray<CJsonObject*> NotifyObjects;
-				const BOOL8 bHasNotifyArray = SectionObject->GetObjectArrayField(PE_TEXT("notifies"), NotifyObjects);
+				const BOOL8 bHasNotifyArray = SectionObject->GetObjectArrayField(PE_TEXT("Notifies"), NotifyObjects);
 				FJsonObjectArrayGuard NotifyGuard(NotifyObjects);
 				if ((!bHasNotifyArray) && (NotifyObjects.Num() > 0))
 				{
@@ -492,37 +492,37 @@ namespace PigeonEngine
 					}
 					FAnimNotifyEvent Notify;
 					Notify.NotifyName = EString(PE_TEXT("Notify")) + ToString(NotifyIndex);
-					NotifyObject->GetStringField(PE_TEXT("name"), Notify.NotifyName);
-					NotifyObject->GetStringField(PE_TEXT("class"), Notify.NotifyClassName);
-					NotifyObject->GetStringField(PE_TEXT("notifyAsset"), Notify.NotifyAssetName);
+					NotifyObject->GetStringField(PE_TEXT("Name"), Notify.NotifyName);
+					NotifyObject->GetStringField(PE_TEXT("Class"), Notify.NotifyClassName);
+					NotifyObject->GetStringField(PE_TEXT("NotifyAsset"), Notify.NotifyAssetName);
 					FLOAT NotifyTime = 0.0f;
-					if (NotifyObject->GetFloatField(PE_TEXT("time"), NotifyTime))
+					if (NotifyObject->GetFloatField(PE_TEXT("Time"), NotifyTime))
 					{
 						Notify.Time = EMath::Max(NotifyTime, 0.0f);
 					}
-					NotifyObject->GetStringField(PE_TEXT("payload"), Notify.PayloadJson);
+					NotifyObject->GetStringField(PE_TEXT("Payload"), Notify.PayloadJson);
 					if (Notify.PayloadJson.Length() <= 0u)
 					{
 						Notify.PayloadJson = EString(PE_TEXT("{}"));
 					}
 					BOOL8 bIsState = FALSE;
-					NotifyObject->GetBoolField(PE_TEXT("state"), bIsState);
+					NotifyObject->GetBoolField(PE_TEXT("State"), bIsState);
 					Notify.bIsState = ((bIsState != FALSE) ? TRUE : FALSE);
 					FLOAT StateDuration = 0.0f;
-					const BOOL32 bHasDuration = (NotifyObject->HasField(PE_TEXT("duration")) ? TRUE : FALSE);
-					if (NotifyObject->GetFloatField(PE_TEXT("duration"), StateDuration))
+					const BOOL32 bHasDuration = (NotifyObject->HasField(PE_TEXT("Duration")) ? TRUE : FALSE);
+					if (NotifyObject->GetFloatField(PE_TEXT("Duration"), StateDuration))
 					{
 						Notify.StateDuration = EMath::Max(StateDuration, 0.001f);
 					}
 					Notify.bStateDurationOverride = bHasDuration;
 
-					const BOOL32 bHasPayload = (NotifyObject->HasField(PE_TEXT("payload")) ? TRUE : FALSE);
+					const BOOL32 bHasPayload = (NotifyObject->HasField(PE_TEXT("Payload")) ? TRUE : FALSE);
 					if (bHasPayload)
 					{
-						if (!NotifyObject->GetStringField(PE_TEXT("payload"), Notify.PayloadJson))
+						if (!NotifyObject->GetStringField(PE_TEXT("Payload"), Notify.PayloadJson))
 						{
 							CJsonObject PayloadObject;
-							if (NotifyObject->GetObjectField(PE_TEXT("payload"), PayloadObject))
+							if (NotifyObject->GetObjectField(PE_TEXT("Payload"), PayloadObject))
 							{
 								Notify.PayloadJson = PayloadObject.ToString();
 							}

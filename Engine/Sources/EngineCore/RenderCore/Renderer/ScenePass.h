@@ -54,6 +54,13 @@ namespace PigeonEngine
 		// per light channel into the screen space mask the lighting pass samples. Appended last
 		// because the enum is append only - a value addresses a row of the pass table.
 		RENDER_PASS_TYPE_DIRECTIONAL_SHADOW_MASK,	// ShadowMask, full screen, 1x RGBA8
+		// Graphics, per primitive: the transparent water surface. It runs after the
+		// lighting and forward passes, blends into the scene colour and writes no depth.
+		RENDER_PASS_TYPE_WATER_SURFACE,		// WaterSurface, translucent, after lighting
+		// Graphics, engine driven: the linear scene colour copy the water material reads for
+		// refraction. The water pass writes the scene colour target, so the pre-water colour has
+		// to be copied out before the draw that samples it.
+		RENDER_PASS_TYPE_WATER_REFRACTION_COPY,	// WaterRefractionCopy, full screen, linear
 		RENDER_PASS_TYPE_COUNT
 	};
 

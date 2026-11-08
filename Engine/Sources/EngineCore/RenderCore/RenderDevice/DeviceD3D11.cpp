@@ -47,29 +47,29 @@ namespace PigeonEngine
 			7u,
 			D3D11_SDK_VERSION,
 			&sd,
-			m_SwapChain.ReleaseAndGetAddressOf(),
-			m_Device.ReleaseAndGetAddressOf(),
-			&(m_FeatureLevel),
-			m_ImmediateContext.ReleaseAndGetAddressOf());	//D3D11_CREATE_DEVICE_FLAG
-		if (FAILED(hr) || !(m_FeatureLevel == D3D_FEATURE_LEVEL_11_1 || m_FeatureLevel == D3D_FEATURE_LEVEL_11_0))
+			SwapChain.ReleaseAndGetAddressOf(),
+			Device.ReleaseAndGetAddressOf(),
+			&(FeatureLevel),
+			ImmediateContext.ReleaseAndGetAddressOf());	//D3D11_CREATE_DEVICE_FLAG
+		if (FAILED(hr) || !(FeatureLevel == D3D_FEATURE_LEVEL_11_1 || FeatureLevel == D3D_FEATURE_LEVEL_11_0))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create D3D11 device failed.")));
 			return;
 		}
-		m_Viewport.Width = static_cast<FLOAT>(bufferWidth);
-		m_Viewport.Height = static_cast<FLOAT>(bufferHeight);
-		m_Viewport.MinDepth = 0.f;
-		m_Viewport.MaxDepth = 1.f;
-		m_Viewport.TopLeftX = 0.f;
-		m_Viewport.TopLeftY = 0.f;
+		Viewport.Width = static_cast<FLOAT>(bufferWidth);
+		Viewport.Height = static_cast<FLOAT>(bufferHeight);
+		Viewport.MinDepth = 0.f;
+		Viewport.MaxDepth = 1.f;
+		Viewport.TopLeftX = 0.f;
+		Viewport.TopLeftY = 0.f;
 		ID3D11Texture2D* pBackBuffer = nullptr;
-		hr = m_SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
+		hr = SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Failed to gather swap chain back buffer.")));
 			return;
 		}
-		hr = m_Device->CreateRenderTargetView(pBackBuffer, nullptr, m_RenderTargetView.ReleaseAndGetAddressOf());
+		hr = Device->CreateRenderTargetView(pBackBuffer, nullptr, RenderTargetView.ReleaseAndGetAddressOf());
 		pBackBuffer->Release();
 		if (FAILED(hr))
 		{
@@ -92,7 +92,7 @@ namespace PigeonEngine
 				td.CPUAccessFlags = 0u;
 				td.MiscFlags = 0u;
 			}
-			hr = m_Device->CreateTexture2D(&td, nullptr, m_DepthTexture.ReleaseAndGetAddressOf());
+			hr = Device->CreateTexture2D(&td, nullptr, DepthTexture.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create main depth buffer failed.")));
@@ -106,7 +106,7 @@ namespace PigeonEngine
 				dsvd.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
 				dsvd.Flags = 0u;	//D3D11_DSV_FLAG
 			}
-			hr = m_Device->CreateDepthStencilView(m_DepthTexture.Get(), &dsvd, m_DepthStencilView.ReleaseAndGetAddressOf());
+			hr = Device->CreateDepthStencilView(DepthTexture.Get(), &dsvd, DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create main depth buffer DSV failed.")));
@@ -119,7 +119,7 @@ namespace PigeonEngine
 		// (e.g., our borderless fullscreen toggle) by sending unexpected window messages.
 		{
 			Microsoft::WRL::ComPtr<IDXGIFactory> DxgiFactory;
-			if (SUCCEEDED(m_SwapChain->GetParent(IID_PPV_ARGS(DxgiFactory.GetAddressOf()))) && DxgiFactory)
+			if (SUCCEEDED(SwapChain->GetParent(IID_PPV_ARGS(DxgiFactory.GetAddressOf()))) && DxgiFactory)
 			{
 				DxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
 			}
@@ -130,35 +130,35 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::ShutDown()
 	{
-		//if (m_RenderTargetView)
+		//if (RenderTargetView)
 		//{
-		//	m_RenderTargetView->Release();
-		//	m_RenderTargetView = nullptr;
+		//	RenderTargetView->Release();
+		//	RenderTargetView = nullptr;
 		//}
-		//if (m_DepthStencilView)
+		//if (DepthStencilView)
 		//{
-		//	m_DepthStencilView->Release();
-		//	m_DepthStencilView = nullptr;
+		//	DepthStencilView->Release();
+		//	DepthStencilView = nullptr;
 		//}
-		//if (m_DepthTexture)
+		//if (DepthTexture)
 		//{
-		//	m_DepthTexture->Release();
-		//	m_DepthTexture = nullptr;
+		//	DepthTexture->Release();
+		//	DepthTexture = nullptr;
 		//}
-		//if (m_SwapChain)
+		//if (SwapChain)
 		//{
-		//	m_SwapChain->Release();
-		//	m_SwapChain = nullptr;
+		//	SwapChain->Release();
+		//	SwapChain = nullptr;
 		//}
-		//if (m_ImmediateContext)
+		//if (ImmediateContext)
 		//{
-		//	m_ImmediateContext->Release();
-		//	m_ImmediateContext = nullptr;
+		//	ImmediateContext->Release();
+		//	ImmediateContext = nullptr;
 		//}
-		//if (m_Device)
+		//if (Device)
 		//{
-		//	m_Device->Release();
-		//	m_Device = nullptr;
+		//	Device->Release();
+		//	Device = nullptr;
 		//}
 	}
 	BOOL32 RDeviceD3D11::CreateShaderObject(const RRHIShaderDesc& InDesc, RD3D11Shader& OutShader)
@@ -186,7 +186,7 @@ namespace PigeonEngine
 		{
 		case ERHIShaderStage::RHI_SHADER_STAGE_VERTEX:
 		{
-			HRESULT hr = m_Device->CreateVertexShader(ByteCode, ByteCodeSize, nullptr, OutShader.VertexShader.ReleaseAndGetAddressOf());
+			HRESULT hr = Device->CreateVertexShader(ByteCode, ByteCodeSize, nullptr, OutShader.VertexShader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create vertex shader resource failed.")));
@@ -204,7 +204,7 @@ namespace PigeonEngine
 			{
 				RDeviceD3D11::TranslateInputLayoutDesc(TempLayouts[i], InDesc.InputLayouts[i]);
 			}
-			hr = m_Device->CreateInputLayout(TempLayouts.GetData(), LayoutNum, ByteCode, ByteCodeSize, OutShader.InputLayout.ReleaseAndGetAddressOf());
+			hr = Device->CreateInputLayout(TempLayouts.GetData(), LayoutNum, ByteCode, ByteCodeSize, OutShader.InputLayout.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create vertex shader input layout failed.")));
@@ -214,7 +214,7 @@ namespace PigeonEngine
 		}
 		case ERHIShaderStage::RHI_SHADER_STAGE_PIXEL:
 		{
-			const HRESULT hr = m_Device->CreatePixelShader(ByteCode, ByteCodeSize, nullptr, OutShader.PixelShader.ReleaseAndGetAddressOf());
+			const HRESULT hr = Device->CreatePixelShader(ByteCode, ByteCodeSize, nullptr, OutShader.PixelShader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create pixel shader resource failed.")));
@@ -224,7 +224,7 @@ namespace PigeonEngine
 		}
 		case ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE:
 		{
-			const HRESULT hr = m_Device->CreateComputeShader(ByteCode, ByteCodeSize, nullptr, OutShader.ComputeShader.ReleaseAndGetAddressOf());
+			const HRESULT hr = Device->CreateComputeShader(ByteCode, ByteCodeSize, nullptr, OutShader.ComputeShader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create compute shader resource failed.")));
@@ -303,11 +303,11 @@ namespace PigeonEngine
 				sd.pSysMem = subData->pSysMem;
 				sd.SysMemPitch = subData->SysMemPitch;
 				sd.SysMemSlicePitch = subData->SysMemSlicePitch;
-				hr = m_Device->CreateBuffer(&bd, &sd, output.Buffer.ReleaseAndGetAddressOf());
+				hr = Device->CreateBuffer(&bd, &sd, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			else
 			{
-				hr = m_Device->CreateBuffer(&bd, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+				hr = Device->CreateBuffer(&bd, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			if (FAILED(hr))
 			{
@@ -322,7 +322,7 @@ namespace PigeonEngine
 			srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_BUFFER;
 			srvd.Buffer.FirstElement = structuredBufferDesc.FirstElement;
 			srvd.Buffer.NumElements = structuredBufferDesc.NumElements;
-			HRESULT hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+			HRESULT hr = Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create structured buffer resource SRV failed.")));
@@ -339,7 +339,7 @@ namespace PigeonEngine
 				uavd.Buffer.FirstElement = structuredBufferDesc.FirstElement;
 				uavd.Buffer.NumElements = structuredBufferDesc.NumElements;
 				RDeviceD3D11::TranslateUAVFlag(uavd.Buffer.Flags, structuredBufferDesc.UAVFlags);
-				HRESULT hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+				HRESULT hr = Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
 					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create structured buffer resource UAV failed.")));
@@ -405,11 +405,11 @@ namespace PigeonEngine
 			subresourceData.pSysMem = subData->pSysMem;
 			subresourceData.SysMemPitch = subData->SysMemPitch;
 			subresourceData.SysMemSlicePitch = subData->SysMemSlicePitch;
-			hr = m_Device->CreateTexture2D(&td, &subresourceData, output.Buffer.ReleaseAndGetAddressOf());
+			hr = Device->CreateTexture2D(&td, &subresourceData, output.Buffer.ReleaseAndGetAddressOf());
 		}
 		else
 		{
-			hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+			hr = Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		}
 		if (FAILED(hr))
 		{
@@ -451,7 +451,7 @@ namespace PigeonEngine
 					srvd.Texture2D.MipLevels = td.MipLevels;
 				}
 			}
-			hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+			hr = Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create render texture2D resource SRV failed.")));
@@ -477,7 +477,7 @@ namespace PigeonEngine
 				uavd.ViewDimension = D3D11_UAV_DIMENSION::D3D11_UAV_DIMENSION_TEXTURE2D;
 				uavd.Texture2D.MipSlice = 0u;
 			}
-			hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+			hr = Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create render texture2D resource UAV failed.")));
@@ -493,7 +493,7 @@ namespace PigeonEngine
 				rtvd.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2D;
 				rtvd.Texture2D.MipSlice = 0u;
 			}
-			hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
+			hr = Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create render texture2D resource RTV failed.")));
@@ -510,7 +510,7 @@ namespace PigeonEngine
 				dsvd.Flags = 0u;	//D3D11_DSV_FLAG
 				dsvd.Texture2D.MipSlice = 0u;
 			}
-			hr = m_Device->CreateDepthStencilView(output.Buffer.Get(), &dsvd, output.DepthStencilView.ReleaseAndGetAddressOf());
+			hr = Device->CreateDepthStencilView(output.Buffer.Get(), &dsvd, output.DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create render texture2D resource DSV failed.")));
@@ -573,11 +573,11 @@ namespace PigeonEngine
 			subresourceData.SysMemPitch = subData->SysMemPitch;
 			subresourceData.SysMemSlicePitch = subData->SysMemSlicePitch;
 
-			hr = m_Device->CreateTexture2D(&td, &subresourceData, output.Buffer.ReleaseAndGetAddressOf());
+			hr = Device->CreateTexture2D(&td, &subresourceData, output.Buffer.ReleaseAndGetAddressOf());
 		}
 		else
 		{
-			hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+			hr = Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		}
 		if (FAILED(hr))
 		{
@@ -592,7 +592,7 @@ namespace PigeonEngine
 			srvd.Texture2D.MostDetailedMip = 0u;
 			srvd.Texture2D.MipLevels = td.MipLevels;
 		}
-		hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+		hr = Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create texture2D resource SRV failed.")));
@@ -679,11 +679,11 @@ namespace PigeonEngine
 					sd[i].SysMemPitch = subData[i].SysMemPitch;
 					sd[i].SysMemSlicePitch = subData[i].SysMemSlicePitch;
 				}
-				hr = m_Device->CreateTexture2D(&td, sd, output.Buffer.ReleaseAndGetAddressOf());
+				hr = Device->CreateTexture2D(&td, sd, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			else
 			{
-				hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+				hr = Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			if (FAILED(hr))
 			{
@@ -700,7 +700,7 @@ namespace PigeonEngine
 				srvd.TextureCube.MostDetailedMip = 0u;
 				srvd.TextureCube.MipLevels = textureDesc.MipLevels;
 			}
-			HRESULT hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+			HRESULT hr = Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create texture cube resource SRV failed.")));
@@ -736,11 +736,11 @@ namespace PigeonEngine
 				sd.SysMemPitch = subData->SysMemPitch;
 				sd.SysMemSlicePitch = subData->SysMemSlicePitch;
 			}
-			hr = m_Device->CreateBuffer(&bd, &sd, buffer.ReleaseAndGetAddressOf());
+			hr = Device->CreateBuffer(&bd, &sd, buffer.ReleaseAndGetAddressOf());
 		}
 		else
 		{
-			hr = m_Device->CreateBuffer(&bd, nullptr, buffer.ReleaseAndGetAddressOf());
+			hr = Device->CreateBuffer(&bd, nullptr, buffer.ReleaseAndGetAddressOf());
 		}
 		if (FAILED(hr))
 		{
@@ -751,49 +751,49 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT32 srcRowPitch, UINT32 srcDepthPitch, UINT32 dstSubresource, const D3D11_BOX* dstBox)
 	{
-		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
+		ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 	}
 	void RDeviceD3D11::UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT32 srcRowPitch, UINT32 srcDepthPitch, UINT32 dstSubresource, const D3D11_BOX* dstBox)
 	{
-		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
+		ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 	}
 	void RDeviceD3D11::Present(UINT32 InSyncInterval) noexcept
 	{
-		m_SwapChain->Present(InSyncInterval, 0u);
+		SwapChain->Present(InSyncInterval, 0u);
 	}
 	void RDeviceD3D11::SetDefaultDepthStencilState()
 	{
-		m_ImmediateContext->OMSetDepthStencilState(nullptr, 0x0u);
+		ImmediateContext->OMSetDepthStencilState(nullptr, 0x0u);
 	}
 	void RDeviceD3D11::SetDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const UINT32& stencilRef)
 	{
-		m_ImmediateContext->OMSetDepthStencilState(dss.Get(), stencilRef);
+		ImmediateContext->OMSetDepthStencilState(dss.Get(), stencilRef);
 	}
 	void RDeviceD3D11::SetDefaultBlendState()
 	{
-		m_ImmediateContext->OMSetBlendState(nullptr, nullptr, 0xffffffffu);
+		ImmediateContext->OMSetBlendState(nullptr, nullptr, 0xffffffffu);
 	}
 	void RDeviceD3D11::SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const Color4& blendFactor, const UINT32& sampleMask)
 	{
-		m_ImmediateContext->OMSetBlendState(bs.Get(), blendFactor.rgba, sampleMask);
+		ImmediateContext->OMSetBlendState(bs.Get(), blendFactor.rgba, sampleMask);
 	}
 	void RDeviceD3D11::SetNoRenderTarget()
 	{
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
-		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, nullptr);
+		ImmediateContext->OMSetRenderTargets(1u, rtvs, nullptr);
 	}
 	void RDeviceD3D11::SetRenderTargetOnly(const RRenderTexture2D& InRTV)
 	{
-		m_ImmediateContext->OMSetRenderTargets(1u, InRTV.RenderTargetView.GetAddressOf(), nullptr);
+		ImmediateContext->OMSetRenderTargets(1u, InRTV.RenderTargetView.GetAddressOf(), nullptr);
 	}
 	void RDeviceD3D11::SetDepthStencilOnly(const RRenderTexture2D& InDSV)
 	{
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
-		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, InDSV.DepthStencilView.Get());
+		ImmediateContext->OMSetRenderTargets(1u, rtvs, InDSV.DepthStencilView.Get());
 	}
 	void RDeviceD3D11::SetRenderTarget(const RRenderTexture2D& InRTV, const RRenderTexture2D& InDSV)
 	{
-		m_ImmediateContext->OMSetRenderTargets(1u, InRTV.RenderTargetView.GetAddressOf(), InDSV.DepthStencilView.Get());
+		ImmediateContext->OMSetRenderTargets(1u, InRTV.RenderTargetView.GetAddressOf(), InDSV.DepthStencilView.Get());
 	}
 	void RDeviceD3D11::SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum)
 	{
@@ -803,7 +803,7 @@ namespace PigeonEngine
 		{
 			UsedRTVs[i] = (InRTVs[i]).RenderTargetView.Get();
 		}
-		m_ImmediateContext->OMSetRenderTargets(InRTVNum, UsedRTVs.GetData(), nullptr);
+		ImmediateContext->OMSetRenderTargets(InRTVNum, UsedRTVs.GetData(), nullptr);
 	}
 	void RDeviceD3D11::SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum, const RRenderTexture2D& InDSV)
 	{
@@ -813,11 +813,11 @@ namespace PigeonEngine
 		{
 			UsedRTVs[i] = (InRTVs[i]).RenderTargetView.Get();
 		}
-		m_ImmediateContext->OMSetRenderTargets(InRTVNum, UsedRTVs.GetData(), InDSV.DepthStencilView.Get());
+		ImmediateContext->OMSetRenderTargets(InRTVNum, UsedRTVs.GetData(), InDSV.DepthStencilView.Get());
 	}
 	void RDeviceD3D11::SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs)
 	{
-		m_ImmediateContext->RSSetState(rs.Get());
+		ImmediateContext->RSSetState(rs.Get());
 	}
 	void RDeviceD3D11::SetViewport(const EViewport& viewport)
 	{
@@ -825,7 +825,7 @@ namespace PigeonEngine
 			viewport.TopLeftX, viewport.TopLeftY,
 			viewport.Width, viewport.Height,
 			viewport.MinDepth, viewport.MaxDepth };
-		m_ImmediateContext->RSSetViewports(1u, &vp);
+		ImmediateContext->RSSetViewports(1u, &vp);
 	}
 	void RDeviceD3D11::SetViewports(const EViewport* viewports, const UINT32& viewportNum)
 	{
@@ -840,35 +840,35 @@ namespace PigeonEngine
 			vps[i].MinDepth = viewports[i].MinDepth;
 			vps[i].MaxDepth = viewports[i].MaxDepth;
 		}
-		m_ImmediateContext->RSSetViewports(viewportNum, vps.GetData());
+		ImmediateContext->RSSetViewports(viewportNum, vps.GetData());
 	}
 	void RDeviceD3D11::SetNoVSShader()
 	{
-		m_ImmediateContext->VSSetShader(nullptr, nullptr, 0u);
+		ImmediateContext->VSSetShader(nullptr, nullptr, 0u);
 	}
 	void RDeviceD3D11::SetNoPSShader()
 	{
-		m_ImmediateContext->PSSetShader(nullptr, nullptr, 0u);
+		ImmediateContext->PSSetShader(nullptr, nullptr, 0u);
 	}
 	void RDeviceD3D11::SetNoCSShader()
 	{
-		m_ImmediateContext->CSSetShader(nullptr, nullptr, 0u);
+		ImmediateContext->CSSetShader(nullptr, nullptr, 0u);
 	}
 	void RDeviceD3D11::SetVSShader(const Microsoft::WRL::ComPtr<ID3D11VertexShader>& vs)
 	{
-		m_ImmediateContext->VSSetShader(vs.Get(), nullptr, 0u);
+		ImmediateContext->VSSetShader(vs.Get(), nullptr, 0u);
 	}
 	void RDeviceD3D11::SetPSShader(const Microsoft::WRL::ComPtr<ID3D11PixelShader>& ps)
 	{
-		m_ImmediateContext->PSSetShader(ps.Get(), nullptr, 0u);
+		ImmediateContext->PSSetShader(ps.Get(), nullptr, 0u);
 	}
 	void RDeviceD3D11::SetCSShader(const Microsoft::WRL::ComPtr<ID3D11ComputeShader>& cs)
 	{
-		m_ImmediateContext->CSSetShader(cs.Get(), nullptr, 0u);
+		ImmediateContext->CSSetShader(cs.Get(), nullptr, 0u);
 	}
 	void RDeviceD3D11::BindVSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT32& startSlot)
 	{
-		m_ImmediateContext->VSSetSamplers(startSlot, 1u, ss.GetAddressOf());
+		ImmediateContext->VSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
 	void RDeviceD3D11::BindVSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT32& startSlot, const UINT32& ssNum)
 	{
@@ -878,11 +878,11 @@ namespace PigeonEngine
 		{
 			sampler[i] = ss[i].Get();
 		}
-		m_ImmediateContext->VSSetSamplers(startSlot, ssNum, sampler.GetData());
+		ImmediateContext->VSSetSamplers(startSlot, ssNum, sampler.GetData());
 	}
 	void RDeviceD3D11::BindPSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT32& startSlot)
 	{
-		m_ImmediateContext->PSSetSamplers(startSlot, 1u, ss.GetAddressOf());
+		ImmediateContext->PSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
 	void RDeviceD3D11::BindPSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT32& startSlot, const UINT32& ssNum)
 	{
@@ -892,11 +892,11 @@ namespace PigeonEngine
 		{
 			sampler[i] = ss[i].Get();
 		}
-		m_ImmediateContext->PSSetSamplers(startSlot, ssNum, sampler.GetData());
+		ImmediateContext->PSSetSamplers(startSlot, ssNum, sampler.GetData());
 	}
 	void RDeviceD3D11::BindCSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT32& startSlot)
 	{
-		m_ImmediateContext->CSSetSamplers(startSlot, 1u, ss.GetAddressOf());
+		ImmediateContext->CSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
 	void RDeviceD3D11::BindCSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT32& startSlot, const UINT32& ssNum)
 	{
@@ -906,11 +906,11 @@ namespace PigeonEngine
 		{
 			sampler[i] = ss[i].Get();
 		}
-		m_ImmediateContext->CSSetSamplers(startSlot, ssNum, sampler.GetData());
+		ImmediateContext->CSSetSamplers(startSlot, ssNum, sampler.GetData());
 	}
 	void RDeviceD3D11::BindVSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT32& startSlot)
 	{
-		m_ImmediateContext->VSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
+		ImmediateContext->VSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
 	void RDeviceD3D11::BindVSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT32& startSlot, const UINT32& bufferNum)
 	{
@@ -920,11 +920,11 @@ namespace PigeonEngine
 		{
 			buffers[i] = buffer[i].Get();
 		}
-		m_ImmediateContext->VSSetConstantBuffers(startSlot, bufferNum, buffers.GetData());
+		ImmediateContext->VSSetConstantBuffers(startSlot, bufferNum, buffers.GetData());
 	}
 	void RDeviceD3D11::BindPSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT32& startSlot)
 	{
-		m_ImmediateContext->PSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
+		ImmediateContext->PSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
 	void RDeviceD3D11::BindPSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT32& startSlot, const UINT32& bufferNum)
 	{
@@ -934,11 +934,11 @@ namespace PigeonEngine
 		{
 			buffers[i] = buffer[i].Get();
 		}
-		m_ImmediateContext->PSSetConstantBuffers(startSlot, bufferNum, buffers.GetData());
+		ImmediateContext->PSSetConstantBuffers(startSlot, bufferNum, buffers.GetData());
 	}
 	void RDeviceD3D11::BindCSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT32& startSlot)
 	{
-		m_ImmediateContext->CSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
+		ImmediateContext->CSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
 	void RDeviceD3D11::BindCSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT32& startSlot, const UINT32& bufferNum)
 	{
@@ -948,11 +948,11 @@ namespace PigeonEngine
 		{
 			buffers[i] = buffer[i].Get();
 		}
-		m_ImmediateContext->CSSetConstantBuffers(startSlot, bufferNum, buffers.GetData());
+		ImmediateContext->CSSetConstantBuffers(startSlot, bufferNum, buffers.GetData());
 	}
 	void RDeviceD3D11::BindVSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT32& startSlot)
 	{
-		m_ImmediateContext->VSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
+		ImmediateContext->VSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
 	void RDeviceD3D11::BindVSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT32& startSlot, const UINT32& srvNum)
 	{
@@ -962,11 +962,11 @@ namespace PigeonEngine
 		{
 			srvs[i] = srv[i].Get();
 		}
-		m_ImmediateContext->VSSetShaderResources(startSlot, srvNum, srvs.GetData());
+		ImmediateContext->VSSetShaderResources(startSlot, srvNum, srvs.GetData());
 	}
 	void RDeviceD3D11::BindPSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT32& startSlot)
 	{
-		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
+		ImmediateContext->PSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
 	void RDeviceD3D11::BindPSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT32& startSlot, const UINT32& srvNum)
 	{
@@ -976,11 +976,11 @@ namespace PigeonEngine
 		{
 			srvs[i] = srv[i].Get();
 		}
-		m_ImmediateContext->PSSetShaderResources(startSlot, srvNum, srvs.GetData());
+		ImmediateContext->PSSetShaderResources(startSlot, srvNum, srvs.GetData());
 	}
 	void RDeviceD3D11::BindCSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT32& startSlot)
 	{
-		m_ImmediateContext->CSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
+		ImmediateContext->CSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
 	void RDeviceD3D11::BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT32& startSlot, const UINT32& srvNum)
 	{
@@ -990,16 +990,16 @@ namespace PigeonEngine
 		{
 			srvs[i] = srv[i].Get();
 		}
-		m_ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.GetData());
+		ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.GetData());
 	}
 	void RDeviceD3D11::BindNoCSUnorderedAccessView(const UINT32& startSlot)
 	{
 		ID3D11UnorderedAccessView* uavs[] = { nullptr };
-		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uavs, nullptr);
+		ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uavs, nullptr);
 	}
 	void RDeviceD3D11::BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT32& startSlot)
 	{
-		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uav.GetAddressOf(), nullptr);
+		ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uav.GetAddressOf(), nullptr);
 	}
 	void RDeviceD3D11::BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT32& startSlot, const UINT32& uavNum)
 	{
@@ -1009,15 +1009,15 @@ namespace PigeonEngine
 		{
 			uavs[i] = uav[i].Get();
 		}
-		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.GetData(), nullptr);
+		ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.GetData(), nullptr);
 	}
 	void RDeviceD3D11::CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst)
 	{
-		m_ImmediateContext->CopyResource(dst.Get(), src.Get());
+		ImmediateContext->CopyResource(dst.Get(), src.Get());
 	}
 	void RDeviceD3D11::ClearRenderTargetView(const RRenderTexture2D& InRTV, const Color4& InClearColor)
 	{
-		m_ImmediateContext->ClearRenderTargetView(InRTV.RenderTargetView.Get(), InClearColor.rgba);
+		ImmediateContext->ClearRenderTargetView(InRTV.RenderTargetView.Get(), InClearColor.rgba);
 	}
 	void RDeviceD3D11::ClearDepthStencilView(const RRenderTexture2D& InDSV, const UINT32 InFlags, const FLOAT InDepth, const UINT32 InStencil)
 	{
@@ -1025,79 +1025,79 @@ namespace PigeonEngine
 		RDeviceD3D11::TranslateClearDepthStencilFlag(UsedClearFlags, InFlags);
 		UINT8 UsedClearStencil = static_cast<UINT8>(EMath::Min(InStencil, 0xffu));
 		FLOAT UsedClearDepth = EMath::Clamp(InDepth, 0.f, 1.f);
-		m_ImmediateContext->ClearDepthStencilView(InDSV.DepthStencilView.Get(), UsedClearFlags, UsedClearDepth, UsedClearStencil);
+		ImmediateContext->ClearDepthStencilView(InDSV.DepthStencilView.Get(), UsedClearFlags, UsedClearDepth, UsedClearStencil);
 	}
 	void RDeviceD3D11::ClearUnorderedAccessViewFloat(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Color4& clearValue)
 	{
-		m_ImmediateContext->ClearUnorderedAccessViewFloat(uav.Get(), clearValue.rgba);
+		ImmediateContext->ClearUnorderedAccessViewFloat(uav.Get(), clearValue.rgba);
 	}
 	void RDeviceD3D11::ClearUnorderedAccessViewUint(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Vector4Int& clearValue)
 	{
 		UINT32 values[4] = { static_cast<UINT32>(clearValue.x), static_cast<UINT32>(clearValue.y), static_cast<UINT32>(clearValue.z), static_cast<UINT32>(clearValue.w) };
-		m_ImmediateContext->ClearUnorderedAccessViewUint(uav.Get(), values);
+		ImmediateContext->ClearUnorderedAccessViewUint(uav.Get(), values);
 	}
 	void RDeviceD3D11::SetInputLayoutAndVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout, const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT32& stride, const UINT32& offset)
 	{
-		m_ImmediateContext->IASetInputLayout(layout.Get());
+		ImmediateContext->IASetInputLayout(layout.Get());
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT
-		m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
+		ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
 	}
 	void RDeviceD3D11::SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout)
 	{
-		m_ImmediateContext->IASetInputLayout(layout.Get());
+		ImmediateContext->IASetInputLayout(layout.Get());
 	}
 	void RDeviceD3D11::SetNoInputLayout()
 	{
-		m_ImmediateContext->IASetInputLayout(nullptr);
+		ImmediateContext->IASetInputLayout(nullptr);
 	}
 	void RDeviceD3D11::SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& InBuffer, UINT32 InStride, UINT32 InOffset, UINT32 InStartSlot, UINT32 InBufferNum)
 	{
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT
-		m_ImmediateContext->IASetVertexBuffers(InStartSlot, InBufferNum, InBuffer.GetAddressOf(), &InStride, &InOffset);
+		ImmediateContext->IASetVertexBuffers(InStartSlot, InBufferNum, InBuffer.GetAddressOf(), &InStride, &InOffset);
 	}
 	void RDeviceD3D11::SetNoVertexBuffer()
 	{
 		ID3D11Buffer* Buffers[] = { nullptr };
 		UINT32 Stride = 0u, Offset = 0u;
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT
-		m_ImmediateContext->IASetVertexBuffers(0u, 1u, Buffers, &Stride, &Offset);
+		ImmediateContext->IASetVertexBuffers(0u, 1u, Buffers, &Stride, &Offset);
 	}
 	void RDeviceD3D11::SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& InBuffer, UINT32 InOffset, RFormatType InFormat)
 	{
 		DXGI_FORMAT IndexFormat = DXGI_FORMAT_UNKNOWN;
 		RDeviceD3D11::TranslateResourceFormat(IndexFormat, InFormat);
-		m_ImmediateContext->IASetIndexBuffer(InBuffer.Get(), IndexFormat, InOffset);
+		ImmediateContext->IASetIndexBuffer(InBuffer.Get(), IndexFormat, InOffset);
 	}
 	void RDeviceD3D11::SetNoIndexBuffer()
 	{
 		DXGI_FORMAT IndexFormat = DXGI_FORMAT_R32_UINT;
-		m_ImmediateContext->IASetIndexBuffer(nullptr, IndexFormat, 0u);
+		ImmediateContext->IASetIndexBuffer(nullptr, IndexFormat, 0u);
 	}
 	void RDeviceD3D11::SetPrimitiveTopology(RPrimitiveTopologyType topology)
 	{
 		D3D_PRIMITIVE_TOPOLOGY output = D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		TranslatePrimitiveTopology(output, topology);
-		m_ImmediateContext->IASetPrimitiveTopology(output);
+		ImmediateContext->IASetPrimitiveTopology(output);
 	}
 	void RDeviceD3D11::Draw(const UINT32& vertexCount, const UINT32& startVertexLocation)
 	{
-		m_ImmediateContext->Draw(vertexCount, startVertexLocation);
+		ImmediateContext->Draw(vertexCount, startVertexLocation);
 	}
 	void RDeviceD3D11::DrawIndexed(const UINT32& indexCount, const UINT32& startIndexLocation, const INT32& baseVertexLocation)
 	{
-		m_ImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
+		ImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 	}
 	void RDeviceD3D11::DrawIndexedInstance(const UINT32& instanceCount, const UINT32& indexCountPerInstance, const UINT32& startInstanceLocation, const UINT32& startIndexLocation, const INT32& BaseVertexLocation)
 	{
-		m_ImmediateContext->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, BaseVertexLocation, startInstanceLocation);
+		ImmediateContext->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, BaseVertexLocation, startInstanceLocation);
 	}
 	void RDeviceD3D11::Dispatch(const UINT32& x, const UINT32& y, const UINT32& z)
 	{
-		m_ImmediateContext->Dispatch(x, y, z);
+		ImmediateContext->Dispatch(x, y, z);
 	}
 	void RDeviceD3D11::DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT32& alignedByteOffsetForArgs)
 	{
-		m_ImmediateContext->DispatchIndirect(arg.Get(), alignedByteOffsetForArgs);
+		ImmediateContext->DispatchIndirect(arg.Get(), alignedByteOffsetForArgs);
 	}
 	BOOL32 RDeviceD3D11::CreateDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const RDepthState& depthState, const RStencilState* stencilState)
 	{
@@ -1106,7 +1106,7 @@ namespace PigeonEngine
 			::ZeroMemory(&dsd, sizeof(dsd));
 			RDeviceD3D11::TranslateDepthStencilState(dsd, depthState, stencilState);
 		}
-		HRESULT hr = m_Device->CreateDepthStencilState(&dsd, dss.ReleaseAndGetAddressOf());
+		HRESULT hr = Device->CreateDepthStencilState(&dsd, dss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create depth stencil state failed.")));
@@ -1136,7 +1136,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-		HRESULT hr = m_Device->CreateBlendState(&D3DBlendDesc, OutBlendState.ReleaseAndGetAddressOf());
+		HRESULT hr = Device->CreateBlendState(&D3DBlendDesc, OutBlendState.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create blend state failed.")));
@@ -1165,7 +1165,7 @@ namespace PigeonEngine
 			rd.MultisampleEnable = FALSE;
 			rd.AntialiasedLineEnable = FALSE;
 		}
-		HRESULT hr = m_Device->CreateRasterizerState(&rd, rs.ReleaseAndGetAddressOf());
+		HRESULT hr = Device->CreateRasterizerState(&rd, rs.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create rasterizer state failed.")));
@@ -1180,7 +1180,7 @@ namespace PigeonEngine
 			::ZeroMemory(&sd, sizeof(sd));
 			RDeviceD3D11::TranslateSamplerState(sd, samplerState);
 		}
-		HRESULT hr = m_Device->CreateSamplerState(&sd, ss.ReleaseAndGetAddressOf());
+		HRESULT hr = Device->CreateSamplerState(&sd, ss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create sampler state failed.")));
@@ -1195,7 +1195,7 @@ namespace PigeonEngine
 			::ZeroMemory(&qd, sizeof(qd));
 			RDeviceD3D11::TranslateQueryDesc(qd, queryDesc);
 		}
-		HRESULT hr = m_Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
+		HRESULT hr = Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create query failed.")));
@@ -1207,16 +1207,16 @@ namespace PigeonEngine
 	{
 		UINT32 getDataFlag = 0u;
 		RDeviceD3D11::TranslateGetDataFlag(getDataFlag, flag);
-		HRESULT hr = m_ImmediateContext->GetData(pAsync, output, size, getDataFlag);
+		HRESULT hr = ImmediateContext->GetData(pAsync, output, size, getDataFlag);
 		return (!(FAILED(hr)));
 	}
 	void RDeviceD3D11::Begin(ID3D11Asynchronous* pAsync)
 	{
-		m_ImmediateContext->Begin(pAsync);
+		ImmediateContext->Begin(pAsync);
 	}
 	void RDeviceD3D11::End(ID3D11Asynchronous* pAsync)
 	{
-		m_ImmediateContext->End(pAsync);
+		ImmediateContext->End(pAsync);
 	}
 	BOOL32 RDeviceD3D11::Map(const RStructuredBuffer& input, const UINT32& indexSubResource, RResourceMapType mapType, RResourceMapFlagType mapFlag, RMappedResource& output)
 	{
@@ -1240,7 +1240,7 @@ namespace PigeonEngine
 			::ZeroMemory(&ms, sizeof(ms));
 			RDeviceD3D11::TranslateResourceMapType(d3dMapType, mapType);
 			RDeviceD3D11::TranslateResourceMapFlag(d3dMapFlag, mapFlag);
-			HRESULT hr = m_ImmediateContext->Map(
+			HRESULT hr = ImmediateContext->Map(
 				input.Buffer.Get(),
 				indexSubResource,
 				d3dMapType,
@@ -1259,7 +1259,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::Unmap(const RStructuredBuffer& input, const UINT32& indexSubResource)
 	{
-		m_ImmediateContext->Unmap(input.Buffer.Get(), indexSubResource);
+		ImmediateContext->Unmap(input.Buffer.Get(), indexSubResource);
 	}
 	void RDeviceD3D11::TranslateBindFlag(UINT32& output, UINT8 input)
 	{
@@ -2050,13 +2050,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::ClearFinalOutput()
 	{
-		m_ImmediateContext->ClearRenderTargetView(m_RenderTargetView.Get(), Color4(0.5f, 0.5f, 0.5f, 1.f).rgba);
-		m_ImmediateContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.f, 0xffu);
+		ImmediateContext->ClearRenderTargetView(RenderTargetView.Get(), Color4(0.5f, 0.5f, 0.5f, 1.f).rgba);
+		ImmediateContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.f, 0xffu);
 	}
 	void RDeviceD3D11::SetFinalOutput()
 	{
-		m_ImmediateContext->OMSetRenderTargets(1u, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
-		m_ImmediateContext->RSSetViewports(1u, &(m_Viewport));
+		ImmediateContext->OMSetRenderTargets(1u, RenderTargetView.GetAddressOf(), DepthStencilView.Get());
+		ImmediateContext->RSSetViewports(1u, &(Viewport));
 	}
 
 	// ============================================================
@@ -2079,14 +2079,14 @@ namespace PigeonEngine
 		CurrentFrameIndex	= 0u;
 
 		// Populate the engine-side backbuffer wrapper from the swapchain.
-		if (m_SwapChain)
+		if (SwapChain)
 		{
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> BackBufferTex;
-			HRESULT hr = m_SwapChain->GetBuffer(0u, IID_PPV_ARGS(BackBufferTex.GetAddressOf()));
+			HRESULT hr = SwapChain->GetBuffer(0u, IID_PPV_ARGS(BackBufferTex.GetAddressOf()));
 			if (SUCCEEDED(hr))
 			{
 				BackBufferWrapper.Buffer			= BackBufferTex;
-				BackBufferWrapper.RenderTargetView	= m_RenderTargetView;
+				BackBufferWrapper.RenderTargetView	= RenderTargetView;
 				BackBufferWrapper.Width				= InDesc.BackBufferWidth;
 				BackBufferWrapper.Height			= InDesc.BackBufferHeight;
 				BackBufferWrapper.MipLevels			= 1u;
@@ -2129,14 +2129,14 @@ namespace PigeonEngine
 		// frame: the context starts with an empty one, so a draw recorded before the first
 		// SetScissorRects (a pass that owns no view, for instance) would be clipped away.
 		// A view, a shadow tile and an ImGui command each replace it before their own draws.
-		if ((m_ImmediateContext) && (BackBufferWrapper.Width > 0u) && (BackBufferWrapper.Height > 0u))
+		if ((ImmediateContext) && (BackBufferWrapper.Width > 0u) && (BackBufferWrapper.Height > 0u))
 		{
 			D3D11_RECT FullRect = {};
 			FullRect.left	= 0;
 			FullRect.top	= 0;
 			FullRect.right	= static_cast<LONG>(BackBufferWrapper.Width);
 			FullRect.bottom	= static_cast<LONG>(BackBufferWrapper.Height);
-			m_ImmediateContext->RSSetScissorRects(1u, &FullRect);
+			ImmediateContext->RSSetScissorRects(1u, &FullRect);
 		}
 	}
 
@@ -2147,25 +2147,25 @@ namespace PigeonEngine
 
 	BOOL8 RDeviceD3D11::ResizeSwapChain(UINT32 InWidth, UINT32 InHeight) noexcept
 	{
-		if (!m_SwapChain || !m_Device || !m_ImmediateContext || InWidth == 0u || InHeight == 0u)
+		if (!SwapChain || !Device || !ImmediateContext || InWidth == 0u || InHeight == 0u)
 		{
 			return FALSE;
 		}
 
 		// Flush any pending GPU work, then reset ALL context state to release
 		// every internal COM AddRef (RTVs, DSV, SRVs, etc.) before ResizeBuffers.
-		m_ImmediateContext->Flush();
-		m_ImmediateContext->ClearState();
+		ImmediateContext->Flush();
+		ImmediateContext->ClearState();
 
 		// Release all references to back-buffer resources
 		BackBufferWrapper.ReleaseRenderResource();
 		BackBufferWrapper.Buffer.Reset();   // must release the back-buffer texture itself before ResizeBuffers
-		m_RenderTargetView.Reset();
-		m_DepthStencilView.Reset();
-		m_DepthTexture.Reset();
+		RenderTargetView.Reset();
+		DepthStencilView.Reset();
+		DepthTexture.Reset();
 
 		// Resize swap-chain buffers (0 = keep existing count and format)
-		HRESULT hr = m_SwapChain->ResizeBuffers(0, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0u);
+		HRESULT hr = SwapChain->ResizeBuffers(0, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0u);
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("RDeviceD3D11::ResizeSwapChain - ResizeBuffers failed.")));
@@ -2175,20 +2175,20 @@ namespace PigeonEngine
 		// Re-acquire back buffer and recreate RTV
 		{
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> BackBufferTex;
-			hr = m_SwapChain->GetBuffer(0u, IID_PPV_ARGS(BackBufferTex.GetAddressOf()));
+			hr = SwapChain->GetBuffer(0u, IID_PPV_ARGS(BackBufferTex.GetAddressOf()));
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("RDeviceD3D11::ResizeSwapChain - GetBuffer failed.")));
 				return FALSE;
 			}
-			hr = m_Device->CreateRenderTargetView(BackBufferTex.Get(), nullptr, m_RenderTargetView.ReleaseAndGetAddressOf());
+			hr = Device->CreateRenderTargetView(BackBufferTex.Get(), nullptr, RenderTargetView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("RDeviceD3D11::ResizeSwapChain - CreateRenderTargetView failed.")));
 				return FALSE;
 			}
 			BackBufferWrapper.Buffer			= BackBufferTex;
-			BackBufferWrapper.RenderTargetView	= m_RenderTargetView;
+			BackBufferWrapper.RenderTargetView	= RenderTargetView;
 			BackBufferWrapper.Width				= InWidth;
 			BackBufferWrapper.Height			= InHeight;
 			BackBufferWrapper.MipLevels			= 1u;
@@ -2209,7 +2209,7 @@ namespace PigeonEngine
 			DepthDesc.BindFlags      = D3D11_BIND_DEPTH_STENCIL;
 			DepthDesc.CPUAccessFlags = 0u;
 			DepthDesc.MiscFlags      = 0u;
-			hr = m_Device->CreateTexture2D(&DepthDesc, nullptr, m_DepthTexture.ReleaseAndGetAddressOf());
+			hr = Device->CreateTexture2D(&DepthDesc, nullptr, DepthTexture.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("RDeviceD3D11::ResizeSwapChain - CreateTexture2D (depth) failed.")));
@@ -2220,7 +2220,7 @@ namespace PigeonEngine
 			DsvDesc.Format        = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			DsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 			DsvDesc.Flags         = 0u;
-			hr = m_Device->CreateDepthStencilView(m_DepthTexture.Get(), &DsvDesc, m_DepthStencilView.ReleaseAndGetAddressOf());
+			hr = Device->CreateDepthStencilView(DepthTexture.Get(), &DsvDesc, DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("RDeviceD3D11::ResizeSwapChain - CreateDepthStencilView failed.")));
@@ -2229,28 +2229,28 @@ namespace PigeonEngine
 		}
 
 		// Update the viewport to match the new dimensions
-		m_Viewport.TopLeftX = 0.f;
-		m_Viewport.TopLeftY = 0.f;
-		m_Viewport.Width    = static_cast<FLOAT>(InWidth);
-		m_Viewport.Height   = static_cast<FLOAT>(InHeight);
-		m_Viewport.MinDepth = 0.f;
-		m_Viewport.MaxDepth = 1.f;
+		Viewport.TopLeftX = 0.f;
+		Viewport.TopLeftY = 0.f;
+		Viewport.Width    = static_cast<FLOAT>(InWidth);
+		Viewport.Height   = static_cast<FLOAT>(InHeight);
+		Viewport.MinDepth = 0.f;
+		Viewport.MaxDepth = 1.f;
 
 		return TRUE;
 	}
 
 	void RDeviceD3D11::WaitForGPUIdle() noexcept
 	{
-		if (m_ImmediateContext)
+		if (ImmediateContext)
 		{
-			m_ImmediateContext->Flush();
+			ImmediateContext->Flush();
 		}
 	}
 
 	/*
 	* A second swap chain for an ImGui platform window.
 	*
-	* The device's main chain stays where it is (m_SwapChain + BackBufferWrapper): this one
+	* The device's main chain stays where it is (SwapChain + BackBufferWrapper): this one
 	* only owns its own back buffer and RTV, so creating or resizing a viewport window can
 	* never disturb the main window's frame. The wrapper is the same RRenderTexture2D the
 	* main back buffer uses, which is also what IRCommandList::BeginRenderPass expects on
@@ -2343,7 +2343,7 @@ namespace PigeonEngine
 
 	IRRHISwapChain* RDeviceD3D11::CreateSwapChainForWindow(HWND InWindowHandle, UINT32 InWidth, UINT32 InHeight, RFormatType InFormat) noexcept
 	{
-		if ((!m_Device) || (!m_SwapChain) || (!InWindowHandle) || (InWidth == 0u) || (InHeight == 0u))
+		if ((!Device) || (!SwapChain) || (!InWindowHandle) || (InWidth == 0u) || (InHeight == 0u))
 		{
 			return nullptr;
 		}
@@ -2351,7 +2351,7 @@ namespace PigeonEngine
 		// The factory that made the main chain already targets the adapter this device runs
 		// on, so a viewport chain made from it is on the same adapter by construction.
 		Microsoft::WRL::ComPtr<IDXGIFactory> Factory;
-		if (FAILED(m_SwapChain->GetParent(IID_PPV_ARGS(Factory.GetAddressOf()))) || (!Factory))
+		if (FAILED(SwapChain->GetParent(IID_PPV_ARGS(Factory.GetAddressOf()))) || (!Factory))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::CreateSwapChainForWindow - IDXGIFactory not found."));
 			return nullptr;
@@ -2380,14 +2380,14 @@ namespace PigeonEngine
 		SwapChainDesc.Flags				= 0u;
 
 		Microsoft::WRL::ComPtr<IDXGISwapChain> WindowSwapChain;
-		if (FAILED(Factory->CreateSwapChain(m_Device.Get(), &SwapChainDesc, WindowSwapChain.GetAddressOf())) || (!WindowSwapChain))
+		if (FAILED(Factory->CreateSwapChain(Device.Get(), &SwapChainDesc, WindowSwapChain.GetAddressOf())) || (!WindowSwapChain))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::CreateSwapChainForWindow - CreateSwapChain failed."));
 			return nullptr;
 		}
 		Factory->MakeWindowAssociation(InWindowHandle, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
 
-		RD3D11WindowSwapChain* Chain = new RD3D11WindowSwapChain(m_Device.Get(), WindowSwapChain, InWidth, InHeight);
+		RD3D11WindowSwapChain* Chain = new RD3D11WindowSwapChain(Device.Get(), WindowSwapChain, InWidth, InHeight);
 		if (Chain->IsValid() == FALSE)
 		{
 			delete Chain;
@@ -2419,7 +2419,7 @@ namespace PigeonEngine
 			LegacyPtr = &Legacy;
 		}
 
-		auto* NewBuffer = new RBufferResource();
+		RBufferResource* NewBuffer = new RBufferResource();
 		if (!CreateBuffer(*NewBuffer, InDesc, LegacyPtr))
 		{
 			delete NewBuffer;
@@ -2457,7 +2457,7 @@ namespace PigeonEngine
 				LegacyArray[0].SysMemSlicePitch	= InInitialSubresources.SlicePitch;
 				LegacyArrayPtr = LegacyArray;
 			}
-			auto* Tex = new RTextureCubeResource();
+			RTextureCubeResource* Tex = new RTextureCubeResource();
 			if (!CreateTextureCube(*Tex, InDesc, LegacyArrayPtr))
 			{
 				delete Tex;
@@ -2486,7 +2486,7 @@ namespace PigeonEngine
 			static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS);
 		if ((BindFlags & RTorDSorUAVMask) != 0u)
 		{
-			auto* Tex = new RRenderTexture2D();
+			RRenderTexture2D* Tex = new RRenderTexture2D();
 			if (!CreateRenderTexture2D(*Tex, InDesc, LegacyPtr))
 			{
 				delete Tex;
@@ -2496,7 +2496,7 @@ namespace PigeonEngine
 			return TRUE;
 		}
 
-		auto* Tex = new RTexture2DResource();
+		RTexture2DResource* Tex = new RTexture2DResource();
 		if (!CreateTexture2D(*Tex, InDesc, LegacyPtr))
 		{
 			delete Tex;
@@ -2514,7 +2514,7 @@ namespace PigeonEngine
 		}
 		*OutShader = nullptr;
 
-		auto* Shader = new RD3D11Shader();
+		RD3D11Shader* Shader = new RD3D11Shader();
 		if (!CreateShaderObject(InDesc, *Shader))
 		{
 			delete Shader;
@@ -2584,7 +2584,7 @@ namespace PigeonEngine
 		}
 		*OutPipelineState = nullptr;
 
-		auto* PSO = new RPipelineStateD3D11();
+		RPipelineStateD3D11* PSO = new RPipelineStateD3D11();
 		PSO->bIsCompute			= FALSE;
 		PSO->StageMask			= InDesc.StageMask;
 		PSO->PrimitiveTopology	= InDesc.PrimitiveTopology;
@@ -2604,9 +2604,9 @@ namespace PigeonEngine
 
 		if (InDesc.VertexShader)
 		{
-			auto* VS = static_cast<IRD3D11Shader*>(InDesc.VertexShader);
+			IRD3D11Shader* VS = static_cast<IRD3D11Shader*>(InDesc.VertexShader);
 			PSO->VertexShader = VS->GetD3D11VS();
-			if (auto* BakedInputLayout = VS->GetD3D11InputLayout())
+			if (ID3D11InputLayout* BakedInputLayout = VS->GetD3D11InputLayout())
 			{
 				PSO->InputLayout = BakedInputLayout;
 			}
@@ -2633,7 +2633,7 @@ namespace PigeonEngine
 					RDeviceD3D11::TranslateInputLayoutDesc(DataLayouts[LayoutIndex], InDesc.InputLayouts[LayoutIndex]);
 				}
 				Microsoft::WRL::ComPtr<ID3D11InputLayout> DeclaredInputLayout;
-				if (FAILED(m_Device->CreateInputLayout(DataLayouts.GetData(), InDesc.InputLayoutCount
+				if (FAILED(Device->CreateInputLayout(DataLayouts.GetData(), InDesc.InputLayoutCount
 					, VS->GetByteCode(), static_cast<ULONG>(VS->GetByteCodeSize())
 					, DeclaredInputLayout.ReleaseAndGetAddressOf())))
 				{
@@ -2646,7 +2646,7 @@ namespace PigeonEngine
 		}
 		if (InDesc.PixelShader)
 		{
-			auto* PS = static_cast<IRD3D11Shader*>(InDesc.PixelShader);
+			IRD3D11Shader* PS = static_cast<IRD3D11Shader*>(InDesc.PixelShader);
 			PSO->PixelShader = PS->GetD3D11PS();
 		}
 
@@ -2678,9 +2678,9 @@ namespace PigeonEngine
 		}
 		*OutPipelineState = nullptr;
 
-		auto* PSO = new RPipelineStateD3D11();
+		RPipelineStateD3D11* PSO = new RPipelineStateD3D11();
 		PSO->bIsCompute = TRUE;
-		auto* CS = static_cast<IRD3D11Shader*>(InDesc.ComputeShader);
+		IRD3D11Shader* CS = static_cast<IRD3D11Shader*>(InDesc.ComputeShader);
 		PSO->ComputeShader = CS->GetD3D11CS();
 		// Same signature rule as the graphics factory above.
 		if (InDesc.RootSignature == nullptr)
@@ -2702,7 +2702,7 @@ namespace PigeonEngine
 		}
 		*OutSampler = nullptr;
 
-		auto* Sampler = new RSamplerResource();
+		RSamplerResource* Sampler = new RSamplerResource();
 		if (!CreateSamplerState(Sampler->SamplerState, InDesc))
 		{
 			delete Sampler;
@@ -2732,7 +2732,7 @@ namespace PigeonEngine
 
 	BOOL8 RDeviceD3D11::CreateTextureUAVView(IRRHITexture* InTexture, const RRHITextureUAVDesc& InDesc, IRRHITextureUAVView** OutView) noexcept
 	{
-		if ((!InTexture) || (!OutView) || (!m_Device))
+		if ((!InTexture) || (!OutView) || (!Device))
 		{
 			return FALSE;
 		}
@@ -2786,7 +2786,7 @@ namespace PigeonEngine
 
 		RD3D11TextureUAVView* View = new RD3D11TextureUAVView();
 		View->Texture = InTexture;
-		if (FAILED(m_Device->CreateUnorderedAccessView(TextureResource, &UAVDesc, View->UAV.GetAddressOf())))
+		if (FAILED(Device->CreateUnorderedAccessView(TextureResource, &UAVDesc, View->UAV.GetAddressOf())))
 		{
 			delete View;
 			return FALSE;
@@ -2873,7 +2873,7 @@ namespace PigeonEngine
 		}
 	}
 
-	IRRHIResource* RDeviceD3D11::GetBindlessResource(UINT32 InIndex)const noexcept
+	IRRHIResource* RDeviceD3D11::GetBindlessResource(UINT32 InIndex) const noexcept
 	{
 		if (InIndex < BindlessSRVTable.Num<UINT32>() && BindlessSRVTable[InIndex])
 		{
@@ -2894,7 +2894,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		auto* NativeBuffer = static_cast<IRD3D11Buffer*>(InDest)->GetD3D11Buffer();
+		ID3D11Buffer* NativeBuffer = static_cast<IRD3D11Buffer*>(InDest)->GetD3D11Buffer();
 		if (!NativeBuffer)
 		{
 			return;
@@ -2908,7 +2908,7 @@ namespace PigeonEngine
 		const BOOL8 bFullUpdate = (InDestOffset == 0u) && (InSize == InDest->GetByteSize());
 		if (bIsConstantBuffer || bFullUpdate)
 		{
-			m_ImmediateContext->UpdateSubresource(NativeBuffer, 0u, nullptr, InData, 0u, 0u);
+			ImmediateContext->UpdateSubresource(NativeBuffer, 0u, nullptr, InData, 0u, 0u);
 			return;
 		}
 		D3D11_BOX Box;
@@ -2918,7 +2918,7 @@ namespace PigeonEngine
 		Box.right	= static_cast<UINT>(InDestOffset + InSize);
 		Box.bottom	= 1u;
 		Box.back	= 1u;
-		m_ImmediateContext->UpdateSubresource(NativeBuffer, 0u, &Box, InData, 0u, 0u);
+		ImmediateContext->UpdateSubresource(NativeBuffer, 0u, &Box, InData, 0u, 0u);
 	}
 
 	void RDeviceD3D11::UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource) noexcept
@@ -2934,7 +2934,7 @@ namespace PigeonEngine
 		}
 		for (UINT32 SubresourceIndex = 0u, SubresourceNum = InSubresourceCount; SubresourceIndex < SubresourceNum; SubresourceIndex++)
 		{
-			m_ImmediateContext->UpdateSubresource(NativeResource, InFirstSubresource + SubresourceIndex, nullptr,
+			ImmediateContext->UpdateSubresource(NativeResource, InFirstSubresource + SubresourceIndex, nullptr,
 				InSubresources[SubresourceIndex].Data, InSubresources[SubresourceIndex].RowPitch, InSubresources[SubresourceIndex].SlicePitch);
 		}
 	}
@@ -2992,7 +2992,7 @@ namespace PigeonEngine
 		// UpdateSubresource is a CPU side copy into a default usage resource: it needs no
 		// staging buffer and no GPU wait, and the rows the caller describes are exactly what
 		// the box reads.
-		m_ImmediateContext->UpdateSubresource(NativeResource, Subresource, &DestinationBox,
+		ImmediateContext->UpdateSubresource(NativeResource, Subresource, &DestinationBox,
 			InRegion.Data, InRegion.RowPitch, InRegion.SlicePitch);
 		return TRUE;
 	}
@@ -3012,7 +3012,7 @@ namespace PigeonEngine
 		}
 		else
 		{
-			TUniquePtr<RCommandListD3D11> NewCommandList = EMemory::MakeUnique<RCommandListD3D11>(this, m_Device);
+			TUniquePtr<RCommandListD3D11> NewCommandList = EMemory::MakeUnique<RCommandListD3D11>(this, Device);
 			CommandList = NewCommandList.get();
 			CommandListPool.Add(EMemory::Move(NewCommandList));
 		}
@@ -3029,7 +3029,7 @@ namespace PigeonEngine
 		// Immediate-mode wrapper on D3D11: every IRCommandList call has
 		// already executed on the shared immediate context, so submit
 		// just retires the command list back to the pool.
-		auto* D3D11List = static_cast<RCommandListD3D11*>(InCommandList);
+		RCommandListD3D11* D3D11List = static_cast<RCommandListD3D11*>(InCommandList);
 		D3D11List->Close();
 		CommandListFreeList.Add(D3D11List);
 	}
@@ -3048,7 +3048,7 @@ namespace PigeonEngine
 
 	// ----- Backbuffer access -----
 
-	IRRHITexture* RDeviceD3D11::GetCurrentBackBuffer()const noexcept
+	IRRHITexture* RDeviceD3D11::GetCurrentBackBuffer() const noexcept
 	{
 		// const_cast: BackBufferWrapper is logically owned by the device and
 		// always returned as a writable handle; the const-ness here is only
@@ -3072,7 +3072,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		*OutHeap = nullptr;
-		if (!m_Device)
+		if (!Device)
 		{
 			return FALSE;
 		}
@@ -3134,7 +3134,7 @@ namespace PigeonEngine
 	void RDeviceD3D11::BeginTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept
 	{
 		RRHITimestampHeapD3D11* Heap = static_cast<RRHITimestampHeapD3D11*>(InHeap);
-		if ((!Heap) || (!m_ImmediateContext))
+		if ((!Heap) || (!ImmediateContext))
 		{
 			return;
 		}
@@ -3151,14 +3151,14 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		m_ImmediateContext->Begin(DisjointQuery);
+		ImmediateContext->Begin(DisjointQuery);
 		Heap->DisjointOpen[InFrameSlot] = TRUE;
 	}
 
 	void RDeviceD3D11::EndTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept
 	{
 		RRHITimestampHeapD3D11* Heap = static_cast<RRHITimestampHeapD3D11*>(InHeap);
-		if ((!Heap) || (!m_ImmediateContext))
+		if ((!Heap) || (!ImmediateContext))
 		{
 			return;
 		}
@@ -3175,7 +3175,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		m_ImmediateContext->End(DisjointQuery);
+		ImmediateContext->End(DisjointQuery);
 		Heap->DisjointOpen[InFrameSlot] = FALSE;
 		// LastResolvedFrequency stays as it was: it is refreshed only by a
 		// successful ResolveTimestamps, so a caller that reads the frequency
@@ -3198,7 +3198,7 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		if ((!m_ImmediateContext) || (!Heap->TimestampQueries))
+		if ((!ImmediateContext) || (!Heap->TimestampQueries))
 		{
 			return FALSE;
 		}
@@ -3213,7 +3213,7 @@ namespace PigeonEngine
 		// frequency live here; bailing if Disjoint == TRUE means we refuse
 		// to emit ticks the GPU itself has flagged as untrustworthy.
 		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT DisjointData = {};
-		HRESULT Result = m_ImmediateContext->GetData(Heap->DisjointQueries[InFrameSlot].Get(), &DisjointData, sizeof(DisjointData), AsyncFlags);
+		HRESULT Result = ImmediateContext->GetData(Heap->DisjointQueries[InFrameSlot].Get(), &DisjointData, sizeof(DisjointData), AsyncFlags);
 		if (Result != S_OK)
 		{
 			return FALSE;
@@ -3233,7 +3233,7 @@ namespace PigeonEngine
 				continue;
 			}
 			UINT64 Tick = 0u;
-			Result = m_ImmediateContext->GetData(TimestampQuery, &Tick, sizeof(Tick), AsyncFlags);
+			Result = ImmediateContext->GetData(TimestampQuery, &Tick, sizeof(Tick), AsyncFlags);
 			if (Result != S_OK)
 			{
 				return FALSE;

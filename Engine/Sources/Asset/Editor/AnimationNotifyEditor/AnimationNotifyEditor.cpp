@@ -1,6 +1,6 @@
 #include "AnimationNotifyEditor.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 
@@ -19,18 +19,18 @@ namespace PigeonEngine
 
 	void EAnimNotifyEditor::EditorInit()
 	{
-		m_ShowEditor = FALSE;
-		m_Asset = nullptr;
-		m_OpenedAssetFullPath = EString();
-		m_LastError = EString();
-		m_JsonBuffer.Empty();
+		bShowEditor = FALSE;
+		Asset = nullptr;
+		OpenedAssetFullPath = EString();
+		LastError = EString();
+		JsonBuffer.Empty();
 	}
 
 	void EAnimNotifyEditor::OpenNotifyAsset(const EString& InAssetFullPath)
 	{
-		m_ShowEditor = TRUE;
-		m_Asset = nullptr;
-		m_LastError = EString();
+		bShowEditor = TRUE;
+		Asset = nullptr;
+		LastError = EString();
 
 		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
 		const EString AssetName = EPath::GetFileNameWithoutExtension(NormalizedAssetPath);
@@ -41,88 +41,88 @@ namespace PigeonEngine
 		}
 		if ((AssetName.Length() <= 0u) || (AssetDirectory.Length() <= 0u))
 		{
-			m_LastError = EString("Notify editor cannot parse asset path: ") + NormalizedAssetPath;
+			LastError = EString("Notify editor cannot parse asset path: ") + NormalizedAssetPath;
 			return;
 		}
 
 		const EAnimNotifyAsset* LoadedAsset = nullptr;
 		if (!(EAnimNotifyManager::GetManagerSingleton()->LoadNotifyAsset(AssetDirectory, AssetName, LoadedAsset)) || (!LoadedAsset))
 		{
-			m_LastError = EString("Notify editor failed to load asset: ") + NormalizedAssetPath;
+			LastError = EString("Notify editor failed to load asset: ") + NormalizedAssetPath;
 			return;
 		}
 
-		m_Asset = LoadedAsset;
-		m_OpenedAssetFullPath = NormalizedAssetPath;
+		Asset = LoadedAsset;
+		OpenedAssetFullPath = NormalizedAssetPath;
 		LoadJsonBufferFromAsset();
 	}
 
 	void EAnimNotifyEditor::EditorUpdate()
 	{
-		if (!m_ShowEditor)
+		if (!bShowEditor)
 		{
 			return;
 		}
 
 		ImGui::SetNextWindowSize(ImVec2(760.0f, 620.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(480.0f, 60.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Notify Editor", &m_ShowEditor, ImGuiWindowFlags_None);
+		ImGui::Begin("Notify Editor", &bShowEditor, ImGuiWindowFlags_None);
 		{
-			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
+			if (ImGui::Button("Reload") && (OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenNotifyAsset(m_OpenedAssetFullPath);
+				OpenNotifyAsset(OpenedAssetFullPath);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Apply"))
 			{
-				if (m_Asset)
+				if (Asset)
 				{
 					EString Error;
-					const EString JsonText(m_JsonBuffer.GetData());
-					if (EAnimNotifyManager::GetManagerSingleton()->RebuildNotifyAsset(m_Asset, JsonText, Error))
+					const EString JsonText(JsonBuffer.GetData());
+					if (EAnimNotifyManager::GetManagerSingleton()->RebuildNotifyAsset(Asset, JsonText, Error))
 					{
-						m_LastError = EString();
+						LastError = EString();
 						// Re-apply the definition to loaded clips/montages in place.
 						EAnimationManager::GetManagerSingleton()->RefreshNotifyReferences();
 						EAnimMontageManager::GetManagerSingleton()->RefreshNotifyReferences();
 					}
 					else
 					{
-						m_LastError = Error;
+						LastError = Error;
 					}
 				}
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Save"))
 			{
-				if (m_Asset)
+				if (Asset)
 				{
 					EString Error;
-					const EString JsonText(m_JsonBuffer.GetData());
-					if (EAnimNotifyManager::GetManagerSingleton()->SaveNotifyAsset(m_Asset, JsonText, Error))
+					const EString JsonText(JsonBuffer.GetData());
+					if (EAnimNotifyManager::GetManagerSingleton()->SaveNotifyAsset(Asset, JsonText, Error))
 					{
-						m_LastError = EString();
+						LastError = EString();
 						EAnimationManager::GetManagerSingleton()->RefreshNotifyReferences();
 						EAnimMontageManager::GetManagerSingleton()->RefreshNotifyReferences();
 					}
 					else
 					{
-						m_LastError = Error;
+						LastError = Error;
 					}
 				}
 			}
 			ImGui::SameLine();
-			ImGui::TextWrapped("%s", (m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No notify selected."));
+			ImGui::TextWrapped("%s", (OpenedAssetFullPath.Length() > 0u ? *OpenedAssetFullPath : "No notify selected."));
 
-			if (m_LastError.Length() > 0u)
+			if (LastError.Length() > 0u)
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastError);
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *LastError);
 			}
 
 			ImGui::Separator();
-			if (m_Asset)
+			if (Asset)
 			{
-				const EAnimNotifyDefinition* Definition = m_Asset->GetStoragedResource();
+				const EAnimNotifyDefinition* Definition = Asset->GetStoragedResource();
 				if (Definition)
 				{
 					ImGui::Text("Name: %s", *Definition->Name);
@@ -140,9 +140,9 @@ namespace PigeonEngine
 				}
 			}
 
-			if (m_JsonBuffer.Num() > 0)
+			if (JsonBuffer.Num() > 0)
 			{
-				ImGui::InputTextMultiline("JSON", m_JsonBuffer.GetData(), static_cast<int>(m_JsonBuffer.Num())
+				ImGui::InputTextMultiline("JSON", JsonBuffer.GetData(), static_cast<int>(JsonBuffer.Num())
 					, ImVec2(-1.0f, -1.0f), ImGuiInputTextFlags_AllowTabInput);
 			}
 		}
@@ -151,12 +151,12 @@ namespace PigeonEngine
 
 	void EAnimNotifyEditor::LoadJsonBufferFromAsset()
 	{
-		m_JsonBuffer.Empty();
-		if (!m_Asset)
+		JsonBuffer.Empty();
+		if (!Asset)
 		{
 			return;
 		}
-		const EAnimNotifyDefinition* Definition = m_Asset->GetStoragedResource();
+		const EAnimNotifyDefinition* Definition = Asset->GetStoragedResource();
 		if (!Definition)
 		{
 			return;
@@ -164,11 +164,11 @@ namespace PigeonEngine
 
 		const EString& SourceJson = Definition->SourceJson;
 		const INT32 BufferLength = static_cast<INT32>(SourceJson.Length()) + NotifyEditorBufferHeadroom + 1;
-		m_JsonBuffer.SetNum(BufferLength);
-		::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
+		JsonBuffer.SetNum(BufferLength);
+		::memset(JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
 		if (SourceJson.Length() > 0u)
 		{
-			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *SourceJson, SourceJson.Length());
+			::memcpy_s(JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *SourceJson, SourceJson.Length());
 		}
 	}
 

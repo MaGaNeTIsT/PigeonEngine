@@ -18,58 +18,58 @@ namespace
 }
 
 FCharacterVirtual::FCharacterVirtual(const FCharacterVirtualSettings& inSettings)
-	: m_CharacterCreateSettings(inSettings)
+	: CharacterCreateSettings(inSettings)
 	, FCharacterBase(inSettings)
 {
-	m_CharacterSettings = new CharacterVirtualSettings();
-	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings.Up);
-	m_CharacterSettings->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings.PlaneVector), inSettings.CharacterRadiusStanding);
-	m_CharacterSettings->mMaxSlopeAngle = inSettings.MaxSlopeAngle;
+	CharacterSettingsInstance = new CharacterVirtualSettings();
+	CharacterSettingsInstance->mUp = PhysicsUtility::Convert(inSettings.Up);
+	CharacterSettingsInstance->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings.PlaneVector), inSettings.CharacterRadiusStanding);
+	CharacterSettingsInstance->mMaxSlopeAngle = inSettings.MaxSlopeAngle;
 	if (inSettings.Shape)
-		m_CharacterSettings->mShape = inSettings.Shape->CreateShape();
-	m_CharacterSettings->mMass = inSettings.Mass;
-	m_CharacterSettings->mMaxStrength = inSettings.MaxStrength;
-	m_CharacterSettings->mInnerBodyLayer = inSettings.Layer.ToJolt();
-	m_CharacterSettings->mShapeOffset = PhysicsUtility::Convert2Meter(inSettings.ShapeOffset);
-	m_CharacterSettings->mBackFaceMode = inSettings.CanBackFaceMode ? EBackFaceMode::CollideWithBackFaces : EBackFaceMode::IgnoreBackFaces;
-	m_CharacterSettings->mPredictiveContactDistance = inSettings.PredictiveContactDistance;
-	m_CharacterSettings->mMaxCollisionIterations = inSettings.MaxCollisionIterations;
-	m_CharacterSettings->mMaxConstraintIterations = inSettings.MaxConstraintIterations;
-	m_CharacterSettings->mMinTimeRemaining = inSettings.MinTimeRemaining;
-	m_CharacterSettings->mCollisionTolerance = inSettings.CollisionTolerance;
-	m_CharacterSettings->mCharacterPadding = inSettings.CharacterPadding;
-	m_CharacterSettings->mMaxNumHits = inSettings.MaxNumHits;
-	m_CharacterSettings->mHitReductionCosMaxAngle = inSettings.HitReductionCosMaxAngle;
-	m_CharacterSettings->mPenetrationRecoverySpeed = inSettings.PenetrationRecoverySpeed;
+		CharacterSettingsInstance->mShape = inSettings.Shape->CreateShape();
+	CharacterSettingsInstance->mMass = inSettings.Mass;
+	CharacterSettingsInstance->mMaxStrength = inSettings.MaxStrength;
+	CharacterSettingsInstance->mInnerBodyLayer = inSettings.Layer.ToJolt();
+	CharacterSettingsInstance->mShapeOffset = PhysicsUtility::Convert2Meter(inSettings.ShapeOffset);
+	CharacterSettingsInstance->mBackFaceMode = inSettings.CanBackFaceMode ? EBackFaceMode::CollideWithBackFaces : EBackFaceMode::IgnoreBackFaces;
+	CharacterSettingsInstance->mPredictiveContactDistance = inSettings.PredictiveContactDistance;
+	CharacterSettingsInstance->mMaxCollisionIterations = inSettings.MaxCollisionIterations;
+	CharacterSettingsInstance->mMaxConstraintIterations = inSettings.MaxConstraintIterations;
+	CharacterSettingsInstance->mMinTimeRemaining = inSettings.MinTimeRemaining;
+	CharacterSettingsInstance->mCollisionTolerance = inSettings.CollisionTolerance;
+	CharacterSettingsInstance->mCharacterPadding = inSettings.CharacterPadding;
+	CharacterSettingsInstance->mMaxNumHits = inSettings.MaxNumHits;
+	CharacterSettingsInstance->mHitReductionCosMaxAngle = inSettings.HitReductionCosMaxAngle;
+	CharacterSettingsInstance->mPenetrationRecoverySpeed = inSettings.PenetrationRecoverySpeed;
 }
 
 FCharacterVirtual::~FCharacterVirtual()
 {
-	if (m_Character)
+	if (CharacterInstance)
 		RemoveFromPhysicsSystem();
-	delete m_CharacterSettings;
-	m_CharacterSettings = nullptr;
+	delete CharacterSettingsInstance;
+	CharacterSettingsInstance = nullptr;
 }
 
 void FCharacterVirtual::AddToPhysicsSystem(PhysicsUtility::EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, const ObjectIdentityType& InObjectID, BOOL32 inLockBodies)
 {
 	(void)inActivationMode;
 	(void)inLockBodies;
-	if (m_Character)
+	if (CharacterInstance)
 	{
 		RemoveFromPhysicsSystem();
 	}
 
-	m_Character = new CharacterVirtual(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), static_cast<uint64>(InObjectID), FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
-	m_Character->SetListener(&m_CharacterContactListener);
-	CharacterBase = m_Character;
+	CharacterInstance = new CharacterVirtual(CharacterSettingsInstance, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), static_cast<uint64>(InObjectID), FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
+	CharacterInstance->SetListener(&ContactListenerInstance);
+	CharacterBase = CharacterInstance;
 }
 
 void FCharacterVirtual::RemoveFromPhysicsSystem(BOOL32 inLockBodies)
 {
 	(void)inLockBodies;
-	delete m_Character;
-	m_Character = nullptr;
+	delete CharacterInstance;
+	CharacterInstance = nullptr;
 	CharacterBase = nullptr;
 }
 
@@ -88,89 +88,89 @@ void FCharacterVirtual::SetLinearAndAngularVelocity(Vector3 inLinearVelocity, Ve
 Vector3 FCharacterVirtual::GetLinearVelocity(BOOL32 inLockBodies) const
 {
 	(void)inLockBodies;
-	return PhysicsUtility::Convert(m_Character->GetLinearVelocity());
+	return PhysicsUtility::Convert(CharacterInstance->GetLinearVelocity());
 }
 
 void FCharacterVirtual::SetLinearVelocity(Vector3 inLinearVelocity, BOOL32 inLockBodies)
 {
 	(void)inLockBodies;
-	m_Character->SetLinearVelocity(PhysicsUtility::Convert(inLinearVelocity));
+	CharacterInstance->SetLinearVelocity(PhysicsUtility::Convert(inLinearVelocity));
 }
 
 void FCharacterVirtual::AddLinearVelocity(Vector3 inLinearVelocity, BOOL32 inLockBodies)
 {
 	(void)inLockBodies;
-	m_Character->SetLinearVelocity(m_Character->GetLinearVelocity() + PhysicsUtility::Convert(inLinearVelocity));
+	CharacterInstance->SetLinearVelocity(CharacterInstance->GetLinearVelocity() + PhysicsUtility::Convert(inLinearVelocity));
 }
 
 void FCharacterVirtual::AddImpulse(Vector3 inImpulse, BOOL32 inLockBodies)
 {
 	(void)inLockBodies;
-	const FLOAT Mass = EMath::Max(m_Character->GetMass(), 1.0e-6f);
-	m_Character->SetLinearVelocity(m_Character->GetLinearVelocity() + PhysicsUtility::Convert(inImpulse / Mass));
+	const FLOAT Mass = EMath::Max(CharacterInstance->GetMass(), 1.0e-6f);
+	CharacterInstance->SetLinearVelocity(CharacterInstance->GetLinearVelocity() + PhysicsUtility::Convert(inImpulse / Mass));
 }
 
 void FCharacterVirtual::GetPositionAndRotation(Vector3& outPosition, Quaternion& outRotation, BOOL32 inLockBodies) const
 {
 	(void)inLockBodies;
-	outPosition = PhysicsUtility::Convert2Centimeter(m_Character->GetPosition());
-	outRotation = PhysicsUtility::Convert(m_Character->GetRotation());
+	outPosition = PhysicsUtility::Convert2Centimeter(CharacterInstance->GetPosition());
+	outRotation = PhysicsUtility::Convert(CharacterInstance->GetRotation());
 }
 
 void FCharacterVirtual::SetPositionAndRotation(Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EActivate inActivationMode, BOOL32 inLockBodies) const
 {
 	(void)inActivationMode;
 	(void)inLockBodies;
-	m_Character->SetPosition(PhysicsUtility::Convert2Meter(inPosition));
-	m_Character->SetRotation(PhysicsUtility::Convert(inRotation));
+	CharacterInstance->SetPosition(PhysicsUtility::Convert2Meter(inPosition));
+	CharacterInstance->SetRotation(PhysicsUtility::Convert(inRotation));
 }
 
 Vector3 FCharacterVirtual::GetPosition(BOOL32 inLockBodies) const
 {
 	(void)inLockBodies;
-	return PhysicsUtility::Convert2Centimeter(m_Character->GetPosition());
+	return PhysicsUtility::Convert2Centimeter(CharacterInstance->GetPosition());
 }
 
 void FCharacterVirtual::SetPosition(Vector3 inPosition, PhysicsUtility::EActivate inActivationMode, BOOL32 inLockBodies)
 {
 	(void)inActivationMode;
 	(void)inLockBodies;
-	m_Character->SetPosition(PhysicsUtility::Convert2Meter(inPosition));
+	CharacterInstance->SetPosition(PhysicsUtility::Convert2Meter(inPosition));
 }
 
 Quaternion FCharacterVirtual::GetRotation(BOOL32 inLockBodies) const
 {
 	(void)inLockBodies;
-	return PhysicsUtility::Convert(m_Character->GetRotation());
+	return PhysicsUtility::Convert(CharacterInstance->GetRotation());
 }
 
 void FCharacterVirtual::SetRotation(Quaternion inRotation, PhysicsUtility::EActivate inActivationMode, BOOL32 inLockBodies)
 {
 	(void)inActivationMode;
 	(void)inLockBodies;
-	m_Character->SetRotation(PhysicsUtility::Convert(inRotation));
+	CharacterInstance->SetRotation(PhysicsUtility::Convert(inRotation));
 }
 
 Vector3 FCharacterVirtual::GetCenterOfMassPosition(BOOL32 inLockBodies) const
 {
 	(void)inLockBodies;
-	return PhysicsUtility::Convert2Centimeter(m_Character->GetCenterOfMassPosition());
+	return PhysicsUtility::Convert2Centimeter(CharacterInstance->GetCenterOfMassPosition());
 }
 
 void FCharacterVirtual::SetLayer(FPhysicsObjectLayer inLayer, BOOL32 inLockBodies)
 {
 	(void)inLockBodies;
-	m_CharacterSettings->mInnerBodyLayer = inLayer.ToJolt();
+	CharacterSettingsInstance->mInnerBodyLayer = inLayer.ToJolt();
 }
 
 BOOL32 FCharacterVirtual::SetShape(FShape* inShape, FLOAT inMaxPenetrationDepth, BOOL32 inLockBodies)
 {
 	(void)inLockBodies;
-	const auto BroadPhaseLayerFilter = GetBroadPhaseLayerFilter(m_CharacterCreateSettings);
-	const auto ObjectLayerFilter = GetObjectLayerFilter(m_CharacterCreateSettings);
-	IgnoreSingleBodyFilter BodyFilter(m_Character->GetInnerBodyID());
+	const auto BroadPhaseLayerFilter = GetBroadPhaseLayerFilter(CharacterCreateSettings);
+	const auto ObjectLayerFilter = GetObjectLayerFilter(CharacterCreateSettings);
+	IgnoreSingleBodyFilter BodyFilter(CharacterInstance->GetInnerBodyID());
 	ShapeFilter ShapeFilter;
-	if (m_Character->SetShape(inShape->CreateShape(), PhysicsUtility::Convert2Meter(inMaxPenetrationDepth), BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->TempAllocator))
+	if (CharacterInstance->SetShape(inShape->CreateShape(), PhysicsUtility::Convert2Meter(inMaxPenetrationDepth), BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->TempAllocator))
 	{
 		Shape = inShape;
 		return TRUE;
@@ -183,40 +183,40 @@ void FCharacterVirtual::PostSimulation(FLOAT inDeltaTime, BOOL32 inLockBodies)
 	(void)inLockBodies;
 	if (inDeltaTime > 0.0f)
 	{
-		const Vector3 Gravity = PhysicsUtility::Convert(FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity()) * m_CharacterCreateSettings.GravityFactor;
-		m_Character->SetLinearVelocity(m_Character->GetLinearVelocity() + PhysicsUtility::Convert(Gravity * inDeltaTime));
+		const Vector3 Gravity = PhysicsUtility::Convert(FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity()) * CharacterCreateSettings.GravityFactor;
+		CharacterInstance->SetLinearVelocity(CharacterInstance->GetLinearVelocity() + PhysicsUtility::Convert(Gravity * inDeltaTime));
 	}
 
-	const auto BroadPhaseLayerFilter = GetBroadPhaseLayerFilter(m_CharacterCreateSettings);
-	const auto ObjectLayerFilter = GetObjectLayerFilter(m_CharacterCreateSettings);
-	IgnoreSingleBodyFilter BodyFilter(m_Character->GetInnerBodyID());
+	const auto BroadPhaseLayerFilter = GetBroadPhaseLayerFilter(CharacterCreateSettings);
+	const auto ObjectLayerFilter = GetObjectLayerFilter(CharacterCreateSettings);
+	IgnoreSingleBodyFilter BodyFilter(CharacterInstance->GetInnerBodyID());
 	ShapeFilter ShapeFilter;
 	CharacterVirtual::ExtendedUpdateSettings UpdateSettings;
-	m_Character->ExtendedUpdate(inDeltaTime, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity(), UpdateSettings, BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->TempAllocator);
+	CharacterInstance->ExtendedUpdate(inDeltaTime, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity(), UpdateSettings, BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->TempAllocator);
 }
 
 void FCharacterVirtual::AddListener(FCharacterContactEventListenerInterface* InListener)
 {
-	m_CharacterContactListener.AddListener(InListener);
-	if (m_Character)
+	ContactListenerInstance.AddListener(InListener);
+	if (CharacterInstance)
 	{
-		m_Character->SetListener(&m_CharacterContactListener);
+		CharacterInstance->SetListener(&ContactListenerInstance);
 	}
 }
 
 void FCharacterVirtual::RemoveListener(FCharacterContactEventListenerInterface* InListener)
 {
-	m_CharacterContactListener.RemoveListener(InListener);
+	ContactListenerInstance.RemoveListener(InListener);
 }
 
 FCharacterContactListener* FCharacterVirtual::GetListener()
 {
-	return &m_CharacterContactListener;
+	return &ContactListenerInstance;
 }
 
 const FCharacterContactListener* FCharacterVirtual::GetListener() const
 {
-	return &m_CharacterContactListener;
+	return &ContactListenerInstance;
 }
 
 PIGEONENGINE_NAMESPACE_END

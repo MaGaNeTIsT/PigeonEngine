@@ -34,10 +34,10 @@ namespace PigeonEngine
 	void PMovementComponent::BeginAddedToScene(PWorld* World)
 	{
 		PActorComponent::BeginAddedToScene(World);
-		if (m_Character)
+		if (CharacterActor)
 		{
-			LastSyncedPosition = m_Character->GetActorLocation();
-			LastSyncedRotation = m_Character->GetActorRotation();
+			LastSyncedPosition = CharacterActor->GetActorLocation();
+			LastSyncedRotation = CharacterActor->GetActorRotation();
 			bHasSyncedTransform = TRUE;
 		}
 		TryRegisterPostPhysicsTick();
@@ -54,9 +54,9 @@ namespace PigeonEngine
 
 	void PMovementComponent::TryRegisterPostPhysicsTick()
 	{
-		if (m_Character && m_Character->GetWorld() && !bPostPhysicsTickRegistered)
+		if (CharacterActor && CharacterActor->GetWorld() && !bPostPhysicsTickRegistered)
 		{
-			PWorld* World = m_Character->GetWorld();
+			PWorld* World = CharacterActor->GetWorld();
 			const ObjectIdentityType ComponentID = GetUniqueID();
 			PostPhysicsTickHandler = TFunction<void(FLOAT)>([World, ComponentID](FLOAT deltaTime)
 			{
@@ -94,19 +94,19 @@ namespace PigeonEngine
 	void PMovementComponent::HandlePostPhysicsTick(FLOAT deltaTime)
 	{
 		(void)deltaTime;
-		if (!m_Character)
+		if (!CharacterActor)
 		{
 			return;
 		}
 
-		if (FCharacterVirtual* Character = m_Character->GetPhysicsCharacter())
+		if (FCharacterVirtual* Character = CharacterActor->GetPhysicsCharacter())
 		{
 			const Vector3 NewPosition = Character->GetPosition();
 			const Quaternion NewRotation = Character->GetRotation();
 			if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
 			{
-				m_Character->SetActorLocation(NewPosition);
-				m_Character->SetActorRotation(NewRotation);
+				CharacterActor->SetActorLocation(NewPosition);
+				CharacterActor->SetActorRotation(NewRotation);
 				LastSyncedPosition = NewPosition;
 				LastSyncedRotation = NewRotation;
 				bHasSyncedTransform = TRUE;
@@ -116,16 +116,16 @@ namespace PigeonEngine
 
 	void PMovementComponent::HandleInput(const ECharacterMoveInput& Input)
 	{
-		Vector3 MovementDirection = m_Character->GetActorForwardVector() * EMath::Clamp(Input.YInput, -1.f, 1.f) + m_Character->GetActorRightVector() * EMath::Clamp(Input.XInput, -1.f, 1.f);
+		Vector3 MovementDirection = CharacterActor->GetActorForwardVector() * EMath::Clamp(Input.YInput, -1.f, 1.f) + CharacterActor->GetActorRightVector() * EMath::Clamp(Input.XInput, -1.f, 1.f);
 		MovementDirection.Normalize();
 		HandleInputInternal(MovementDirection, Input.bJump, Input.bCrouch, Input.bRun);
 	}
 
 	void PMovementComponent::HandleInputInternal(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 InSwitchStance, BOOL32 InRun)
 	{
-		FCharacterVirtual* Character = m_Character->GetPhysicsCharacter();
-		const Vector3 WorldUp = GetCharacterWorldUp(m_Character);
-		//character->SetPositionAndRotation(m_Character->GetActorLocation(), m_Character->GetActorRotation());
+		FCharacterVirtual* Character = CharacterActor->GetPhysicsCharacter();
+		const Vector3 WorldUp = GetCharacterWorldUp(CharacterActor);
+		//character->SetPositionAndRotation(CharacterActor->GetActorLocation(), CharacterActor->GetActorRotation());
 		FCharacterBase::EGroundState GroundState = Character->GetGroundState();
 		if (GroundState == FCharacterBase::EGroundState::OnSteepGround
 			|| GroundState == FCharacterBase::EGroundState::NotSupported)
@@ -139,19 +139,19 @@ namespace PigeonEngine
 
 		// Stance switch
 		if (InSwitchStance)
-			Character->SetShape(Character->GetShape() == m_Character->GetStandingShape() ? m_Character->GetCrouchingShape() : m_Character->GetStandingShape(), 1.5f * 0.02f);
+			Character->SetShape(Character->GetShape() == CharacterActor->GetStandingShape() ? CharacterActor->GetCrouchingShape() : CharacterActor->GetStandingShape(), 1.5f * 0.02f);
 
-		if (m_Character->ControlMovementDuringJump || Character->IsSupported())
+		if (CharacterActor->ControlMovementDuringJump || Character->IsSupported())
 		{
 			// Update velocity
 			Vector3 CurrentVelocity = Character->GetLinearVelocity();
-			Vector3 DesiredVelocity = (InRun ? m_Character->CharacterRunSpeed : m_Character->CharacterSpeed) * InMovementDirection;
+			Vector3 DesiredVelocity = (InRun ? CharacterActor->CharacterRunSpeed : CharacterActor->CharacterSpeed) * InMovementDirection;
 			DesiredVelocity += WorldUp * Vector3::Dot(CurrentVelocity, WorldUp);
 			Vector3 NewVelocity = 0.75f * CurrentVelocity + 0.25f * DesiredVelocity;
 
 			// Jump
 			if (InJump && Character->IsSupported())
-			NewVelocity += WorldUp * (m_Character->JumpSpeed - Vector3::Dot(NewVelocity, WorldUp));
+			NewVelocity += WorldUp * (CharacterActor->JumpSpeed - Vector3::Dot(NewVelocity, WorldUp));
 
 			// Update the velocity
 			Character->SetLinearVelocity(NewVelocity);
