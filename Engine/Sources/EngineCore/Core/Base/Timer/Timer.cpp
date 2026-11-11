@@ -88,6 +88,7 @@ namespace PigeonEngine
 		this->m_Timer = timer;
 		this->m_Total = EMath::TruncToDouble(0);
 		this->m_Delta = EMath::TruncToDouble(0);
+		this->m_FrameIndex = 0u;
 	}
 	EGameTimer::~EGameTimer()
 	{
@@ -96,6 +97,7 @@ namespace PigeonEngine
 	{
 		this->m_Total = EMath::TruncToDouble(0);
 		this->m_Delta = EMath::TruncToDouble(0);
+		this->m_FrameIndex = 0u;
 	}
 	void EGameTimer::Update()
 	{
@@ -107,6 +109,7 @@ namespace PigeonEngine
 		DOUBLE temp = this->m_Timer->GetClockTime();
 		m_Delta = temp - m_Total;
 		m_Total = temp;
+		m_FrameIndex++;
 	}
 	DOUBLE EGameTimer::GetClockTime()const
 	{
@@ -115,6 +118,10 @@ namespace PigeonEngine
 	DOUBLE EGameTimer::GetDeltaTime()const
 	{
 		return (this->m_Delta);
+	}
+	UINT64 EGameTimer::GetFrameIndex()const
+	{
+		return (this->m_FrameIndex);
 	}
 
 	namespace EngineSystemTime

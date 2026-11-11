@@ -2,6 +2,9 @@
 #include <CoreMinimal.h>
 #include <fstream>
 #include <filesystem>
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
 namespace PigeonEngine
 {
 
@@ -95,6 +98,66 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	BOOL8 EFileHelper::SaveBytesToFileAtomic(const EString& FilePath, const void* Bytes, const ULONG& Size, const BOOL8& bCreateDirectory)
+	{
+		const std::filesystem::path TargetPath(*FilePath);
+		const std::filesystem::path DirectoryPath = TargetPath.parent_path();
+		if (!std::filesystem::exists(DirectoryPath))
+		{
+			if (bCreateDirectory == FALSE)
+			{
+				return FALSE;
+			}
+			std::error_code CreateError;
+			std::filesystem::create_directories(DirectoryPath, CreateError);
+			if (CreateError)
+			{
+				return FALSE;
+			}
+		}
+
+		const EString TempPath = FilePath + EString(PE_TEXT(".tmp"));
+		{
+			std::ofstream Output(*TempPath, std::ios::binary | std::ios::trunc);
+			if (!Output.is_open())
+			{
+				return FALSE;
+			}
+			Output.write(static_cast<const CHAR*>(Bytes), Size);
+			if (!Output.good())
+			{
+				Output.close();
+				std::filesystem::remove(std::filesystem::path(*TempPath));
+				return FALSE;
+			}
+			Output.close();
+			if (!Output.good())
+			{
+				std::filesystem::remove(std::filesystem::path(*TempPath));
+				return FALSE;
+			}
+		}
+
+#if defined(_WIN32)
+		// Same-volume replacement; the previous file is never truncated before the new bytes
+		// are complete on disk.
+		if (::MoveFileExA(*TempPath, *FilePath, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) == FALSE)
+		{
+			::DeleteFileA(*TempPath);
+			return FALSE;
+		}
+#else
+		std::error_code RenameError;
+		std::filesystem::rename(std::filesystem::path(*TempPath), TargetPath, RenameError);
+		if (RenameError)
+		{
+			std::filesystem::remove(std::filesystem::path(*TempPath));
+			return FALSE;
+		}
+#endif
+		return TRUE;
+	}
+
 	BOOL8 EFileHelper::IsFileExists(const EString& FilePath)
 	{
 		return static_cast<BOOL8>(std::filesystem::exists(*FilePath));
@@ -183,5 +246,19 @@ namespace PigeonEngine
 			PE_CHECK((ENGINE_ASSET_ERROR), ("EFileHelper::CopyFileToNewPath : read file error!"), (FALSE));
 			return FALSE;
 		}
+	}
+
+	BOOL8 EFileHelper::MoveFile(const EString& FilePath, const EString& NewFilePath)
+	{
+		std::error_code Error;
+		std::filesystem::rename(std::filesystem::path(*FilePath), std::filesystem::path(*NewFilePath), Error);
+		return ((Error) ? FALSE : TRUE);
+	}
+
+	BOOL8 EFileHelper::DeleteFile(const EString& FilePath)
+	{
+		std::error_code Error;
+		const bool bRemoved = std::filesystem::remove(std::filesystem::path(*FilePath), Error);
+		return (((Error) || (!bRemoved)) ? FALSE : TRUE);
 	}
 };

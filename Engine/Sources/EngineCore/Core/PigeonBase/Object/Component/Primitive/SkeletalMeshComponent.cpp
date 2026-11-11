@@ -3,13 +3,20 @@
 #include <AnimationAsset/AnimationAsset.h>
 #include <Asset/AssetLoadManager.h>
 #include <Base/Timer/Timer.h>
+#include <Development/Profiler.h>
 #include <MeshAsset/MeshAsset.h>
+#include <MultiThread/Atomic.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
 namespace PigeonEngine
 {
+
+	// Characters whose animation Update ran since the last consume. Written and read on the
+	// game thread today; atomic so a future parallel evaluation can keep the same profiling
+	// hook. File-local: only ConsumeAnimatedCharacterNum publishes it.
+	static TAtomic<UINT32> AnimatedCharacterNumCounter(0u);
 
 	static void RegisterClassTypes()
 	{
@@ -59,6 +66,8 @@ namespace PigeonEngine
 	}
 	BOOL32 PSkeletalMeshComponent::BuildRenderSnapshot(FPrimitiveRenderSnapshot& OutSnapshot) const
 	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_ANIM_SNAPSHOT);
+
 		if (!PMeshComponent::BuildRenderSnapshot(OutSnapshot))
 		{
 			return FALSE;
@@ -360,6 +369,27 @@ namespace PigeonEngine
 			AnimInstance->ResumeMontage(InSlotName);
 		}
 	}
+	void PSkeletalMeshComponent::SetMontagePositionSeconds(FLOAT InPositionSeconds)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetMontagePositionSeconds(InPositionSeconds);
+		}
+	}
+	void PSkeletalMeshComponent::SetMontagePlayRate(FLOAT InPlayRate)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetMontagePlayRate(InPlayRate);
+		}
+	}
+	void PSkeletalMeshComponent::SetMontageLoopMode(EAnimationLoopMode InLoopMode)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetMontageLoopMode(InLoopMode);
+		}
+	}
 	BOOL32 PSkeletalMeshComponent::IsMontagePlaying()const
 	{
 		return (AnimInstance ? AnimInstance->IsMontagePlaying() : FALSE);
@@ -437,10 +467,24 @@ namespace PigeonEngine
 		{
 			const PWorld* World = GetWorld();
 			const EGameTimer* GameTimer = (World ? World->GetGameTimer() : nullptr);
-			const FLOAT DeltaSeconds = (GameTimer ? static_cast<FLOAT>(GameTimer->GetDeltaTime()) : 0.0f);
-			if (AnimInstance->Update(DeltaSeconds))
+			// An editor build runs World::Tick and then World::EditorTick, and both walk the
+			// component tree through TickRender. Advancing twice would play every clip at
+			// double speed, so the same frame index is rejected here. A zero index means no
+			// update has happened yet (or there is no timer), and is deliberately not stamped.
+			const UINT64 FrameIndex = (GameTimer ? GameTimer->GetFrameIndex() : 0u);
+			const BOOL32 bAlreadyAdvanced = (((FrameIndex != 0u) && (FrameIndex == LastAnimationFrameIndex)) ? TRUE : FALSE);
+			if (!bAlreadyAdvanced)
 			{
-				MarkBoneMemoryPoolDirty();
+				if (FrameIndex != 0u)
+				{
+					LastAnimationFrameIndex = FrameIndex;
+				}
+				AnimatedCharacterNumCounter.FetchAdd(1u);
+				const FLOAT DeltaSeconds = (GameTimer ? static_cast<FLOAT>(GameTimer->GetDeltaTime()) : 0.0f);
+				if (AnimInstance->Update(DeltaSeconds))
+				{
+					MarkBoneMemoryPoolDirty();
+				}
 			}
 		}
 		if (IsRenderStateDirty())
@@ -451,6 +495,11 @@ namespace PigeonEngine
 		{
 			elem->TickRender();
 		}
+	}
+
+	UINT32 PSkeletalMeshComponent::ConsumeAnimatedCharacterNum()
+	{
+		return AnimatedCharacterNumCounter.Exchange(0u);
 	}
 
 	// Render proxy functions START

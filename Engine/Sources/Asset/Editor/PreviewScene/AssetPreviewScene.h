@@ -7,6 +7,7 @@
 
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Text/String.h>
+#include <Animation/AnimationTypes.h>
 #include <Main/FrameRenderer.h>
 
 namespace PigeonEngine
@@ -19,6 +20,10 @@ namespace PigeonEngine
 	class EStaticMeshAsset;
 	class ESkinnedMeshAsset;
 	class ESkeletonAsset;
+	class ESkeletonAnimationAsset;
+	class EAnimStateMachine;
+	class EAnimStateMachineInstance;
+	class EAnimMontage;
 	class EMesh;
 	class RSceneRenderer;
 	struct ESkeletonAnimationClip;
@@ -33,8 +38,9 @@ namespace PigeonEngine
 		void Shutdown();
 
 		void UpdateViewportSize(UINT32 InWidth, UINT32 InHeight);
-		// GameThread: the frame's game-side work - animation sampling, camera, scene tick. The
-		// image is recorded by RenderFrame, on the render thread, never here.
+		// GameThread: camera, preview scene tick, and the AnimInstance update that runs from
+		// the skeletal component's TickRender. The image is recorded by RenderFrame, on the
+		// render thread, never here.
 		void Tick(FLOAT InDeltaSeconds);
 
 		// IEngineFrameRenderer
@@ -43,10 +49,25 @@ namespace PigeonEngine
 
 		void SetStaticMesh(const EStaticMeshAsset* InStaticMeshAsset);
 		void SetSkinnedMesh(const ESkinnedMeshAsset* InSkinnedMeshAsset, const ESkeletonAsset* InSkeletonAsset);
-		void SetAnimationClip(const ESkeletonAnimationClip* InAnimationClip);
+		// The preview runs the same EAnimInstance the runtime uses. InAnimationClipIndex is
+		// resolved against InAnimationAsset; -1 keeps the bind pose.
+		void SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset, INT32 InAnimationClipIndex);
+		// Editor draft state machine. The component owns the instance; the caller can inject
+		// parameters through GetStateMachineInstance().
+		void SetStateMachine(const EAnimStateMachine* InMachine);
+		void ClearStateMachine();
+		PE_NODISCARD EAnimStateMachineInstance* GetStateMachineInstance()const;
+		// Editor draft montage. The preview plays one section as a layer over the bind pose so
+		// BoneMask/Slot/Notify behavior can be inspected before the asset is applied. The
+		// animation asset supplies the section clips; it is bound to the AnimInstance first.
+		void SetMontage(const EAnimMontage* InMontage, const ESkeletonAnimationAsset* InAnimationAsset
+			, const EString& InSectionName);
+		void ClearMontage();
+		PE_NODISCARD BOOL8 IsMontageMode()const;
 		void SetAutoRotate(BOOL8 InAutoRotate);
 		void SetPlayAnimation(BOOL8 InPlayAnimation);
 		void SetPlaybackRate(FLOAT InPlaybackRate);
+		void SetPlaybackLoopMode(EAnimationLoopMode InLoopMode);
 		void ResetPlayback();
 		// The editor's timeline: the position is in seconds and is clamped to the selected
 		// clip. While playback is enabled the value still advances every Tick.
@@ -69,7 +90,9 @@ namespace PigeonEngine
 		// Preview-only clip planes: they follow the framing distance so assets authored at
 		// different scales (metres vs centimetres) are neither clipped nor lost in the distance.
 		void UpdateCameraProjection();
-		void ApplyAnimation(FLOAT InDeltaSeconds);
+		// Re-binds the current asset/clip to the preview component after it is created or the
+		// mesh/skeleton changed. The component owns playback from then on.
+		void BindPreviewAnimation();
 		const EMesh* GetPreviewMeshResource() const;
 		// Skeletal assets are authored Y-up and are rotated into the engine's Z-up space. The
 		// component rotation and the placement maths have to use this one value: computing the
@@ -108,7 +131,13 @@ namespace PigeonEngine
 		const EStaticMeshAsset*	m_StaticMeshAsset = nullptr;
 		const ESkinnedMeshAsset*	m_SkinnedMeshAsset = nullptr;
 		const ESkeletonAsset*	m_SkeletonAsset = nullptr;
+		const ESkeletonAnimationAsset*	m_AnimationAsset = nullptr;
+		INT32					m_AnimationClipIndex = -1;
 		const ESkeletonAnimationClip*	m_AnimationClip = nullptr;
+		const EAnimMontage*		m_Montage = nullptr;
+		EString					m_MontageSectionName;
+		BOOL8					m_bMontageMode = FALSE;
+		EAnimationLoopMode		m_LoopMode = ANIMATION_LOOP_REPEAT;
 	public:
 		EAssetPreviewScene(const EAssetPreviewScene&) = delete;
 		EAssetPreviewScene& operator=(const EAssetPreviewScene&) = delete;

@@ -76,11 +76,29 @@ namespace PigeonEngine
 		BOOL32	ImportNotify(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath);
 #endif
 		BOOL32	LoadNotifyAsset(const EString& InLoadPath, const EString& InLoadName, const EAnimNotifyAsset*& OutAsset);
+		/*
+		* Editor: loads a fresh notify definition from disk, swaps the cache entry and keeps the
+		* old object alive for live clips/montages that still reference it. OutAsset receives
+		* the new object; existing references are not refreshed by this call.
+		*/
+		BOOL32	ReloadNotifyAsset(const EString& InLoadPath, const EString& InLoadName
+			, const EAnimNotifyAsset*& OutAsset, EString& OutError);
 		// Resolves a clip/montage event reference against the standard notify asset path.
 		BOOL32	ResolveNotifyDefinition(const EString& InNotifyName, const EAnimNotifyDefinition*& OutDefinition);
 		BOOL32	RebuildNotifyAsset(const EAnimNotifyAsset* InAsset, const EString& InJsonText, EString& OutError);
 		BOOL32	SaveNotifyAsset(const EAnimNotifyAsset* InAsset, const EString& InJsonText, EString& OutError);
+		// Parses JSON into a standalone definition owned by the caller; used by the workspace
+		// draft so structured edits can validate without touching the live asset.
+		EAnimNotifyDefinition* BuildTransientNotifyDefinition(const EString& InJsonText, EString& OutError);
+		// Editor: builds a fresh asset and swaps the cache entry. Apply does not touch disk;
+		// the copy-on-write save variant writes the PAsset only after validation succeeds.
+		BOOL32	ApplyNotifyAsset(const EAnimNotifyAsset* InAsset, const EString& InJsonText
+			, const EAnimNotifyAsset*& OutAsset, EString& OutError);
+		BOOL32	SaveNotifyAssetCopyOnWrite(const EAnimNotifyAsset* InAsset, const EString& InJsonText
+			, const EAnimNotifyAsset*& OutAsset, EString& OutError);
 	private:
+		BOOL32	BuildAndPublishNotifyAsset(const EAnimNotifyAsset* InAsset, const EString& InJsonText
+			, BOOL32 bInSaveToDisk, const EAnimNotifyAsset*& OutAsset, EString& OutError);
 		void	ClearNotifies();
 		void	ReleaseAllAssets();
 	private:

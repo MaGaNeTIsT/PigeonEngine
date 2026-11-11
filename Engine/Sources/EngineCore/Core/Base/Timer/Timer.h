@@ -56,6 +56,11 @@ namespace PigeonEngine
 	public:
 		DOUBLE	GetClockTime()const;
 		DOUBLE	GetDeltaTime()const;
+		// How many successful Update() calls this timer has seen. The component animation
+		// update uses it to advance a skeleton at most once per frame: the editor ticks the
+		// same component tree through World::Tick and World::EditorTick, and both call
+		// TickRender. Zero means no frame has been produced yet.
+		UINT64	GetFrameIndex()const;
 	public:
 		EGameTimer(EBaseTimer* timer);
 		virtual ~EGameTimer();
@@ -63,6 +68,7 @@ namespace PigeonEngine
 		EBaseTimer*		m_Timer;
 		DOUBLE			m_Total;
 		DOUBLE			m_Delta;
+		UINT64			m_FrameIndex;
 	};
 
 	namespace EngineSystemTime

@@ -1,5 +1,6 @@
 #include "SkeletonAsset.h"
 #include <Asset/AssetLoadManager.h>
+#include <Development/Profiler.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
 #include <Config/EngineConfig.h>
@@ -451,23 +452,24 @@ namespace PigeonEngine
 		{
 			Check((IsRenderResourceValid()), (ENGINE_ASSET_ERROR));
 			Check((BoneNum == InMatrices.Num<UINT32>()), (ENGINE_ASSET_ERROR));
-			Matrix4x4* NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
-			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX] = new Matrix4x4[InMatrixNum];
 			const UINT32 MatrixSize = sizeof(Matrix4x4) * InMatrixNum;
-			::memcpy_s(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX], MatrixSize, InMatrices.GetData(), MatrixSize);
-			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX] = new Matrix4x4[InMatrixNum];
+			TArray<Matrix4x4>& UploadMatrices = UploadScratch[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX];
+			TArray<Matrix4x4>& UploadInverseTranspose = UploadScratch[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX];
+			// SetNum keeps the capacity the previous update allocated, so a steady state update
+			// reuses both staging arrays instead of allocating per frame.
+			UploadMatrices.SetNum(InMatrixNum);
+			UploadInverseTranspose.SetNum(InMatrixNum);
+			::memcpy_s(UploadMatrices.GetData(), MatrixSize, InMatrices.GetData(), MatrixSize);
 			for (UINT32 i = 0u; i < InMatrixNum; i++)
 			{
-				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX])[i] = TranslateUploadMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i].Inverse());
-				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i] = TranslateUploadTransposeMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i]);
+				UploadInverseTranspose[i] = TranslateUploadMatrixType(UploadMatrices[i].Inverse());
+				UploadMatrices[i] = TranslateUploadTransposeMatrixType(UploadMatrices[i]);
 			}
 			IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-			for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
-			{
-				RenderResource[i].UploadDataViaRHI(RenderDevice, NewMatrices[i], MatrixSize, 0u);
-			}
-			delete[](NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX]);
-			delete[](NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX]);
+			RenderResource[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX].UploadDataViaRHI(
+				RenderDevice, UploadMatrices.GetData(), MatrixSize, 0u);
+			RenderResource[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX].UploadDataViaRHI(
+				RenderDevice, UploadInverseTranspose.GetData(), MatrixSize, 0u);
 		}
 	}
 	BOOL32 ESkeletonRenderResource::IsRenderResourceValid()const noexcept
@@ -610,6 +612,7 @@ namespace PigeonEngine
 	}
 	void ESkeletonBoneMemoryPool::RecursionToRootTransforms()
 	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_ANIM_BONE_TO_ROOT);
 #if _EDITOR_ONLY
 		if (IsValid())
 #endif
@@ -1090,6 +1093,42 @@ namespace PigeonEngine
 		OutSkeletonAsset = ResultSkeletonAsset;
 		return TRUE;
 	}
+	BOOL32 ESkeletonAssetManager::ReloadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAsset*& OutSkeletonAsset, EString& OutError)
+	{
+		OutSkeletonAsset = nullptr;
+		OutError = EString();
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
+
+		ESkeletonAsset* FreshAsset = LoadSkeletonAsset(InLoadPath, InLoadName, FALSE);
+		if (!FreshAsset)
+		{
+			OutError = EString(PE_TEXT("Failed to load skeleton asset from disk: ")) + TempFullPathName;
+			return FALSE;
+		}
+		if (!FreshAsset->InitResource())
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Skeleton asset has no valid resource: ")) + TempFullPathName;
+			return FALSE;
+		}
+
+		ESkeletonAsset* OldAsset = SkeletonAssetDataManager.Detach(TempFullPathName);
+		if (SkeletonAssetDataManager.Add(TempFullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (SkeletonAssetDataManager.Add(TempFullPathName, OldAsset, FALSE) == 0u))
+			{
+				SkeletonAssetDataManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish reloaded skeleton asset: ")) + TempFullPathName;
+			return FALSE;
+		}
+		SkeletonAssetDataManager.RetireDetached(OldAsset);
+		OutSkeletonAsset = FreshAsset;
+		return TRUE;
+	}
 	BOOL32 ESkeletonAssetManager::RequireLoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName
 		, const ESkeletonAsset*& OutSkeletonAsset, const FAssetImportSource* InImportSource, EAssetLoadCompleteType InOnLoadComplete)
 	{
@@ -1159,52 +1198,34 @@ namespace PigeonEngine
 		}
 		return NewSkeletonAsset;
 	}
-	BOOL32 ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset)
+	BOOL32 ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName
+		, const ESkeletonAsset* InSkeletonAsset, EString& OutError)
 	{
+		OutError = EString();
 		EString TempFullPathName(InSavePath);
 		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Save skeleton asset path name check failed (save file path : ");
-				ErrorData += InSavePath;
-				ErrorData += ", save file name : ";
-				ErrorData += InSaveName;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
+			OutError = EString(PE_TEXT("Invalid skeleton asset save path: ")) + TempFullPathName;
 			return FALSE;
 		}
 		if (!InSkeletonAsset)
 		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Save skeleton asset failed (save file path : ");
-				ErrorData += TempFullPathName;
-				ErrorData += ") this asset is null.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
+			OutError = EString(PE_TEXT("Cannot save a null skeleton asset: ")) + TempFullPathName;
 			return FALSE;
 		}
 		const ESkeleton* SavedSkeletonResource = InSkeletonAsset->GetStoragedResource();
 		if ((!SavedSkeletonResource) || (!(SavedSkeletonResource->IsResourceValid())))
 		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Save skeleton asset failed (save file path : ");
-				ErrorData += TempFullPathName;
-				ErrorData += ", skeleton asset name : ";
-				ErrorData += (POBJ_DEBUGNAME_GET(InSkeletonAsset));
-				ErrorData += ") this asset is not contain valid skeleton resource.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
+			OutError = EString(PE_TEXT("Skeleton asset has no valid resource: ")) + TempFullPathName;
 			return FALSE;
 		}
-		return (SaveSkeletonResource(InSavePath, InSaveName, SavedSkeletonResource));
+		if (!SaveSkeletonResource(InSavePath, InSaveName, SavedSkeletonResource))
+		{
+			OutError = EString(PE_TEXT("Failed to write skeleton asset: ")) + TempFullPathName;
+			return FALSE;
+		}
+		return TRUE;
 	}
 	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
@@ -1558,7 +1579,7 @@ namespace PigeonEngine
 #undef SAVE_ASSET_STRING_MEMORY
 #undef SAVE_ASSET_PTR_MEMORY
 
-		if (EFileHelper::SaveBytesToFile(TempFullPathName, OutputMem, OutputMemSize))
+		if (EFileHelper::SaveBytesToFileAtomic(TempFullPathName, OutputMem, OutputMemSize))
 		{
 			delete[]OutputMem;
 			return TRUE;

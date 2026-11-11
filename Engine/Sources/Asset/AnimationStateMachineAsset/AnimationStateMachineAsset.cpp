@@ -172,6 +172,51 @@ namespace PigeonEngine
 		}
 		return SaveStateMachineResource(InSavePath, InAssetName, JsonText);
 	}
+
+	BOOL32 EAnimStateMachineManager::CreateStateMachineAsset(const EString& InAssetName
+		, const EString& InJsonText, const EString& InSavePath, EString& OutError)
+	{
+		OutError = EString();
+		if (InAssetName.Length() <= 0u)
+		{
+			OutError = EString("State machine asset name is empty.");
+			return FALSE;
+		}
+		if (InJsonText.Length() <= 0u)
+		{
+			OutError = EString("State machine JSON is empty.");
+			return FALSE;
+		}
+
+		EAnimStateMachine TempMachine;
+		if (!BuildStateMachine(TempMachine, InJsonText, OutError))
+		{
+			return FALSE;
+		}
+		if (TempMachine.Name.Length() <= 0u)
+		{
+			TempMachine.Name = InAssetName;
+		}
+
+		const EString FullPathName = MakeAssetFullPathName(InSavePath, InAssetName);
+		if (EFileHelper::IsFileExists(FullPathName))
+		{
+			OutError = EString("State machine asset already exists: ") + FullPathName;
+			return FALSE;
+		}
+		if (!SaveStateMachineResource(InSavePath, InAssetName, InJsonText))
+		{
+			OutError = EString("Failed to write state machine asset: ") + FullPathName;
+			return FALSE;
+		}
+		const EAnimStateMachineAsset* LoadedAsset = nullptr;
+		if (!LoadStateMachineAsset(InSavePath, InAssetName, LoadedAsset) || (!LoadedAsset))
+		{
+			OutError = EString("Created state machine could not be loaded: ") + FullPathName;
+			return FALSE;
+		}
+		return TRUE;
+	}
 #endif
 
 	BOOL32 EAnimStateMachineManager::LoadStateMachineAsset(const EString& InLoadPath, const EString& InLoadName
@@ -217,6 +262,60 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		OutAsset = NewAsset;
+		return TRUE;
+	}
+	BOOL32 EAnimStateMachineManager::ReloadStateMachineAsset(const EString& InLoadPath, const EString& InLoadName
+		, const EAnimStateMachineAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
+
+		EString LoadError;
+		EAnimStateMachine* LoadedResource = LoadStateMachineResource(InLoadPath, InLoadName, LoadError);
+		if ((!LoadedResource) || (!LoadedResource->IsResourceValid()))
+		{
+			delete LoadedResource;
+			OutError = (LoadError.Length() > 0u)
+				? LoadError
+				: (EString(PE_TEXT("Failed to load state machine asset from disk: ")) + FullPathName);
+			return FALSE;
+		}
+
+		EAnimStateMachineAsset* FreshAsset = new EAnimStateMachineAsset(InLoadPath, InLoadName
+#if _EDITOR_ONLY
+			, InLoadName
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([LoadedResource]() -> EAnimStateMachine*
+			{
+				return LoadedResource;
+			})))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to build reloaded state machine asset: ")) + FullPathName;
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("State machine asset has no valid resource: ")) + FullPathName;
+			return FALSE;
+		}
+
+		EAnimStateMachineAsset* OldAsset = StateMachineAssetManager.Detach(FullPathName);
+		if (StateMachineAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (StateMachineAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				StateMachineAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish reloaded state machine asset: ")) + FullPathName;
+			return FALSE;
+		}
+		StateMachineAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
 		return TRUE;
 	}
 
@@ -270,14 +369,123 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	EAnimStateMachine* EAnimStateMachineManager::BuildTransientStateMachine(const EString& InJsonText
+		, EString& OutError)
+	{
+		EAnimStateMachine* Machine = new EAnimStateMachine();
+		if (!BuildStateMachine(*Machine, InJsonText, OutError))
+		{
+			delete Machine;
+			return nullptr;
+		}
+		return Machine;
+	}
+
+	BOOL32 EAnimStateMachineManager::BuildAndPublishStateMachineAsset(const EAnimStateMachineAsset* InAsset
+		, const EString& InJsonText, BOOL32 bInSaveToDisk
+		, const EAnimStateMachineAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		if (!InAsset)
+		{
+			OutError = EString("Null state machine asset.");
+			return FALSE;
+		}
+
+		EAnimStateMachine* NewResource = new EAnimStateMachine();
+		if (!BuildStateMachine(*NewResource, InJsonText, OutError))
+		{
+			delete NewResource;
+			return FALSE;
+		}
+		if (NewResource->Name.Length() <= 0u)
+		{
+			NewResource->Name = InAsset->GetAssetName();
+		}
+
+		EAnimStateMachineAsset* FreshAsset = new EAnimStateMachineAsset(InAsset->GetAssetPath()
+			, InAsset->GetAssetName()
+#if _EDITOR_ONLY
+			, InAsset->GetAssetName()
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([NewResource]() -> EAnimStateMachine*
+			{
+				return NewResource;
+			})))
+		{
+			delete NewResource;
+			delete FreshAsset;
+			OutError = EString("Failed to build the new state machine resource.");
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString("State machine asset has no valid resource.");
+			return FALSE;
+		}
+
+		if (bInSaveToDisk != FALSE)
+		{
+			if (!SaveStateMachineResource(FreshAsset->GetAssetPath(), FreshAsset->GetAssetName(), InJsonText))
+			{
+				delete FreshAsset;
+				OutError = EString(PE_TEXT("Failed to write state machine asset: "))
+					+ InAsset->GetAssetPath() + InAsset->GetAssetName();
+				return FALSE;
+			}
+		}
+
+		const EString FullPathName = FreshAsset->GetAssetFullPathName();
+		EAnimStateMachineAsset* OldAsset = StateMachineAssetManager.Detach(FullPathName);
+		if (StateMachineAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (StateMachineAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				StateMachineAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish state machine asset: ")) + FullPathName;
+			return FALSE;
+		}
+		StateMachineAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
+		return TRUE;
+	}
+
+	BOOL32 EAnimStateMachineManager::ApplyStateMachineAsset(const EAnimStateMachineAsset* InAsset
+		, const EString& InJsonText, const EAnimStateMachineAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishStateMachineAsset(InAsset, InJsonText, FALSE, OutAsset, OutError);
+	}
+
+	BOOL32 EAnimStateMachineManager::SaveStateMachineAssetCopyOnWrite(const EAnimStateMachineAsset* InAsset
+		, const EString& InJsonText, const EAnimStateMachineAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishStateMachineAsset(InAsset, InJsonText, TRUE, OutAsset, OutError);
+	}
+
 	BOOL32 EAnimStateMachineManager::SaveStateMachineAsset(const EAnimStateMachineAsset* InAsset
 		, const EString& InJsonText, EString& OutError)
 	{
-		if (!RebuildStateMachineAsset(InAsset, InJsonText, OutError))
+		const EAnimStateMachineAsset* PublishedAsset = nullptr;
+		return SaveStateMachineAssetCopyOnWrite(InAsset, InJsonText, PublishedAsset, OutError);
+	}
+
+	void EAnimStateMachineManager::GetLoadedAssets(TArray<const EAnimStateMachineAsset*>& OutAssets)
+	{
+		OutAssets.Empty();
+		TArray<EAnimStateMachineAsset*> LoadedAssets;
+		StateMachineAssetManager.GenerateValueArray(LoadedAssets);
+		for (INT32 AssetIndex = 0; AssetIndex < LoadedAssets.Num(); AssetIndex++)
 		{
-			return FALSE;
+			if (LoadedAssets[AssetIndex])
+			{
+				OutAssets.Add(LoadedAssets[AssetIndex]);
+			}
 		}
-		return SaveStateMachineResource(InAsset->GetAssetPath(), InAsset->GetAssetName(), InJsonText);
 	}
 
 	EAnimStateMachineAsset* EAnimStateMachineManager::LoadStateMachineAsset(const EString& InLoadPath, const EString& InLoadName)
@@ -366,7 +574,7 @@ namespace PigeonEngine
 		Cursor += sizeof(UINT32);
 		::memcpy_s(Cursor, JsonLength, *InJsonText, JsonLength);
 
-		const BOOL32 Result = EFileHelper::SaveBytesToFile(FullPathName, OutputMem, OutputSize);
+		const BOOL32 Result = EFileHelper::SaveBytesToFileAtomic(FullPathName, OutputMem, OutputSize);
 		delete[] OutputMem;
 		return Result;
 	}
@@ -390,13 +598,13 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		Root.GetStringField(PE_TEXT("name"), OutMachine.Name);
-		Root.GetStringField(PE_TEXT("skeleton"), OutMachine.SkeletonName);
-		Root.GetStringField(PE_TEXT("animation"), OutMachine.AnimationAssetName);
+		Root.GetStringField(PE_TEXT("Name"), OutMachine.Name);
+		Root.GetStringField(PE_TEXT("Skeleton"), OutMachine.SkeletonName);
+		Root.GetStringField(PE_TEXT("Animation"), OutMachine.AnimationAssetName);
 
 		{
 			TArray<CJsonObject*> ParameterObjects;
-			Root.GetObjectArrayField(PE_TEXT("parameters"), ParameterObjects);
+			Root.GetObjectArrayField(PE_TEXT("Parameters"), ParameterObjects);
 			FJsonObjectArrayGuard ParameterGuard(ParameterObjects);
 			for (INT32 ParameterIndex = 0; ParameterIndex < ParameterObjects.Num(); ParameterIndex++)
 			{
@@ -406,14 +614,14 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimStateMachineParameter Parameter;
-				ParameterObject->GetStringField(PE_TEXT("name"), Parameter.Name);
+				ParameterObject->GetStringField(PE_TEXT("Name"), Parameter.Name);
 				EString TypeText;
-				ParameterObject->GetStringField(PE_TEXT("type"), TypeText);
+				ParameterObject->GetStringField(PE_TEXT("Type"), TypeText);
 				Parameter.Type = ParseParameterType(TypeText);
 				if (Parameter.Type == ANIM_PARAM_FLOAT)
 				{
 					FLOAT DefaultValue = 0.0f;
-					if (ParameterObject->GetFloatField(PE_TEXT("default"), DefaultValue))
+					if (ParameterObject->GetFloatField(PE_TEXT("Default"), DefaultValue))
 					{
 						Parameter.DefaultFloat = DefaultValue;
 					}
@@ -421,7 +629,7 @@ namespace PigeonEngine
 				else if (Parameter.Type == ANIM_PARAM_BOOL)
 				{
 					BOOL8 DefaultValue = FALSE;
-					if (ParameterObject->GetBoolField(PE_TEXT("default"), DefaultValue))
+					if (ParameterObject->GetBoolField(PE_TEXT("Default"), DefaultValue))
 					{
 						Parameter.DefaultBool = DefaultValue;
 					}
@@ -432,7 +640,7 @@ namespace PigeonEngine
 
 		{
 			TArray<CJsonObject*> StateObjects;
-			if (!(Root.GetObjectArrayField(PE_TEXT("states"), StateObjects)))
+			if (!(Root.GetObjectArrayField(PE_TEXT("States"), StateObjects)))
 			{
 				for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 				{
@@ -450,18 +658,18 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimStateMachineState State;
-				StateObject->GetStringField(PE_TEXT("name"), State.Name);
-				StateObject->GetStringField(PE_TEXT("clip"), State.ClipName);
+				StateObject->GetStringField(PE_TEXT("Name"), State.Name);
+				StateObject->GetStringField(PE_TEXT("Clip"), State.ClipName);
 				EString LoopText;
-				StateObject->GetStringField(PE_TEXT("loop"), LoopText);
+				StateObject->GetStringField(PE_TEXT("Loop"), LoopText);
 				State.LoopMode = ParseLoopMode(LoopText);
 				FLOAT PlayRate = 1.0f;
-				if (StateObject->GetFloatField(PE_TEXT("rate"), PlayRate))
+				if (StateObject->GetFloatField(PE_TEXT("Rate"), PlayRate))
 				{
 					State.PlayRate = PlayRate;
 				}
 				FLOAT BlendSeconds = 0.2f;
-				if (StateObject->GetFloatField(PE_TEXT("blend"), BlendSeconds))
+				if (StateObject->GetFloatField(PE_TEXT("Blend"), BlendSeconds))
 				{
 					State.BlendSeconds = BlendSeconds;
 				}
@@ -482,7 +690,7 @@ namespace PigeonEngine
 
 		{
 			TArray<CJsonObject*> TransitionObjects;
-			Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+			Root.GetObjectArrayField(PE_TEXT("Transitions"), TransitionObjects);
 			FJsonObjectArrayGuard TransitionGuard(TransitionObjects);
 			for (INT32 TransitionIndex = 0; TransitionIndex < TransitionObjects.Num(); TransitionIndex++)
 			{
@@ -494,8 +702,8 @@ namespace PigeonEngine
 				EAnimStateMachineTransition Transition;
 				EString FromText;
 				EString ToText;
-				TransitionObject->GetStringField(PE_TEXT("from"), FromText);
-				TransitionObject->GetStringField(PE_TEXT("to"), ToText);
+				TransitionObject->GetStringField(PE_TEXT("From"), FromText);
+				TransitionObject->GetStringField(PE_TEXT("To"), ToText);
 				const BOOL32 bAnyState = ((FromText.Length() <= 0u) || (FromText == EString("Any")));
 				Transition.FromStateIndex = (bAnyState ? -1 : OutMachine.FindState(FromText));
 				Transition.ToStateIndex = OutMachine.FindState(ToText);
@@ -506,29 +714,29 @@ namespace PigeonEngine
 				}
 
 				INT32 Priority = 0;
-				if (TransitionObject->GetIntField(PE_TEXT("priority"), Priority))
+				if (TransitionObject->GetIntField(PE_TEXT("Priority"), Priority))
 				{
 					Transition.Priority = Priority;
 				}
 				FLOAT BlendSeconds = 0.2f;
-				if (TransitionObject->GetFloatField(PE_TEXT("blend"), BlendSeconds))
+				if (TransitionObject->GetFloatField(PE_TEXT("Blend"), BlendSeconds))
 				{
 					Transition.BlendSeconds = BlendSeconds;
 				}
 				FLOAT MinTimeInState = 0.0f;
-				if (TransitionObject->GetFloatField(PE_TEXT("minTime"), MinTimeInState))
+				if (TransitionObject->GetFloatField(PE_TEXT("MinTime"), MinTimeInState))
 				{
 					Transition.MinTimeInState = MinTimeInState;
 				}
 				BOOL8 bCanTransitionToSelf = FALSE;
-				if (TransitionObject->GetBoolField(PE_TEXT("canSelf"), bCanTransitionToSelf))
+				if (TransitionObject->GetBoolField(PE_TEXT("CanSelf"), bCanTransitionToSelf))
 				{
 					Transition.bCanTransitionToSelf = bCanTransitionToSelf;
 				}
 
 				{
 					TArray<CJsonObject*> ConditionObjects;
-					TransitionObject->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+					TransitionObject->GetObjectArrayField(PE_TEXT("Conditions"), ConditionObjects);
 					FJsonObjectArrayGuard ConditionGuard(ConditionObjects);
 					for (INT32 ConditionIndex = 0; ConditionIndex < ConditionObjects.Num(); ConditionIndex++)
 					{
@@ -540,8 +748,8 @@ namespace PigeonEngine
 						EAnimStateMachineCondition Condition;
 						EString ParameterName;
 						EString CompareText;
-						ConditionObject->GetStringField(PE_TEXT("param"), ParameterName);
-						ConditionObject->GetStringField(PE_TEXT("op"), CompareText);
+						ConditionObject->GetStringField(PE_TEXT("Param"), ParameterName);
+						ConditionObject->GetStringField(PE_TEXT("Op"), CompareText);
 						Condition.ParameterIndex = OutMachine.FindParameter(ParameterName);
 						if (Condition.ParameterIndex < 0)
 						{
@@ -550,7 +758,7 @@ namespace PigeonEngine
 						}
 						Condition.Compare = ParseCompareType(CompareText);
 						FLOAT CompareValue = 0.0f;
-						if (ConditionObject->GetFloatField(PE_TEXT("value"), CompareValue))
+						if (ConditionObject->GetFloatField(PE_TEXT("Value"), CompareValue))
 						{
 							Condition.Value = CompareValue;
 						}
@@ -563,7 +771,7 @@ namespace PigeonEngine
 		}
 
 		EString EntryName;
-		Root.GetStringField(PE_TEXT("entry"), EntryName);
+		Root.GetStringField(PE_TEXT("Entry"), EntryName);
 		OutMachine.EntryStateIndex = ((EntryName.Length() > 0u) ? OutMachine.FindState(EntryName) : 0);
 		if (OutMachine.EntryStateIndex < 0)
 		{

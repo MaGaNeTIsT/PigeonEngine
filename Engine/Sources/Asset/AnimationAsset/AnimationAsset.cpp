@@ -407,6 +407,44 @@ namespace PigeonEngine
 		OutSkeletonAnimationAsset = ResultAsset;
 		return TRUE;
 	}
+	BOOL32 EAnimationManager::ReloadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, EString& OutError)
+	{
+		OutSkeletonAnimationAsset = nullptr;
+		OutError = EString();
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
+
+		ESkeletonAnimationAsset* FreshAsset = LoadSkeletonAnimationAsset(InLoadPath, InLoadName, FALSE);
+		if (!FreshAsset)
+		{
+			OutError = EString(PE_TEXT("Failed to load animation asset from disk: ")) + TempFullPathName;
+			return FALSE;
+		}
+		if (!FreshAsset->InitResource())
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Animation asset has no valid resource: ")) + TempFullPathName;
+			return FALSE;
+		}
+
+		ESkeletonAnimationAsset* OldAsset = SkeletonAnimationAssetManager.Detach(TempFullPathName);
+		if (SkeletonAnimationAssetManager.Add(TempFullPathName, FreshAsset, FALSE) == 0u)
+		{
+			// Put the old entry back if the swap could not be published. Retire it only when
+			// even that fails, so the pointer a live instance holds never dangles.
+			if (OldAsset && (SkeletonAnimationAssetManager.Add(TempFullPathName, OldAsset, FALSE) == 0u))
+			{
+				SkeletonAnimationAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish reloaded animation asset: ")) + TempFullPathName;
+			return FALSE;
+		}
+		SkeletonAnimationAssetManager.RetireDetached(OldAsset);
+		OutSkeletonAnimationAsset = FreshAsset;
+		return TRUE;
+	}
 	BOOL32 EAnimationManager::RequireLoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
 		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset
 		, const FAssetImportSource* InImportSource
@@ -447,15 +485,156 @@ namespace PigeonEngine
 			static_cast<EAssetLoadCompleteType&&>(InOnLoadComplete));
 		return FALSE;
 	}
-	BOOL32 EAnimationManager::SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset)
+	BOOL32 EAnimationManager::SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset, EString& OutError)
 	{
+		OutError = EString();
 		if (!InSkeletonAnimationAsset)
 		{
+			OutError = EString(PE_TEXT("Cannot save a null skeleton animation asset."));
 			return FALSE;
 		}
-		return SaveSkeletonAnimationAsset(InSkeletonAnimationAsset->GetAssetPath()
-			, InSkeletonAnimationAsset->GetAssetName(), InSkeletonAnimationAsset);
+		const ESkeletonAnimation* SavedResource = InSkeletonAnimationAsset->GetStoragedResource();
+		if ((!SavedResource) || (!(SavedResource->IsResourceValid())))
+		{
+			OutError = EString(PE_TEXT("Skeleton animation asset has no valid resource."));
+			return FALSE;
+		}
+		if (!SaveSkeletonAnimationResource(InSkeletonAnimationAsset->GetAssetPath()
+			, InSkeletonAnimationAsset->GetAssetName(), SavedResource))
+		{
+			OutError = EString(PE_TEXT("Failed to write skeleton animation asset: "))
+				+ InSkeletonAnimationAsset->GetAssetPath() + InSkeletonAnimationAsset->GetAssetName();
+			return FALSE;
+		}
+		return TRUE;
 	}
+
+	void EAnimationManager::GetLoadedAssets(TArray<const ESkeletonAnimationAsset*>& OutAssets)
+	{
+		OutAssets.Empty();
+		TArray<ESkeletonAnimationAsset*> LoadedAssets;
+		SkeletonAnimationAssetManager.GenerateValueArray(LoadedAssets);
+		for (INT32 AssetIndex = 0; AssetIndex < LoadedAssets.Num(); AssetIndex++)
+		{
+			if (LoadedAssets[AssetIndex])
+			{
+				OutAssets.Add(LoadedAssets[AssetIndex]);
+			}
+		}
+	}
+
+	BOOL32 EAnimationManager::ApplySkeletonAnimationAsset(const ESkeletonAnimationAsset* InAsset
+		, const TArray<TArray<FAnimNotifyEvent>>& InNotifies
+		, const ESkeletonAnimationAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishSkeletonAnimationAsset(InAsset, InNotifies, FALSE, OutAsset, OutError);
+	}
+
+	BOOL32 EAnimationManager::SaveSkeletonAnimationAssetCopyOnWrite(const ESkeletonAnimationAsset* InAsset
+		, const TArray<TArray<FAnimNotifyEvent>>& InNotifies
+		, const ESkeletonAnimationAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishSkeletonAnimationAsset(InAsset, InNotifies, TRUE, OutAsset, OutError);
+	}
+
+	BOOL32 EAnimationManager::BuildAndPublishSkeletonAnimationAsset(const ESkeletonAnimationAsset* InAsset
+		, const TArray<TArray<FAnimNotifyEvent>>& InNotifies, BOOL32 bInSaveToDisk
+		, const ESkeletonAnimationAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		if (!InAsset)
+		{
+			OutError = EString("Null animation asset.");
+			return FALSE;
+		}
+		const ESkeletonAnimation* SourceResource = InAsset->GetStoragedResource();
+		if (!SourceResource)
+		{
+			OutError = EString("Animation asset has no resource.");
+			return FALSE;
+		}
+		if (InNotifies.Num() != SourceResource->GetAnimationClipNum())
+		{
+			OutError = EString("Notify draft clip count does not match the animation asset.");
+			return FALSE;
+		}
+
+		// Deep-copy the resource so the published asset owns its curves while live instances
+		// keep the previous object pointer until they rebind.
+		ESkeletonAnimation* NewResource = new ESkeletonAnimation(SourceResource->GetAnimationName());
+		NewResource->SetSkeletonName(SourceResource->GetSkeletonName());
+		NewResource->SetRootBoneName(SourceResource->GetRootBoneName());
+		NewResource->AnimationClips = SourceResource->GetAnimationClips();
+		for (INT32 ClipIndex = 0; ClipIndex < NewResource->AnimationClips.Num(); ClipIndex++)
+		{
+			TArray<FAnimNotifyEvent>& Notifies = NewResource->AnimationClips[ClipIndex].Notifies;
+			Notifies = InNotifies[ClipIndex];
+			for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
+			{
+				Notifies[NotifyIndex].ResetCompiledNotify();
+				Notifies[NotifyIndex].Compile();
+			}
+		}
+		NewResource->RebuildWholeMapping();
+		if (!NewResource->InitResource())
+		{
+			delete NewResource;
+			OutError = EString("Animation resource could not be rebuilt.");
+			return FALSE;
+		}
+
+		ESkeletonAnimationAsset* FreshAsset = new ESkeletonAnimationAsset(InAsset->GetAssetPath()
+			, InAsset->GetAssetName()
+#if _EDITOR_ONLY
+			, InAsset->GetAssetName()
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([NewResource]() -> ESkeletonAnimation*
+			{
+				return NewResource;
+			})))
+		{
+			delete NewResource;
+			delete FreshAsset;
+			OutError = EString("Failed to build the new animation resource.");
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString("Animation asset has no valid resource.");
+			return FALSE;
+		}
+		if (bInSaveToDisk != FALSE)
+		{
+			if (!SaveSkeletonAnimationResource(FreshAsset->GetAssetPath(), FreshAsset->GetAssetName()
+				, FreshAsset->GetStoragedResource()))
+			{
+				delete FreshAsset;
+				OutError = EString(PE_TEXT("Failed to write skeleton animation asset: "))
+					+ InAsset->GetAssetPath() + InAsset->GetAssetName();
+				return FALSE;
+			}
+		}
+
+		const EString FullPathName = MakeAssetFullPathName(InAsset->GetAssetPath(), InAsset->GetAssetName());
+		ESkeletonAnimationAsset* OldAsset = SkeletonAnimationAssetManager.Detach(FullPathName);
+		if (SkeletonAnimationAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (SkeletonAnimationAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				SkeletonAnimationAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish animation asset: ")) + FullPathName;
+			return FALSE;
+		}
+		SkeletonAnimationAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
+		return TRUE;
+	}
+
 	void EAnimationManager::ClearSkeletonAnimations()
 	{
 		SkeletonAnimationAssetManager.Clear();
@@ -485,21 +664,6 @@ namespace PigeonEngine
 			return NewAsset;
 		}
 		return NewAsset;
-	}
-	BOOL32 EAnimationManager::SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset)
-	{
-		if (!InSkeletonAnimationAsset)
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("Error try to save a null skeleton animation asset."));
-			return FALSE;
-		}
-		const ESkeletonAnimation* SavedResource = InSkeletonAnimationAsset->GetStoragedResource();
-		if ((!SavedResource) || (!(SavedResource->IsResourceValid())))
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("Error try to save a skeleton animation asset without resource."));
-			return FALSE;
-		}
-		return (SaveSkeletonAnimationResource(InSavePath, InSaveName, SavedResource));
 	}
 	ESkeletonAnimation* EAnimationManager::LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
@@ -959,7 +1123,7 @@ namespace PigeonEngine
 #undef SAVE_ASSET_STRING_MEMORY
 #undef SAVE_ASSET_PTR_MEMORY
 
-		if (EFileHelper::SaveBytesToFile(TempFullPathName, OutputMem, OutputMemSize))
+		if (EFileHelper::SaveBytesToFileAtomic(TempFullPathName, OutputMem, OutputMemSize))
 		{
 			delete[]OutputMem;
 			return TRUE;

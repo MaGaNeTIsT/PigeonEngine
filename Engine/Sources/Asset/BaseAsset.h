@@ -372,6 +372,33 @@ namespace PigeonEngine
 			return ResultNum;
 		}
 		/*
+		* Takes the asset out of the table and hands it back WITHOUT scheduling its release.
+		* The caller owns it. Editor reload uses this to swap in a freshly loaded object while
+		* live animation instances still point at the old one; RetireDetached parks it until
+		* the manager shuts down instead of freeing memory a running object may read.
+		*/
+		TAssetType* Detach(const TKeyType& InKeyValue)
+		{
+			TAssetType* DetachedData = nullptr;
+			EScopedLock ScopedLock(TableMutex);
+			if (SavedDatas.FindValue(InKeyValue, DetachedData))
+			{
+				SavedDatas.Remove(InKeyValue);
+			}
+			return DetachedData;
+		}
+		// Parks an asset that is no longer in the table. Clear() releases the table entries
+		// and these together, which is the shutdown path for editor reload replacements.
+		void RetireDetached(TAssetType* InDataValue)
+		{
+			if (!InDataValue)
+			{
+				return;
+			}
+			EScopedLock ScopedLock(TableMutex);
+			RetiredDatas.Add(InDataValue);
+		}
+		/*
 		* Find item with InKeyValue in mapped datas.
 		* Return [TAssetType*]: If contain key return asset. If not then return nullptr.
 		*/
@@ -411,7 +438,7 @@ namespace PigeonEngine
 			TArray<TAssetType*> ReleasedAssets;
 			{
 				EScopedLock ScopedLock(TableMutex);
-				if (SavedDatas.Num() <= 0)
+				if ((SavedDatas.Num() <= 0) && (RetiredDatas.Num() <= 0))
 				{
 					return;
 				}
@@ -419,7 +446,12 @@ namespace PigeonEngine
 				{
 					ReleasedAssets.Add(it->second);
 				}
+				for (INT32 RetiredIndex = 0; RetiredIndex < RetiredDatas.Num(); RetiredIndex++)
+				{
+					ReleasedAssets.Add(RetiredDatas[RetiredIndex]);
+				}
 				SavedDatas.Empty();
+				RetiredDatas.Empty();
 			}
 			for (UINT32 Index = 0u, Num = ReleasedAssets.Num<UINT32>(); Index < Num; Index++)
 			{
@@ -462,6 +494,9 @@ namespace PigeonEngine
 		}
 	protected:
 		TMap<TKeyType, TAssetType*> SavedDatas;
+		// Editor reload replacements. They are no longer handed out by Find, but running
+		// instances may still hold pointers into them, so they stay alive until Clear().
+		TArray<TAssetType*> RetiredDatas;
 		// Guards SavedDatas. Mutable because the const entry points (Contain, Size) read the same
 		// table the load thread writes.
 		mutable EMutex TableMutex;

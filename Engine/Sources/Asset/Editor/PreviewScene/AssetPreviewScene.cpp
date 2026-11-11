@@ -2,11 +2,14 @@
 
 #if _EDITOR_ONLY
 
-#include <Animation/AnimationSampler.h>
+#include <Animation/AnimInstance.h>
+#include <Animation/AnimationMontage.h>
+#include <Animation/AnimationStateMachine.h>
 
 #include <cmath>
 
 #include <AnimationAsset/AnimationAsset.h>
+#include <Development/Profiler.h>
 #include <MeshAsset/MeshAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <PigeonBase/Object/Actor.h>
@@ -401,10 +404,31 @@ namespace PigeonEngine
 			m_OrbitRadians += InDeltaSeconds * 0.6f;
 		}
 		UpdateCameraTransform();
-		ApplyAnimation(InDeltaSeconds);
 		if (m_PreviewWorld)
 		{
+			// The skeletal component ticks here and runs EAnimInstance::Update. The component
+			// marks the bone pool dirty itself, so the preview no longer samples the clip or
+			// rebuilds the pool in this function.
 			m_PreviewWorld->Tick(InDeltaSeconds);
+		}
+		if (m_SkeletalMeshComponent)
+		{
+			if (m_bMontageMode != FALSE)
+			{
+				const EAnimMontageInstance* MontageInstance = m_SkeletalMeshComponent->GetMontageInstance();
+				if (MontageInstance)
+				{
+					m_PlaybackTimeSeconds = MontageInstance->GetClipPlayer().GetPositionSeconds();
+				}
+			}
+			else
+			{
+				const EAnimInstance* AnimInstance = m_SkeletalMeshComponent->GetAnimInstance();
+				if (AnimInstance)
+				{
+					m_PlaybackTimeSeconds = AnimInstance->GetPositionSeconds();
+				}
+			}
 		}
 		// The recording itself happens on the render thread; this only publishes that this
 		// frame has something to record. A panel that stops ticking (closed) costs one more
@@ -447,6 +471,8 @@ namespace PigeonEngine
 		m_StaticMeshAsset = InStaticMeshAsset;
 		m_SkinnedMeshAsset = nullptr;
 		m_SkeletonAsset = nullptr;
+		m_AnimationAsset = nullptr;
+		m_AnimationClipIndex = -1;
 		m_AnimationClip = nullptr;
 		ResetPlayback();
 		RecreatePreviewActor();
@@ -465,14 +491,117 @@ namespace PigeonEngine
 		RecreatePreviewActor();
 	}
 
-	void EAssetPreviewScene::SetAnimationClip(const ESkeletonAnimationClip* InAnimationClip)
+	void EAssetPreviewScene::SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset, INT32 InAnimationClipIndex)
 	{
-		if (m_AnimationClip == InAnimationClip)
+		const BOOL32 bWasMontage = m_bMontageMode;
+		if (m_bMontageMode != FALSE)
+		{
+			if (m_SkeletalMeshComponent)
+			{
+				m_SkeletalMeshComponent->StopMontage(0.0f);
+			}
+			m_bMontageMode = FALSE;
+			m_Montage = nullptr;
+			m_MontageSectionName = EString();
+		}
+		if ((bWasMontage == FALSE) && (m_AnimationAsset == InAnimationAsset)
+			&& (m_AnimationClipIndex == InAnimationClipIndex))
 		{
 			return;
 		}
-		m_AnimationClip = InAnimationClip;
+		m_AnimationAsset = InAnimationAsset;
+		m_AnimationClipIndex = InAnimationClipIndex;
+		m_AnimationClip = nullptr;
+		const ESkeletonAnimation* Animation = (InAnimationAsset ? InAnimationAsset->GetStoragedResource() : nullptr);
+		if ((Animation) && (InAnimationClipIndex >= 0) && (InAnimationClipIndex < Animation->GetAnimationClipNum()))
+		{
+			m_AnimationClip = Animation->GetAnimationClip(InAnimationClipIndex);
+		}
 		ResetPlayback();
+		BindPreviewAnimation();
+	}
+
+	void EAssetPreviewScene::SetMontage(const EAnimMontage* InMontage
+		, const ESkeletonAnimationAsset* InAnimationAsset, const EString& InSectionName)
+	{
+		if ((!InMontage) || (!InAnimationAsset))
+		{
+			ClearMontage();
+			return;
+		}
+		const BOOL32 bSameSection = ((m_bMontageMode != FALSE)
+			&& (m_AnimationAsset == InAnimationAsset)
+			&& (m_MontageSectionName == InSectionName)) ? TRUE : FALSE;
+		// The same draft pointer is submitted every frame; only section/asset changes or a
+		// rebuilt montage pointer (an edit) should rebind.
+		if ((bSameSection != FALSE) && (m_Montage == InMontage))
+		{
+			return;
+		}
+		// Editing a notify rebuilds the draft montage. Keep the playhead when the section is
+		// unchanged; a real section switch starts at zero.
+		if (bSameSection == FALSE)
+		{
+			m_PlaybackTimeSeconds = 0.0f;
+		}
+		m_bMontageMode = TRUE;
+		m_Montage = InMontage;
+		m_MontageSectionName = InSectionName;
+		m_AnimationAsset = InAnimationAsset;
+		m_AnimationClipIndex = -1;
+		m_AnimationClip = nullptr;
+		BindPreviewAnimation();
+	}
+
+	void EAssetPreviewScene::ClearMontage()
+	{
+		if (m_SkeletalMeshComponent)
+		{
+			m_SkeletalMeshComponent->StopMontage(0.0f);
+		}
+		m_bMontageMode = FALSE;
+		m_Montage = nullptr;
+		m_MontageSectionName = EString();
+		m_PlaybackTimeSeconds = 0.0f;
+	}
+
+	BOOL8 EAssetPreviewScene::IsMontageMode()const
+	{
+		return m_bMontageMode;
+	}
+
+	void EAssetPreviewScene::SetStateMachine(const EAnimStateMachine* InMachine)
+	{
+		if ((!m_SkeletalMeshComponent) || (!InMachine))
+		{
+			return;
+		}
+		// SetAnimationAsset(-1) deliberately clears the component to show the bind pose.
+		// State machine playback still needs the animation asset bound, so bind it here
+		// before handing the machine to the AnimInstance.
+		if (m_AnimationAsset)
+		{
+			m_SkeletalMeshComponent->SetAnimationAsset(m_AnimationAsset);
+		}
+		m_SkeletalMeshComponent->SetStateMachine(InMachine);
+	}
+
+	void EAssetPreviewScene::ClearStateMachine()
+	{
+		if (m_SkeletalMeshComponent)
+		{
+			m_SkeletalMeshComponent->ClearStateMachine();
+		}
+	}
+
+	EAnimStateMachineInstance* EAssetPreviewScene::GetStateMachineInstance()const
+	{
+		if (!m_SkeletalMeshComponent)
+		{
+			return nullptr;
+		}
+		EAnimInstance* AnimInstance = m_SkeletalMeshComponent->GetAnimInstance();
+		return (AnimInstance ? AnimInstance->GetStateMachineInstance() : nullptr);
 	}
 
 	void EAssetPreviewScene::SetAutoRotate(BOOL8 InAutoRotate)
@@ -482,17 +611,90 @@ namespace PigeonEngine
 
 	void EAssetPreviewScene::SetPlayAnimation(BOOL8 InPlayAnimation)
 	{
+		if (m_PlayAnimation == InPlayAnimation)
+		{
+			return;
+		}
 		m_PlayAnimation = InPlayAnimation;
+		if (m_SkeletalMeshComponent)
+		{
+			if (m_bMontageMode != FALSE)
+			{
+				if (m_PlayAnimation != FALSE)
+				{
+					m_SkeletalMeshComponent->ResumeMontage();
+				}
+				else
+				{
+					m_SkeletalMeshComponent->PauseMontage();
+				}
+			}
+			else if (m_PlayAnimation != FALSE)
+			{
+				m_SkeletalMeshComponent->ResumeAnimation();
+			}
+			else
+			{
+				m_SkeletalMeshComponent->PauseAnimation();
+			}
+		}
 	}
 
 	void EAssetPreviewScene::SetPlaybackRate(FLOAT InPlaybackRate)
 	{
-		m_PlaybackRate = EMath::Max(InPlaybackRate, 0.0f);
+		const FLOAT ClampedRate = EMath::Max(InPlaybackRate, 0.0f);
+		if (m_PlaybackRate == ClampedRate)
+		{
+			return;
+		}
+		m_PlaybackRate = ClampedRate;
+		if (m_SkeletalMeshComponent)
+		{
+			if (m_bMontageMode != FALSE)
+			{
+				m_SkeletalMeshComponent->SetMontagePlayRate(m_PlaybackRate);
+			}
+			else
+			{
+				m_SkeletalMeshComponent->SetAnimationPlayRate(m_PlaybackRate);
+			}
+		}
+	}
+
+	void EAssetPreviewScene::SetPlaybackLoopMode(EAnimationLoopMode InLoopMode)
+	{
+		if (m_LoopMode == InLoopMode)
+		{
+			return;
+		}
+		m_LoopMode = InLoopMode;
+		if (m_SkeletalMeshComponent)
+		{
+			if (m_bMontageMode != FALSE)
+			{
+				m_SkeletalMeshComponent->SetMontageLoopMode(m_LoopMode);
+			}
+			else
+			{
+				m_SkeletalMeshComponent->SetAnimationLoopMode(m_LoopMode);
+			}
+		}
 	}
 
 	void EAssetPreviewScene::ResetPlayback()
 	{
 		m_PlaybackTimeSeconds = 0.0f;
+		if (m_SkeletalMeshComponent)
+		{
+			if (m_bMontageMode != FALSE)
+			{
+				m_SkeletalMeshComponent->SetMontagePositionSeconds(0.0f);
+			}
+			else
+			{
+				m_SkeletalMeshComponent->SetAnimationPositionSeconds(0.0f);
+			}
+		}
 	}
 
 	void EAssetPreviewScene::SetPlaybackTimeSeconds(FLOAT InTimeSeconds)
@@ -504,30 +706,75 @@ namespace PigeonEngine
 			return;
 		}
 		m_PlaybackTimeSeconds = EMath::Clamp(InTimeSeconds, 0.0f, DurationSeconds);
+		if (m_SkeletalMeshComponent)
+		{
+			if (m_bMontageMode != FALSE)
+			{
+				m_SkeletalMeshComponent->SetMontagePositionSeconds(m_PlaybackTimeSeconds);
+			}
+			else
+			{
+				m_SkeletalMeshComponent->SetAnimationPositionSeconds(m_PlaybackTimeSeconds);
+			}
+		}
 	}
 
 	FLOAT EAssetPreviewScene::GetPlaybackTimeSeconds()const
 	{
+		if (m_SkeletalMeshComponent)
+		{
+			if (m_bMontageMode != FALSE)
+			{
+				const EAnimMontageInstance* MontageInstance = m_SkeletalMeshComponent->GetMontageInstance();
+				if (MontageInstance)
+				{
+					return MontageInstance->GetClipPlayer().GetPositionSeconds();
+				}
+			}
+			else
+			{
+				const EAnimInstance* AnimInstance = m_SkeletalMeshComponent->GetAnimInstance();
+				if (AnimInstance)
+				{
+					return AnimInstance->GetPositionSeconds();
+				}
+			}
+		}
 		return m_PlaybackTimeSeconds;
 	}
 
 	FLOAT EAssetPreviewScene::GetClipDurationSeconds()const
 	{
-		if ((!m_AnimationClip) || (m_AnimationClip->Duration <= 0.0f))
+		const ESkeletonAnimationClip* Clip = m_AnimationClip;
+		if (m_bMontageMode != FALSE)
+		{
+			// Resolve through the authored montage/section rather than the live layer, so the
+			// transport keeps its duration even while the layer is paused or blending out.
+			const INT32 SectionIndex = (m_Montage ? m_Montage->FindSection(m_MontageSectionName) : -1);
+			const EAnimMontageSection* Section = ((SectionIndex >= 0)
+				? &m_Montage->Sections[SectionIndex] : nullptr);
+			const ESkeletonAnimation* Animation = (m_AnimationAsset
+				? m_AnimationAsset->GetStoragedResource() : nullptr);
+			Clip = ((Section && Animation) ? Animation->GetAnimationClip(Section->ClipName) : nullptr);
+		}
+		if ((!Clip) || (Clip->Duration <= 0.0f))
 		{
 			return 0.0f;
 		}
-		const FLOAT TicksPerSecond = (m_AnimationClip->TicksPerSecond > 1e-3f)
-			? m_AnimationClip->TicksPerSecond
+		const FLOAT TicksPerSecond = (Clip->TicksPerSecond > 1e-3f)
+			? Clip->TicksPerSecond
 			: EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
-		return ((TicksPerSecond > 0.0f) ? (m_AnimationClip->Duration / TicksPerSecond) : 0.0f);
+		return ((TicksPerSecond > 0.0f) ? (Clip->Duration / TicksPerSecond) : 0.0f);
 	}
 
 	void EAssetPreviewScene::ClearPreview()
 	{
+		ClearMontage();
 		m_StaticMeshAsset = nullptr;
 		m_SkinnedMeshAsset = nullptr;
 		m_SkeletonAsset = nullptr;
+		m_AnimationAsset = nullptr;
+		m_AnimationClipIndex = -1;
 		m_AnimationClip = nullptr;
 		DestroyPreviewActor();
 	}
@@ -610,6 +857,7 @@ namespace PigeonEngine
 			m_SkeletalMeshComponent->SetMeshAsset(m_SkinnedMeshAsset);
 			m_SkeletalMeshComponent->SetSkeletonAsset(m_SkeletonAsset);
 			m_SkeletalMeshComponent->SetComponentRotation(GetPreviewMeshRotation());
+			BindPreviewAnimation();
 		}
 
 		UpdatePreviewPlacement();
@@ -744,68 +992,61 @@ namespace PigeonEngine
 		m_CameraActor->SetActorRotation(LookAtTargetQuaternionRotation(FocusPoint, CameraPosition, Vector3::YVector()));
 	}
 
-	void EAssetPreviewScene::ApplyAnimation(FLOAT InDeltaSeconds)
+	void EAssetPreviewScene::BindPreviewAnimation()
 	{
-		if ((!m_SkeletalMeshComponent) || (!m_SkeletonAsset))
+		if (!m_SkeletalMeshComponent)
 		{
 			return;
 		}
-
-		const ESkeleton* SkeletonResource = m_SkeletonAsset->GetStoragedResource();
-		if (!SkeletonResource)
+		if (!m_AnimationAsset)
+		{
+			// Clearing the component makes the AnimInstance write the skeleton's bind pose on
+			// its next tick instead of leaving the previous clip playing.
+			m_SkeletalMeshComponent->SetAnimationAsset(nullptr);
+			return;
+		}
+		// Montage layers need the animation asset bound, but no base clip: the layer samples
+		// over the bind pose. SetAnimationAsset() also clears old layers/notify windows.
+		if (!(m_SkeletalMeshComponent->SetAnimationAsset(m_AnimationAsset)))
 		{
 			return;
 		}
-
-		ESkeletonBoneMemoryPool& BoneMemoryPool = m_SkeletalMeshComponent->GetBoneMemoryPool();
-		BoneMemoryPool.GenerateFromSkeleton(SkeletonResource);
-
-		if (m_AnimationClip)
+		if (m_bMontageMode != FALSE)
 		{
-			if (m_PlayAnimation)
+			if (!m_Montage)
 			{
-				m_PlaybackTimeSeconds += InDeltaSeconds * m_PlaybackRate;
-
-				// Wrap the editor clock too, not just the sampled key time: otherwise the
-				// Position slider sticks at the clip end while the mesh keeps looping, and the
-				// accumulated seconds slowly lose float precision.
-				const FLOAT DurationSeconds = GetClipDurationSeconds();
-				if (DurationSeconds > 0.0f)
-				{
-					m_PlaybackTimeSeconds = std::fmod(m_PlaybackTimeSeconds, DurationSeconds);
-				}
+				return;
 			}
-
-			const FLOAT TicksPerSecond = (m_AnimationClip->TicksPerSecond > 1e-3f) ? m_AnimationClip->TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
-			const FLOAT KeyTime = EAnimationSampler::WrapKeyTime(m_PlaybackTimeSeconds * TicksPerSecond, m_AnimationClip->Duration);
-			auto VectorLerp = [](const Vector3& InValue0, const Vector3& InValue1, FLOAT InAlpha)->Vector3
+			if (!(m_SkeletalMeshComponent->PlayMontage(m_Montage, m_MontageSectionName, m_PlaybackRate)))
 			{
-				return Vector3::Lerp(InValue0, InValue1, InAlpha);
-			};
-			auto QuaternionLerp = [](const Quaternion& InValue0, const Quaternion& InValue1, FLOAT InAlpha)->Quaternion
-			{
-				return Quaternion::SLerp(InValue0, InValue1, InAlpha);
-			};
-
-			const TMap<EString, USHORT>& BoneMapping = SkeletonResource->GetBoneMapping();
-			for (INT32 CurveIndex = 0, CurveNum = m_AnimationClip->AnimationCurves.Num(); CurveIndex < CurveNum; CurveIndex++)
-			{
-				const EBoneAnimationCurve& Curve = m_AnimationClip->AnimationCurves[CurveIndex];
-				if (!(BoneMapping.ContainsKey(Curve.BoneName)))
-				{
-					continue;
-				}
-
-				EBoneTransform BoneTransform = BoneMemoryPool.GetBoneRelativeTransform(Curve.BoneName);
-				EAnimationSampler::SampleKey(KeyTime, Curve.PositionKeys, BoneTransform.Position, VectorLerp);
-				EAnimationSampler::SampleKey(KeyTime, Curve.RotationKeys, BoneTransform.Rotation, QuaternionLerp);
-				EAnimationSampler::SampleKey(KeyTime, Curve.ScalingKeys, BoneTransform.Scaling, VectorLerp);
-				BoneMemoryPool.SetBoneRelativeTransform(Curve.BoneName, BoneTransform);
+				return;
 			}
+			// The preview inspects one section: loop its clip by default instead of running the
+			// authored Next chain. The transport Loop control can override this.
+			m_SkeletalMeshComponent->SetMontageLoopMode(m_LoopMode);
+			m_SkeletalMeshComponent->SetMontagePositionSeconds(m_PlaybackTimeSeconds);
+			if (m_PlayAnimation == FALSE)
+			{
+				m_SkeletalMeshComponent->PauseMontage();
+			}
+			return;
 		}
-
-		BoneMemoryPool.RecursionToRootTransforms();
-		m_SkeletalMeshComponent->MarkBoneMemoryPoolDirty();
+		if ((m_AnimationClipIndex < 0) || (!m_AnimationClip))
+		{
+			// State-machine previews and bind-pose previews intentionally have no base clip.
+			return;
+		}
+		if (!(m_SkeletalMeshComponent->PlayAnimation(m_AnimationClipIndex, TRUE, m_PlaybackRate)))
+		{
+			return;
+		}
+		m_SkeletalMeshComponent->SetAnimationLoopMode(m_LoopMode);
+		m_SkeletalMeshComponent->SetAnimationPlayRate(m_PlaybackRate);
+		m_SkeletalMeshComponent->SetAnimationPositionSeconds(m_PlaybackTimeSeconds);
+		if (m_PlayAnimation == FALSE)
+		{
+			m_SkeletalMeshComponent->PauseAnimation();
+		}
 	}
 
 	const EMesh* EAssetPreviewScene::GetPreviewMeshResource() const

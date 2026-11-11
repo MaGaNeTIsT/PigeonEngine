@@ -18,6 +18,14 @@ namespace PigeonEngine
 		// itself, and for every pass when no frame total was recorded.
 		DOUBLE				ShareRatio	= 0.0;
 		BOOL8				bHasShare	= FALSE;
+		// Per-frame aggregate of a CPU scope. Stat.AverageSeconds is per call, and a scope that
+		// runs once per character has as many calls as there are characters. bHasPerFrame is
+		// FALSE for a concurrent scope: worker rows overlap in time, so summing their samples
+		// would count the same wall clock several times.
+		DOUBLE				CallsPerFrame	= 0.0;
+		DOUBLE				PerFrameSeconds	= 0.0;
+		BOOL8				bIsConcurrent	= FALSE;
+		BOOL8				bHasPerFrame	= FALSE;
 	};
 
 	// One node of the CPU scope tree. The tree comes from the scope names themselves:

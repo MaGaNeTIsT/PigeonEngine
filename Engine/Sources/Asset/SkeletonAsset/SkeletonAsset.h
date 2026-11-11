@@ -184,6 +184,9 @@ namespace PigeonEngine
 	protected:
 		UINT32				BoneNum;
 		RStructuredBuffer	RenderResource[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
+		// CPU staging reused across updates. The arrays are sized once per bone count, so a
+		// per-frame upload no longer allocates and frees two Matrix4x4 blocks per character.
+		TArray<Matrix4x4>	UploadScratch[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
 	public:
 		ESkeletonRenderResource();
 		virtual ~ESkeletonRenderResource();
@@ -416,6 +419,13 @@ namespace PigeonEngine
 #endif
 		BOOL32	LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset, const BOOL32 bTryLoad = FALSE);
 		/*
+		* Editor: loads a fresh skeleton from disk, swaps the cache entry and keeps the old
+		* object alive for live components that still point at it. OutSkeletonAsset receives
+		* the new object.
+		*/
+		BOOL32	ReloadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName
+			, const ESkeletonAsset*& OutSkeletonAsset, EString& OutError);
+		/*
 		* Any thread: the skeleton when it is already loaded, otherwise FALSE and a null output
 		* after recording one load request for the load thread (EAssetLoadManager). Never blocks
 		* and never reads the disk on the calling thread; ask again next frame. Load* above is the
@@ -428,8 +438,9 @@ namespace PigeonEngine
 		BOOL32	RequireLoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset
 			, const FAssetImportSource* InImportSource = nullptr, EAssetLoadCompleteType InOnLoadComplete = nullptr);
 		// Editor: writes the live skeleton resource back to its PAsset after edits such as
-		// slot group changes.
-		BOOL32	SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
+		// slot group changes. OutError is filled when the resource is invalid or the file could
+		// not be replaced.
+		BOOL32	SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset, EString& OutError);
 	private:
 		void	ClearSkeletons();
 		// Releases every asset this manager caches. Shared by ShutDown and Uninit so the two

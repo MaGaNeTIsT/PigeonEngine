@@ -6,6 +6,7 @@
 
 #include <AnimationAsset/AnimationAsset.h>
 #include <Editor/EditorLogManager.h>
+#include <Development/Profiler.h>
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <SkeletonAsset/SkeletonAsset.h>
@@ -465,6 +466,42 @@ namespace PigeonEngine
 		}
 	}
 
+	void EAnimInstance::SetMontagePositionSeconds(FLOAT InPositionSeconds)
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			if (Montage)
+			{
+				EndNotifyStates(Montage->GetActiveNotifyStates());
+				Montage->SetPositionSeconds(InPositionSeconds);
+			}
+		}
+		bPoseDirty = TRUE;
+	}
+
+	void EAnimInstance::SetMontagePlayRate(FLOAT InPlayRate)
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			if (MontageInstances[Index])
+			{
+				MontageInstances[Index]->SetPlayRate(InPlayRate);
+			}
+		}
+	}
+
+	void EAnimInstance::SetMontageLoopMode(EAnimationLoopMode InLoopMode)
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			if (MontageInstances[Index])
+			{
+				MontageInstances[Index]->SetLoopMode(InLoopMode);
+			}
+		}
+	}
+
 	BOOL32 EAnimInstance::IsMontagePlaying()const
 	{
 		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
@@ -595,6 +632,42 @@ namespace PigeonEngine
 
 	BOOL32 EAnimInstance::Update(FLOAT InDeltaSeconds)
 	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_ANIM);
+
+		FAnimAdvanceResult AdvanceResult;
+		if (!Advance(InDeltaSeconds, AdvanceResult))
+		{
+			return FALSE;
+		}
+
+		// The skeleton that owns the bones this instance writes. A valid binding already
+		// resolved it; the fallback path reads it from the component's asset.
+		const ESkeleton* Skeleton = nullptr;
+		if (Binding.IsValid())
+		{
+			Skeleton = Binding.GetSkeleton();
+		}
+		else if (Component)
+		{
+			const ESkeletonAsset* SkeletonAsset = Component->GetSkeletonAsset();
+			Skeleton = (SkeletonAsset ? SkeletonAsset->GetStoragedResource() : nullptr);
+		}
+
+		if (!EvaluatePose(AdvanceResult, Skeleton, Component->GetBoneMemoryPool()))
+		{
+			return FALSE;
+		}
+		CommitSideEffects(AdvanceResult, PendingRootMotion);
+		return TRUE;
+	}
+
+	BOOL32 EAnimInstance::Advance(FLOAT InDeltaSeconds, FAnimAdvanceResult& OutAdvance)
+	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_ANIM_ADVANCE);
+
+		OutAdvance = FAnimAdvanceResult();
+		OutAdvance.DeltaSeconds = InDeltaSeconds;
+
 		if (!Component)
 		{
 			return FALSE;
@@ -605,18 +678,9 @@ namespace PigeonEngine
 			// The asset and the skeleton could not be bound. A caller that asked for a pose
 			// change (stop, asset swap, skeleton swap) still gets the skeleton's default pose
 			// instead of keeping a pose from an animation that is no longer bound.
-			if (bPoseDirty)
-			{
-				if (Component->GetBoneMemoryPool().IsValid())
-				{
-					const ESkeletonAsset* SkeletonAsset = Component->GetSkeletonAsset();
-					ApplyDefaultPose(SkeletonAsset ? SkeletonAsset->GetStoragedResource() : nullptr);
-					Component->GetBoneMemoryPool().RecursionToRootTransforms();
-				}
-				bPoseDirty = FALSE;
-				return TRUE;
-			}
-			return FALSE;
+			OutAdvance.bDefaultPoseOnly = TRUE;
+			OutAdvance.bShouldEvaluate = bPoseDirty;
+			return (OutAdvance.bShouldEvaluate != FALSE);
 		}
 
 		// A state transition may start a new clip, so the machine runs before the clip player
@@ -660,18 +724,58 @@ namespace PigeonEngine
 			PreviousClipPlayer.Advance(InDeltaSeconds);
 		}
 
+		// Montage time and weight advance here rather than inside the pose build: they are
+		// state the pose is a function of, and moving them earlier keeps EvaluatePose free
+		// of anything a worker would have to serialize.
+		MontageAliveScratch.SetNum(MontageInstances.Num());
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			MontageAliveScratch[Index] = (Montage ? Montage->Update(InDeltaSeconds) : FALSE);
+		}
+
+		OutAdvance.bShouldEvaluate = TRUE;
+		OutAdvance.bAdvancing = bAdvancing;
+		OutAdvance.bPreviousAdvancing = bPreviousAdvancing;
+		OutAdvance.bCrossFading = bCrossFading;
+		OutAdvance.bMontageActive = bMontageActive;
+		OutAdvance.bMontageTransitionPending = bMontageTransitionPending;
+		return TRUE;
+	}
+
+	BOOL32 EAnimInstance::EvaluatePose(const FAnimAdvanceResult& InAdvance, const ESkeleton* InSkeleton, ESkeletonBoneMemoryPool& InOutBonePool)
+	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_ANIM_POSE);
+
+		if (!InAdvance.bShouldEvaluate)
+		{
+			return FALSE;
+		}
+
+		if (InAdvance.bDefaultPoseOnly)
+		{
+			if (InOutBonePool.IsValid())
+			{
+				ApplyDefaultPose(InSkeleton, InOutBonePool.GetBoneRelativeTransforms());
+				InOutBonePool.RecursionToRootTransforms();
+			}
+			return TRUE;
+		}
+
+		TArray<EBoneTransform>& CurrentPose = InOutBonePool.GetBoneRelativeTransforms();
+
 		// The clip only drives the bones it has curves for. Starting from the skeleton's
 		// default pose is what keeps every other bone at its bind transform instead of
 		// keeping whatever the previous clip left there.
-		ApplyDefaultPose(Binding.GetSkeleton());
+		ApplyDefaultPose(InSkeleton, CurrentPose);
 		if (ClipPlayer.GetClip())
 		{
-			ClipPlayer.Evaluate(Binding, Component->GetBoneMemoryPool().GetBoneRelativeTransforms());
+			ClipPlayer.Evaluate(Binding, CurrentPose);
 		}
 
-		if (bCrossFading)
+		if (InAdvance.bCrossFading)
 		{
-			CrossFadeRemaining = EMath::Max(CrossFadeRemaining - InDeltaSeconds, 0.0f);
+			CrossFadeRemaining = EMath::Max(CrossFadeRemaining - InAdvance.DeltaSeconds, 0.0f);
 			const FLOAT Weight = ((CrossFadeDuration > 0.0f)
 				? EMath::Clamp(1.0f - (CrossFadeRemaining / CrossFadeDuration), 0.0f, 1.0f)
 				: 1.0f);
@@ -679,12 +783,11 @@ namespace PigeonEngine
 			// The previous clip is sampled into its own buffer, starting from the default
 			// pose, then the two poses are blended per bone. Bones neither clip drives stay
 			// at the default pose on both sides, so the blend changes nothing there.
-			TArray<EBoneTransform>& CurrentPose = Component->GetBoneMemoryPool().GetBoneRelativeTransforms();
 			if (CrossFadePose.Num() != CurrentPose.Num())
 			{
 				CrossFadePose.SetNum(CurrentPose.Num());
 			}
-			ApplyDefaultPose(Binding.GetSkeleton(), CrossFadePose);
+			ApplyDefaultPose(InSkeleton, CrossFadePose);
 			PreviousClipPlayer.Evaluate(Binding, CrossFadePose);
 
 			const INT32 BoneNum = EMath::Min(CurrentPose.Num(), CrossFadePose.Num());
@@ -704,40 +807,56 @@ namespace PigeonEngine
 		}
 
 		// Layers are ordered from base to highest; each Evaluate() blends its masked bones
-		// onto the pose produced by the previous layer.
-		TArray<BOOL32> MontageAliveFlags;
-		MontageAliveFlags.SetNum(MontageInstances.Num());
-		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		// onto the pose produced by the previous layer. The alive flags were captured by
+		// Advance, so a layer that finished this frame is skipped here.
+		const INT32 MontageNum = EMath::Min(MontageInstances.Num(), MontageAliveScratch.Num());
+		for (INT32 Index = 0; Index < MontageNum; Index++)
 		{
-			EAnimMontageInstance* Montage = MontageInstances[Index].get();
-			if (!Montage)
+			if (!MontageAliveScratch[Index])
 			{
-				MontageAliveFlags[Index] = FALSE;
 				continue;
 			}
-			MontageAliveFlags[Index] = Montage->Update(*this, InDeltaSeconds);
-			if (MontageAliveFlags[Index])
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			if (Montage)
 			{
-				Montage->Evaluate(*this, Binding, Component->GetBoneMemoryPool().GetBoneRelativeTransforms());
+				Montage->Evaluate(Binding, CurrentPose);
 			}
 		}
 
 		// Root motion consumes the root bone delta before the pose-to-root matrices are
 		// rebuilt, so the mesh renders at the bind root while the actor carries the motion.
-		ApplyRootMotion(Component->GetBoneMemoryPool().GetBoneRelativeTransforms(), InDeltaSeconds);
-		Component->GetBoneMemoryPool().RecursionToRootTransforms();
-		if (bAdvancing)
+		// The actor itself is moved by CommitSideEffects: the delta is a game-thread side
+		// effect, but the bone reset belongs to the pose.
+		PendingRootMotion = FAnimRootMotionDelta();
+		ComputeRootMotion(CurrentPose, InAdvance.DeltaSeconds, PendingRootMotion);
+		InOutBonePool.RecursionToRootTransforms();
+		return TRUE;
+	}
+
+	void EAnimInstance::CommitSideEffects(const FAnimAdvanceResult& InAdvance, const FAnimRootMotionDelta& InRootMotionDelta)
+	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_ANIM_NOTIFY);
+
+		ApplyRootMotionDelta(InRootMotionDelta);
+
+		if (InAdvance.bDefaultPoseOnly)
+		{
+			bPoseDirty = FALSE;
+			return;
+		}
+
+		if (InAdvance.bAdvancing)
 		{
 			// Notify states and instant events run after the pose and bone-to-root matrices
 			// are current, so a notify that reads a socket sees this frame's pose.
 			if (const ESkeletonAnimationClip* BaseClip = ClipPlayer.GetClip())
 			{
-				UpdateNotifyStates(ActiveBaseNotifyStates, BaseClip->Notifies, ClipPlayer, TRUE, InDeltaSeconds);
+				UpdateNotifyStates(ActiveBaseNotifyStates, BaseClip->Notifies, ClipPlayer, TRUE, InAdvance.DeltaSeconds);
 			}
 			DispatchNotifies(ClipPlayer);
 		}
 		BOOL32 bMontageOrderDirty = FALSE;
-		const INT32 NotifyPassCount = MontageAliveFlags.Num();
+		const INT32 NotifyPassCount = MontageAliveScratch.Num();
 		for (INT32 Index = 0; (Index < NotifyPassCount) && (Index < MontageInstances.Num()); Index++)
 		{
 			EAnimMontageInstance* Montage = MontageInstances[Index].get();
@@ -746,14 +865,14 @@ namespace PigeonEngine
 				continue;
 			}
 			const EAnimMontageSection* MontageSection = Montage->GetCurrentSection();
-			if ((!MontageAliveFlags[Index]) || (Montage->IsStopping()))
+			if ((!MontageAliveScratch[Index]) || (Montage->IsStopping()))
 			{
 				EndNotifyStates(Montage->GetActiveNotifyStates());
 			}
 			else if ((MontageSection) && (Montage->IsPlaying()))
 			{
 				UpdateNotifyStates(Montage->GetActiveNotifyStates(), MontageSection->Notifies
-					, Montage->GetClipPlayer(), TRUE, InDeltaSeconds);
+					, Montage->GetClipPlayer(), TRUE, InAdvance.DeltaSeconds);
 			}
 			DispatchNotifies(Montage->GetClipPlayer());
 			DispatchMontageSectionNotifies(*Montage);
@@ -772,7 +891,7 @@ namespace PigeonEngine
 		// and newly added layers are picked up next frame.
 		for (INT32 Index = NotifyPassCount - 1; Index >= 0; Index--)
 		{
-			if ((Index >= MontageInstances.Num()) || (MontageAliveFlags[Index]))
+			if ((Index >= MontageInstances.Num()) || (MontageAliveScratch[Index]))
 			{
 				continue;
 			}
@@ -787,7 +906,6 @@ namespace PigeonEngine
 			SortMontagesByLayerPriority();
 		}
 		bPoseDirty = FALSE;
-		return TRUE;
 	}
 
 	void EAnimInstance::DispatchNotifies(const EAnimationClipPlayer& InPlayer)
@@ -872,7 +990,8 @@ namespace PigeonEngine
 			BOOL32 bAlreadyActive = FALSE;
 			for (INT32 ActiveIndex = 0; ActiveIndex < InOutActive.Num(); ActiveIndex++)
 			{
-				if (InOutActive[ActiveIndex].Event == &Event)
+				// Identity only: the source pointer may already be dangling after an asset edit.
+				if (InOutActive[ActiveIndex].SourceEvent == &Event)
 				{
 					bAlreadyActive = TRUE;
 					break;
@@ -911,8 +1030,11 @@ namespace PigeonEngine
 			{
 				// The active loop below performs the first Tick, so Begin and Tick still
 				// happen on the same frame without ticking twice.
+				// Snapshot the authored event. If the notify array is rebuilt while this state
+				// is active, NotifyTick/NotifyEnd still have valid data and a live CachedNotify.
 				FActiveAnimNotifyState& ActiveState = InOutActive.AddDefaultGetRef();
-				ActiveState.Event = &Event;
+				ActiveState.SourceEvent = &Event;
+				ActiveState.Event = Event;
 			}
 			else
 			{
@@ -926,25 +1048,22 @@ namespace PigeonEngine
 		// backwards makes removal safe.
 		for (INT32 ActiveIndex = InOutActive.Num() - 1; ActiveIndex >= 0; ActiveIndex--)
 		{
-			const FAnimNotifyEvent* Event = InOutActive[ActiveIndex].Event;
-			if (!Event)
-			{
-				InOutActive.RemoveAt(ActiveIndex);
-				continue;
-			}
-			const FLOAT StateEndTime = Event->Time + EMath::Max(Event->StateDuration, 0.001f);
-			const BOOL32 bInside = ((CurrentTime >= Event->Time) && (CurrentTime < StateEndTime)) ? TRUE : FALSE;
+			// Use the snapshot rather than the authored array: it may have been rebuilt since
+			// NotifyBegin, which used to leave this loop dereferencing freed memory.
+			FAnimNotifyEvent& Event = InOutActive[ActiveIndex].Event;
+			const FLOAT StateEndTime = Event.Time + EMath::Max(Event.StateDuration, 0.001f);
+			const BOOL32 bInside = ((CurrentTime >= Event.Time) && (CurrentTime < StateEndTime)) ? TRUE : FALSE;
 			if (!bInside)
 			{
-				if (Event->CachedNotify)
+				if (Event.CachedNotify)
 				{
-					Event->CachedNotify->NotifyEnd(*this, *Event);
+					Event.CachedNotify->NotifyEnd(*this, Event);
 				}
 				InOutActive.RemoveAt(ActiveIndex);
 			}
-			else if (Event->CachedNotify)
+			else if (Event.CachedNotify)
 			{
-				Event->CachedNotify->NotifyTick(*this, *Event, InDeltaSeconds);
+				Event.CachedNotify->NotifyTick(*this, Event, InDeltaSeconds);
 			}
 		}
 
@@ -959,10 +1078,10 @@ namespace PigeonEngine
 	{
 		for (INT32 ActiveIndex = 0; ActiveIndex < InOutActive.Num(); ActiveIndex++)
 		{
-			const FAnimNotifyEvent* Event = InOutActive[ActiveIndex].Event;
-			if ((Event) && (Event->CachedNotify))
+			FAnimNotifyEvent& Event = InOutActive[ActiveIndex].Event;
+			if (Event.CachedNotify)
 			{
-				Event->CachedNotify->NotifyEnd(*this, *Event);
+				Event.CachedNotify->NotifyEnd(*this, Event);
 			}
 		}
 		InOutActive.Empty();
@@ -974,9 +1093,10 @@ namespace PigeonEngine
 		PreviousRootTransform = EBoneTransform::Identity();
 	}
 
-	void EAnimInstance::ApplyRootMotion(TArray<EBoneTransform>& InOutPose, FLOAT InDeltaSeconds)
+	void EAnimInstance::ComputeRootMotion(TArray<EBoneTransform>& InOutPose, FLOAT InDeltaSeconds, FAnimRootMotionDelta& OutDelta)
 	{
-		if ((!bRootMotionEnabled) || (InDeltaSeconds <= 0.0f) || (!Component) || (!Binding.IsValid()))
+		OutDelta = FAnimRootMotionDelta();
+		if ((!bRootMotionEnabled) || (InDeltaSeconds <= 0.0f) || (!Binding.IsValid()))
 		{
 			return;
 		}
@@ -988,40 +1108,52 @@ namespace PigeonEngine
 		const EBoneTransform CurrentRoot = InOutPose[RootMotionBoneIndex];
 		if ((bHasPreviousRootTransform) && (!ClipPlayer.HasLoopedLastAdvance()))
 		{
-			const Vector3 DeltaPosition(CurrentRoot.Position.x - PreviousRootTransform.Position.x
+			OutDelta.DeltaPosition = Vector3(CurrentRoot.Position.x - PreviousRootTransform.Position.x
 				, CurrentRoot.Position.y - PreviousRootTransform.Position.y
 				, CurrentRoot.Position.z - PreviousRootTransform.Position.z);
-			const Quaternion DeltaRotation = Quaternion::MultiplyQuaternion(CurrentRoot.Rotation
+			OutDelta.DeltaRotation = Quaternion::MultiplyQuaternion(CurrentRoot.Rotation
 				, Quaternion::Inverse(PreviousRootTransform.Rotation));
-
-			if (PActor* OwnerActor = Component->GetOwnerActor())
-			{
-				if (DeltaPosition.Length() > 1e-6f)
-				{
-					OwnerActor->SetActorLocation(OwnerActor->GetActorLocation() + DeltaPosition);
-				}
-				OwnerActor->SetActorRotation(Quaternion::MultiplyQuaternion(DeltaRotation, OwnerActor->GetActorRotation()));
-			}
-			else
-			{
-				const ETransform& CurrentTransform = Component->GetTransform();
-				ETransform NewTransform(CurrentTransform.GetLocation_Local() + DeltaPosition
-					, Quaternion::MultiplyQuaternion(DeltaRotation, CurrentTransform.GetRotation_Local())
-					, CurrentTransform.GetScaling_Local());
-				Component->SetComponentTransform(NewTransform);
-			}
+			OutDelta.bHasDelta = TRUE;
 		}
 
 		PreviousRootTransform = CurrentRoot;
 		bHasPreviousRootTransform = TRUE;
 
-		// The actor/component consumed the motion; keep the mesh at its bind root so it is
-		// not displaced a second time by the sampled clip.
+		// The actor/component consumes the motion in CommitSideEffects; keep the mesh at its
+		// bind root so it is not displaced a second time by the sampled clip. The recursion
+		// below uses the pool's own SkeletonRootTransform, which is component-local and not
+		// the actor transform this delta will change, so applying the delta later cannot
+		// feed back into the matrices built here.
 		const ESkeleton* Skeleton = Binding.GetSkeleton();
 		if ((Skeleton) && (RootMotionBoneIndex < Skeleton->GetBoneCount()))
 		{
 			const EBoneData& Bone = Skeleton->GetBonePart()[RootMotionBoneIndex];
 			InOutPose[RootMotionBoneIndex] = EBoneTransform(Bone.DefaultPosition, Bone.DefaultRotation, Bone.DefaultScaling);
+		}
+	}
+
+	void EAnimInstance::ApplyRootMotionDelta(const FAnimRootMotionDelta& InDelta)
+	{
+		if ((!InDelta.bHasDelta) || (!Component))
+		{
+			return;
+		}
+
+		if (PActor* OwnerActor = Component->GetOwnerActor())
+		{
+			if (InDelta.DeltaPosition.Length() > 1e-6f)
+			{
+				OwnerActor->SetActorLocation(OwnerActor->GetActorLocation() + InDelta.DeltaPosition);
+			}
+			OwnerActor->SetActorRotation(Quaternion::MultiplyQuaternion(InDelta.DeltaRotation, OwnerActor->GetActorRotation()));
+		}
+		else
+		{
+			const ETransform& CurrentTransform = Component->GetTransform();
+			ETransform NewTransform(CurrentTransform.GetLocation_Local() + InDelta.DeltaPosition
+				, Quaternion::MultiplyQuaternion(InDelta.DeltaRotation, CurrentTransform.GetRotation_Local())
+				, CurrentTransform.GetScaling_Local());
+			Component->SetComponentTransform(NewTransform);
 		}
 	}
 
@@ -1050,15 +1182,6 @@ namespace PigeonEngine
 		CrossFadePose.Empty();
 		CrossFadeDuration = 0.0f;
 		CrossFadeRemaining = 0.0f;
-	}
-
-	void EAnimInstance::ApplyDefaultPose(const ESkeleton* InSkeleton)
-	{
-		if ((!InSkeleton) || (!Component) || (!Component->GetBoneMemoryPool().IsValid()))
-		{
-			return;
-		}
-		ApplyDefaultPose(InSkeleton, Component->GetBoneMemoryPool().GetBoneRelativeTransforms());
 	}
 
 	void EAnimInstance::ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose)

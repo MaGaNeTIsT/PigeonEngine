@@ -89,10 +89,17 @@ namespace PigeonEngine
 	/*
 	* Runtime-only link from an active state event back to its authored data. The asset owns
 	* the event; each anim instance and montage layer keeps its own active list.
+	*
+	* The live notify array can be rebuilt while a state is active (editor edits, reload,
+	* hot reload). Keeping only a pointer into that array leaves the active list dangling,
+	* so the callbacks use a snapshot taken at NotifyBegin. SourceEvent is for identity
+	* comparison only and is never dereferenced.
 	*/
 	struct FActiveAnimNotifyState
 	{
-		const FAnimNotifyEvent* Event = nullptr;
+	public:
+		const FAnimNotifyEvent* SourceEvent = nullptr;
+		FAnimNotifyEvent Event;
 	};
 
 	/*
@@ -106,6 +113,8 @@ namespace PigeonEngine
 	public:
 		static BOOL32 Register(const EString& InClassName, EAnimNotifyFactory InFactory);
 		static TSharedPtr<EAnimNotify> Create(const EString& InClassName);
+		// Returns FALSE when the class is not registered; bOutIsState is then untouched.
+		static BOOL32 IsStateClass(const EString& InClassName, BOOL32& bOutIsState);
 		PE_NODISCARD static TArray<EString> GetRegisteredClassNames();
 	};
 

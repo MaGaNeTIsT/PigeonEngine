@@ -66,6 +66,59 @@ namespace PigeonEngine
 		return (static_cast<INT32>(static_cast<UINT8>(*InLeft)) - static_cast<INT32>(static_cast<UINT8>(*InRight)));
 	}
 
+	// A scope recorded once per worker is concurrent with its siblings. Summing its samples
+	// into a frame total would count overlapping wall clock more than once, so the panel marks
+	// it and leaves the per-frame cell empty.
+	static BOOL8 IsConcurrentProfilerScope(const EName& InName)
+	{
+		static const CHAR WorkerSuffix[] = PE_TEXT(".Worker");
+		const CHAR* NameData = InName.GetData();
+		if (!NameData)
+		{
+			return FALSE;
+		}
+		UINT32 NameLength = 0u;
+		while (NameData[NameLength] != static_cast<CHAR>(0))
+		{
+			NameLength++;
+		}
+		constexpr UINT32 SuffixLength = 7u;
+		if (NameLength < SuffixLength)
+		{
+			return FALSE;
+		}
+		for (UINT32 Index = 0u; Index < SuffixLength; Index++)
+		{
+			if (NameData[NameLength - SuffixLength + Index] != WorkerSuffix[Index])
+			{
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+
+	// Stat.SampleCount is the number of calls since the traces were cleared; dividing by the
+	// GameThread call count turns it into calls per frame. The GameThread bracket is one call
+	// per frame by construction, so it is the frame counter the panel already has.
+	static void FillProfilerPerFrame(EProfilerTableRow& InOutRow, UINT64 InFrameSampleCount)
+	{
+		InOutRow.bIsConcurrent = IsConcurrentProfilerScope(InOutRow.Name);
+		InOutRow.CallsPerFrame = 0.0;
+		InOutRow.PerFrameSeconds = 0.0;
+		InOutRow.bHasPerFrame = FALSE;
+		if (InFrameSampleCount == 0u)
+		{
+			return;
+		}
+		InOutRow.CallsPerFrame = static_cast<DOUBLE>(InOutRow.Stat.SampleCount)
+			/ static_cast<DOUBLE>(InFrameSampleCount);
+		if (InOutRow.bIsConcurrent == FALSE)
+		{
+			InOutRow.PerFrameSeconds = InOutRow.Stat.AverageSeconds * InOutRow.CallsPerFrame;
+			InOutRow.bHasPerFrame = TRUE;
+		}
+	}
+
 	static DOUBLE GetProfilerSortValue(const EProfilerTableRow& InRow, INT32 InColumn, BOOL8 bShareColumn)
 	{
 		switch (InColumn)
@@ -80,6 +133,8 @@ namespace PigeonEngine
 			return InRow.Stat.MaxSeconds;
 		case 5:
 			return ((bShareColumn != FALSE) ? InRow.ShareRatio : static_cast<DOUBLE>(InRow.Stat.SampleCount));
+		case 6:
+			return InRow.PerFrameSeconds;
 		default:
 			return 0.0;
 		}
@@ -140,7 +195,7 @@ namespace PigeonEngine
 	// The numeric columns of one row. Shared by the flat GPU table and the CPU tree so the two
 	// cannot disagree about what a column means; a synthetic tree node has no sample of its own
 	// and shows the placeholder rather than a zero that would read as a measurement.
-	static void DrawProfilerRowColumns(const EProfilerTableRow& InRow, BOOL8 bHasRow, BOOL8 bShareColumn)
+	static void DrawProfilerRowColumns(const EProfilerTableRow& InRow, BOOL8 bHasRow, BOOL8 bShareColumn, BOOL8 bShowPerFrame)
 	{
 		ImGui::TableSetColumnIndex(1);
 		if (bHasRow != FALSE)
@@ -195,9 +250,37 @@ namespace PigeonEngine
 		{
 			ImGui::TextUnformatted("-");
 		}
+		if (bShowPerFrame != FALSE)
+		{
+			ImGui::TableSetColumnIndex(6);
+			if ((bHasRow == FALSE) || (InRow.CallsPerFrame <= 0.0))
+			{
+				ImGui::TextUnformatted("-");
+			}
+			else if (InRow.bIsConcurrent != FALSE)
+			{
+				ImGui::TextUnformatted("-");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("%.1f calls/frame; concurrent workers are not summed", InRow.CallsPerFrame);
+				}
+			}
+			else if (InRow.bHasPerFrame != FALSE)
+			{
+				ImGui::Text("%.3f", InRow.PerFrameSeconds * 1000.0);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("%.1f calls/frame", InRow.CallsPerFrame);
+				}
+			}
+			else
+			{
+				ImGui::TextUnformatted("-");
+			}
+		}
 	}
 
-	static void DrawProfilerRows(const TArray<EProfilerTableRow>& InRows, BOOL8 bShareColumn)
+	static void DrawProfilerRows(const TArray<EProfilerTableRow>& InRows, BOOL8 bShareColumn, BOOL8 bShowPerFrame)
 	{
 		const INT32 RowNum = InRows.Num<INT32>();
 		for (INT32 RowIndex = 0; RowIndex < RowNum; RowIndex++)
@@ -206,7 +289,7 @@ namespace PigeonEngine
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::TextUnformatted(Row.Name.GetData());
-			DrawProfilerRowColumns(Row, TRUE, bShareColumn);
+			DrawProfilerRowColumns(Row, TRUE, bShareColumn, bShowPerFrame);
 		}
 	}
 
@@ -251,7 +334,7 @@ namespace PigeonEngine
 			ImGui::TableHeadersRow();
 
 			SortProfilerRows(InOutRows, bShareColumn, ImGui::TableGetSortSpecs());
-			DrawProfilerRows(InOutRows, bShareColumn);
+			DrawProfilerRows(InOutRows, bShareColumn, FALSE);
 			ImGui::EndTable();
 		}
 	}
@@ -299,8 +382,7 @@ namespace PigeonEngine
 	}
 
 	static void DrawProfilerTreeRow(const TArray<EProfilerTreeNode>& InNodes, INT32 InNodeIndex, BOOL8 bShareColumn)
-	{
-		if ((InNodeIndex < 0) || (InNodeIndex >= InNodes.Num<INT32>()))
+	{		if ((InNodeIndex < 0) || (InNodeIndex >= InNodes.Num<INT32>()))
 		{
 			return;
 		}
@@ -315,7 +397,7 @@ namespace PigeonEngine
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
 		const BOOL32 bOpen = ImGui::TreeNodeEx(Node.Row.Name.GetData(), NodeFlags);
-		DrawProfilerRowColumns(Node.Row, Node.bHasRow, bShareColumn);
+		DrawProfilerRowColumns(Node.Row, Node.bHasRow, bShareColumn, TRUE);
 		if ((bHasChildren != FALSE) && (bOpen != FALSE))
 		{
 			for (INT32 ChildIndex = 0; ChildIndex < Node.Children.Num<INT32>(); ChildIndex++)
@@ -337,7 +419,7 @@ namespace PigeonEngine
 
 		const ImGuiTableFlags TableFlags = ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg
 			| ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingStretchProp;
-		if (ImGui::BeginTable(InTableId, 6, TableFlags))
+		if (ImGui::BeginTable(InTableId, 7, TableFlags))
 		{
 			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 3.0f);
 			ImGui::TableSetupColumn("Avg(ms)", ImGuiTableColumnFlags_WidthStretch
@@ -346,6 +428,7 @@ namespace PigeonEngine
 			ImGui::TableSetupColumn("Min(ms)", ImGuiTableColumnFlags_WidthStretch, 1.0f);
 			ImGui::TableSetupColumn("Max(ms)", ImGuiTableColumnFlags_WidthStretch, 1.0f);
 			ImGui::TableSetupColumn((bShareColumn != FALSE) ? "Share" : "Samples", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+			ImGui::TableSetupColumn("Per-Frame(ms)", ImGuiTableColumnFlags_WidthStretch, 1.2f);
 			ImGui::TableHeadersRow();
 
 			// Thread order is fixed; only the children of each thread follow the header sort.
@@ -455,6 +538,12 @@ namespace PigeonEngine
 		CounterRows.Empty();
 
 #if _CPU_ENABLE_PROFILER
+		// The GameThread bracket runs exactly once per frame, so its sample count is the frame
+		// count every other CPU scope is divided by.
+		EProfileScopeStat GameThreadScopeStat;
+		const BOOL8 bHasGameThreadStat = EProfiler::GetManagerSingleton()->GetScopeStat(EName(PROFILER_SCOPE_GAME_THREAD), GameThreadScopeStat);
+		const UINT64 FrameSampleCount = ((bHasGameThreadStat != FALSE) ? GameThreadScopeStat.SampleCount : 0u);
+
 		// Fixed order, independent of the rings' own ordering: the four thread
 		// brackets always read in the same sequence.
 		const CHAR* ThreadScopeNames[4] = { PROFILER_SCOPE_GAME_THREAD, PROFILER_SCOPE_RENDER_THREAD, PROFILER_SCOPE_PHYSICS_THREAD, PROFILER_SCOPE_LOAD_THREAD };
@@ -468,6 +557,7 @@ namespace PigeonEngine
 			EProfilerTableRow Row;
 			Row.Name = EName(ThreadScopeNames[Index]);
 			Row.Stat = Stat;
+			FillProfilerPerFrame(Row, FrameSampleCount);
 			CpuRows.Add(Row);
 		}
 
@@ -495,6 +585,7 @@ namespace PigeonEngine
 			EProfilerTableRow Row;
 			Row.Name = ScopeName;
 			Row.Stat = CpuSnapshot[RowIndex].second;
+			FillProfilerPerFrame(Row, FrameSampleCount);
 			CpuRows.Add(Row);
 		}
 
@@ -690,6 +781,10 @@ namespace PigeonEngine
 		}
 		ImGui::SameLine();
 		ImGui::TextDisabled("window %u samples", static_cast<unsigned int>(EEngineSettings::ENGINE_PROFILER_AVERAGE_NUM));
+		ImGui::SameLine();
+		// Avg is per call; the new column multiplies it by calls/frame. Worker rows overlap in
+		// time, so their per-frame cell is left empty rather than summing concurrent samples.
+		ImGui::TextDisabled("Per-Frame = Avg x calls/frame; approx, workers excluded");
 
 #if _GPU_ENABLE_PROFILER
 		// A GPU sample that never arrived: the D3D11 delay ring ran out of

@@ -7,6 +7,8 @@
 #include <Base/DataStructure/Text/String.h>
 
 #include "../PreviewScene/AssetPreviewScene.h"
+#include "../EditorDocument.h"
+#include <Animation/AnimationNotify.h>
 
 namespace PigeonEngine
 {
@@ -25,9 +27,15 @@ namespace PigeonEngine
 		void OpenAnimationAsset(const EString& InAssetFullPath);
 
 	private:
+		void OpenAnimationAssetNow(const EString& InAssetFullPath);
+		BOOL32 SaveAnimationAsset(EString& OutError);
+		BOOL32 ReloadAnimationAssetNow(EString& OutError);
+		void CaptureBaseline();
+		void DiscardChanges();
+		void HandleDocumentAction();
 		void ResetSelection();
 		void RefreshPreviewOptions();
-		void UpdatePreviewScene(const ESkeletonAnimationClip* InSelectedClip);
+		void UpdatePreviewScene();
 		void DrawAssetSummary(const ESkeletonAnimationAsset* InAsset, const ESkeletonAnimation* InAnimation) const;
 		void DrawClipList(const ESkeletonAnimation* InAnimation);
 		void DrawClipDetails(ESkeletonAnimationClip& InClip);
@@ -40,6 +48,13 @@ namespace PigeonEngine
 		const ESkeletonAnimationAsset*	m_AnimationAsset = nullptr;
 		EString							m_OpenedAssetFullPath;
 		EString							m_LastOpenError;
+		EString							m_StatusMessage;
+		BOOL8							m_bStatusSucceeded = TRUE;
+		FEditorDocumentState			m_Document;
+		// One snapshot per clip of the notify lists as they were when the asset was opened or
+		// last saved. Notify editing is the only live mutation this editor performs, so this
+		// is all Discard has to restore.
+		TArray<TArray<FAnimNotifyEvent>>	m_BaselineNotifies;
 		INT32							m_SelectedClipIndex = 0;
 		INT32							m_SelectedCurveIndex = 0;
 		EAssetPreviewScene				m_PreviewScene;
@@ -52,6 +67,7 @@ namespace PigeonEngine
 		BOOL8							m_PreviewAutoRotate = TRUE;
 		BOOL8							m_PreviewPlayAnimation = TRUE;
 		FLOAT							m_PreviewPlaybackRate = 1.0f;
+		EAnimationLoopMode				m_PreviewLoopMode = ANIMATION_LOOP_REPEAT;
 		// The binding report is rebuilt only when the selected skeleton changes; doing it
 		// every frame would call Bind (and log its warnings) at the UI refresh rate.
 		const ESkeletonAsset*			m_LastBindingSkeletonAsset = nullptr;

@@ -67,6 +67,21 @@ namespace PigeonEngine
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_LOAD_THREAD		= PE_TEXT("LoadThread");
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_GPU_FRAME		= PE_TEXT("GPU Frame");
 
+	// Animation evaluation, all on the game thread today. The parent row is the per character
+	// Update; the children split it into the parts a worker can own later (Advance and Pose)
+	// and the parts that must stay on the game thread (Notify). BoneToRoot is called from
+	// inside Pose and is kept as its own row because it is usually the largest part of it.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_ANIM					= PE_TEXT("GameThread.Anim");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_ANIM_ADVANCE			= PE_TEXT("GameThread.Anim.Advance");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_ANIM_POSE			= PE_TEXT("GameThread.Anim.Pose");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_ANIM_NOTIFY			= PE_TEXT("GameThread.Anim.Notify");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_ANIM_BONE_TO_ROOT	= PE_TEXT("GameThread.Anim.BoneToRoot");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_ANIM_SNAPSHOT		= PE_TEXT("GameThread.Anim.Snapshot");
+	// The render thread's half of the same pipeline: turning bone-to-root matrices into the
+	// palette and uploading it. Kept separate so a slow game thread and a slow palette build
+	// do not look like the same problem.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_SKELETON_PALETTE	= PE_TEXT("RenderThread.SkeletonPalette");
+
 	// Render-thread sub-brackets. The whole-thread row above says how long the frame took;
 	// these say where it went. They are separate rows rather than nested children because the
 	// profiler records each scope as an independent trace.
@@ -91,6 +106,9 @@ namespace PigeonEngine
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_BASE_DRAW_CALLS	= PE_TEXT("BaseDrawCalls");
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_SHADOW_DRAW_CALLS	= PE_TEXT("ShadowDrawCalls");
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_SHADOW_VIEW_NUM	= PE_TEXT("ShadowViewNum");
+	// Characters whose animation actually ran this frame. The animation cost is linear in this
+	// number, so a timing row without it cannot be compared between runs.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_ANIMATED_CHARACTER_NUM	= PE_TEXT("AnimatedCharacterNum");
 
 	// -----------------------------------------------------------------------
 	// Snapshot result types returned by the EProfiler query API

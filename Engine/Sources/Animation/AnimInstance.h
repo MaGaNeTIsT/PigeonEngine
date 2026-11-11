@@ -4,6 +4,7 @@
 
 #include "AnimationClipPlayer.h"
 #include "AnimationNotify.h"
+#include "AnimEvaluation.h"
 #include "SkeletonBinding.h"
 
 namespace PigeonEngine
@@ -11,6 +12,7 @@ namespace PigeonEngine
 
 	class PSkeletalMeshComponent;
 	class ESkeleton;
+	class ESkeletonBoneMemoryPool;
 	class ESkeletonAnimationAsset;
 	class EAnimStateMachine;
 	class EAnimStateMachineInstance;
@@ -108,6 +110,11 @@ namespace PigeonEngine
 		void PauseMontage(const EString& InSlotName);
 		void ResumeMontage();
 		void ResumeMontage(const EString& InSlotName);
+		// Editor preview/seek helpers. Seeking closes active windows before moving the time,
+		// so a scrub does not leave a Begin without its End behind.
+		void SetMontagePositionSeconds(FLOAT InPositionSeconds);
+		void SetMontagePlayRate(FLOAT InPlayRate);
+		void SetMontageLoopMode(EAnimationLoopMode InLoopMode);
 		PE_NODISCARD BOOL32 IsMontagePlaying()const;
 		PE_NODISCARD BOOL32 IsMontagePlaying(const EString& InSlotName)const;
 		// Returns the lowest-priority active layer; useful for callers that only expect one.
@@ -149,6 +156,29 @@ namespace PigeonEngine
 		*/
 		virtual BOOL32 Update(FLOAT InDeltaSeconds);
 
+		/*
+		* The three stages Update is composed of, exposed separately so the pose stage can
+		* move to a worker without moving the gameplay side effects with it.
+		*
+		* Advance (game thread): runs the state machine, advances the clip and montage clocks
+		* and decides whether this frame needs a pose. It also fills MontageAliveScratch.
+		*
+		* EvaluatePose (worker-safe): builds the pose from the state Advance left behind. It
+		* reads the binding, the assets and the players and writes only the passed bone pool
+		* and per-instance scratch. It never touches the component's actor, the world or a
+		* notify callback.
+		*
+		* CommitSideEffects (game thread): applies the root motion delta, dispatches the
+		* frame's notifies, applies queued montage section transitions and retires finished
+		* layers.
+		*
+		* AnimEvaluation.h holds the full thread/ownership contract these three stages follow,
+		* including where future IK and layered-graph work belongs and when Phase B may start.
+		*/
+		BOOL32 Advance(FLOAT InDeltaSeconds, FAnimAdvanceResult& OutAdvance);
+		BOOL32 EvaluatePose(const FAnimAdvanceResult& InAdvance, const ESkeleton* InSkeleton, ESkeletonBoneMemoryPool& InOutBonePool);
+		void CommitSideEffects(const FAnimAdvanceResult& InAdvance, const FAnimRootMotionDelta& InRootMotionDelta);
+
 	private:
 		BOOL32 BindAnimation();
 		BOOL32 PlayInternal(INT32 InClipIndex, EAnimationLoopMode InLoopMode, FLOAT InPlayRate, FLOAT InFadeSeconds);
@@ -172,9 +202,11 @@ namespace PigeonEngine
 		// transitions, not by a normal blend-out.
 		void ClearAllMontages();
 		void SortMontagesByLayerPriority();
-		void ApplyRootMotion(TArray<EBoneTransform>& InOutPose, FLOAT InDeltaSeconds);
+		// Computes the frame's root delta from the pose and resets the root bone to its bind
+		// transform. It does not touch the actor; CommitSideEffects applies the delta there.
+		void ComputeRootMotion(TArray<EBoneTransform>& InOutPose, FLOAT InDeltaSeconds, FAnimRootMotionDelta& OutDelta);
+		void ApplyRootMotionDelta(const FAnimRootMotionDelta& InDelta);
 		void ResetRootMotionState();
-		void ApplyDefaultPose(const ESkeleton* InSkeleton);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose);
 		PE_NODISCARD INT32 GetAnimationClipNum()const;
 
@@ -196,6 +228,11 @@ namespace PigeonEngine
 		TArray<EBoneTransform>			CrossFadePose;
 		// Base-clip state windows. Each montage layer owns its own list on its instance.
 		TArray<FActiveAnimNotifyState>	ActiveBaseNotifyStates;
+		// Per-frame scratch shared by the three stages: Advance fills the alive flags,
+		// EvaluatePose fills the root motion delta, CommitSideEffects consumes both. Members
+		// rather than locals so the evaluation path does not allocate every frame.
+		TArray<BOOL32>					MontageAliveScratch;
+		FAnimRootMotionDelta			PendingRootMotion;
 		BOOL32							bRootMotionEnabled = FALSE;
 		INT32							RootMotionBoneIndex = 0;
 		BOOL32							bHasPreviousRootTransform = FALSE;

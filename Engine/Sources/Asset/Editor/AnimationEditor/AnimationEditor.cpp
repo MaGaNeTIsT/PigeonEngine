@@ -4,10 +4,13 @@
 
 #include <imgui.h>
 
+#include <cstdio>
+
 #include <Animation/AnimationNotify.h>
 #include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <Animation/SkeletonBinding.h>
 #include <AnimationAsset/AnimationAsset.h>
+#include "../AnimationCurvePlot/AnimationCurvePlot.h"
 #include <BaseAsset.h>
 #include <Editor/EditorLogManager.h>
 #include <Base/DataStructure/Text/Path.h>
@@ -78,6 +81,124 @@ namespace PigeonEngine
 				? InClip.TicksPerSecond
 				: EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
 			return ((TicksPerSecond > 0.0f) ? (InClip.Duration / TicksPerSecond) : 0.0f);
+		}
+
+		const CHAR* GetLoopModeLabel(EAnimationLoopMode InLoopMode)
+		{
+			switch (InLoopMode)
+			{
+			case EAnimationLoopMode::ANIMATION_LOOP_ONCE:
+				return PE_TEXT("Once");
+			case EAnimationLoopMode::ANIMATION_LOOP_REPEAT:
+				return PE_TEXT("Repeat");
+			case EAnimationLoopMode::ANIMATION_LOOP_PINGPONG:
+				return PE_TEXT("PingPong");
+			case EAnimationLoopMode::ANIMATION_LOOP_CLAMP:
+				return PE_TEXT("Clamp");
+			default:
+				return PE_TEXT("Unknown");
+			}
+		}
+
+		/*
+		* Read-only clip timeline. Draws the ruler, the authored notify markers and the current
+		* playhead, and turns a click/drag into OutScrubbedTime. The caller owns playback state:
+		* it pauses and seeks the preview when this returns TRUE.
+		*
+		* Notify markers are positioned by authored time; state notifies are drawn as a range of
+		* their StateDuration, instant notifies as a single line. The clip itself is the only
+		* source here, so the widget works before any preview actor exists.
+		*/
+		BOOL32 DrawClipTimeline(const ESkeletonAnimationClip& InClip, FLOAT InCurrentTime, FLOAT& OutScrubbedTime)
+		{
+			const FLOAT DurationSeconds = GetClipDurationSeconds(InClip);
+			if (DurationSeconds <= 0.0f)
+			{
+				return FALSE;
+			}
+
+			ImDrawList* DrawList = ImGui::GetWindowDrawList();
+			const ImVec2 Origin = ImGui::GetCursorScreenPos();
+			const FLOAT BarWidth = EMath::Max(ImGui::GetContentRegionAvail().x - 8.0f, 120.0f);
+			constexpr FLOAT RulerHeight = 16.0f;
+			constexpr FLOAT BarHeight = 28.0f;
+			constexpr FLOAT TotalHeight = RulerHeight + BarHeight + 4.0f;
+			const ImVec2 BarMin(Origin.x, Origin.y + RulerHeight);
+			const ImVec2 BarMax(BarMin.x + BarWidth, BarMin.y + BarHeight);
+
+			ImGui::PushID(&InClip);
+			ImGui::InvisibleButton("##clip_timeline", ImVec2(BarWidth, TotalHeight));
+			const BOOL32 bHovered = ImGui::IsItemHovered();
+			const BOOL32 bActive = ImGui::IsItemActive();
+			ImGui::PopID();
+
+			BOOL32 bScrubbed = FALSE;
+			if (bActive != FALSE)
+			{
+				const FLOAT Alpha = EMath::Clamp((ImGui::GetIO().MousePos.x - BarMin.x) / BarWidth, 0.0f, 1.0f);
+				OutScrubbedTime = Alpha * DurationSeconds;
+				bScrubbed = TRUE;
+			}
+
+			DrawList->AddRectFilled(BarMin, BarMax, IM_COL32(38, 40, 46, 255), 3.0f);
+			DrawList->AddRect(BarMin, BarMax, IM_COL32(90, 92, 100, 255), 3.0f);
+
+			constexpr UINT32 DivisionNum = 10u;
+			for (UINT32 DivisionIndex = 0u; DivisionIndex <= DivisionNum; DivisionIndex++)
+			{
+				const FLOAT Alpha = static_cast<FLOAT>(DivisionIndex) / static_cast<FLOAT>(DivisionNum);
+				const FLOAT X = BarMin.x + Alpha * BarWidth;
+				DrawList->AddLine(ImVec2(X, BarMin.y - 4.0f), ImVec2(X, BarMin.y + 2.0f), IM_COL32(130, 132, 140, 255));
+				if ((DivisionIndex == 0u) || (DivisionIndex == (DivisionNum / 2u)) || (DivisionIndex == DivisionNum))
+				{
+					CHAR TimeText[32] = "";
+					::snprintf(TimeText, sizeof(TimeText), "%.2fs", Alpha * DurationSeconds);
+					DrawList->AddText(ImVec2(X + 2.0f, Origin.y), IM_COL32(160, 162, 170, 255), TimeText);
+				}
+			}
+
+			const FAnimNotifyEvent* HoveredNotify = nullptr;
+			for (INT32 NotifyIndex = 0; NotifyIndex < InClip.Notifies.Num(); NotifyIndex++)
+			{
+				const FAnimNotifyEvent& Notify = InClip.Notifies[NotifyIndex];
+				const FLOAT NotifyAlpha = EMath::Clamp(Notify.Time / DurationSeconds, 0.0f, 1.0f);
+				const FLOAT NotifyX = BarMin.x + NotifyAlpha * BarWidth;
+				if (Notify.bIsState)
+				{
+					const FLOAT StateAlpha = EMath::Clamp(Notify.StateDuration / DurationSeconds, 0.0f, 1.0f - NotifyAlpha);
+					const ImVec2 StateMin(NotifyX, BarMin.y + 5.0f);
+					const ImVec2 StateMax(NotifyX + StateAlpha * BarWidth, BarMax.y - 5.0f);
+					if (StateMax.x > StateMin.x)
+					{
+						DrawList->AddRectFilled(StateMin, StateMax, IM_COL32(70, 120, 210, 180), 2.0f);
+						DrawList->AddRect(StateMin, StateMax, IM_COL32(120, 170, 240, 220), 2.0f);
+					}
+				}
+				else
+				{
+					DrawList->AddLine(ImVec2(NotifyX, BarMin.y + 5.0f), ImVec2(NotifyX, BarMax.y - 5.0f)
+						, IM_COL32(235, 150, 60, 255), 2.0f);
+				}
+
+				if ((bHovered != FALSE) && (EMath::Abs(ImGui::GetIO().MousePos.x - NotifyX) <= 4.0f))
+				{
+					HoveredNotify = &Notify;
+				}
+			}
+
+			const FLOAT PlayheadAlpha = EMath::Clamp(InCurrentTime / DurationSeconds, 0.0f, 1.0f);
+			const FLOAT PlayheadX = BarMin.x + PlayheadAlpha * BarWidth;
+			DrawList->AddLine(ImVec2(PlayheadX, BarMin.y - 5.0f), ImVec2(PlayheadX, BarMax.y + 3.0f)
+				, IM_COL32(245, 220, 90, 255), 2.0f);
+			DrawList->AddTriangleFilled(ImVec2(PlayheadX, BarMax.y + 3.0f)
+				, ImVec2(PlayheadX - 4.0f, BarMax.y + 8.0f), ImVec2(PlayheadX + 4.0f, BarMax.y + 8.0f)
+				, IM_COL32(245, 220, 90, 255));
+
+			if (HoveredNotify)
+			{
+				ImGui::SetTooltip("%s @ %.3fs", *HoveredNotify->NotifyName, HoveredNotify->Time);
+			}
+			return bScrubbed;
 		}
 
 		BOOL8 ReadAssetTypeFromAssetFile(const EString& InAssetFullPath, EAssetType& OutAssetType)
@@ -154,11 +275,27 @@ namespace PigeonEngine
 	void EAnimationEditor::OpenAnimationAsset(const EString& InAssetFullPath)
 	{
 		m_ShowEditor = TRUE;
-		m_AnimationAsset = nullptr;
+		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
+		if (m_Document.bDirty)
+		{
+			if (NormalizedAssetPath == m_OpenedAssetFullPath)
+			{
+				m_Document.bReloadPending = TRUE;
+			}
+			else
+			{
+				m_Document.bOpenPending = TRUE;
+				m_Document.PendingOpenPath = InAssetFullPath;
+			}
+			return;
+		}
+		OpenAnimationAssetNow(InAssetFullPath);
+	}
+
+	void EAnimationEditor::OpenAnimationAssetNow(const EString& InAssetFullPath)
+	{
+		m_ShowEditor = TRUE;
 		m_LastOpenError = EString();
-		m_LastBindingSkeletonAsset = nullptr;
-		m_BindingValid = FALSE;
-		m_BindingMissingBoneNum = 0;
 
 		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
 		const EString AssetName = EPath::GetFileNameWithoutExtension(NormalizedAssetPath);
@@ -178,12 +315,177 @@ namespace PigeonEngine
 
 		m_AnimationAsset = LoadedAsset;
 		m_OpenedAssetFullPath = NormalizedAssetPath;
+		m_LastBindingSkeletonAsset = nullptr;
+		m_BindingValid = FALSE;
+		m_BindingMissingBoneNum = 0;
+		m_Document.ClearPendingAction();
+		m_Document.bDirty = FALSE;
+		m_StatusMessage = EString("Loaded.");
+		m_bStatusSucceeded = TRUE;
 		ResetSelection();
 		RefreshPreviewOptions();
+		CaptureBaseline();
+	}
+
+	BOOL32 EAnimationEditor::SaveAnimationAsset(EString& OutError)
+	{
+		OutError = EString();
+		if (!m_AnimationAsset)
+		{
+			OutError = EString("No animation asset is open.");
+			return FALSE;
+		}
+		if (!(EAnimationManager::GetManagerSingleton()->SaveSkeletonAnimationAsset(m_AnimationAsset, OutError)))
+		{
+			return FALSE;
+		}
+		CaptureBaseline();
+		m_Document.bDirty = FALSE;
+		return TRUE;
+	}
+
+	BOOL32 EAnimationEditor::ReloadAnimationAssetNow(EString& OutError)
+	{
+		OutError = EString();
+		if (!m_AnimationAsset)
+		{
+			OutError = EString("No animation asset is open.");
+			return FALSE;
+		}
+
+		const EString AssetPath = m_AnimationAsset->GetAssetPath();
+		const EString AssetName = m_AnimationAsset->GetAssetName();
+		const ESkeletonAnimationAsset* FreshAsset = nullptr;
+		if (!(EAnimationManager::GetManagerSingleton()->ReloadSkeletonAnimationAsset(AssetPath, AssetName, FreshAsset, OutError))
+			|| (!FreshAsset))
+		{
+			return FALSE;
+		}
+
+		m_AnimationAsset = FreshAsset;
+		m_LastBindingSkeletonAsset = nullptr;
+		m_BindingValid = FALSE;
+		m_BindingMissingBoneNum = 0;
+		m_Document.ClearPendingAction();
+		m_Document.bDirty = FALSE;
+		ResetSelection();
+		RefreshPreviewOptions();
+		CaptureBaseline();
+		return TRUE;
+	}
+
+	void EAnimationEditor::CaptureBaseline()
+	{
+		m_BaselineNotifies.Empty();
+		const ESkeletonAnimation* Animation = (m_AnimationAsset ? m_AnimationAsset->GetStoragedResource() : nullptr);
+		if (!Animation)
+		{
+			return;
+		}
+		for (INT32 ClipIndex = 0; ClipIndex < Animation->GetAnimationClipNum(); ClipIndex++)
+		{
+			const ESkeletonAnimationClip* Clip = Animation->GetAnimationClip(ClipIndex);
+			TArray<FAnimNotifyEvent> NotifySnapshot;
+			if (Clip)
+			{
+				NotifySnapshot = Clip->Notifies;
+			}
+			m_BaselineNotifies.Add(NotifySnapshot);
+		}
+	}
+
+	void EAnimationEditor::DiscardChanges()
+	{
+		ESkeletonAnimation* Animation = (m_AnimationAsset
+			? const_cast<ESkeletonAnimation*>(m_AnimationAsset->GetStoragedResource())
+			: nullptr);
+		if (Animation)
+		{
+			for (INT32 ClipIndex = 0; (ClipIndex < Animation->GetAnimationClipNum()) && (ClipIndex < m_BaselineNotifies.Num()); ClipIndex++)
+			{
+				ESkeletonAnimationClip* Clip = Animation->GetAnimationClip(ClipIndex);
+				if (Clip)
+				{
+					Clip->Notifies = m_BaselineNotifies[ClipIndex];
+				}
+			}
+		}
+		m_Document.bDirty = FALSE;
+		m_StatusMessage = EString("Discarded unsaved changes.");
+		m_bStatusSucceeded = TRUE;
+	}
+
+	void EAnimationEditor::HandleDocumentAction()
+	{
+		const EEditorUnsavedChoiceType Choice = DrawEditorUnsavedChangesPopup("##animation_editor_unsaved"
+			, (m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : nullptr), m_Document);
+		if (Choice == EEditorUnsavedChoiceType::NONE)
+		{
+			return;
+		}
+
+		const BOOL8 bWasClose = m_Document.bClosePending;
+		const BOOL8 bWasOpen = m_Document.bOpenPending;
+		const BOOL8 bWasReload = m_Document.bReloadPending;
+		const EString PendingPath = m_Document.PendingOpenPath;
+
+		if (Choice == EEditorUnsavedChoiceType::CANCEL)
+		{
+			m_Document.ClearPendingAction();
+			return;
+		}
+		if (Choice == EEditorUnsavedChoiceType::SAVE)
+		{
+			EString SaveError;
+			if (!SaveAnimationAsset(SaveError))
+			{
+				m_LastOpenError = SaveError;
+				m_StatusMessage = SaveError;
+				m_bStatusSucceeded = FALSE;
+				return;	// keep the pending action so the modal comes back next frame
+			}
+		}
+		else
+		{
+			DiscardChanges();
+		}
+
+		m_Document.ClearPendingAction();
+		if (bWasClose)
+		{
+			m_ShowEditor = FALSE;
+			return;
+		}
+		if (bWasReload)
+		{
+			EString ReloadError;
+			if (!ReloadAnimationAssetNow(ReloadError))
+			{
+				m_LastOpenError = ReloadError;
+				m_StatusMessage = ReloadError;
+				m_bStatusSucceeded = FALSE;
+			}
+			else
+			{
+				m_StatusMessage = EString("Reloaded from disk.");
+				m_bStatusSucceeded = TRUE;
+			}
+			return;
+		}
+		if (bWasOpen)
+		{
+			OpenAnimationAssetNow(PendingPath);
+		}
 	}
 
 	void EAnimationEditor::EditorUpdate()
 	{
+		if (!m_ShowEditor)
+		{
+			return;
+		}
+
+		HandleDocumentAction();
 		if (!m_ShowEditor)
 		{
 			return;
@@ -197,19 +499,51 @@ namespace PigeonEngine
 
 		ImGui::SetNextWindowSize(ImVec2(960.0f, 640.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(420.0f, 40.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Animation Editor", &m_ShowEditor, ImGuiWindowFlags_None);
+		bool bWindowOpen = true;
+		ImGui::Begin("Animation Editor", &bWindowOpen, ImGuiWindowFlags_None);
 		{
 			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenAnimationAsset(m_OpenedAssetFullPath);
+				if (m_Document.bDirty)
+				{
+					m_Document.bReloadPending = TRUE;
+				}
+				else
+				{
+					EString ReloadError;
+					if (!ReloadAnimationAssetNow(ReloadError))
+					{
+						m_LastOpenError = ReloadError;
+						m_StatusMessage = ReloadError;
+						m_bStatusSucceeded = FALSE;
+					}
+					else
+					{
+						m_StatusMessage = EString("Reloaded from disk.");
+						m_bStatusSucceeded = TRUE;
+					}
+				}
 			}
 			ImGui::SameLine();
 			ImGui::TextWrapped("%s", m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No animation asset selected.");
+			if (m_Document.bDirty)
+			{
+				ImGui::SameLine();
+				ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.25f, 1.0f), "UNSAVED");
+			}
 
 			if (m_LastOpenError.Length() > 0u)
 			{
 				ImGui::Separator();
 				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastOpenError);
+			}
+			if (m_StatusMessage.Length() > 0u)
+			{
+				ImGui::Separator();
+				const ImVec4 StatusColor = (m_bStatusSucceeded != FALSE)
+					? ImVec4(0.45f, 0.85f, 0.45f, 1.0f)
+					: ImVec4(1.0f, 0.35f, 0.35f, 1.0f);
+				ImGui::TextColored(StatusColor, "%s", *m_StatusMessage);
 			}
 
 			if (!m_AnimationAsset)
@@ -229,6 +563,19 @@ namespace PigeonEngine
 			}
 		}
 		ImGui::End();
+
+		if (!bWindowOpen)
+		{
+			if (m_Document.bDirty)
+			{
+				m_Document.bClosePending = TRUE;
+			}
+			else
+			{
+				m_ShowEditor = FALSE;
+				return;
+			}
+		}
 
 		if ((!m_ShowEditor) || (!Animation))
 		{
@@ -276,7 +623,7 @@ namespace PigeonEngine
 						if (ImGui::Selectable(*AssetName, bSelected))
 						{
 							m_SelectedPreviewMeshIndex = MeshIndex;
-							UpdatePreviewScene(SelectedClip);
+							UpdatePreviewScene();
 						}
 						if (bSelected)
 						{
@@ -305,7 +652,7 @@ namespace PigeonEngine
 						if (ImGui::Selectable(*AssetName, bSelected))
 						{
 							m_SelectedPreviewSkeletonIndex = SkeletonIndex;
-							UpdatePreviewScene(SelectedClip);
+							UpdatePreviewScene();
 						}
 						if (bSelected)
 						{
@@ -320,20 +667,84 @@ namespace PigeonEngine
 				ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "No skeleton asset found in current folder.");
 			}
 
-			UpdatePreviewScene(SelectedClip);
+			UpdatePreviewScene();
 
 			ImGui::Checkbox("Auto Rotate", reinterpret_cast<bool*>(&m_PreviewAutoRotate));
 			ImGui::SameLine();
 			ImGui::Checkbox("Play", reinterpret_cast<bool*>(&m_PreviewPlayAnimation));
 			ImGui::SliderFloat("Play Rate", &m_PreviewPlaybackRate, 0.0f, 3.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+			if (ImGui::BeginCombo("Loop Mode", GetLoopModeLabel(m_PreviewLoopMode)))
+			{
+				const EAnimationLoopMode LoopModes[4] = {
+					EAnimationLoopMode::ANIMATION_LOOP_ONCE,
+					EAnimationLoopMode::ANIMATION_LOOP_REPEAT,
+					EAnimationLoopMode::ANIMATION_LOOP_PINGPONG,
+					EAnimationLoopMode::ANIMATION_LOOP_CLAMP
+				};
+				for (UINT32 ModeIndex = 0u; ModeIndex < 4u; ModeIndex++)
+				{
+					const BOOL32 bSelected = (m_PreviewLoopMode == LoopModes[ModeIndex]);
+					if (ImGui::Selectable(GetLoopModeLabel(LoopModes[ModeIndex]), bSelected))
+					{
+						m_PreviewLoopMode = LoopModes[ModeIndex];
+						m_PreviewScene.SetPlaybackLoopMode(m_PreviewLoopMode);
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
 
 			const FLOAT ClipDurationSeconds = m_PreviewScene.GetClipDurationSeconds();
 			if (ClipDurationSeconds > 0.0f)
 			{
+				const FLOAT TicksPerSecond = ((SelectedClip) && (SelectedClip->TicksPerSecond > 1e-3f))
+					? SelectedClip->TicksPerSecond
+					: EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
+				const FLOAT FrameDeltaSeconds = ((TicksPerSecond > 0.0f) ? (1.0f / TicksPerSecond) : 0.0f);
+
 				FLOAT PlaybackTimeSeconds = m_PreviewScene.GetPlaybackTimeSeconds();
-				if (ImGui::SliderFloat("Position", &PlaybackTimeSeconds, 0.0f, ClipDurationSeconds, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+				ImGui::SetNextItemWidth(90.0f);
+				ImGui::InputFloat("Time (s)", &PlaybackTimeSeconds, 0.0f, 0.0f, "%.3f");
+				const BOOL32 bTimeCommitted = (ImGui::IsItemDeactivatedAfterEdit() != FALSE) ? TRUE : FALSE;
+				ImGui::SameLine();
+				ImGui::TextDisabled("/ %.3fs", ClipDurationSeconds);
+				if (bTimeCommitted != FALSE)
 				{
+					// The timeline is the scrub surface; the numeric field is for exact entry.
+					m_PreviewPlayAnimation = FALSE;
+					m_PreviewScene.SetPlayAnimation(FALSE);
 					m_PreviewScene.SetPlaybackTimeSeconds(PlaybackTimeSeconds);
+				}
+
+				if (ImGui::Button("-1 Frame"))
+				{
+					m_PreviewPlayAnimation = FALSE;
+					m_PreviewScene.SetPlayAnimation(FALSE);
+					m_PreviewScene.SetPlaybackTimeSeconds(m_PreviewScene.GetPlaybackTimeSeconds() - FrameDeltaSeconds);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("+1 Frame"))
+				{
+					m_PreviewPlayAnimation = FALSE;
+					m_PreviewScene.SetPlayAnimation(FALSE);
+					m_PreviewScene.SetPlaybackTimeSeconds(m_PreviewScene.GetPlaybackTimeSeconds() + FrameDeltaSeconds);
+				}
+
+				if (SelectedClip)
+				{
+					ImGui::Separator();
+					ImGui::Text("Timeline  %.3f / %.3f s"
+						, m_PreviewScene.GetPlaybackTimeSeconds(), ClipDurationSeconds);
+					FLOAT ScrubbedTime = 0.0f;
+					if (DrawClipTimeline(*SelectedClip, m_PreviewScene.GetPlaybackTimeSeconds(), ScrubbedTime))
+					{
+						m_PreviewPlayAnimation = FALSE;
+						m_PreviewScene.SetPlayAnimation(FALSE);
+						m_PreviewScene.SetPlaybackTimeSeconds(ScrubbedTime);
+					}
 				}
 			}
 
@@ -488,7 +899,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void EAnimationEditor::UpdatePreviewScene(const ESkeletonAnimationClip* InSelectedClip)
+	void EAnimationEditor::UpdatePreviewScene()
 	{
 		m_PreviewMeshAsset = nullptr;
 		m_PreviewSkeletonAsset = nullptr;
@@ -519,17 +930,21 @@ namespace PigeonEngine
 		m_PreviewScene.SetAutoRotate(m_PreviewAutoRotate);
 		m_PreviewScene.SetPlayAnimation(m_PreviewPlayAnimation);
 		m_PreviewScene.SetPlaybackRate(m_PreviewPlaybackRate);
-		m_PreviewScene.SetAnimationClip(InSelectedClip);
+		m_PreviewScene.SetPlaybackLoopMode(m_PreviewLoopMode);
 
 		if ((m_PreviewMeshAsset) && (m_PreviewSkeletonAsset))
 		{
 			m_PreviewScene.SetSkinnedMesh(m_PreviewMeshAsset, m_PreviewSkeletonAsset);
-			m_PreviewScene.SetAnimationClip(InSelectedClip);
 		}
 		else
 		{
-			m_PreviewScene.ClearPreview();
+			// Keep the selected clip even without a preview mesh: the timeline and duration
+			// read from the scene, and the user may only want to inspect the curve data.
+			m_PreviewScene.SetSkinnedMesh(nullptr, nullptr);
 		}
+		const BOOL32 bHasSelectedClip = ((m_AnimationAsset) && (m_SelectedClipIndex >= 0)) ? TRUE : FALSE;
+		m_PreviewScene.SetAnimationAsset(bHasSelectedClip ? m_AnimationAsset : nullptr
+			, bHasSelectedClip ? m_SelectedClipIndex : -1);
 	}
 
 	void EAnimationEditor::DrawAssetSummary(const ESkeletonAnimationAsset* InAsset, const ESkeletonAnimation* InAnimation) const
@@ -606,13 +1021,20 @@ namespace PigeonEngine
 		{
 			if (m_AnimationAsset)
 			{
-				if (EAnimationManager::GetManagerSingleton()->SaveSkeletonAnimationAsset(m_AnimationAsset))
+				EString SaveError;
+				if (SaveAnimationAsset(SaveError))
 				{
+					m_LastOpenError = EString();
+					m_StatusMessage = EString("Saved.");
+					m_bStatusSucceeded = TRUE;
 					PE_LOG_LOG(EString("Saved animation asset: ") + m_AnimationAsset->GetAssetFullPathName());
 				}
 				else
 				{
-					PE_LOG_WARN(EString("Failed to save animation asset: ") + m_AnimationAsset->GetAssetFullPathName());
+					m_LastOpenError = SaveError;
+					m_StatusMessage = SaveError;
+					m_bStatusSucceeded = FALSE;
+					PE_LOG_WARN(SaveError);
 				}
 			}
 		}
@@ -638,6 +1060,7 @@ namespace PigeonEngine
 			Notify.StateDuration = 0.2f;
 			Notify.Compile();
 			InClip.Notifies.Add(Notify);
+			m_Document.bDirty = TRUE;
 		}
 
 		if (InClip.Notifies.Num() <= 0)
@@ -658,6 +1081,7 @@ namespace PigeonEngine
 			if (ImGui::InputText("Name", NameBuffer, static_cast<int>(sizeof(NameBuffer))))
 			{
 				Notify.NotifyName = EString(NameBuffer);
+				m_Document.bDirty = TRUE;
 			}
 
 			CHAR NotifyAssetBuffer[EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX] = "";
@@ -667,6 +1091,7 @@ namespace PigeonEngine
 				Notify.NotifyAssetName = EString(NotifyAssetBuffer);
 				Notify.bStateDurationOverride = FALSE;
 				Notify.bPayloadOverride = FALSE;
+				m_Document.bDirty = TRUE;
 			}
 			if (Notify.NotifyAssetName.Length() > 0u)
 			{
@@ -680,6 +1105,7 @@ namespace PigeonEngine
 						Notify.bStateDurationOverride = FALSE;
 						Notify.bPayloadOverride = FALSE;
 						ApplyNotifyDefinitionToEvent(Notify, *Definition);
+						m_Document.bDirty = TRUE;
 					}
 					else
 					{
@@ -700,6 +1126,7 @@ namespace PigeonEngine
 				{
 					Notify.NotifyClassName = EString();
 					Notify.ResetCompiledNotify();
+					m_Document.bDirty = TRUE;
 				}
 				for (INT32 ClassIndex = 0; ClassIndex < RegisteredClassNames.Num(); ClassIndex++)
 				{
@@ -709,6 +1136,7 @@ namespace PigeonEngine
 						Notify.NotifyClassName = RegisteredClassNames[ClassIndex];
 						Notify.ResetCompiledNotify();
 						Notify.Compile();
+						m_Document.bDirty = TRUE;
 					}
 					if (bSelected)
 					{
@@ -724,6 +1152,7 @@ namespace PigeonEngine
 				if (ImGui::SliderFloat("Time", &NotifyTime, 0.0f, ClipDurationSeconds, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 				{
 					Notify.Time = NotifyTime;
+					m_Document.bDirty = TRUE;
 				}
 			}
 			else
@@ -741,6 +1170,7 @@ namespace PigeonEngine
 				}
 				Notify.ResetCompiledNotify();
 				Notify.Compile();
+				m_Document.bDirty = TRUE;
 			}
 			if (Notify.bIsState)
 			{
@@ -750,6 +1180,7 @@ namespace PigeonEngine
 				{
 					Notify.StateDuration = StateDuration;
 					Notify.bStateDurationOverride = TRUE;
+					m_Document.bDirty = TRUE;
 				}
 				if ((Notify.NotifyClassName.Length() > 0u) && (!Notify.CachedNotify))
 				{
@@ -768,11 +1199,13 @@ namespace PigeonEngine
 				// object so the edit takes effect immediately.
 				Notify.ResetCompiledNotify();
 				Notify.Compile();
+				m_Document.bDirty = TRUE;
 			}
 
 			if (ImGui::Button("Remove"))
 			{
 				InClip.Notifies.RemoveAt(NotifyIndex);
+				m_Document.bDirty = TRUE;
 				ImGui::PopID();
 				break;
 			}
@@ -824,6 +1257,31 @@ namespace PigeonEngine
 			ImGui::Text("Scaling Range: %.3f -> %.3f", TimeStart, TimeEnd);
 		}
 		ImGui::Text("Total Keys: %u", GetCurveKeyCount(InCurve));
+
+		FLOAT CurveTimeMax = 0.0f;
+		FLOAT RangeStart = 0.0f;
+		FLOAT RangeEnd = 0.0f;
+		if (TryGetKeyTimeRange(InCurve.PositionKeys, RangeStart, RangeEnd))
+		{
+			CurveTimeMax = EMath::Max(CurveTimeMax, RangeEnd);
+		}
+		if (TryGetKeyTimeRange(InCurve.RotationKeys, RangeStart, RangeEnd))
+		{
+			CurveTimeMax = EMath::Max(CurveTimeMax, RangeEnd);
+		}
+		if (TryGetKeyTimeRange(InCurve.ScalingKeys, RangeStart, RangeEnd))
+		{
+			CurveTimeMax = EMath::Max(CurveTimeMax, RangeEnd);
+		}
+		if (CurveTimeMax > 0.0f)
+		{
+			ImGui::Separator();
+			ImGui::TextDisabled("Curve Preview (read-only)");
+			const FLOAT PlotWidth = EMath::Max(ImGui::GetContentRegionAvail().x - 8.0f, 120.0f);
+			EAnimationCurvePlot::DrawVectorKeys("Position", InCurve.PositionKeys, CurveTimeMax, PlotWidth, 62.0f);
+			EAnimationCurvePlot::DrawRotationKeys(InCurve.RotationKeys, CurveTimeMax, PlotWidth, 62.0f);
+			EAnimationCurvePlot::DrawVectorKeys("Scaling", InCurve.ScalingKeys, CurveTimeMax, PlotWidth, 62.0f);
+		}
 	}
 }
 

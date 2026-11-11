@@ -125,6 +125,17 @@ namespace PigeonEngine
 		return TSharedPtr<EAnimNotify>((*Factory)());
 	}
 
+	BOOL32 EAnimNotifyRegistry::IsStateClass(const EString& InClassName, BOOL32& bOutIsState)
+	{
+		TSharedPtr<EAnimNotify> Instance = Create(InClassName);
+		if (!Instance)
+		{
+			return FALSE;
+		}
+		bOutIsState = Instance->IsStateNotify();
+		return TRUE;
+	}
+
 	TArray<EString> EAnimNotifyRegistry::GetRegisteredClassNames()
 	{
 		TArray<EString> Result;

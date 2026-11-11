@@ -6,6 +6,9 @@
 
 #include <AnimationAsset/AnimationAsset.h>
 #include <AnimationMontageAsset/AnimationMontageAsset.h>
+#include <SkeletonAsset/SkeletonAsset.h>
+#include <RapidJson/Headers/JsonObject.h>
+#include "../AnimationCurvePlot/AnimationCurvePlot.h"
 #include <Base/DataStructure/Text/Path.h>
 
 #include <cfloat>
@@ -47,125 +50,29 @@ namespace PigeonEngine
 			return (InClip->Duration / TicksPerSecond);
 		}
 
-		void DrawVectorKeyPlot(const CHAR* InLabel, const TArray<EBoneAnimationCurve::TPositionKey>& InKeys
-			, FLOAT InTimeMax, FLOAT InWidth, FLOAT InHeight)
+		// GetObjectArrayField hands out heap copies; this guard owns them for the duration of
+		// one structural edit, including objects appended for a new section.
+		struct FJsonObjectArrayGuard
 		{
-			ImDrawList* DrawList = ImGui::GetWindowDrawList();
-			const ImVec2 Origin = ImGui::GetCursorScreenPos();
-			const ImVec2 Max(Origin.x + InWidth, Origin.y + InHeight);
-			DrawList->AddRectFilled(Origin, Max, IM_COL32(30, 32, 38, 255), 3.0f);
-			DrawList->AddRect(Origin, Max, IM_COL32(90, 92, 100, 255), 3.0f);
-			DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 3.0f), IM_COL32(220, 220, 225, 255), InLabel);
-			if (InKeys.Num() <= 0)
+			explicit FJsonObjectArrayGuard(TArray<CJsonObject*>& InObjects) : Objects(InObjects) {}
+			~FJsonObjectArrayGuard()
 			{
-				DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 20.0f), IM_COL32(150, 150, 155, 255), "No keys");
-				ImGui::Dummy(ImVec2(InWidth, InHeight));
-				return;
-			}
-
-			FLOAT Min = FLT_MAX;
-			FLOAT MaxValue = -FLT_MAX;
-			for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
-			{
-				const Vector3& Value = InKeys[KeyIndex].Value;
-				Min = EMath::Min(Min, EMath::Min(Value.x, EMath::Min(Value.y, Value.z)));
-				MaxValue = EMath::Max(MaxValue, EMath::Max(Value.x, EMath::Max(Value.y, Value.z)));
-			}
-			if (MaxValue - Min < 1e-4f)
-			{
-				Min -= 0.5f;
-				MaxValue += 0.5f;
-			}
-			const FLOAT SafeTimeMax = EMath::Max(InTimeMax, 0.001f);
-			const FLOAT Left = Origin.x + 80.0f;
-			const FLOAT Right = Max.x - 8.0f;
-			const FLOAT Top = Origin.y + 18.0f;
-			const FLOAT Bottom = Max.y - 6.0f;
-			const ImU32 Colors[3] = { IM_COL32(235, 90, 90, 255), IM_COL32(100, 210, 110, 255), IM_COL32(90, 150, 240, 255) };
-
-			for (INT32 Component = 0; Component < 3; Component++)
-			{
-				TArray<ImVec2> Points;
-				Points.SetNum(InKeys.Num());
-				for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
+				for (INT32 Index = 0; Index < Objects.Num(); Index++)
 				{
-					const Vector3& Value = InKeys[KeyIndex].Value;
-					const FLOAT ComponentValue = ((Component == 0) ? Value.x : ((Component == 1) ? Value.y : Value.z));
-					const FLOAT TimeRatio = EMath::Clamp(InKeys[KeyIndex].Time / SafeTimeMax, 0.0f, 1.0f);
-					const FLOAT ValueRatio = EMath::Clamp((ComponentValue - Min) / (MaxValue - Min), 0.0f, 1.0f);
-					Points[KeyIndex] = ImVec2(Left + TimeRatio * (Right - Left), Bottom - ValueRatio * (Bottom - Top));
+					delete Objects[Index];
 				}
-				DrawList->AddPolyline(Points.GetData(), Points.Num(), Colors[Component], 0, 1.5f);
+				Objects.Empty();
 			}
+			TArray<CJsonObject*>& Objects;
+		};
 
-			CHAR RangeText[64] = "";
-			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", MaxValue);
-			DrawList->AddText(ImVec2(Origin.x + 6.0f, Top), IM_COL32(160, 160, 165, 255), RangeText);
-			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", Min);
-			DrawList->AddText(ImVec2(Origin.x + 6.0f, Bottom - 12.0f), IM_COL32(160, 160, 165, 255), RangeText);
-			ImGui::Dummy(ImVec2(InWidth, InHeight));
+		EString GetJsonStringField(CJsonObject& InObject, const EString& InFieldName)
+		{
+			EString Result;
+			InObject.GetStringField(InFieldName, Result);
+			return Result;
 		}
 
-		void DrawRotationKeyPlot(const TArray<EBoneAnimationCurve::TRotationKey>& InKeys
-			, FLOAT InTimeMax, FLOAT InWidth, FLOAT InHeight)
-		{
-			ImDrawList* DrawList = ImGui::GetWindowDrawList();
-			const ImVec2 Origin = ImGui::GetCursorScreenPos();
-			const ImVec2 Max(Origin.x + InWidth, Origin.y + InHeight);
-			DrawList->AddRectFilled(Origin, Max, IM_COL32(30, 32, 38, 255), 3.0f);
-			DrawList->AddRect(Origin, Max, IM_COL32(90, 92, 100, 255), 3.0f);
-			DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 3.0f), IM_COL32(220, 220, 225, 255), "Rotation");
-			if (InKeys.Num() <= 0)
-			{
-				DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 20.0f), IM_COL32(150, 150, 155, 255), "No keys");
-				ImGui::Dummy(ImVec2(InWidth, InHeight));
-				return;
-			}
-
-			FLOAT Min = FLT_MAX;
-			FLOAT MaxValue = -FLT_MAX;
-			for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
-			{
-				const Quaternion& Value = InKeys[KeyIndex].Value;
-				Min = EMath::Min(Min, EMath::Min(Value.x, EMath::Min(Value.y, EMath::Min(Value.z, Value.w))));
-				MaxValue = EMath::Max(MaxValue, EMath::Max(Value.x, EMath::Max(Value.y, EMath::Max(Value.z, Value.w))));
-			}
-			if (MaxValue - Min < 1e-4f)
-			{
-				Min -= 0.5f;
-				MaxValue += 0.5f;
-			}
-			const FLOAT SafeTimeMax = EMath::Max(InTimeMax, 0.001f);
-			const FLOAT Left = Origin.x + 80.0f;
-			const FLOAT Right = Max.x - 8.0f;
-			const FLOAT Top = Origin.y + 18.0f;
-			const FLOAT Bottom = Max.y - 6.0f;
-			const ImU32 Colors[4] = { IM_COL32(235, 90, 90, 255), IM_COL32(100, 210, 110, 255)
-				, IM_COL32(90, 150, 240, 255), IM_COL32(235, 210, 90, 255) };
-
-			for (INT32 Component = 0; Component < 4; Component++)
-			{
-				TArray<ImVec2> Points;
-				Points.SetNum(InKeys.Num());
-				for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
-				{
-					const Quaternion& Value = InKeys[KeyIndex].Value;
-					const FLOAT ComponentValue = ((Component == 0) ? Value.x : ((Component == 1) ? Value.y
-						: ((Component == 2) ? Value.z : Value.w)));
-					const FLOAT TimeRatio = EMath::Clamp(InKeys[KeyIndex].Time / SafeTimeMax, 0.0f, 1.0f);
-					const FLOAT ValueRatio = EMath::Clamp((ComponentValue - Min) / (MaxValue - Min), 0.0f, 1.0f);
-					Points[KeyIndex] = ImVec2(Left + TimeRatio * (Right - Left), Bottom - ValueRatio * (Bottom - Top));
-				}
-				DrawList->AddPolyline(Points.GetData(), Points.Num(), Colors[Component], 0, 1.5f);
-			}
-
-			CHAR RangeText[64] = "";
-			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", MaxValue);
-			DrawList->AddText(ImVec2(Origin.x + 6.0f, Top), IM_COL32(160, 160, 165, 255), RangeText);
-			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", Min);
-			DrawList->AddText(ImVec2(Origin.x + 6.0f, Bottom - 12.0f), IM_COL32(160, 160, 165, 255), RangeText);
-			ImGui::Dummy(ImVec2(InWidth, InHeight));
-		}
 	}
 
 	void EAnimMontageEditor::EditorInit()
@@ -173,6 +80,7 @@ namespace PigeonEngine
 		m_ShowEditor = FALSE;
 		m_Asset = nullptr;
 		m_AnimationAsset = nullptr;
+		m_SkeletonAsset = nullptr;
 		m_OpenedAssetFullPath = EString();
 		m_LastError = EString();
 		m_JsonBuffer.Empty();
@@ -183,7 +91,26 @@ namespace PigeonEngine
 	void EAnimMontageEditor::OpenMontageAsset(const EString& InAssetFullPath)
 	{
 		m_ShowEditor = TRUE;
-		m_Asset = nullptr;
+		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
+		if (m_Document.bDirty)
+		{
+			if (NormalizedAssetPath == m_OpenedAssetFullPath)
+			{
+				m_Document.bReloadPending = TRUE;
+			}
+			else
+			{
+				m_Document.bOpenPending = TRUE;
+				m_Document.PendingOpenPath = InAssetFullPath;
+			}
+			return;
+		}
+		OpenMontageAssetNow(InAssetFullPath);
+	}
+
+	void EAnimMontageEditor::OpenMontageAssetNow(const EString& InAssetFullPath)
+	{
+		m_ShowEditor = TRUE;
 		m_LastError = EString();
 
 		const EString NormalizedAssetPath = InAssetFullPath.Replace("\\", "/");
@@ -221,7 +148,179 @@ namespace PigeonEngine
 				m_AnimationAsset = LoadedAnimation;
 			}
 		}
+		if (Montage)
+		{
+			RefreshSkeletonAsset(*Montage);
+		}
 		LoadJsonBufferFromAsset();
+		CaptureBaseline();
+		m_Document.ClearPendingAction();
+		m_Document.bDirty = FALSE;
+		m_StatusMessage = EString("Loaded.");
+		m_bStatusSucceeded = TRUE;
+	}
+
+	void EAnimMontageEditor::CaptureBaseline()
+	{
+		m_BaselineJson = EString();
+		const EAnimMontage* Montage = (m_Asset ? m_Asset->GetStoragedResource() : nullptr);
+		if (Montage)
+		{
+			m_BaselineJson = Montage->SourceJson;
+		}
+	}
+
+	BOOL32 EAnimMontageEditor::DiscardChanges()
+	{
+		if (m_Asset && (m_BaselineJson.Length() > 0u))
+		{
+			EString Error;
+			if (!EAnimMontageManager::GetManagerSingleton()->RebuildMontageAsset(m_Asset, m_BaselineJson, Error))
+			{
+				m_LastError = Error;
+				m_StatusMessage = Error;
+				m_bStatusSucceeded = FALSE;
+				return FALSE;
+			}
+		}
+		m_JsonBuffer.Empty();
+		const EString Baseline = m_BaselineJson;
+		if (Baseline.Length() > 0u)
+		{
+			const INT32 BufferLength = static_cast<INT32>(Baseline.Length()) + MontageEditorBufferHeadroom + 1;
+			m_JsonBuffer.SetNum(BufferLength);
+			::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
+			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *Baseline, Baseline.Length());
+		}
+		m_Document.bDirty = FALSE;
+		m_StatusMessage = EString("Discarded unsaved changes.");
+		m_bStatusSucceeded = TRUE;
+		return TRUE;
+	}
+
+	BOOL32 EAnimMontageEditor::SaveMontageAsset(EString& OutError)
+	{
+		OutError = EString();
+		if (!m_Asset)
+		{
+			OutError = EString("No montage asset is open.");
+			return FALSE;
+		}
+		const EString JsonText(m_JsonBuffer.GetData());
+		if (!EAnimMontageManager::GetManagerSingleton()->SaveMontageAsset(m_Asset, JsonText, OutError))
+		{
+			return FALSE;
+		}
+		m_BaselineJson = JsonText;
+		m_Document.bDirty = FALSE;
+		return TRUE;
+	}
+
+	BOOL32 EAnimMontageEditor::ReloadMontageAssetNow(EString& OutError)
+	{
+		OutError = EString();
+		if (!m_Asset)
+		{
+			OutError = EString("No montage asset is open.");
+			return FALSE;
+		}
+
+		const EAnimMontageAsset* FreshAsset = nullptr;
+		if (!(EAnimMontageManager::GetManagerSingleton()->ReloadMontageAsset(
+			m_Asset->GetAssetPath(), m_Asset->GetAssetName(), FreshAsset, OutError)) || (!FreshAsset))
+		{
+			return FALSE;
+		}
+
+		m_Asset = FreshAsset;
+		m_AnimationAsset = nullptr;
+		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+		if ((Montage) && (Montage->AnimationAssetName.Length() > 0u))
+		{
+			const ESkeletonAnimationAsset* LoadedAnimation = nullptr;
+			if (EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(
+				EBaseSettings::ENGINE_ANIMATION_PATH, Montage->AnimationAssetName, LoadedAnimation))
+			{
+				m_AnimationAsset = LoadedAnimation;
+			}
+		}
+		if (Montage)
+		{
+			RefreshSkeletonAsset(*Montage);
+		}
+		m_SelectedCurveSectionIndex = 0;
+		m_SelectedCurveIndex = 0;
+		LoadJsonBufferFromAsset();
+		CaptureBaseline();
+		m_Document.ClearPendingAction();
+		m_Document.bDirty = FALSE;
+		return TRUE;
+	}
+
+	void EAnimMontageEditor::HandleDocumentAction()
+	{
+		const EEditorUnsavedChoiceType Choice = DrawEditorUnsavedChangesPopup("##montage_editor_unsaved"
+			, (m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : nullptr), m_Document);
+		if (Choice == EEditorUnsavedChoiceType::NONE)
+		{
+			return;
+		}
+
+		const BOOL8 bWasClose = m_Document.bClosePending;
+		const BOOL8 bWasOpen = m_Document.bOpenPending;
+		const BOOL8 bWasReload = m_Document.bReloadPending;
+		const EString PendingPath = m_Document.PendingOpenPath;
+
+		if (Choice == EEditorUnsavedChoiceType::CANCEL)
+		{
+			m_Document.ClearPendingAction();
+			return;
+		}
+		if (Choice == EEditorUnsavedChoiceType::SAVE)
+		{
+			EString SaveError;
+			if (!SaveMontageAsset(SaveError))
+			{
+				m_LastError = SaveError;
+				m_StatusMessage = SaveError;
+				m_bStatusSucceeded = FALSE;
+				return;
+			}
+		}
+		else
+		{
+			if (!DiscardChanges())
+			{
+				return;
+			}
+		}
+
+		m_Document.ClearPendingAction();
+		if (bWasClose)
+		{
+			m_ShowEditor = FALSE;
+			return;
+		}
+		if (bWasReload)
+		{
+			EString ReloadError;
+			if (!ReloadMontageAssetNow(ReloadError))
+			{
+				m_LastError = ReloadError;
+				m_StatusMessage = ReloadError;
+				m_bStatusSucceeded = FALSE;
+			}
+			else
+			{
+				m_StatusMessage = EString("Reloaded from disk.");
+				m_bStatusSucceeded = TRUE;
+			}
+			return;
+		}
+		if (bWasOpen)
+		{
+			OpenMontageAssetNow(PendingPath);
+		}
 	}
 
 	void EAnimMontageEditor::EditorUpdate()
@@ -231,13 +330,38 @@ namespace PigeonEngine
 			return;
 		}
 
+		HandleDocumentAction();
+		if (!m_ShowEditor)
+		{
+			return;
+		}
+
 		ImGui::SetNextWindowSize(ImVec2(920.0f, 760.0f), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(440.0f, 36.0f), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Montage Editor", &m_ShowEditor, ImGuiWindowFlags_None);
+		bool bWindowOpen = true;
+		ImGui::Begin("Montage Editor", &bWindowOpen, ImGuiWindowFlags_None);
 		{
 			if (ImGui::Button("Reload") && (m_OpenedAssetFullPath.Length() > 0u))
 			{
-				OpenMontageAsset(m_OpenedAssetFullPath);
+				if (m_Document.bDirty)
+				{
+					m_Document.bReloadPending = TRUE;
+				}
+				else
+				{
+					EString ReloadError;
+					if (!ReloadMontageAssetNow(ReloadError))
+					{
+						m_LastError = ReloadError;
+						m_StatusMessage = ReloadError;
+						m_bStatusSucceeded = FALSE;
+					}
+					else
+					{
+						m_StatusMessage = EString("Reloaded from disk.");
+						m_bStatusSucceeded = TRUE;
+					}
+				}
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Apply"))
@@ -249,10 +373,15 @@ namespace PigeonEngine
 					if (EAnimMontageManager::GetManagerSingleton()->RebuildMontageAsset(m_Asset, JsonText, Error))
 					{
 						m_LastError = EString();
+						m_Document.bDirty = TRUE;
+						m_StatusMessage = EString("Applied to the live asset. Save to write it to disk.");
+						m_bStatusSucceeded = TRUE;
 					}
 					else
 					{
 						m_LastError = Error;
+						m_StatusMessage = Error;
+						m_bStatusSucceeded = FALSE;
 					}
 				}
 			}
@@ -262,23 +391,38 @@ namespace PigeonEngine
 				if (m_Asset)
 				{
 					EString Error;
-					const EString JsonText(m_JsonBuffer.GetData());
-					if (EAnimMontageManager::GetManagerSingleton()->SaveMontageAsset(m_Asset, JsonText, Error))
+					if (SaveMontageAsset(Error))
 					{
 						m_LastError = EString();
+						m_StatusMessage = EString("Saved.");
+						m_bStatusSucceeded = TRUE;
 					}
 					else
 					{
 						m_LastError = Error;
+						m_StatusMessage = Error;
+						m_bStatusSucceeded = FALSE;
 					}
 				}
 			}
 			ImGui::SameLine();
 			ImGui::TextWrapped("%s", (m_OpenedAssetFullPath.Length() > 0u ? *m_OpenedAssetFullPath : "No montage selected."));
+			if (m_Document.bDirty)
+			{
+				ImGui::SameLine();
+				ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.25f, 1.0f), "UNSAVED");
+			}
 
 			if (m_LastError.Length() > 0u)
 			{
 				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "%s", *m_LastError);
+			}
+			if (m_StatusMessage.Length() > 0u)
+			{
+				const ImVec4 StatusColor = (m_bStatusSucceeded != FALSE)
+					? ImVec4(0.45f, 0.85f, 0.45f, 1.0f)
+					: ImVec4(1.0f, 0.35f, 0.35f, 1.0f);
+				ImGui::TextColored(StatusColor, "%s", *m_StatusMessage);
 			}
 
 			ImGui::Separator();
@@ -301,18 +445,9 @@ namespace PigeonEngine
 						}
 						ImGui::TreePop();
 					}
-					if (ImGui::TreeNode("Sections"))
+					if (ImGui::TreeNode("Sections (editable)"))
 					{
-						for (INT32 SectionIndex = 0; SectionIndex < Montage->Sections.Num(); SectionIndex++)
-						{
-							const EAnimMontageSection& Section = Montage->Sections[SectionIndex];
-							const EString NextName = ((Section.NextSectionName.Length() > 0u)
-								? Section.NextSectionName : EString("(end)"));
-							ImGui::BulletText("%s -> %s | clip: %s | slot: %s | %s%s | notifies: %d"
-								, *Section.Name, *NextName, *Section.ClipName, *Section.SlotName
-								, GetLoopModeLabel(Section.LoopMode), (Section.bAdditive ? " | additive" : "")
-								, Section.Notifies.Num());
-						}
+						DrawEditableSections(*Montage);
 						ImGui::TreePop();
 					}
 
@@ -330,11 +465,26 @@ namespace PigeonEngine
 
 			if (m_JsonBuffer.Num() > 0)
 			{
-				ImGui::InputTextMultiline("JSON", m_JsonBuffer.GetData(), static_cast<int>(m_JsonBuffer.Num())
-					, ImVec2(-1.0f, -1.0f), ImGuiInputTextFlags_AllowTabInput);
+				if (ImGui::InputTextMultiline("JSON", m_JsonBuffer.GetData(), static_cast<int>(m_JsonBuffer.Num())
+					, ImVec2(-1.0f, -1.0f), ImGuiInputTextFlags_AllowTabInput))
+				{
+					m_Document.bDirty = TRUE;
+				}
 			}
 		}
 		ImGui::End();
+
+		if (!bWindowOpen)
+		{
+			if (m_Document.bDirty)
+			{
+				m_Document.bClosePending = TRUE;
+			}
+			else
+			{
+				m_ShowEditor = FALSE;
+			}
+		}
 	}
 
 	void EAnimMontageEditor::DrawTimeline(const EAnimMontage& InMontage)
@@ -497,9 +647,9 @@ namespace PigeonEngine
 		}
 
 		const FLOAT PlotWidth = EMath::Max(ImGui::GetContentRegionAvail().x, 120.0f);
-		DrawVectorKeyPlot("Position", Curve.PositionKeys, TimeMax, PlotWidth, 62.0f);
-		DrawRotationKeyPlot(Curve.RotationKeys, TimeMax, PlotWidth, 62.0f);
-		DrawVectorKeyPlot("Scaling", Curve.ScalingKeys, TimeMax, PlotWidth, 62.0f);
+		EAnimationCurvePlot::DrawVectorKeys("Position", Curve.PositionKeys, TimeMax, PlotWidth, 62.0f);
+		EAnimationCurvePlot::DrawRotationKeys(Curve.RotationKeys, TimeMax, PlotWidth, 62.0f);
+		EAnimationCurvePlot::DrawVectorKeys("Scaling", Curve.ScalingKeys, TimeMax, PlotWidth, 62.0f);
 	}
 
 	void EAnimMontageEditor::LoadJsonBufferFromAsset()
@@ -522,6 +672,870 @@ namespace PigeonEngine
 		if (SourceJson.Length() > 0u)
 		{
 			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *SourceJson, SourceJson.Length());
+		}
+	}
+
+	void EAnimMontageEditor::ReplaceJsonBuffer(const EString& InJsonText)
+	{
+		m_JsonBuffer.Empty();
+		const INT32 BufferLength = static_cast<INT32>(InJsonText.Length()) + MontageEditorBufferHeadroom + 1;
+		m_JsonBuffer.SetNum(BufferLength);
+		::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(BufferLength));
+		if (InJsonText.Length() > 0u)
+		{
+			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(BufferLength), *InJsonText, InJsonText.Length());
+		}
+	}
+
+	BOOL32 EAnimMontageEditor::CommitJsonText(const EString& InJsonText)
+	{
+		EString Error;
+		if (!(EAnimMontageManager::GetManagerSingleton()->RebuildMontageAsset(m_Asset, InJsonText, Error)))
+		{
+			m_LastError = Error;
+			m_StatusMessage = Error;
+			m_bStatusSucceeded = FALSE;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(InJsonText);
+		m_LastError = EString();
+		m_Document.bDirty = TRUE;
+		return TRUE;
+	}
+
+	BOOL32 EAnimMontageEditor::UpdateMontageSection(INT32 InSectionIndex, const TFunction<void(CJsonObject&)>& InMutator)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		CJsonObject Root(EString(m_JsonBuffer.GetData()));
+		if (!Root.IsValid())
+		{
+			m_LastError = EString("Montage JSON is not a valid object.");
+			return FALSE;
+		}
+		TArray<CJsonObject*> Sections;
+		if (!(Root.GetObjectArrayField(PE_TEXT("Sections"), Sections)))
+		{
+			m_LastError = EString("Montage JSON has no sections array.");
+			return FALSE;
+		}
+		FJsonObjectArrayGuard SectionGuard(Sections);
+		if ((InSectionIndex < 0) || (InSectionIndex >= Sections.Num()) || (!Sections[InSectionIndex]))
+		{
+			m_LastError = EString("Montage section index is out of range.");
+			return FALSE;
+		}
+		InMutator(*Sections[InSectionIndex]);
+		Root.SetObjectArrayField(PE_TEXT("Sections"), Sections);
+		return CommitJsonText(Root.ToString());
+	}
+
+	BOOL32 EAnimMontageEditor::AddMontageSection()
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		CJsonObject Root(EString(m_JsonBuffer.GetData()));
+		if (!Root.IsValid())
+		{
+			m_LastError = EString("Montage JSON is not a valid object.");
+			return FALSE;
+		}
+		TArray<CJsonObject*> Sections;
+		if (!(Root.GetObjectArrayField(PE_TEXT("Sections"), Sections)))
+		{
+			m_LastError = EString("Montage JSON has no sections array.");
+			return FALSE;
+		}
+		FJsonObjectArrayGuard SectionGuard(Sections);
+
+		INT32 Suffix = Sections.Num();
+		EString NewName;
+		BOOL32 bNameExists = TRUE;
+		while (bNameExists != FALSE)
+		{
+			bNameExists = FALSE;
+			NewName = EString(PE_TEXT("Section")) + ToString(Suffix++);
+			for (INT32 SectionIndex = 0; SectionIndex < Sections.Num(); SectionIndex++)
+			{
+				if ((Sections[SectionIndex]) && (GetJsonStringField(*Sections[SectionIndex], PE_TEXT("Name")) == NewName))
+				{
+					bNameExists = TRUE;
+					break;
+				}
+			}
+		}
+
+		EString ClipName;
+		const ESkeletonAnimation* Animation = (m_AnimationAsset ? m_AnimationAsset->GetStoragedResource() : nullptr);
+		if ((Animation) && (Animation->GetAnimationClipNum() > 0))
+		{
+			const ESkeletonAnimationClip* Clip = Animation->GetAnimationClip(0);
+			if (Clip)
+			{
+				ClipName = Clip->ClipName;
+			}
+		}
+		EString SlotName;
+		const ESkeleton* Skeleton = (m_SkeletonAsset ? m_SkeletonAsset->GetStoragedResource() : nullptr);
+		if (Skeleton)
+		{
+			const TArray<ESkeletonSlotGroup>& Groups = Skeleton->GetSlotGroups();
+			if ((Groups.Num() > 0) && (Groups[0].SlotNames.Num() > 0))
+			{
+				SlotName = Groups[0].SlotNames[0];
+			}
+		}
+
+		CJsonObject* NewSection = new CJsonObject();
+		NewSection->SetStringField(PE_TEXT("Name"), NewName);
+		NewSection->SetStringField(PE_TEXT("Clip"), ClipName);
+		NewSection->SetStringField(PE_TEXT("Slot"), SlotName);
+		NewSection->SetStringField(PE_TEXT("Next"), EString());
+		NewSection->SetStringField(PE_TEXT("Loop"), EString(PE_TEXT("Once")));
+		NewSection->SetFloatField(PE_TEXT("Rate"), 1.0f);
+		NewSection->SetFloatField(PE_TEXT("BlendIn"), 0.1f);
+		NewSection->SetFloatField(PE_TEXT("BlendOut"), 0.2f);
+		NewSection->SetBoolField(PE_TEXT("Additive"), FALSE);
+		Sections.Add(NewSection);
+
+		Root.SetObjectArrayField(PE_TEXT("Sections"), Sections);
+		return CommitJsonText(Root.ToString());
+	}
+
+	BOOL32 EAnimMontageEditor::RemoveMontageSection(INT32 InSectionIndex)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		CJsonObject Root(EString(m_JsonBuffer.GetData()));
+		if (!Root.IsValid())
+		{
+			m_LastError = EString("Montage JSON is not a valid object.");
+			return FALSE;
+		}
+		TArray<CJsonObject*> Sections;
+		if (!(Root.GetObjectArrayField(PE_TEXT("Sections"), Sections)))
+		{
+			m_LastError = EString("Montage JSON has no sections array.");
+			return FALSE;
+		}
+		FJsonObjectArrayGuard SectionGuard(Sections);
+		if ((InSectionIndex < 0) || (InSectionIndex >= Sections.Num()) || (!Sections[InSectionIndex]))
+		{
+			m_LastError = EString("Montage section index is out of range.");
+			return FALSE;
+		}
+		if (Sections.Num() <= 1)
+		{
+			m_LastError = EString("A montage needs at least one section.");
+			return FALSE;
+		}
+
+		const EString RemovedName = GetJsonStringField(*Sections[InSectionIndex], PE_TEXT("Name"));
+		delete Sections[InSectionIndex];
+		Sections.RemoveAt(InSectionIndex);
+		// A chain that pointed at the removed section now ends instead of referencing a name
+		// that no longer exists. The builder would reject the dangling reference.
+		for (INT32 SectionIndex = 0; SectionIndex < Sections.Num(); SectionIndex++)
+		{
+			if ((Sections[SectionIndex]) && (GetJsonStringField(*Sections[SectionIndex], PE_TEXT("Next")) == RemovedName))
+			{
+				Sections[SectionIndex]->SetStringField(PE_TEXT("Next"), EString());
+			}
+		}
+
+		Root.SetObjectArrayField(PE_TEXT("Sections"), Sections);
+		return CommitJsonText(Root.ToString());
+	}
+
+	BOOL32 EAnimMontageEditor::UpdateBoneMask(INT32 InSectionIndex, const TArray<EString>& InBones, FLOAT InWeight
+		, const EString& InMaskName)
+	{
+		return UpdateMontageSection(InSectionIndex, [InBones, InWeight, InMaskName](CJsonObject& InSection)
+			{
+				CJsonObject MaskObject;
+				InSection.GetObjectField(PE_TEXT("BoneMask"), MaskObject);
+				MaskObject.SetStringField(PE_TEXT("Name"), InMaskName);
+				MaskObject.SetStringArrayField(PE_TEXT("Bones"), InBones);
+				MaskObject.SetFloatField(PE_TEXT("Weight"), InWeight);
+				InSection.SetObjectField(PE_TEXT("BoneMask"), &MaskObject);
+			});
+	}
+
+	BOOL32 EAnimMontageEditor::UpdateMontageNotify(INT32 InSectionIndex, INT32 InNotifyIndex
+		, const TFunction<void(CJsonObject&)>& InMutator)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+		if ((!Montage) || (InSectionIndex < 0) || (InSectionIndex >= Montage->Sections.Num()))
+		{
+			return FALSE;
+		}
+		const EAnimMontageSection& Section = Montage->Sections[InSectionIndex];
+		if ((InNotifyIndex < 0) || (InNotifyIndex >= Section.Notifies.Num()))
+		{
+			return FALSE;
+		}
+
+		return UpdateMontageSection(InSectionIndex, [InNotifyIndex, &InMutator](CJsonObject& InSection)
+			{
+				TArray<CJsonObject*> Notifies;
+				if (!(InSection.GetObjectArrayField(PE_TEXT("Notifies"), Notifies)))
+				{
+					return;
+				}
+				FJsonObjectArrayGuard NotifyGuard(Notifies);
+				if ((InNotifyIndex < 0) || (InNotifyIndex >= Notifies.Num()) || (!Notifies[InNotifyIndex]))
+				{
+					return;
+				}
+				InMutator(*Notifies[InNotifyIndex]);
+				InSection.SetObjectArrayField(PE_TEXT("Notifies"), Notifies);
+			});
+	}
+
+	BOOL32 EAnimMontageEditor::AddMontageNotify(INT32 InSectionIndex)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+		if ((!Montage) || (InSectionIndex < 0) || (InSectionIndex >= Montage->Sections.Num()))
+		{
+			return FALSE;
+		}
+
+		return UpdateMontageSection(InSectionIndex, [](CJsonObject& InSection)
+			{
+				TArray<CJsonObject*> Notifies;
+				InSection.GetObjectArrayField(PE_TEXT("Notifies"), Notifies);
+				FJsonObjectArrayGuard NotifyGuard(Notifies);
+
+				INT32 Suffix = Notifies.Num();
+				EString NewName;
+				BOOL32 bNameExists = TRUE;
+				while (bNameExists != FALSE)
+				{
+					bNameExists = FALSE;
+					NewName = EString(PE_TEXT("Notify")) + ToString(Suffix++);
+					for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
+					{
+						if ((Notifies[NotifyIndex]) && (GetJsonStringField(*Notifies[NotifyIndex], PE_TEXT("Name")) == NewName))
+						{
+							bNameExists = TRUE;
+							break;
+						}
+					}
+				}
+
+				const TArray<EString> RegisteredClassNames = EAnimNotifyRegistry::GetRegisteredClassNames();
+				// Prefer an instant class for a new event; the registry order is not stable and
+				// a state class must not be written with State=false.
+				EString DefaultClass;
+				BOOL32 bDefaultIsState = FALSE;
+				for (INT32 ClassIndex = 0; ClassIndex < RegisteredClassNames.Num(); ClassIndex++)
+				{
+					BOOL32 bClassIsState = FALSE;
+					if ((EAnimNotifyRegistry::IsStateClass(RegisteredClassNames[ClassIndex], bClassIsState) != FALSE)
+						&& (bClassIsState == FALSE))
+					{
+						DefaultClass = RegisteredClassNames[ClassIndex];
+						break;
+					}
+				}
+				if ((DefaultClass.Length() <= 0u) && (RegisteredClassNames.Num() > 0))
+				{
+					DefaultClass = RegisteredClassNames[0];
+					EAnimNotifyRegistry::IsStateClass(DefaultClass, bDefaultIsState);
+				}
+				CJsonObject* NewNotify = new CJsonObject();
+				NewNotify->SetStringField(PE_TEXT("Name"), NewName);
+				NewNotify->SetStringField(PE_TEXT("Class"), DefaultClass);
+				NewNotify->SetFloatField(PE_TEXT("Time"), 0.0f);
+				NewNotify->SetBoolField(PE_TEXT("State"), bDefaultIsState);
+				if (bDefaultIsState != FALSE)
+				{
+					NewNotify->SetFloatField(PE_TEXT("Duration"), 0.1f);
+				}
+				NewNotify->SetStringField(PE_TEXT("Payload"), EString(PE_TEXT("{}")));
+				Notifies.Add(NewNotify);
+				InSection.SetObjectArrayField(PE_TEXT("Notifies"), Notifies);
+			});
+	}
+
+	BOOL32 EAnimMontageEditor::RemoveMontageNotify(INT32 InSectionIndex, INT32 InNotifyIndex)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+		if ((!Montage) || (InSectionIndex < 0) || (InSectionIndex >= Montage->Sections.Num()))
+		{
+			return FALSE;
+		}
+		const EAnimMontageSection& Section = Montage->Sections[InSectionIndex];
+		if ((InNotifyIndex < 0) || (InNotifyIndex >= Section.Notifies.Num()))
+		{
+			return FALSE;
+		}
+
+		return UpdateMontageSection(InSectionIndex, [InNotifyIndex](CJsonObject& InSection)
+			{
+				TArray<CJsonObject*> Notifies;
+				if (!(InSection.GetObjectArrayField(PE_TEXT("Notifies"), Notifies)))
+				{
+					return;
+				}
+				FJsonObjectArrayGuard NotifyGuard(Notifies);
+				if ((InNotifyIndex < 0) || (InNotifyIndex >= Notifies.Num()) || (!Notifies[InNotifyIndex]))
+				{
+					return;
+				}
+				delete Notifies[InNotifyIndex];
+				Notifies.RemoveAt(InNotifyIndex);
+				InSection.SetObjectArrayField(PE_TEXT("Notifies"), Notifies);
+			});
+	}
+
+	BOOL32 EAnimMontageEditor::DrawSectionNotifies(const EAnimMontageSection& InSection, INT32 InSectionIndex)
+	{
+		if (ImGui::Button("Add Notify"))
+		{
+			if (AddMontageNotify(InSectionIndex))
+			{
+				return TRUE;
+			}
+		}
+		if (InSection.Notifies.Num() <= 0)
+		{
+			ImGui::TextDisabled("No notifies.");
+			return FALSE;
+		}
+
+		const ESkeletonAnimation* Animation = (m_AnimationAsset ? m_AnimationAsset->GetStoragedResource() : nullptr);
+		const ESkeletonAnimationClip* Clip = (Animation ? Animation->GetAnimationClip(InSection.ClipName) : nullptr);
+		const FLOAT ClipDurationSeconds = GetClipDurationSeconds(Clip);
+		const TArray<EString> RegisteredClassNames = EAnimNotifyRegistry::GetRegisteredClassNames();
+		BOOL32 bPendingAddNotify = FALSE;
+		INT32 PendingRemoveNotifyIndex = -1;
+
+		for (INT32 NotifyIndex = 0; NotifyIndex < InSection.Notifies.Num(); NotifyIndex++)
+		{
+			const FAnimNotifyEvent& Notify = InSection.Notifies[NotifyIndex];
+			ImGui::PushID(NotifyIndex);
+			ImGui::Separator();
+			ImGui::Text("Name: %s", *Notify.NotifyName);
+			if (ImGui::BeginPopupContextItem("##notify_menu"))
+			{
+				if (ImGui::MenuItem("Add Notify"))
+				{
+					bPendingAddNotify = TRUE;
+				}
+				if (ImGui::MenuItem("Remove Notify"))
+				{
+					PendingRemoveNotifyIndex = NotifyIndex;
+				}
+				ImGui::EndPopup();
+			}
+			if (Notify.NotifyAssetName.Length() > 0u)
+			{
+				ImGui::TextDisabled("Asset: %s", *Notify.NotifyAssetName);
+			}
+
+			const CHAR* CurrentClassLabel = ((Notify.NotifyClassName.Length() > 0u) ? *Notify.NotifyClassName : "None");
+				if (ImGui::BeginCombo("Class", CurrentClassLabel))
+				{
+					if (ImGui::Selectable("None", (Notify.NotifyClassName.Length() == 0u)))
+					{
+						if (UpdateMontageNotify(InSectionIndex, NotifyIndex, [](CJsonObject& InNotify)
+							{
+								InNotify.SetStringField(PE_TEXT("Class"), EString());
+								InNotify.SetBoolField(PE_TEXT("State"), FALSE);
+							}))
+						{
+							ImGui::EndCombo();
+							ImGui::PopID();
+							return TRUE;
+						}
+					}
+					for (INT32 ClassIndex = 0; ClassIndex < RegisteredClassNames.Num(); ClassIndex++)
+					{
+						BOOL32 bClassIsState = FALSE;
+						const BOOL32 bKnownClass = EAnimNotifyRegistry::IsStateClass(
+							RegisteredClassNames[ClassIndex], bClassIsState);
+						EString ClassLabel = RegisteredClassNames[ClassIndex];
+						if (bKnownClass != FALSE)
+						{
+							ClassLabel += ((bClassIsState != FALSE) ? EString(" (State)") : EString(" (Instant)"));
+						}
+						const BOOL32 bSelected = (Notify.NotifyClassName == RegisteredClassNames[ClassIndex]);
+						if (ImGui::Selectable(*ClassLabel, bSelected))
+						{
+							const EString NewClassName = RegisteredClassNames[ClassIndex];
+							if (UpdateMontageNotify(InSectionIndex, NotifyIndex
+								, [NewClassName, bKnownClass, bClassIsState](CJsonObject& InNotify)
+								{
+									InNotify.SetStringField(PE_TEXT("Class"), NewClassName);
+									if (bKnownClass != FALSE)
+									{
+										// Class kind is authoritative; keep the serialized State flag in
+										// sync instead of letting the old checkbox disagree with it.
+										InNotify.SetBoolField(PE_TEXT("State"), bClassIsState);
+										if (bClassIsState != FALSE)
+										{
+											FLOAT ExistingDuration = 0.0f;
+											InNotify.GetFloatField(PE_TEXT("Duration"), ExistingDuration);
+											InNotify.SetFloatField(PE_TEXT("Duration"), EMath::Max(ExistingDuration, 0.1f));
+										}
+									}
+								}))
+							{
+								ImGui::EndCombo();
+								ImGui::PopID();
+								return TRUE;
+							}
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+			if (ClipDurationSeconds > 0.0f)
+			{
+				FLOAT NotifyTime = Notify.Time;
+				if (ImGui::SliderFloat("Time", &NotifyTime, 0.0f, ClipDurationSeconds, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+				{
+					if (UpdateMontageNotify(InSectionIndex, NotifyIndex, [NotifyTime](CJsonObject& InNotify)
+						{
+							InNotify.SetFloatField(PE_TEXT("Time"), NotifyTime);
+						}))
+					{
+						ImGui::PopID();
+						return TRUE;
+					}
+				}
+			}
+
+			// Class is the single source of truth for the event kind now. Keep a read-only
+			// indicator so legacy assets with a mismatched State flag are visible but cannot
+			// create another invalid combination.
+			if (Notify.CachedNotify)
+			{
+				ImGui::Text("Kind: %s", (Notify.bIsState != FALSE) ? "State" : "Instant");
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f)
+					, "Class '%s' is missing or does not match its State flag.", CurrentClassLabel);
+				ImGui::TextDisabled("Select the class again to synchronize the event kind.");
+			}
+			if (Notify.bIsState)
+			{
+				const FLOAT MaxDuration = ((ClipDurationSeconds > 0.001f) ? ClipDurationSeconds : 1.0f);
+				FLOAT StateDuration = EMath::Clamp(Notify.StateDuration, 0.001f, MaxDuration);
+				if (ImGui::SliderFloat("State Duration", &StateDuration, 0.001f, MaxDuration, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+				{
+					if (UpdateMontageNotify(InSectionIndex, NotifyIndex, [StateDuration](CJsonObject& InNotify)
+						{
+							InNotify.SetFloatField(PE_TEXT("Duration"), StateDuration);
+						}))
+					{
+						ImGui::PopID();
+						return TRUE;
+					}
+				}
+			}
+			if (Notify.PayloadJson.Length() > 0u)
+			{
+				ImGui::TextDisabled("Payload (read-only): %.120s", *Notify.PayloadJson);
+			}
+
+			if (ImGui::Button("Remove Notify"))
+			{
+				if (RemoveMontageNotify(InSectionIndex, NotifyIndex))
+				{
+					ImGui::PopID();
+					return TRUE;
+				}
+			}
+			ImGui::PopID();
+		}
+
+		if (bPendingAddNotify != FALSE)
+		{
+			if (AddMontageNotify(InSectionIndex))
+			{
+				return TRUE;
+			}
+		}
+		if (PendingRemoveNotifyIndex >= 0)
+		{
+			if (RemoveMontageNotify(InSectionIndex, PendingRemoveNotifyIndex))
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	void EAnimMontageEditor::RefreshSkeletonAsset(const EAnimMontage& InMontage)
+	{
+		m_SkeletonAsset = nullptr;
+		if (InMontage.SkeletonName.Length() <= 0u)
+		{
+			return;
+		}
+		const ESkeletonAsset* LoadedSkeleton = nullptr;
+		if (ESkeletonAssetManager::GetManagerSingleton()->LoadSkeletonAsset(
+			EBaseSettings::ENGINE_SKELETON_PATH, InMontage.SkeletonName, LoadedSkeleton))
+		{
+			m_SkeletonAsset = LoadedSkeleton;
+		}
+	}
+
+	void EAnimMontageEditor::DrawEditableSections(const EAnimMontage& InMontage)
+	{
+		if (ImGui::Button("Add Section"))
+		{
+			if (AddMontageSection())
+			{
+				return;
+			}
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Slot names come from the skeleton; boneMask/notifies stay untouched.");
+
+		const ESkeleton* Skeleton = (m_SkeletonAsset ? m_SkeletonAsset->GetStoragedResource() : nullptr);
+		// Section context actions rebuild the live montage; defer them until the loop ends.
+		BOOL32 bPendingAddSection = FALSE;
+		INT32 PendingRemoveSectionIndex = -1;
+		INT32 PendingAddNotifySectionIndex = -1;
+		for (INT32 SectionIndex = 0; SectionIndex < InMontage.Sections.Num(); SectionIndex++)
+		{
+			const EAnimMontageSection& Section = InMontage.Sections[SectionIndex];
+			ImGui::PushID(SectionIndex);
+			ImGui::Separator();
+
+			ImGui::Text("%s", *Section.Name);
+			if (ImGui::BeginPopupContextItem("##section_menu"))
+			{
+				if (ImGui::MenuItem("Add Section"))
+				{
+					bPendingAddSection = TRUE;
+				}
+				if (ImGui::MenuItem("Remove Section", nullptr, false, (InMontage.Sections.Num() > 1)))
+				{
+					PendingRemoveSectionIndex = SectionIndex;
+				}
+				if (ImGui::MenuItem("Add Notify"))
+				{
+					PendingAddNotifySectionIndex = SectionIndex;
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Remove Section"))
+			{
+				if (RemoveMontageSection(SectionIndex))
+				{
+					ImGui::PopID();
+					return;
+				}
+			}
+
+			const CHAR* CurrentClipLabel = ((Section.ClipName.Length() > 0u) ? *Section.ClipName : "None");
+			if (ImGui::BeginCombo("Clip", CurrentClipLabel))
+			{
+				const ESkeletonAnimation* Animation = (m_AnimationAsset ? m_AnimationAsset->GetStoragedResource() : nullptr);
+				if (Animation)
+				{
+					for (INT32 ClipIndex = 0; ClipIndex < Animation->GetAnimationClipNum(); ClipIndex++)
+					{
+						const ESkeletonAnimationClip* Clip = Animation->GetAnimationClip(ClipIndex);
+						if (!Clip)
+						{
+							continue;
+						}
+						const BOOL32 bSelected = (Section.ClipName == Clip->ClipName);
+						if (ImGui::Selectable(*Clip->ClipName, bSelected))
+						{
+							const EString NewClipName = Clip->ClipName;
+							if (UpdateMontageSection(SectionIndex, [NewClipName](CJsonObject& InSection)
+								{
+									InSection.SetStringField(PE_TEXT("Clip"), NewClipName);
+								}))
+							{
+								ImGui::EndCombo();
+								ImGui::PopID();
+								return;
+							}
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			const CHAR* CurrentSlotLabel = ((Section.SlotName.Length() > 0u) ? *Section.SlotName : "None");
+			if (ImGui::BeginCombo("Slot", CurrentSlotLabel))
+			{
+				if (Skeleton)
+				{
+					const TArray<ESkeletonSlotGroup>& Groups = Skeleton->GetSlotGroups();
+					for (INT32 GroupIndex = 0; GroupIndex < Groups.Num(); GroupIndex++)
+					{
+						const ESkeletonSlotGroup& Group = Groups[GroupIndex];
+						for (INT32 SlotIndex = 0; SlotIndex < Group.SlotNames.Num(); SlotIndex++)
+						{
+							const EString& SlotName = Group.SlotNames[SlotIndex];
+							const BOOL32 bSelected = (Section.SlotName == SlotName);
+							if (ImGui::Selectable(*SlotName, bSelected))
+							{
+								const EString NewSlotName = SlotName;
+								if (UpdateMontageSection(SectionIndex, [NewSlotName](CJsonObject& InSection)
+									{
+										InSection.SetStringField(PE_TEXT("Slot"), NewSlotName);
+									}))
+								{
+									ImGui::EndCombo();
+									ImGui::PopID();
+									return;
+								}
+							}
+							if (bSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+					}
+				}
+				else
+				{
+					ImGui::TextDisabled("Skeleton '%s' is not loaded.", *InMontage.SkeletonName);
+				}
+				ImGui::EndCombo();
+			}
+
+			const CHAR* CurrentNextLabel = ((Section.NextSectionName.Length() > 0u) ? *Section.NextSectionName : "(end)");
+			if (ImGui::BeginCombo("Next", CurrentNextLabel))
+			{
+				if (ImGui::Selectable("(end)", (Section.NextSectionName.Length() == 0u)))
+				{
+					if (UpdateMontageSection(SectionIndex, [](CJsonObject& InSection)
+						{
+							InSection.SetStringField(PE_TEXT("Next"), EString());
+						}))
+					{
+						ImGui::EndCombo();
+						ImGui::PopID();
+						return;
+					}
+				}
+				for (INT32 NextIndex = 0; NextIndex < InMontage.Sections.Num(); NextIndex++)
+				{
+					if (NextIndex == SectionIndex)
+					{
+						continue;
+					}
+					const EAnimMontageSection& NextSection = InMontage.Sections[NextIndex];
+					const BOOL32 bSelected = (Section.NextSectionName == NextSection.Name);
+					if (ImGui::Selectable(*NextSection.Name, bSelected))
+					{
+						const EString NewNextName = NextSection.Name;
+						if (UpdateMontageSection(SectionIndex, [NewNextName](CJsonObject& InSection)
+							{
+								InSection.SetStringField(PE_TEXT("Next"), NewNextName);
+							}))
+						{
+							ImGui::EndCombo();
+							ImGui::PopID();
+							return;
+						}
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			const EAnimationLoopMode LoopModes[4] = {
+				EAnimationLoopMode::ANIMATION_LOOP_ONCE,
+				EAnimationLoopMode::ANIMATION_LOOP_REPEAT,
+				EAnimationLoopMode::ANIMATION_LOOP_PINGPONG,
+				EAnimationLoopMode::ANIMATION_LOOP_CLAMP
+			};
+			if (ImGui::BeginCombo("Loop", GetLoopModeLabel(Section.LoopMode)))
+			{
+				for (UINT32 ModeIndex = 0u; ModeIndex < 4u; ModeIndex++)
+				{
+					const BOOL32 bSelected = (Section.LoopMode == LoopModes[ModeIndex]);
+					if (ImGui::Selectable(GetLoopModeLabel(LoopModes[ModeIndex]), bSelected))
+					{
+						const EString NewLoopText(GetLoopModeLabel(LoopModes[ModeIndex]));
+						if (UpdateMontageSection(SectionIndex, [NewLoopText](CJsonObject& InSection)
+							{
+								InSection.SetStringField(PE_TEXT("Loop"), NewLoopText);
+							}))
+						{
+							ImGui::EndCombo();
+							ImGui::PopID();
+							return;
+						}
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			FLOAT PlayRate = Section.PlayRate;
+			if (ImGui::SliderFloat("Rate", &PlayRate, 0.01f, 4.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp))
+			{
+				if (UpdateMontageSection(SectionIndex, [PlayRate](CJsonObject& InSection)
+					{
+						InSection.SetFloatField(PE_TEXT("Rate"), PlayRate);
+					}))
+				{
+					ImGui::PopID();
+					return;
+				}
+			}
+			FLOAT BlendIn = Section.BlendInSeconds;
+			if (ImGui::SliderFloat("Blend In", &BlendIn, 0.0f, 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+			{
+				if (UpdateMontageSection(SectionIndex, [BlendIn](CJsonObject& InSection)
+					{
+						InSection.SetFloatField(PE_TEXT("BlendIn"), BlendIn);
+					}))
+				{
+					ImGui::PopID();
+					return;
+				}
+			}
+			FLOAT BlendOut = Section.BlendOutSeconds;
+			if (ImGui::SliderFloat("Blend Out", &BlendOut, 0.0f, 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+			{
+				if (UpdateMontageSection(SectionIndex, [BlendOut](CJsonObject& InSection)
+					{
+						InSection.SetFloatField(PE_TEXT("BlendOut"), BlendOut);
+					}))
+				{
+					ImGui::PopID();
+					return;
+				}
+			}
+			bool bAdditive = (Section.bAdditive != FALSE);
+			if (ImGui::Checkbox("Additive", &bAdditive))
+			{
+				if (UpdateMontageSection(SectionIndex, [bAdditive](CJsonObject& InSection)
+					{
+						InSection.SetBoolField(PE_TEXT("Additive"), (bAdditive ? TRUE : FALSE));
+					}))
+				{
+					ImGui::PopID();
+					return;
+				}
+			}
+
+			if (ImGui::TreeNode("Bone Mask"))
+			{
+				ImGui::TextDisabled("Empty list = full body.");
+				const EString MaskName = ((Section.BoneMask.Name.Length() > 0u)
+					? Section.BoneMask.Name : EString(PE_TEXT("Mask")));
+				FLOAT MaskWeight = Section.BoneMask.Weight;
+				if (ImGui::SliderFloat("Weight", &MaskWeight, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp))
+				{
+					if (UpdateBoneMask(SectionIndex, Section.BoneMask.BoneNames, MaskWeight, MaskName))
+					{
+						ImGui::TreePop();
+						ImGui::PopID();
+						return;
+					}
+				}
+
+				if (Skeleton)
+				{
+					ImGui::BeginChild("BoneMaskList", ImVec2(0.0f, 150.0f), true);
+					const TArray<EBoneData>& Bones = Skeleton->GetBonePart();
+					for (INT32 BoneIndex = 0; BoneIndex < Bones.Num(); BoneIndex++)
+					{
+						const EBoneData& Bone = Bones[BoneIndex];
+						bool bChecked = (Section.BoneMask.BoneNames.Contains(Bone.Name) != FALSE);
+						if (ImGui::Checkbox(*Bone.Name, &bChecked))
+						{
+							TArray<EString> NewBones;
+							for (INT32 ExistingIndex = 0; ExistingIndex < Section.BoneMask.BoneNames.Num(); ExistingIndex++)
+							{
+								const EString& ExistingName = Section.BoneMask.BoneNames[ExistingIndex];
+								if (ExistingName != Bone.Name)
+								{
+									NewBones.Add(ExistingName);
+								}
+							}
+							if (bChecked)
+							{
+								NewBones.Add(Bone.Name);
+							}
+							if (UpdateBoneMask(SectionIndex, NewBones, Section.BoneMask.Weight, MaskName))
+							{
+								ImGui::EndChild();
+								ImGui::TreePop();
+								ImGui::PopID();
+								return;
+							}
+						}
+					}
+					ImGui::EndChild();
+				}
+				else
+				{
+					ImGui::TextDisabled("Skeleton is not loaded.");
+				}
+				ImGui::TreePop();
+			}
+
+			if (DrawSectionNotifies(Section, SectionIndex))
+			{
+				ImGui::PopID();
+				return;
+			}
+			ImGui::PopID();
+		}
+
+		if (bPendingAddSection != FALSE)
+		{
+			AddMontageSection();
+			return;
+		}
+		if (PendingRemoveSectionIndex >= 0)
+		{
+			RemoveMontageSection(PendingRemoveSectionIndex);
+			return;
+		}
+		if (PendingAddNotifySectionIndex >= 0)
+		{
+			AddMontageNotify(PendingAddNotifySectionIndex);
+			return;
 		}
 	}
 

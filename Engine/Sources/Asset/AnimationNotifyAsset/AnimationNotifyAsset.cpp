@@ -221,6 +221,60 @@ namespace PigeonEngine
 		OutAsset = NewAsset;
 		return TRUE;
 	}
+	BOOL32 EAnimNotifyManager::ReloadNotifyAsset(const EString& InLoadPath, const EString& InLoadName
+		, const EAnimNotifyAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
+
+		EString LoadError;
+		EAnimNotifyDefinition* LoadedResource = LoadNotifyResource(InLoadPath, InLoadName, LoadError);
+		if ((!LoadedResource) || (!LoadedResource->IsResourceValid()))
+		{
+			delete LoadedResource;
+			OutError = (LoadError.Length() > 0u)
+				? LoadError
+				: (EString(PE_TEXT("Failed to load notify asset from disk: ")) + FullPathName);
+			return FALSE;
+		}
+
+		EAnimNotifyAsset* FreshAsset = new EAnimNotifyAsset(InLoadPath, InLoadName
+#if _EDITOR_ONLY
+			, InLoadName
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([LoadedResource]() -> EAnimNotifyDefinition*
+			{
+				return LoadedResource;
+			})))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to build reloaded notify asset: ")) + FullPathName;
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Notify asset has no valid resource: ")) + FullPathName;
+			return FALSE;
+		}
+
+		EAnimNotifyAsset* OldAsset = NotifyAssetManager.Detach(FullPathName);
+		if (NotifyAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (NotifyAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				NotifyAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish reloaded notify asset: ")) + FullPathName;
+			return FALSE;
+		}
+		NotifyAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
+		return TRUE;
+	}
 
 	BOOL32 EAnimNotifyManager::ResolveNotifyDefinition(const EString& InNotifyName, const EAnimNotifyDefinition*& OutDefinition)
 	{
@@ -272,7 +326,108 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		return SaveNotifyResource(InAsset->GetAssetPath(), InAsset->GetAssetName(), InJsonText);
+		if (!SaveNotifyResource(InAsset->GetAssetPath(), InAsset->GetAssetName(), InJsonText))
+		{
+			OutError = EString(PE_TEXT("Failed to write notify asset: "))
+				+ InAsset->GetAssetPath() + InAsset->GetAssetName();
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	EAnimNotifyDefinition* EAnimNotifyManager::BuildTransientNotifyDefinition(const EString& InJsonText
+		, EString& OutError)
+	{
+		EAnimNotifyDefinition* Definition = new EAnimNotifyDefinition();
+		if (!BuildNotifyDefinition(*Definition, InJsonText, OutError))
+		{
+			delete Definition;
+			return nullptr;
+		}
+		return Definition;
+	}
+
+	BOOL32 EAnimNotifyManager::BuildAndPublishNotifyAsset(const EAnimNotifyAsset* InAsset
+		, const EString& InJsonText, BOOL32 bInSaveToDisk
+		, const EAnimNotifyAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		if (!InAsset)
+		{
+			OutError = EString("Null notify asset.");
+			return FALSE;
+		}
+		EAnimNotifyDefinition* NewDefinition = new EAnimNotifyDefinition();
+		if (!BuildNotifyDefinition(*NewDefinition, InJsonText, OutError))
+		{
+			delete NewDefinition;
+			return FALSE;
+		}
+		if (NewDefinition->Name.Length() <= 0u)
+		{
+			NewDefinition->Name = InAsset->GetAssetName();
+		}
+
+		EAnimNotifyAsset* FreshAsset = new EAnimNotifyAsset(InAsset->GetAssetPath(), InAsset->GetAssetName()
+#if _EDITOR_ONLY
+			, InAsset->GetAssetName()
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([NewDefinition]() -> EAnimNotifyDefinition*
+			{
+				return NewDefinition;
+			})))
+		{
+			delete NewDefinition;
+			delete FreshAsset;
+			OutError = EString("Failed to build the new notify resource.");
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString("Notify asset has no valid resource.");
+			return FALSE;
+		}
+		if (bInSaveToDisk != FALSE)
+		{
+			if (!SaveNotifyResource(FreshAsset->GetAssetPath(), FreshAsset->GetAssetName(), InJsonText))
+			{
+				delete FreshAsset;
+				OutError = EString(PE_TEXT("Failed to write notify asset: "))
+					+ InAsset->GetAssetPath() + InAsset->GetAssetName();
+				return FALSE;
+			}
+		}
+
+		const EString FullPathName = FreshAsset->GetAssetFullPathName();
+		EAnimNotifyAsset* OldAsset = NotifyAssetManager.Detach(FullPathName);
+		if (NotifyAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (NotifyAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				NotifyAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish notify asset: ")) + FullPathName;
+			return FALSE;
+		}
+		NotifyAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
+		return TRUE;
+	}
+
+	BOOL32 EAnimNotifyManager::ApplyNotifyAsset(const EAnimNotifyAsset* InAsset, const EString& InJsonText
+		, const EAnimNotifyAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishNotifyAsset(InAsset, InJsonText, FALSE, OutAsset, OutError);
+	}
+
+	BOOL32 EAnimNotifyManager::SaveNotifyAssetCopyOnWrite(const EAnimNotifyAsset* InAsset
+		, const EString& InJsonText, const EAnimNotifyAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishNotifyAsset(InAsset, InJsonText, TRUE, OutAsset, OutError);
 	}
 
 	EAnimNotifyAsset* EAnimNotifyManager::LoadNotifyAsset(const EString& InLoadPath, const EString& InLoadName)
@@ -358,7 +513,7 @@ namespace PigeonEngine
 		Cursor += sizeof(UINT32);
 		::memcpy_s(Cursor, JsonLength, *InJsonText, JsonLength);
 
-		const BOOL32 Result = EFileHelper::SaveBytesToFile(FullPathName, OutputMem, OutputSize);
+		const BOOL32 Result = EFileHelper::SaveBytesToFileAtomic(FullPathName, OutputMem, OutputSize);
 		delete[] OutputMem;
 		return Result;
 	}
@@ -380,15 +535,15 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		Root.GetStringField(PE_TEXT("name"), OutDefinition.Name);
-		Root.GetStringField(PE_TEXT("description"), OutDefinition.Description);
-		Root.GetStringField(PE_TEXT("class"), OutDefinition.NotifyClassName);
+		Root.GetStringField(PE_TEXT("Name"), OutDefinition.Name);
+		Root.GetStringField(PE_TEXT("Description"), OutDefinition.Description);
+		Root.GetStringField(PE_TEXT("Class"), OutDefinition.NotifyClassName);
 		// Payload is authored either as a JSON string (free-form game data) or as an object
 		// that is serialized back to text for the notify class.
-		if (!Root.GetStringField(PE_TEXT("payload"), OutDefinition.PayloadJson))
+		if (!Root.GetStringField(PE_TEXT("Payload"), OutDefinition.PayloadJson))
 		{
 			CJsonObject PayloadObject;
-			if (Root.GetObjectField(PE_TEXT("payload"), PayloadObject))
+			if (Root.GetObjectField(PE_TEXT("Payload"), PayloadObject))
 			{
 				OutDefinition.PayloadJson = PayloadObject.ToString();
 			}
@@ -399,11 +554,11 @@ namespace PigeonEngine
 		}
 
 		BOOL8 bIsState = FALSE;
-		Root.GetBoolField(PE_TEXT("state"), bIsState);
+		Root.GetBoolField(PE_TEXT("State"), bIsState);
 		OutDefinition.bIsState = ((bIsState != FALSE) ? TRUE : FALSE);
 
 		FLOAT Duration = 0.0f;
-		if (Root.GetFloatField(PE_TEXT("duration"), Duration))
+		if (Root.GetFloatField(PE_TEXT("Duration"), Duration))
 		{
 			OutDefinition.DefaultDuration = EMath::Max(Duration, 0.001f);
 		}

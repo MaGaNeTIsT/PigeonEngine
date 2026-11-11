@@ -614,7 +614,7 @@ namespace PigeonEngine
 		// The Sponza scene, added to the level rather than replacing it: its own objects are placed at
 		// the source's world space, so the content above stays where it is and the building grows
 		// around it. The build waits on assets, so it continues across frames on its own.
-		BuildDemoSponzaScene(*GetWorld());
+		//BuildDemoSponzaScene(*GetWorld());
 	}
 
 	void PLevelActor::UserEndPlay()

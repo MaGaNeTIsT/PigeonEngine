@@ -225,8 +225,27 @@ namespace PigeonEngine
 			, const EString& InSkeletonName = EString(), const EString& InRootBoneName = EString());
 #endif
 		BOOL32	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, const BOOL32 bTryLoad = FALSE);
-		// Editor save: writes the asset back to the path and name it was loaded from.
-		BOOL32	SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
+		/*
+		* Editor: loads a fresh object from disk, swaps the cache entry and keeps the old object
+		* alive for instances that already hold it. OutSkeletonAnimationAsset receives the new
+		* object; the previous one keeps serving running instances until they rebind or restart.
+		*/
+		BOOL32	ReloadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
+			, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, EString& OutError);
+		// Editor save: writes the asset back to the path and name it was loaded from. OutError
+		// is filled when the resource is invalid or the file could not be replaced.
+		BOOL32	SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset, EString& OutError);
+		// Editor copy-on-write: builds a fresh animation resource with the supplied notify
+		// arrays, publishes it into the cache and retires the old object for live instances.
+		// Apply does not touch disk; the save variant writes the PAsset after validation.
+		BOOL32	ApplySkeletonAnimationAsset(const ESkeletonAnimationAsset* InAsset
+			, const TArray<TArray<FAnimNotifyEvent>>& InNotifies
+			, const ESkeletonAnimationAsset*& OutAsset, EString& OutError);
+		BOOL32	SaveSkeletonAnimationAssetCopyOnWrite(const ESkeletonAnimationAsset* InAsset
+			, const TArray<TArray<FAnimNotifyEvent>>& InNotifies
+			, const ESkeletonAnimationAsset*& OutAsset, EString& OutError);
+		// Reference index: every animation asset currently resident in the cache.
+		void	GetLoadedAssets(TArray<const ESkeletonAnimationAsset*>& OutAssets);
 		// Re-applies every standalone notify asset to loaded clip events in place. Event
 		// addresses stay stable, so active notify-state windows remain valid.
 		void	RefreshNotifyReferences();
@@ -250,9 +269,11 @@ namespace PigeonEngine
 		void	ReleaseAllAssets();
 	private:
 		ESkeletonAnimationAsset* LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
-		BOOL32 SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
 		ESkeletonAnimation* LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		BOOL32 SaveSkeletonAnimationResource(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimation* InSkeletonAnimationResource);
+		BOOL32 BuildAndPublishSkeletonAnimationAsset(const ESkeletonAnimationAsset* InAsset
+			, const TArray<TArray<FAnimNotifyEvent>>& InNotifies, BOOL32 bInSaveToDisk
+			, const ESkeletonAnimationAsset*& OutAsset, EString& OutError);
 	private:
 		ESkeletonAnimationAssetManager	SkeletonAnimationAssetManager;
 

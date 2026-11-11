@@ -140,6 +140,51 @@ namespace PigeonEngine
 		}
 		return SaveMontageResource(InSavePath, InAssetName, JsonText);
 	}
+
+	BOOL32 EAnimMontageManager::CreateMontageAsset(const EString& InAssetName, const EString& InJsonText
+		, const EString& InSavePath, EString& OutError)
+	{
+		OutError = EString();
+		if (InAssetName.Length() <= 0u)
+		{
+			OutError = EString("Montage asset name is empty.");
+			return FALSE;
+		}
+		if (InJsonText.Length() <= 0u)
+		{
+			OutError = EString("Montage JSON is empty.");
+			return FALSE;
+		}
+
+		EAnimMontage TempMontage;
+		if (!BuildMontage(TempMontage, InJsonText, OutError))
+		{
+			return FALSE;
+		}
+		if (TempMontage.Name.Length() <= 0u)
+		{
+			TempMontage.Name = InAssetName;
+		}
+
+		const EString FullPathName = MakeAssetFullPathName(InSavePath, InAssetName);
+		if (EFileHelper::IsFileExists(FullPathName))
+		{
+			OutError = EString("Montage asset already exists: ") + FullPathName;
+			return FALSE;
+		}
+		if (!SaveMontageResource(InSavePath, InAssetName, InJsonText))
+		{
+			OutError = EString("Failed to write montage asset: ") + FullPathName;
+			return FALSE;
+		}
+		const EAnimMontageAsset* LoadedAsset = nullptr;
+		if (!LoadMontageAsset(InSavePath, InAssetName, LoadedAsset) || (!LoadedAsset))
+		{
+			OutError = EString("Created montage could not be loaded: ") + FullPathName;
+			return FALSE;
+		}
+		return TRUE;
+	}
 #endif
 
 	BOOL32 EAnimMontageManager::LoadMontageAsset(const EString& InLoadPath, const EString& InLoadName
@@ -185,6 +230,60 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		OutAsset = NewAsset;
+		return TRUE;
+	}
+	BOOL32 EAnimMontageManager::ReloadMontageAsset(const EString& InLoadPath, const EString& InLoadName
+		, const EAnimMontageAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
+
+		EString LoadError;
+		EAnimMontage* LoadedResource = LoadMontageResource(InLoadPath, InLoadName, LoadError);
+		if ((!LoadedResource) || (!LoadedResource->IsResourceValid()))
+		{
+			delete LoadedResource;
+			OutError = (LoadError.Length() > 0u)
+				? LoadError
+				: (EString(PE_TEXT("Failed to load montage asset from disk: ")) + FullPathName);
+			return FALSE;
+		}
+
+		EAnimMontageAsset* FreshAsset = new EAnimMontageAsset(InLoadPath, InLoadName
+#if _EDITOR_ONLY
+			, InLoadName
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([LoadedResource]() -> EAnimMontage*
+			{
+				return LoadedResource;
+			})))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to build reloaded montage asset: ")) + FullPathName;
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Montage asset has no valid resource: ")) + FullPathName;
+			return FALSE;
+		}
+
+		EAnimMontageAsset* OldAsset = MontageAssetManager.Detach(FullPathName);
+		if (MontageAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (MontageAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				MontageAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish reloaded montage asset: ")) + FullPathName;
+			return FALSE;
+		}
+		MontageAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
 		return TRUE;
 	}
 
@@ -237,13 +336,120 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL32 EAnimMontageManager::SaveMontageAsset(const EAnimMontageAsset* InAsset, const EString& InJsonText, EString& OutError)
+	EAnimMontage* EAnimMontageManager::BuildTransientMontage(const EString& InJsonText, EString& OutError)
 	{
-		if (!RebuildMontageAsset(InAsset, InJsonText, OutError))
+		EAnimMontage* Montage = new EAnimMontage();
+		if (!BuildMontage(*Montage, InJsonText, OutError))
 		{
+			delete Montage;
+			return nullptr;
+		}
+		return Montage;
+	}
+
+	BOOL32 EAnimMontageManager::BuildAndPublishMontageAsset(const EAnimMontageAsset* InAsset
+		, const EString& InJsonText, BOOL32 bInSaveToDisk
+		, const EAnimMontageAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		if (!InAsset)
+		{
+			OutError = EString("Null montage asset.");
 			return FALSE;
 		}
-		return SaveMontageResource(InAsset->GetAssetPath(), InAsset->GetAssetName(), InJsonText);
+		EAnimMontage* NewResource = new EAnimMontage();
+		if (!BuildMontage(*NewResource, InJsonText, OutError))
+		{
+			delete NewResource;
+			return FALSE;
+		}
+		if (NewResource->Name.Length() <= 0u)
+		{
+			NewResource->Name = InAsset->GetAssetName();
+		}
+
+		EAnimMontageAsset* FreshAsset = new EAnimMontageAsset(InAsset->GetAssetPath()
+			, InAsset->GetAssetName()
+#if _EDITOR_ONLY
+			, InAsset->GetAssetName()
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([NewResource]() -> EAnimMontage*
+			{
+				return NewResource;
+			})))
+		{
+			delete NewResource;
+			delete FreshAsset;
+			OutError = EString("Failed to build the new montage resource.");
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString("Montage asset has no valid resource.");
+			return FALSE;
+		}
+		if (bInSaveToDisk != FALSE)
+		{
+			if (!SaveMontageResource(FreshAsset->GetAssetPath(), FreshAsset->GetAssetName(), InJsonText))
+			{
+				delete FreshAsset;
+				OutError = EString(PE_TEXT("Failed to write montage asset: "))
+					+ InAsset->GetAssetPath() + InAsset->GetAssetName();
+				return FALSE;
+			}
+		}
+
+		const EString FullPathName = FreshAsset->GetAssetFullPathName();
+		EAnimMontageAsset* OldAsset = MontageAssetManager.Detach(FullPathName);
+		if (MontageAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (MontageAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				MontageAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish montage asset: ")) + FullPathName;
+			return FALSE;
+		}
+		MontageAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
+		return TRUE;
+	}
+
+	BOOL32 EAnimMontageManager::ApplyMontageAsset(const EAnimMontageAsset* InAsset
+		, const EString& InJsonText, const EAnimMontageAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishMontageAsset(InAsset, InJsonText, FALSE, OutAsset, OutError);
+	}
+
+	BOOL32 EAnimMontageManager::SaveMontageAssetCopyOnWrite(const EAnimMontageAsset* InAsset
+		, const EString& InJsonText, const EAnimMontageAsset*& OutAsset, EString& OutError)
+	{
+		return BuildAndPublishMontageAsset(InAsset, InJsonText, TRUE, OutAsset, OutError);
+	}
+
+	BOOL32 EAnimMontageManager::SaveMontageAsset(const EAnimMontageAsset* InAsset
+		, const EString& InJsonText, EString& OutError)
+	{
+		const EAnimMontageAsset* PublishedAsset = nullptr;
+		return SaveMontageAssetCopyOnWrite(InAsset, InJsonText, PublishedAsset, OutError);
+	}
+
+	void EAnimMontageManager::GetLoadedAssets(TArray<const EAnimMontageAsset*>& OutAssets)
+	{
+		OutAssets.Empty();
+		TArray<EAnimMontageAsset*> LoadedAssets;
+		MontageAssetManager.GenerateValueArray(LoadedAssets);
+		for (INT32 AssetIndex = 0; AssetIndex < LoadedAssets.Num(); AssetIndex++)
+		{
+			if (LoadedAssets[AssetIndex])
+			{
+				OutAssets.Add(LoadedAssets[AssetIndex]);
+			}
+		}
 	}
 
 	void EAnimMontageManager::RefreshNotifyReferences()
@@ -368,7 +574,7 @@ namespace PigeonEngine
 		Cursor += sizeof(UINT32);
 		::memcpy_s(Cursor, JsonLength, *InJsonText, JsonLength);
 
-		const BOOL32 Result = EFileHelper::SaveBytesToFile(FullPathName, OutputMem, OutputSize);
+		const BOOL32 Result = EFileHelper::SaveBytesToFileAtomic(FullPathName, OutputMem, OutputSize);
 		delete[] OutputMem;
 		return Result;
 	}
@@ -390,13 +596,13 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		Root.GetStringField(PE_TEXT("name"), OutMontage.Name);
-		Root.GetStringField(PE_TEXT("skeleton"), OutMontage.SkeletonName);
-		Root.GetStringField(PE_TEXT("animation"), OutMontage.AnimationAssetName);
+		Root.GetStringField(PE_TEXT("Name"), OutMontage.Name);
+		Root.GetStringField(PE_TEXT("Skeleton"), OutMontage.SkeletonName);
+		Root.GetStringField(PE_TEXT("Animation"), OutMontage.AnimationAssetName);
 
 		{
 			TArray<CJsonObject*> GroupObjects;
-			Root.GetObjectArrayField(PE_TEXT("slotGroups"), GroupObjects);
+			Root.GetObjectArrayField(PE_TEXT("SlotGroups"), GroupObjects);
 			FJsonObjectArrayGuard GroupGuard(GroupObjects);
 			for (INT32 GroupIndex = 0; GroupIndex < GroupObjects.Num(); GroupIndex++)
 			{
@@ -406,8 +612,8 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimMontageSlotGroup Group;
-				GroupObject->GetStringField(PE_TEXT("name"), Group.Name);
-				GroupObject->GetStringArrayField(PE_TEXT("slots"), Group.SlotNames);
+				GroupObject->GetStringField(PE_TEXT("Name"), Group.Name);
+				GroupObject->GetStringArrayField(PE_TEXT("Slots"), Group.SlotNames);
 				if (Group.Name.Length() <= 0u || Group.SlotNames.Num() <= 0)
 				{
 					OutError = EString("Every montage slot group needs a name and at least one slot.");
@@ -419,7 +625,7 @@ namespace PigeonEngine
 
 		{
 			TArray<CJsonObject*> SectionObjects;
-			if (!(Root.GetObjectArrayField(PE_TEXT("sections"), SectionObjects)))
+			if (!(Root.GetObjectArrayField(PE_TEXT("Sections"), SectionObjects)))
 			{
 				for (INT32 SectionIndex = 0; SectionIndex < SectionObjects.Num(); SectionIndex++)
 				{
@@ -437,46 +643,46 @@ namespace PigeonEngine
 					continue;
 				}
 				EAnimMontageSection Section;
-				SectionObject->GetStringField(PE_TEXT("name"), Section.Name);
-				SectionObject->GetStringField(PE_TEXT("clip"), Section.ClipName);
-				SectionObject->GetStringField(PE_TEXT("slot"), Section.SlotName);
-				SectionObject->GetStringField(PE_TEXT("next"), Section.NextSectionName);
+				SectionObject->GetStringField(PE_TEXT("Name"), Section.Name);
+				SectionObject->GetStringField(PE_TEXT("Clip"), Section.ClipName);
+				SectionObject->GetStringField(PE_TEXT("Slot"), Section.SlotName);
+				SectionObject->GetStringField(PE_TEXT("Next"), Section.NextSectionName);
 				EString LoopText;
-				SectionObject->GetStringField(PE_TEXT("loop"), LoopText);
+				SectionObject->GetStringField(PE_TEXT("Loop"), LoopText);
 				Section.LoopMode = ParseLoopMode(LoopText);
 				FLOAT PlayRate = 1.0f;
-				if (SectionObject->GetFloatField(PE_TEXT("rate"), PlayRate))
+				if (SectionObject->GetFloatField(PE_TEXT("Rate"), PlayRate))
 				{
 					Section.PlayRate = PlayRate;
 				}
 				FLOAT BlendIn = 0.1f;
-				if (SectionObject->GetFloatField(PE_TEXT("blendIn"), BlendIn))
+				if (SectionObject->GetFloatField(PE_TEXT("BlendIn"), BlendIn))
 				{
 					Section.BlendInSeconds = BlendIn;
 				}
 				FLOAT BlendOut = 0.2f;
-				if (SectionObject->GetFloatField(PE_TEXT("blendOut"), BlendOut))
+				if (SectionObject->GetFloatField(PE_TEXT("BlendOut"), BlendOut))
 				{
 					Section.BlendOutSeconds = BlendOut;
 				}
 				BOOL8 bAdditive = FALSE;
-				SectionObject->GetBoolField(PE_TEXT("additive"), bAdditive);
+				SectionObject->GetBoolField(PE_TEXT("Additive"), bAdditive);
 				Section.bAdditive = ((bAdditive != FALSE) ? TRUE : FALSE);
 
 				CJsonObject MaskObject;
-				if (SectionObject->GetObjectField(PE_TEXT("boneMask"), MaskObject))
+				if (SectionObject->GetObjectField(PE_TEXT("BoneMask"), MaskObject))
 				{
-					MaskObject.GetStringField(PE_TEXT("name"), Section.BoneMask.Name);
-					MaskObject.GetStringArrayField(PE_TEXT("bones"), Section.BoneMask.BoneNames);
+					MaskObject.GetStringField(PE_TEXT("Name"), Section.BoneMask.Name);
+					MaskObject.GetStringArrayField(PE_TEXT("Bones"), Section.BoneMask.BoneNames);
 					FLOAT MaskWeight = 1.0f;
-					if (MaskObject.GetFloatField(PE_TEXT("weight"), MaskWeight))
+					if (MaskObject.GetFloatField(PE_TEXT("Weight"), MaskWeight))
 					{
 						Section.BoneMask.Weight = MaskWeight;
 					}
 				}
 
 				TArray<CJsonObject*> NotifyObjects;
-				const BOOL8 bHasNotifyArray = SectionObject->GetObjectArrayField(PE_TEXT("notifies"), NotifyObjects);
+				const BOOL8 bHasNotifyArray = SectionObject->GetObjectArrayField(PE_TEXT("Notifies"), NotifyObjects);
 				FJsonObjectArrayGuard NotifyGuard(NotifyObjects);
 				if ((!bHasNotifyArray) && (NotifyObjects.Num() > 0))
 				{
@@ -492,37 +698,37 @@ namespace PigeonEngine
 					}
 					FAnimNotifyEvent Notify;
 					Notify.NotifyName = EString(PE_TEXT("Notify")) + ToString(NotifyIndex);
-					NotifyObject->GetStringField(PE_TEXT("name"), Notify.NotifyName);
-					NotifyObject->GetStringField(PE_TEXT("class"), Notify.NotifyClassName);
-					NotifyObject->GetStringField(PE_TEXT("notifyAsset"), Notify.NotifyAssetName);
+					NotifyObject->GetStringField(PE_TEXT("Name"), Notify.NotifyName);
+					NotifyObject->GetStringField(PE_TEXT("Class"), Notify.NotifyClassName);
+					NotifyObject->GetStringField(PE_TEXT("NotifyAsset"), Notify.NotifyAssetName);
 					FLOAT NotifyTime = 0.0f;
-					if (NotifyObject->GetFloatField(PE_TEXT("time"), NotifyTime))
+					if (NotifyObject->GetFloatField(PE_TEXT("Time"), NotifyTime))
 					{
 						Notify.Time = EMath::Max(NotifyTime, 0.0f);
 					}
-					NotifyObject->GetStringField(PE_TEXT("payload"), Notify.PayloadJson);
+					NotifyObject->GetStringField(PE_TEXT("Payload"), Notify.PayloadJson);
 					if (Notify.PayloadJson.Length() <= 0u)
 					{
 						Notify.PayloadJson = EString(PE_TEXT("{}"));
 					}
 					BOOL8 bIsState = FALSE;
-					NotifyObject->GetBoolField(PE_TEXT("state"), bIsState);
+					NotifyObject->GetBoolField(PE_TEXT("State"), bIsState);
 					Notify.bIsState = ((bIsState != FALSE) ? TRUE : FALSE);
 					FLOAT StateDuration = 0.0f;
-					const BOOL32 bHasDuration = (NotifyObject->HasField(PE_TEXT("duration")) ? TRUE : FALSE);
-					if (NotifyObject->GetFloatField(PE_TEXT("duration"), StateDuration))
+					const BOOL32 bHasDuration = (NotifyObject->HasField(PE_TEXT("Duration")) ? TRUE : FALSE);
+					if (NotifyObject->GetFloatField(PE_TEXT("Duration"), StateDuration))
 					{
 						Notify.StateDuration = EMath::Max(StateDuration, 0.001f);
 					}
 					Notify.bStateDurationOverride = bHasDuration;
 
-					const BOOL32 bHasPayload = (NotifyObject->HasField(PE_TEXT("payload")) ? TRUE : FALSE);
+					const BOOL32 bHasPayload = (NotifyObject->HasField(PE_TEXT("Payload")) ? TRUE : FALSE);
 					if (bHasPayload)
 					{
-						if (!NotifyObject->GetStringField(PE_TEXT("payload"), Notify.PayloadJson))
+						if (!NotifyObject->GetStringField(PE_TEXT("Payload"), Notify.PayloadJson))
 						{
 							CJsonObject PayloadObject;
-							if (NotifyObject->GetObjectField(PE_TEXT("payload"), PayloadObject))
+							if (NotifyObject->GetObjectField(PE_TEXT("Payload"), PayloadObject))
 							{
 								Notify.PayloadJson = PayloadObject.ToString();
 							}

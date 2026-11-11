@@ -239,9 +239,8 @@ namespace PigeonEngine
 		return CompileBoneMask(BoundSkeleton);
 	}
 
-	BOOL32 EAnimMontageInstance::Update(EAnimInstance& InAnimInstance, FLOAT InDeltaSeconds)
+	BOOL32 EAnimMontageInstance::Update(FLOAT InDeltaSeconds)
 	{
-		(void)InAnimInstance;
 		if ((!Montage) || (SectionIndex < 0) || (SectionIndex >= Montage->Sections.Num()) || (bFinished))
 		{
 			return FALSE;
@@ -301,9 +300,8 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL32 EAnimMontageInstance::Evaluate(EAnimInstance& InAnimInstance, const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose)
+	BOOL32 EAnimMontageInstance::Evaluate(const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose)
 	{
-		(void)InAnimInstance;
 		if ((!Montage) || (LayerWeight <= 0.0f) || (!InBinding.IsValid()) || (InOutPose.Num() <= 0))
 		{
 			return FALSE;
@@ -333,7 +331,13 @@ namespace PigeonEngine
 		}
 		else
 		{
-			LayerPose = InOutPose;
+			// Copy in place rather than assigning the array: TArray::operator= frees the old
+			// buffer and allocates an exact sized one, which is a free/alloc pair for every
+			// active layer every frame. SetNum above already guarantees the size.
+			for (INT32 BoneIndex = 0; BoneIndex < InOutPose.Num(); BoneIndex++)
+			{
+				LayerPose[BoneIndex] = InOutPose[BoneIndex];
+			}
 		}
 		if (!ClipPlayer.Evaluate(InBinding, LayerPose))
 		{
@@ -418,6 +422,28 @@ namespace PigeonEngine
 		{
 			ClipPlayer.Play();
 		}
+	}
+
+	void EAnimMontageInstance::SetPositionSeconds(FLOAT InPositionSeconds)
+	{
+		// A seek is an explicit restart of the sampled timeline, even after a one-shot section
+		// stopped the player. Notify windows are ended by the AnimInstance before this call.
+		bFinished = FALSE;
+		ClipPlayer.SetPositionSeconds(InPositionSeconds);
+	}
+
+	void EAnimMontageInstance::SetPlayRate(FLOAT InPlayRate)
+	{
+		InstancePlayRate = EMath::Max(InPlayRate, 0.0f);
+		if (const EAnimMontageSection* Section = GetCurrentSection())
+		{
+			ClipPlayer.SetPlayRate(Section->PlayRate * InstancePlayRate);
+		}
+	}
+
+	void EAnimMontageInstance::SetLoopMode(EAnimationLoopMode InLoopMode)
+	{
+		ClipPlayer.SetLoopMode(InLoopMode);
 	}
 
 	BOOL32 EAnimMontageInstance::IsPlaying()const

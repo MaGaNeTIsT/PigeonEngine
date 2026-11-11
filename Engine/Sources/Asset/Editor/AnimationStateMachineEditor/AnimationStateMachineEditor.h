@@ -5,13 +5,17 @@
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Array.h>
 #include <Base/DataStructure/Text/String.h>
+#include <Animation/AnimationTypes.h>
 #include <imgui.h>
+#include "../EditorDocument.h"
 
 namespace PigeonEngine
 {
 
 	class EAnimStateMachine;
 	class EAnimStateMachineAsset;
+	class ESkeletonAnimationAsset;
+	class CJsonObject;
 
 	/*
 	* First-pass state machine editor: the graph is authored as JSON, validated on Apply,
@@ -26,10 +30,35 @@ namespace PigeonEngine
 		void OpenStateMachineAsset(const EString& InAssetFullPath);
 
 	private:
+		void OpenStateMachineAssetNow(const EString& InAssetFullPath);
+		BOOL32 SaveStateMachineAsset(EString& OutError);
+		BOOL32 ReloadStateMachineAssetNow(EString& OutError);
+		void CaptureBaseline();
+		BOOL32 DiscardChanges();
+		void HandleDocumentAction();
 		void LoadJsonBufferFromAsset();
 		void DrawGraph(const EAnimStateMachine& InMachine);
 		void DrawStructureControls(const EAnimStateMachine& InMachine);
 		void DrawTransitionConditions(const EAnimStateMachine& InMachine);
+		// Both return TRUE when they committed a change; the caller must stop touching the
+		// live machine for this frame.
+		BOOL32 DrawParameterControls(const EAnimStateMachine& InMachine);
+		BOOL32 DrawStateProperties(const EAnimStateMachine& InMachine);
+		BOOL32 AddParameter();
+		BOOL32 RemoveParameter(INT32 InParameterIndex);
+		BOOL32 UpdateParameter(INT32 InParameterIndex, UINT8 InParameterType
+			, FLOAT InDefaultFloat, BOOL8 InDefaultBool);
+		BOOL32 UpdateState(INT32 InStateIndex, const EString& InClipName
+			, EAnimationLoopMode InLoopMode, FLOAT InPlayRate, FLOAT InBlendSeconds);
+		BOOL32 UpdateTransition(INT32 InTransitionIndex, INT32 InPriority, FLOAT InBlendSeconds
+			, FLOAT InMinTimeInState, BOOL8 bInCanTransitionToSelf);
+		// Renames update every JSON reference: entry, transition from/to, and condition param.
+		BOOL32 RenameState(const EString& InOldName, const EString& InNewName);
+		BOOL32 RenameParameter(INT32 InParameterIndex, const EString& InNewName);
+		// Rewrites one object in a top-level JSON array and commits the result.
+		BOOL32 UpdateArrayObject(const EString& InFieldName, INT32 InIndex
+			, const TFunction<void(CJsonObject&)>& InMutator);
+		void RefreshAnimationAsset(const EAnimStateMachine& InMachine);
 		void LoadNodePositionsFromJson(const EAnimStateMachine& InMachine);
 		void AutoLayoutGraph(const EAnimStateMachine& InMachine);
 		// Serializes the current node positions into nodeX/nodeY fields before Apply/Save.
@@ -54,10 +83,24 @@ namespace PigeonEngine
 	private:
 		BOOL8							m_ShowEditor = FALSE;
 		const EAnimStateMachineAsset*	m_Asset = nullptr;
+		// Loaded from the machine's animation name so state clips can be picked by name.
+		const ESkeletonAnimationAsset*	m_AnimationAsset = nullptr;
 		EString							m_OpenedAssetFullPath;
 		EString							m_LastError;
+		EString							m_StatusMessage;
+		BOOL8							m_bStatusSucceeded = TRUE;
+		FEditorDocumentState			m_Document;
+		// Last applied/saved JSON. Discard rebuilds the live graph from this text.
+		EString							m_BaselineJson;
 		TArray<CHAR>					m_JsonBuffer;
 		TMap<EString, ImVec2>			m_NodePositions;
+		// Rename buffers persist while the item is being edited; they are refilled when the
+		// selected state/parameter set changes.
+		TArray<CHAR>					m_StateNameBuffer;
+		INT32							m_StateNameBufferIndex = -1;
+		BOOL8							m_bFocusStateName = FALSE;
+		TArray<TArray<CHAR>>			m_ParameterNameBuffers;
+		INT32							m_FocusParameterIndex = -1;
 		INT32							m_SelectedStateIndex = 0;
 		INT32							m_SelectedTransitionIndex = -1;
 		// -1 means the "Any" pseudo state.

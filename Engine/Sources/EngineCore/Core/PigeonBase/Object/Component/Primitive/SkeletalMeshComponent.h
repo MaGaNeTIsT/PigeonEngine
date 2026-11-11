@@ -38,6 +38,9 @@ namespace PigeonEngine
 		// Nothing else can see that they moved, so without this call the render side keeps the
 		// previous pose.
 		void                            MarkBoneMemoryPoolDirty();
+		// Profiles only: returns how many components advanced their animation since the last
+		// call and resets the count. EMainManager::Update publishes it once per frame.
+		PE_NODISCARD static UINT32      ConsumeAnimatedCharacterNum();
 		/*
 		* Game thread: binds a skinned mesh and its skeleton to this component without waiting for them.
 		* Both are asked for now - an already loaded pair is applied before this call returns - and the
@@ -105,6 +108,9 @@ namespace PigeonEngine
 		void                                        PauseMontage(const EString& InSlotName);
 		void                                        ResumeMontage();
 		void                                        ResumeMontage(const EString& InSlotName);
+		void                                        SetMontagePositionSeconds(FLOAT InPositionSeconds);
+		void                                        SetMontagePlayRate(FLOAT InPlayRate);
+		void                                        SetMontageLoopMode(EAnimationLoopMode InLoopMode);
 		PE_NODISCARD BOOL32                         IsMontagePlaying()const;
 		PE_NODISCARD BOOL32                         IsMontagePlaying(const EString& InSlotName)const;
 		PE_NODISCARD EAnimMontageInstance*          GetMontageInstance()const;
@@ -126,6 +132,10 @@ namespace PigeonEngine
 		const ESkeletonAsset*           SkeletonAsset;
 		EAnimInstance*                  AnimInstance;
 		ESkeletonBoneMemoryPool         BoneMemoryPool;
+		// The EGameTimer frame animation last advanced in. An editor build walks the same
+		// component tree from World::Tick and again from World::EditorTick, so without this
+		// stamp a clip would run at twice its authored speed there.
+		UINT64                          LastAnimationFrameIndex = 0u;
 
 		// What this primitive reports to the render tier START
 	public:

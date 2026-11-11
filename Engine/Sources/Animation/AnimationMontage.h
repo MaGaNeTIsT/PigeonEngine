@@ -101,14 +101,24 @@ namespace PigeonEngine
 		void Clear();
 
 		// Returns FALSE when the montage has finished blending out and should be removed.
-		BOOL32 Update(EAnimInstance& InAnimInstance, FLOAT InDeltaSeconds);
+		// Game thread: the caller runs this in EAnimInstance::Advance.
+		BOOL32 Update(FLOAT InDeltaSeconds);
 		// Blends this layer's sampled pose onto InOutPose. Returns FALSE when the layer has
-		// no weight or no valid clip.
-		BOOL32 Evaluate(EAnimInstance& InAnimInstance, const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose);
+		// no weight or no valid clip. Worker-safe: it reads the binding and the layer's own
+		// state and writes only InOutPose, so EAnimInstance::EvaluatePose can hand it to a
+		// worker without passing the instance or the component.
+		BOOL32 Evaluate(const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose);
 
 		void Stop(FLOAT InBlendOutSeconds = -1.0f);
 		void Pause();
 		void Resume();
+		// Preview/seek support. Callers that own dispatch (EAnimInstance) end active notify
+		// windows before moving the position; the clip player moves PreviousPositionSeconds
+		// with it so a seek does not replay every event in the jumped-over range.
+		void SetPositionSeconds(FLOAT InPositionSeconds);
+		// Multiplies the section's authored rate. A later section switch keeps this value.
+		void SetPlayRate(FLOAT InPlayRate);
+		void SetLoopMode(EAnimationLoopMode InLoopMode);
 		PE_NODISCARD BOOL32 IsPlaying()const;
 		PE_NODISCARD BOOL32 IsStopping()const;
 		PE_NODISCARD INT32 GetSectionIndex()const;

@@ -4,6 +4,8 @@
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Text/String.h>
+#include <SkeletonAsset/SkeletonAsset.h>
+#include "../EditorDocument.h"
 
 namespace PigeonEngine
 {
@@ -22,6 +24,12 @@ namespace PigeonEngine
 		void OpenSkeletonAsset(const EString& InAssetFullPath);
 
 	private:
+		void OpenSkeletonAssetNow(const EString& InAssetFullPath);
+		BOOL32 SaveSkeletonAsset(EString& OutError);
+		BOOL32 ReloadSkeletonAssetNow(EString& OutError);
+		void CaptureBaseline();
+		void DiscardChanges();
+		void HandleDocumentAction();
 		BOOL32 ValidateSlotGroups(EString& OutError)const;
 
 	private:
@@ -29,6 +37,11 @@ namespace PigeonEngine
 		const ESkeletonAsset*		m_Asset = nullptr;
 		EString						m_OpenedAssetFullPath;
 		EString						m_LastError;
+		EString						m_StatusMessage;
+		BOOL8						m_bStatusSucceeded = TRUE;
+		FEditorDocumentState		m_Document;
+		// Slot groups as they were when the asset was opened or last saved.
+		TArray<ESkeletonSlotGroup>	m_BaselineSlotGroups;
 	};
 
 }

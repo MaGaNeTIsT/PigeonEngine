@@ -16,6 +16,7 @@
 
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/World/WorldManager.h"
+#include "PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h"
 
 #include "Development/Message/Message.h"
 
@@ -528,6 +529,12 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		RDebugWireframePrimitiveManager::GetManagerSingleton()->SwapCommandSlots();
 #endif
+		// How many characters actually advanced this frame. Consumed at the frame boundary so
+		// the editor previews, which tick inside EditorUpdate above, are included; the main
+		// world's characters were counted during World::Tick.
+		const UINT32 AnimatedCharacterNum = PSkeletalMeshComponent::ConsumeAnimatedCharacterNum();
+		PE_PROFILE_COUNTER(PROFILER_COUNTER_ANIMATED_CHARACTER_NUM, AnimatedCharacterNum);
+		(void)AnimatedCharacterNum;
 		RenderScene->SwapCommandSlots();
 		// Secondary renderers publish here for the same reason: their back slot is written by
 		// this thread and drained by the render thread, so it flips at the same boundary.
