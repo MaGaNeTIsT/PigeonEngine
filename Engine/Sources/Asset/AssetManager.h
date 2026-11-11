@@ -71,6 +71,10 @@ namespace PigeonEngine
 		void EditorInit();
 	public:
 		void EditorUpdate();
+		// Opens the skeleton's SlotGroup document in the animation workspace. Montage
+		// sections resolve their slot against this skeleton-owned order, so the montage
+		// editor links here instead of maintaining a second group list.
+		void OpenSkeletonSlotGroups(const EString& InAssetFullPath);
 
 	protected:
 		void GenerateContentBrowser();

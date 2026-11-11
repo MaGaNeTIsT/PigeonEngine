@@ -106,6 +106,53 @@ namespace PigeonEngine
 		}
 	}
 
+	BOOL32 FTimelineWidget::IsMarkerSelected(INT32 InTrackIndex, INT32 InMarkerIndex)const
+	{
+		for (INT32 RefIndex = 0; RefIndex < m_SelectedMarkers.Num(); RefIndex++)
+		{
+			if ((m_SelectedMarkers[RefIndex].TrackIndex == InTrackIndex)
+				&& (m_SelectedMarkers[RefIndex].MarkerIndex == InMarkerIndex))
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	void FTimelineWidget::SetSingleSelection(INT32 InTrackIndex, INT32 InMarkerIndex)
+	{
+		m_SelectedMarkers.Empty();
+		if ((InTrackIndex >= 0) && (InMarkerIndex >= 0))
+		{
+			FTimelineMarkerRef Ref;
+			Ref.TrackIndex = InTrackIndex;
+			Ref.MarkerIndex = InMarkerIndex;
+			m_SelectedMarkers.Add(Ref);
+		}
+		m_LastInputTrack = InTrackIndex;
+		m_LastInputMarker = InMarkerIndex;
+	}
+
+	void FTimelineWidget::ToggleSelection(INT32 InTrackIndex, INT32 InMarkerIndex)
+	{
+		FTimelineMarkerRef Ref;
+		Ref.TrackIndex = InTrackIndex;
+		Ref.MarkerIndex = InMarkerIndex;
+		const INT32 ExistingIndex = m_SelectedMarkers.Find(Ref);
+		if (ExistingIndex >= 0)
+		{
+			m_SelectedMarkers.RemoveAt(ExistingIndex);
+		}
+		else if (Ref.IsValid() != FALSE)
+		{
+			m_SelectedMarkers.Add(Ref);
+		}
+		const FTimelineMarkerRef Primary = (m_SelectedMarkers.Num() > 0)
+			? m_SelectedMarkers[m_SelectedMarkers.Num() - 1] : FTimelineMarkerRef();
+		m_LastInputTrack = Primary.TrackIndex;
+		m_LastInputMarker = Primary.MarkerIndex;
+	}
+
 	void FTimelineWidget::Draw(const CHAR* InId, const TArray<FTimelineTrack>& InTracks
 		, FLOAT InDuration, FLOAT InCurrentTime, INT32 InSelectedTrack, INT32 InSelectedMarker
 		, FTimelineInteraction& OutInteraction)
@@ -117,6 +164,17 @@ namespace PigeonEngine
 		{
 			ImGui::TextDisabled("No timeline duration.");
 			return;
+		}
+
+		// The panel owns the primary selection. If it changed outside the widget (inspector,
+		// delete, document reload), reset the multi-selection to that single marker.
+		if ((InSelectedTrack != m_LastInputTrack) || (InSelectedMarker != m_LastInputMarker))
+		{
+			SetSingleSelection(InSelectedTrack, InSelectedMarker);
+		}
+		if (m_SelectedMarkers.IsEmpty() && (InSelectedMarker >= 0))
+		{
+			SetSingleSelection(InSelectedTrack, InSelectedMarker);
 		}
 
 		FImGuiIdScope TimelineScope(InId);
@@ -236,6 +294,19 @@ namespace PigeonEngine
 			}
 		}
 
+		if ((IO.WantTextInput == false)
+			&& (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) != false)
+			&& (ImGui::IsKeyPressed(ImGuiKey_Escape, false) != false)
+			&& (m_SelectedMarkers.Num() > 0))
+		{
+			SetSingleSelection(-1, -1);
+			m_bBoxSelecting = FALSE;
+			OutInteraction.bMarkerSelected = TRUE;
+			OutInteraction.bMarkerSelectionChanged = TRUE;
+			OutInteraction.SelectedTrack = -1;
+			OutInteraction.SelectedMarker = -1;
+		}
+
 		const FLOAT ViewStart = m_ViewStart;
 		const FLOAT ViewDuration = m_ViewDuration;
 		const FLOAT ViewEnd = ViewStart + ViewDuration;
@@ -341,10 +412,14 @@ namespace PigeonEngine
 					MarkerTime = m_ResizeTime;
 					MarkerDuration = m_ResizeDuration;
 				}
+				else if ((m_bMultiDragging != FALSE)
+					&& (IsMarkerSelected(Row.TrackIndex, Item.MarkerIndex) != FALSE))
+				{
+					MarkerTime += m_MultiDragDelta;
+				}
 				const FLOAT MarkerX = TimeToX(MarkerTime);
 				const FLOAT MarkerEndX = TimeToX(MarkerTime + MarkerDuration);
-				const BOOL32 bSelectedMarker = ((OutInteraction.SelectedTrack == Row.TrackIndex)
-					&& (OutInteraction.SelectedMarker == Item.MarkerIndex)) ? TRUE : FALSE;
+				const BOOL32 bSelectedMarker = IsMarkerSelected(Row.TrackIndex, Item.MarkerIndex);
 				const ImU32 MarkerColor = (bSelectedMarker != FALSE)
 					? IM_COL32(255, 210, 90, 255) : Marker.Color;
 
@@ -405,6 +480,19 @@ namespace PigeonEngine
 		DrawList->AddTriangleFilled(ImVec2(PlayheadX, Origin.y + RulerHeight - 4.0f)
 			, ImVec2(PlayheadX - 4.0f, Origin.y + RulerHeight + 1.0f)
 			, ImVec2(PlayheadX + 4.0f, Origin.y + RulerHeight + 1.0f), IM_COL32(245, 220, 90, 255));
+		if ((m_bBoxSelecting != FALSE) && (ImGui::IsMouseDown(ImGuiMouseButton_Left) != false))
+		{
+			const ImVec2 BoxMin(EMath::Clamp(EMath::Min(m_BoxStart.x, MousePosition.x)
+				, TimelineX, TimelineX + TimelineWidth)
+				, EMath::Clamp(EMath::Min(m_BoxStart.y, MousePosition.y)
+					, Origin.y + RulerHeight, Origin.y + TotalHeight));
+			const ImVec2 BoxMax(EMath::Clamp(EMath::Max(m_BoxStart.x, MousePosition.x)
+				, TimelineX, TimelineX + TimelineWidth)
+				, EMath::Clamp(EMath::Max(m_BoxStart.y, MousePosition.y)
+					, Origin.y + RulerHeight, Origin.y + TotalHeight));
+			DrawList->AddRectFilled(BoxMin, BoxMax, IM_COL32(90, 140, 220, 50));
+			DrawList->AddRect(BoxMin, BoxMax, IM_COL32(140, 180, 245, 220));
+		}
 		DrawList->PopClipRect();
 
 		if ((HoverTrack >= 0) && (HoverMarker >= 0))
@@ -425,62 +513,202 @@ namespace PigeonEngine
 			}
 		}
 
-		if ((bHovered != FALSE) && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		if ((bHovered != FALSE) && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+			&& (IO.KeyShift != false) && (bOverTimeline != FALSE))
+		{
+			// Shift+left drag is box selection; plain left drag stays scrub.
+			m_bBoxSelecting = TRUE;
+			m_BoxStart = MousePosition;
+			m_bScrubbing = FALSE;
+			m_bDraggingMarker = FALSE;
+			m_bResizingMarker = FALSE;
+			m_bMultiDragging = FALSE;
+		}
+		else if ((bHovered != FALSE) && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+			&& (m_bBoxSelecting == FALSE) && (IO.KeyShift == false))
 		{
 			if ((HoverTrack >= 0) && (HoverMarker >= 0))
 			{
+				const FTimelineMarker& Marker = InTracks[HoverTrack].Markers[HoverMarker];
 				OutInteraction.bMarkerSelected = TRUE;
 				OutInteraction.SelectedTrack = HoverTrack;
 				OutInteraction.SelectedMarker = HoverMarker;
-				const FTimelineMarker& Marker = InTracks[HoverTrack].Markers[HoverMarker];
-				m_bDraggingMarker = FALSE;
-				m_bResizingMarker = FALSE;
 				m_bScrubbing = FALSE;
-				if (bHoverResize != FALSE)
+				if (IO.KeyCtrl != false)
 				{
-					m_bResizingMarker = TRUE;
-					m_bResizeLeftEdge = bHoverResizeLeft;
-					m_DragTrack = HoverTrack;
-					m_DragMarker = HoverMarker;
-					m_ResizeTime = Marker.Time;
-					m_ResizeDuration = Marker.Duration;
+					ToggleSelection(HoverTrack, HoverMarker);
+					if (m_SelectedMarkers.Num() > 0)
+					{
+						const FTimelineMarkerRef Primary = m_SelectedMarkers[m_SelectedMarkers.Num() - 1];
+						OutInteraction.SelectedTrack = Primary.TrackIndex;
+						OutInteraction.SelectedMarker = Primary.MarkerIndex;
+					}
+					else
+					{
+						OutInteraction.SelectedTrack = -1;
+						OutInteraction.SelectedMarker = -1;
+					}
+					OutInteraction.bMarkerSelectionChanged = TRUE;
+					m_bDraggingMarker = FALSE;
+					m_bResizingMarker = FALSE;
+					m_bMultiDragging = FALSE;
 				}
-				else if (Marker.bDraggable != FALSE)
+				else
 				{
-					m_bDraggingMarker = TRUE;
-					m_DragTrack = HoverTrack;
-					m_DragMarker = HoverMarker;
-					m_DragTime = Marker.Time;
-					// Remember where inside the marker the user grabbed it. Without this a
-					// click on the body of a NotifyState immediately snaps its start to the
-					// cursor, even before the mouse moves.
-					m_DragOffsetTime = XToTime(MousePosition.x) - Marker.Time;
+					m_bDraggingMarker = FALSE;
+					m_bResizingMarker = FALSE;
+					m_bMultiDragging = FALSE;
+					if (bHoverResize != FALSE)
+					{
+						SetSingleSelection(HoverTrack, HoverMarker);
+						m_bResizingMarker = TRUE;
+						m_bResizeLeftEdge = bHoverResizeLeft;
+						m_DragTrack = HoverTrack;
+						m_DragMarker = HoverMarker;
+						m_ResizeTime = Marker.Time;
+						m_ResizeDuration = Marker.Duration;
+					}
+					else if (Marker.bDraggable != FALSE)
+					{
+						if ((IsMarkerSelected(HoverTrack, HoverMarker) != FALSE)
+							&& (m_SelectedMarkers.Num() > 1))
+						{
+							// Drag the whole selection by one shared delta.
+							m_bMultiDragging = TRUE;
+							m_DragTrack = HoverTrack;
+							m_DragMarker = HoverMarker;
+							m_MultiDragStartTime = XToTime(MousePosition.x);
+							m_MultiDragDelta = 0.0f;
+							m_MultiDragRefs.Empty();
+							m_MultiDragBaseTimes.Empty();
+							m_MultiDragDurations.Empty();
+							for (INT32 RefIndex = 0; RefIndex < m_SelectedMarkers.Num(); RefIndex++)
+							{
+								const FTimelineMarkerRef& Ref = m_SelectedMarkers[RefIndex];
+								if ((Ref.TrackIndex >= 0) && (Ref.TrackIndex < InTracks.Num())
+									&& (Ref.MarkerIndex >= 0)
+									&& (Ref.MarkerIndex < InTracks[Ref.TrackIndex].Markers.Num()))
+								{
+									const FTimelineMarker& SelectedMarker = InTracks[Ref.TrackIndex].Markers[Ref.MarkerIndex];
+									m_MultiDragRefs.Add(Ref);
+									m_MultiDragBaseTimes.Add(SelectedMarker.Time);
+									m_MultiDragDurations.Add((SelectedMarker.bRange != FALSE)
+										? SelectedMarker.Duration : 0.0f);
+								}
+							}
+							m_LastInputTrack = HoverTrack;
+							m_LastInputMarker = HoverMarker;
+						}
+						else
+						{
+							SetSingleSelection(HoverTrack, HoverMarker);
+							m_bDraggingMarker = TRUE;
+							m_DragTrack = HoverTrack;
+							m_DragMarker = HoverMarker;
+							m_DragTime = Marker.Time;
+							// Remember where inside the marker the user grabbed it. Without this a
+							// click on the body of a NotifyState immediately snaps its start to the
+							// cursor, even before the mouse moves.
+							m_DragOffsetTime = XToTime(MousePosition.x) - Marker.Time;
+						}
+					}
+					else
+					{
+						SetSingleSelection(HoverTrack, HoverMarker);
+					}
+					OutInteraction.bMarkerSelectionChanged = TRUE;
 				}
+			}
+				else
+				{
+					// Clicking outside a marker leaves marker selection. Keep scrub/track
+					// selection working, but clear the multi-selection first.
+					const BOOL32 bHadSelection = ((m_SelectedMarkers.Num() > 0) ? TRUE : FALSE);
+					SetSingleSelection(-1, -1);
+					if (bHadSelection != FALSE)
+					{
+						OutInteraction.bMarkerSelected = TRUE;
+						OutInteraction.bMarkerSelectionChanged = TRUE;
+						OutInteraction.SelectedTrack = -1;
+						OutInteraction.SelectedMarker = -1;
+					}
+					INT32 TrackAtMouse = -1;
+					for (INT32 RowIndex = 0; RowIndex < Rows.Num(); RowIndex++)
+					{
+						const FRowLayout& Row = Rows[RowIndex];
+						if ((MousePosition.y >= Row.Y) && (MousePosition.y < (Row.Y + LaneHeight)))
+						{
+							TrackAtMouse = Row.TrackIndex;
+							break;
+						}
+					}
+					if ((MousePosition.x < TimelineX) && (TrackAtMouse >= 0))
+					{
+						OutInteraction.bTrackSelected = TRUE;
+						OutInteraction.SelectedTrack = TrackAtMouse;
+					}
+					else if ((MousePosition.x >= TimelineX)
+						&& (MousePosition.x <= TimelineX + TimelineWidth))
+					{
+						m_bScrubbing = TRUE;
+						OutInteraction.bScrubbed = TRUE;
+						OutInteraction.ScrubbedTime = XToTime(MousePosition.x);
+					}
+				}
+		}
+
+		if ((m_bBoxSelecting != FALSE) && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) != false))
+		{
+			const ImVec2 BoxMin(EMath::Min(m_BoxStart.x, MousePosition.x)
+				, EMath::Min(m_BoxStart.y, MousePosition.y));
+			const ImVec2 BoxMax(EMath::Max(m_BoxStart.x, MousePosition.x)
+				, EMath::Max(m_BoxStart.y, MousePosition.y));
+			m_SelectedMarkers.Empty();
+			for (INT32 RowIndex = 0; RowIndex < Rows.Num(); RowIndex++)
+			{
+				const FRowLayout& Row = Rows[RowIndex];
+				const FTimelineTrack& Track = InTracks[Row.TrackIndex];
+				const TArray<FLaneItem>& Items = TrackLanes[Row.TrackIndex].Lanes[Row.LaneIndex];
+				const FLOAT RowMinY = Row.Y;
+				const FLOAT RowMaxY = RowMinY + LaneHeight;
+				if ((RowMaxY < BoxMin.y) || (RowMinY > BoxMax.y))
+				{
+					continue;
+				}
+				for (INT32 ItemIndex = 0; ItemIndex < Items.Num(); ItemIndex++)
+				{
+					const FLaneItem& Item = Items[ItemIndex];
+					const FTimelineMarker& Marker = Track.Markers[Item.MarkerIndex];
+					const FLOAT StartX = TimeToX(Marker.Time);
+					const FLOAT EndX = TimeToX(Marker.Time + ((Marker.bRange != FALSE) ? Marker.Duration : 0.0f));
+					if (((StartX >= BoxMin.x) && (StartX <= BoxMax.x))
+						|| ((EndX >= BoxMin.x) && (EndX <= BoxMax.x))
+						|| ((StartX <= BoxMin.x) && (EndX >= BoxMax.x)))
+					{
+						FTimelineMarkerRef Ref;
+						Ref.TrackIndex = Row.TrackIndex;
+						Ref.MarkerIndex = Item.MarkerIndex;
+						m_SelectedMarkers.Add(Ref);
+					}
+				}
+			}
+			m_bBoxSelecting = FALSE;
+			OutInteraction.bMarkerSelectionChanged = TRUE;
+			OutInteraction.bMarkerSelected = TRUE;
+			if (m_SelectedMarkers.Num() > 0)
+			{
+				const FTimelineMarkerRef Primary = m_SelectedMarkers[0];
+				m_LastInputTrack = Primary.TrackIndex;
+				m_LastInputMarker = Primary.MarkerIndex;
+				OutInteraction.SelectedTrack = Primary.TrackIndex;
+				OutInteraction.SelectedMarker = Primary.MarkerIndex;
 			}
 			else
 			{
-				INT32 TrackAtMouse = -1;
-				for (INT32 RowIndex = 0; RowIndex < Rows.Num(); RowIndex++)
-				{
-					const FRowLayout& Row = Rows[RowIndex];
-					if ((MousePosition.y >= Row.Y) && (MousePosition.y < (Row.Y + LaneHeight)))
-					{
-						TrackAtMouse = Row.TrackIndex;
-						break;
-					}
-				}
-				if ((MousePosition.x < TimelineX) && (TrackAtMouse >= 0))
-				{
-					OutInteraction.bTrackSelected = TRUE;
-					OutInteraction.SelectedTrack = TrackAtMouse;
-				}
-				else if ((MousePosition.x >= TimelineX)
-					&& (MousePosition.x <= TimelineX + TimelineWidth))
-				{
-					m_bScrubbing = TRUE;
-					OutInteraction.bScrubbed = TRUE;
-					OutInteraction.ScrubbedTime = XToTime(MousePosition.x);
-				}
+				m_LastInputTrack = -1;
+				m_LastInputMarker = -1;
+				OutInteraction.SelectedTrack = -1;
+				OutInteraction.SelectedMarker = -1;
 			}
 		}
 
@@ -525,6 +753,46 @@ namespace PigeonEngine
 				m_bResizingMarker = FALSE;
 			}
 		}
+		else if (m_bMultiDragging != FALSE)
+		{
+			OutInteraction.bMarkerMultiDragActive = TRUE;
+			OutInteraction.SelectedTrack = m_DragTrack;
+			OutInteraction.SelectedMarker = m_DragMarker;
+			if (bActive != FALSE)
+			{
+				const FLOAT RequestedDelta = XToTime(MousePosition.x) - m_MultiDragStartTime;
+				FLOAT MinDelta = -FLT_MAX;
+				FLOAT MaxDelta = FLT_MAX;
+				for (INT32 RefIndex = 0; RefIndex < m_MultiDragRefs.Num(); RefIndex++)
+				{
+					const FLOAT BaseTime = m_MultiDragBaseTimes[RefIndex];
+					const FLOAT Duration = m_MultiDragDurations[RefIndex];
+					MinDelta = EMath::Max(MinDelta, -BaseTime);
+					MaxDelta = EMath::Min(MaxDelta, InDuration - (BaseTime + Duration));
+				}
+				if (MaxDelta < MinDelta)
+				{
+					MaxDelta = MinDelta;
+				}
+				m_MultiDragDelta = EMath::Clamp(RequestedDelta, MinDelta, MaxDelta);
+				OutInteraction.MarkerMultiDragDelta = m_MultiDragDelta;
+				OutInteraction.MultiDraggedMarkers = m_MultiDragRefs;
+			}
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+			{
+				if ((EMath::Abs(m_MultiDragDelta) > 0.0001f) && (m_MultiDragRefs.Num() > 0))
+				{
+					OutInteraction.MarkerMultiDragDelta = m_MultiDragDelta;
+					OutInteraction.MultiDraggedMarkers = m_MultiDragRefs;
+					OutInteraction.bMarkerMultiDragFinished = TRUE;
+				}
+				m_bMultiDragging = FALSE;
+				m_MultiDragDelta = 0.0f;
+				m_MultiDragRefs.Empty();
+				m_MultiDragBaseTimes.Empty();
+				m_MultiDragDurations.Empty();
+			}
+		}
 		else if (m_bDraggingMarker != FALSE)
 		{
 			OutInteraction.bMarkerDragActive = TRUE;
@@ -567,6 +835,8 @@ namespace PigeonEngine
 		{
 			m_bScrubbing = FALSE;
 		}
+
+		OutInteraction.SelectedMarkers = m_SelectedMarkers;
 	}
 
 }

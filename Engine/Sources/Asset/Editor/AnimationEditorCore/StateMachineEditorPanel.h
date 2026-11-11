@@ -44,6 +44,12 @@ namespace PigeonEngine
 
 	private:
 		FStateMachinePreviewPanel	m_PreviewPanel;
+		ImVec2						m_GraphPan = ImVec2(0.0f, 0.0f);
+		FLOAT						m_GraphZoom = 1.0f;
+		BOOL8						m_bGraphPanning = FALSE;
+		INT32						m_GraphPanButton = -1;
+		BOOL8						m_bGraphFitRequested = FALSE;
+		const FStateMachineDocument*	m_LastGraphDocument = nullptr;
 		FGrowableTextBuffer			m_StateNameBuffer;
 		EString						m_StateNameBufferSource;
 		TArray<FGrowableTextBuffer>	m_ParameterNameBuffers;

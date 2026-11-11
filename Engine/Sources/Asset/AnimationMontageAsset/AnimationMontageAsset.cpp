@@ -49,10 +49,8 @@ namespace PigeonEngine
 			OutMontage.SkeletonName = InMontage.SkeletonName;
 			OutMontage.AnimationAssetName = InMontage.AnimationAssetName;
 			OutMontage.SourceJson = InMontage.SourceJson;
-			OutMontage.SlotGroups = InMontage.SlotGroups;
 			OutMontage.Sections = InMontage.Sections;
 			OutMontage.SectionMapping = InMontage.SectionMapping;
-			OutMontage.SlotGroupMapping = InMontage.SlotGroupMapping;
 		}
 	}
 
@@ -599,29 +597,6 @@ namespace PigeonEngine
 		Root.GetStringField(PE_TEXT("Name"), OutMontage.Name);
 		Root.GetStringField(PE_TEXT("Skeleton"), OutMontage.SkeletonName);
 		Root.GetStringField(PE_TEXT("Animation"), OutMontage.AnimationAssetName);
-
-		{
-			TArray<CJsonObject*> GroupObjects;
-			Root.GetObjectArrayField(PE_TEXT("SlotGroups"), GroupObjects);
-			FJsonObjectArrayGuard GroupGuard(GroupObjects);
-			for (INT32 GroupIndex = 0; GroupIndex < GroupObjects.Num(); GroupIndex++)
-			{
-				CJsonObject* GroupObject = GroupObjects[GroupIndex];
-				if (!GroupObject)
-				{
-					continue;
-				}
-				EAnimMontageSlotGroup Group;
-				GroupObject->GetStringField(PE_TEXT("Name"), Group.Name);
-				GroupObject->GetStringArrayField(PE_TEXT("Slots"), Group.SlotNames);
-				if (Group.Name.Length() <= 0u || Group.SlotNames.Num() <= 0)
-				{
-					OutError = EString("Every montage slot group needs a name and at least one slot.");
-					return FALSE;
-				}
-				OutMontage.SlotGroups.Add(Group);
-			}
-		}
 
 		{
 			TArray<CJsonObject*> SectionObjects;

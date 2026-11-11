@@ -26,18 +26,12 @@ namespace PigeonEngine
 		FLOAT			Weight = 1.0f;
 	};
 
-	struct EAnimMontageSlotGroup
-	{
-		EString			Name;
-		TArray<EString>	SlotNames;
-	};
-
 	/*
-	* One playable montage section. The slot names the layer's identity; the bone mask is
-	* what decides which bones the layer actually writes. NextSectionName chains a one-shot
-	* section into another section when it reaches its end; an empty name ends the montage.
-	* Notifies are authored on the section timeline and use the same event data as clip
-	* notifies, so gameplay code does not care which asset produced the event.
+	* One playable montage section. The slot names the layer's identity and is resolved
+	* against the skeleton's ordered slot groups; the bone mask decides which bones the
+	* layer writes. NextSectionName chains a one-shot section into another section when it
+	* reaches its end; an empty name ends the montage. Notifies are authored on the section
+	* timeline and use the same event data as clip notifies.
 	*/
 	struct EAnimMontageSection
 	{
@@ -70,18 +64,14 @@ namespace PigeonEngine
 		EString								SkeletonName;
 		EString								AnimationAssetName;
 		EString								SourceJson;
-		TArray<EAnimMontageSlotGroup>		SlotGroups;
 		TArray<EAnimMontageSection>			Sections;
 		TMap<EString, INT32>				SectionMapping;
-		TMap<EString, INT32>				SlotGroupMapping;
 
 	public:
 		void	Reset();
 		BOOL32	RebuildMappings();
 		BOOL32	IsValid()const;
 		PE_NODISCARD INT32 FindSection(const EString& InName)const;
-		PE_NODISCARD INT32 FindSlotGroup(const EString& InName)const;
-		PE_NODISCARD BOOL32 HasSlot(const EString& InSlotName)const;
 	};
 
 	/*

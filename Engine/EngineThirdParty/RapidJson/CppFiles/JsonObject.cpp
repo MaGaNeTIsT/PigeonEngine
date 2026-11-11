@@ -28,7 +28,10 @@ namespace PigeonEngine
 	CJsonObject::CJsonObject(const CJsonObject& Other)
 	{
 		Doc = new rapidjson::Document();
-		Doc->CopyFrom(*Other.GetDocument(), Other.GetDocument()->GetAllocator());
+		// The copy must own its storage. Using the source allocator leaves the copied
+		// values tied to the source document; adding a member later reallocates them
+		// through this document's still-empty allocator and dereferences a null chunk.
+		Doc->CopyFrom(*Other.GetDocument(), Doc->GetAllocator());
 	}
 
 	CJsonObject::CJsonObject(rapidjson::Document* const Other)
@@ -43,7 +46,13 @@ namespace PigeonEngine
 
 	CJsonObject& CJsonObject::operator=(const CJsonObject& Other)
 	{
-		new (this)CJsonObject(Other);
+		if (this != &Other)
+		{
+			rapidjson::Document* NewDoc = new rapidjson::Document();
+			NewDoc->CopyFrom(*Other.GetDocument(), NewDoc->GetAllocator());
+			delete Doc;
+			Doc = NewDoc;
+		}
 		return(*this);
 	}
 
@@ -164,7 +173,9 @@ namespace PigeonEngine
 		if (itr == Doc->MemberEnd() || !itr->value.IsObject())
 			return FALSE;
 		rapidjson::Document* OutDoc = new rapidjson::Document;
-		OutDoc->CopyFrom(itr->value, Doc->GetAllocator());
+		// Allocate the extracted object's storage from its own document so callers can
+		// mutate it (add/remove fields) after the source document goes away.
+		OutDoc->CopyFrom(itr->value, OutDoc->GetAllocator());
 		Out.SetDocument(OutDoc);
 		return TRUE;
 	}
@@ -291,7 +302,8 @@ namespace PigeonEngine
 			if (!v.IsObject())
 				return FALSE;
 			rapidjson::Document* TempDoc = new rapidjson::Document;
-			TempDoc->CopyFrom(v, Doc->GetAllocator());
+			// Each extracted element owns its own allocator so it can be edited safely.
+			TempDoc->CopyFrom(v, TempDoc->GetAllocator());
 			CJsonObject* Obj = new CJsonObject(TempDoc);
 			Out.Add(Obj);
 		}

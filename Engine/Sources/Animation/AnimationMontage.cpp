@@ -39,16 +39,13 @@ namespace PigeonEngine
 		SkeletonName = EString();
 		AnimationAssetName = EString();
 		SourceJson = EString();
-		SlotGroups.Empty();
 		Sections.Empty();
 		SectionMapping.Empty();
-		SlotGroupMapping.Empty();
 	}
 
 	BOOL32 EAnimMontage::RebuildMappings()
 	{
 		SectionMapping.Empty();
-		SlotGroupMapping.Empty();
 
 		for (INT32 SectionIndex = 0; SectionIndex < Sections.Num(); SectionIndex++)
 		{
@@ -59,21 +56,12 @@ namespace PigeonEngine
 			}
 			SectionMapping.Add(SectionName, SectionIndex);
 		}
-		for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
-		{
-			const EString& GroupName = SlotGroups[GroupIndex].Name;
-			if ((GroupName.Length() <= 0u) || (SlotGroupMapping.ContainsKey(GroupName)))
-			{
-				return FALSE;
-			}
-			SlotGroupMapping.Add(GroupName, GroupIndex);
-		}
 		return TRUE;
 	}
 
 	BOOL32 EAnimMontage::IsValid()const
 	{
-		if ((Sections.Num() <= 0) || (SectionMapping.Num() != Sections.Num()) || (SlotGroupMapping.Num() != SlotGroups.Num()))
+		if ((Sections.Num() <= 0) || (SectionMapping.Num() != Sections.Num()))
 		{
 			return FALSE;
 		}
@@ -81,12 +69,6 @@ namespace PigeonEngine
 		{
 			const EAnimMontageSection& Section = Sections[SectionIndex];
 			if ((Section.ClipName.Length() <= 0u) || (Section.SlotName.Length() <= 0u))
-			{
-				return FALSE;
-			}
-			// Slot groups may live on the montage (legacy) or on the skeleton. When the
-			// montage carries none, the skeleton validates the slot at bind time.
-			if ((SlotGroups.Num() > 0) && (!HasSlot(Section.SlotName)))
 			{
 				return FALSE;
 			}
@@ -100,13 +82,6 @@ namespace PigeonEngine
 				}
 			}
 		}
-		for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
-		{
-			if (SlotGroups[GroupIndex].SlotNames.Num() <= 0)
-			{
-				return FALSE;
-			}
-		}
 		return TRUE;
 	}
 
@@ -115,29 +90,6 @@ namespace PigeonEngine
 		INT32 Result = -1;
 		SectionMapping.FindValue(InName, Result);
 		return Result;
-	}
-
-	INT32 EAnimMontage::FindSlotGroup(const EString& InName)const
-	{
-		INT32 Result = -1;
-		SlotGroupMapping.FindValue(InName, Result);
-		return Result;
-	}
-
-	BOOL32 EAnimMontage::HasSlot(const EString& InSlotName)const
-	{
-		for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
-		{
-			const TArray<EString>& SlotNames = SlotGroups[GroupIndex].SlotNames;
-			for (INT32 SlotIndex = 0; SlotIndex < SlotNames.Num(); SlotIndex++)
-			{
-				if (SlotNames[SlotIndex] == InSlotName)
-				{
-					return TRUE;
-				}
-			}
-		}
-		return FALSE;
 	}
 
 	BOOL32 EAnimMontageInstance::SetMontage(const EAnimMontage* InMontage, const EString& InSectionName

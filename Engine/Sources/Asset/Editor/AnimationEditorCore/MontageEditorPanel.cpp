@@ -4,6 +4,7 @@
 
 #include <AnimationAsset/AnimationAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
+#include <AssetManager.h>
 #include <Animation/AnimationNotify.h>
 #include <Config/EngineConfig.h>
 #include <Base/DataStructure/Text/Path.h>
@@ -398,7 +399,48 @@ namespace PigeonEngine
 		}
 		FImGuiIdScope LeftScope("MontageSections");
 		ImGui::Text("Sections: %d", Montage->Sections.Num());
-		ImGui::TextDisabled("Slot groups: %d", Montage->SlotGroups.Num());
+
+		// Slot groups and their order are owned by the skeleton. The montage only names a
+		// slot; resolving that name to a layer priority happens in EAnimMontageInstance.
+		const ESkeleton* Skeleton = (m_SkeletonAsset ? m_SkeletonAsset->GetStoragedResource() : nullptr);
+		ImGui::TextDisabled("Skeleton: %s"
+			, (m_SkeletonAsset ? *m_SkeletonAsset->GetAssetName() : "None"));
+		if (Skeleton)
+		{
+			const TArray<ESkeletonSlotGroup>& Groups = Skeleton->GetSlotGroups();
+			ImGui::TextDisabled("Skeleton slot groups (priority order): %d", Groups.Num());
+			for (INT32 GroupIndex = 0; GroupIndex < Groups.Num(); GroupIndex++)
+			{
+				const ESkeletonSlotGroup& Group = Groups[GroupIndex];
+				ImGui::PushID(GroupIndex);
+				ImGui::Text("%d  %s  (%d slots)", GroupIndex, *Group.Name, Group.SlotNames.Num());
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::BeginTooltip();
+					if (Group.SlotNames.Num() <= 0)
+					{
+						ImGui::TextDisabled("(no slots)");
+					}
+					for (INT32 SlotIndex = 0; SlotIndex < Group.SlotNames.Num(); SlotIndex++)
+					{
+						ImGui::TextUnformatted(*Group.SlotNames[SlotIndex]);
+					}
+					ImGui::EndTooltip();
+				}
+				ImGui::PopID();
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("Skeleton slot groups: preview skeleton unavailable");
+		}
+		ImGui::BeginDisabled(Skeleton == nullptr);
+		if (ImGui::Button("Edit Skeleton Slot Groups", ImVec2(-FLT_MIN, 0.0f)) && Skeleton)
+		{
+			EAssetManager::GetManagerSingleton()->OpenSkeletonSlotGroups(
+				m_SkeletonAsset->GetAssetFullPathName());
+		}
+		ImGui::EndDisabled();
 		if (ImGui::Button("Add Section", ImVec2(-FLT_MIN, 0.0f)))
 		{
 			AddSection(InDocument);
@@ -548,7 +590,7 @@ namespace PigeonEngine
 			return;
 		}
 		ImGui::SameLine();
-		ImGui::TextDisabled("Drag a notify to retime it; Ctrl+Wheel zoom, Shift+Wheel/middle-drag pan, middle double-click fit.");
+		ImGui::TextDisabled("Drag to retime; Shift+drag box select; Ctrl+click multi-select; Esc/empty click clears; Ctrl+Wheel zoom.");
 
 		TArray<FTimelineTrack> Tracks;
 		BuildTimelineTracks(InDocument, Tracks);
@@ -558,9 +600,18 @@ namespace PigeonEngine
 		if (TimelineInteraction.bMarkerSelected != FALSE)
 		{
 			m_SelectedNotifyIndex = TimelineInteraction.SelectedMarker;
-			InDocument.Selection.Type = EEditorSelectionType::NOTIFY;
-			InDocument.Selection.ObjectIndex = m_SelectedSectionIndex;
-			InDocument.Selection.SubIndex = m_SelectedNotifyIndex;
+			if (m_SelectedNotifyIndex >= 0)
+			{
+				InDocument.Selection.Type = EEditorSelectionType::NOTIFY;
+				InDocument.Selection.ObjectIndex = m_SelectedSectionIndex;
+				InDocument.Selection.SubIndex = m_SelectedNotifyIndex;
+			}
+			else
+			{
+				InDocument.Selection.Type = EEditorSelectionType::SECTION;
+				InDocument.Selection.ObjectIndex = m_SelectedSectionIndex;
+				InDocument.Selection.SubIndex = -1;
+			}
 			ResetNotifyBuffers();
 		}
 		if (TimelineInteraction.bScrubbed != FALSE)
@@ -604,6 +655,67 @@ namespace PigeonEngine
 				CommitSectionNotifies(InDocument, m_SelectedSectionIndex, Notifies
 					, EString("Notify retimed."));
 			}
+		}
+		if (TimelineInteraction.bMarkerMultiDragFinished != FALSE)
+		{
+			TArray<FAnimNotifyEvent> Notifies = Section->Notifies;
+			const FLOAT ClipDuration = GetSelectedClipDuration(InDocument);
+			for (INT32 RefIndex = 0; RefIndex < TimelineInteraction.MultiDraggedMarkers.Num(); RefIndex++)
+			{
+				const FTimelineMarkerRef& Ref = TimelineInteraction.MultiDraggedMarkers[RefIndex];
+				if ((Ref.TrackIndex != 0) || (Ref.MarkerIndex < 0)
+					|| (Ref.MarkerIndex >= Notifies.Num()))
+				{
+					continue;
+				}
+				FAnimNotifyEvent& Notify = Notifies[Ref.MarkerIndex];
+				const FLOAT RangeDuration = (Notify.bIsState != FALSE)
+					? EMath::Max(Notify.StateDuration, 0.0f) : 0.0f;
+				Notify.Time = EMath::Clamp(Notify.Time + TimelineInteraction.MarkerMultiDragDelta
+					, 0.0f, EMath::Max(0.0f, ClipDuration - RangeDuration));
+			}
+			CommitSectionNotifies(InDocument, m_SelectedSectionIndex, Notifies
+				, EString("Notifies retimed."));
+			return;
+		}
+
+		const ImGuiIO& IO = ImGui::GetIO();
+		if ((TimelineInteraction.SelectedMarkers.Num() > 1)
+			&& (IO.WantTextInput == false)
+			&& (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) != false)
+			&& (ImGui::IsKeyPressed(ImGuiKey_Delete, false) != false))
+		{
+			TArray<FAnimNotifyEvent> Notifies = Section->Notifies;
+			TArray<BOOL8> RemoveMask;
+			RemoveMask.SetNum(Notifies.Num());
+			for (INT32 NotifyIndex = 0; NotifyIndex < RemoveMask.Num(); NotifyIndex++)
+			{
+				RemoveMask[NotifyIndex] = FALSE;
+			}
+			for (INT32 RefIndex = 0; RefIndex < TimelineInteraction.SelectedMarkers.Num(); RefIndex++)
+			{
+				const FTimelineMarkerRef& Ref = TimelineInteraction.SelectedMarkers[RefIndex];
+				if ((Ref.TrackIndex == 0) && (Ref.MarkerIndex >= 0)
+					&& (Ref.MarkerIndex < RemoveMask.Num()))
+				{
+					RemoveMask[Ref.MarkerIndex] = TRUE;
+				}
+			}
+			TArray<FAnimNotifyEvent> RemainingNotifies;
+			for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
+			{
+				if (RemoveMask[NotifyIndex] == FALSE)
+				{
+					RemainingNotifies.Add(Notifies[NotifyIndex]);
+				}
+			}
+			CommitSectionNotifies(InDocument, m_SelectedSectionIndex, RemainingNotifies
+				, EString("Notifies deleted."));
+			m_SelectedNotifyIndex = -1;
+			InDocument.Selection.Type = EEditorSelectionType::SECTION;
+			InDocument.Selection.ObjectIndex = m_SelectedSectionIndex;
+			InDocument.Selection.SubIndex = -1;
+			ResetNotifyBuffers();
 		}
 	}
 
@@ -871,52 +983,78 @@ namespace PigeonEngine
 				ImGui::TreePop();
 				return;
 			}
-			if (m_SkeletonAsset)
+		if (m_SkeletonAsset)
+		{
+			const ESkeleton* MaskSkeleton = m_SkeletonAsset->GetStoragedResource();
+			if (MaskSkeleton)
 			{
-				const ESkeleton* MaskSkeleton = m_SkeletonAsset->GetStoragedResource();
+				ImGui::SetNextItemWidth(-FLT_MIN);
+				m_MaskSearchBuffer.InputText("##montage_mask_search");
+				const EString MaskSearch = m_MaskSearchBuffer.ToString();
+				if (ImGui::Button("Clear Mask"))
+				{
+					if (!Section.BoneMask.BoneNames.IsEmpty())
+					{
+						Section.BoneMask.BoneNames.Empty();
+						CommitSection(InDocument, InSectionIndex, Section, EString("Bone mask cleared."));
+						ImGui::TreePop();
+						return;
+					}
+				}
+				ImGui::SameLine();
+				ImGui::TextDisabled("%d selected", Section.BoneMask.BoneNames.Num());
+
 				if (ImGui::BeginChild("##montage_mask_bones", ImVec2(0.0f, 150.0f), true))
 				{
-					if (MaskSkeleton)
+					INT32 VisibleBoneCount = 0;
+					const TArray<EBoneData>& Bones = MaskSkeleton->GetBonePart();
+					for (INT32 BoneIndex = 0; BoneIndex < Bones.Num(); BoneIndex++)
 					{
-						const TArray<EBoneData>& Bones = MaskSkeleton->GetBonePart();
-						for (INT32 BoneIndex = 0; BoneIndex < Bones.Num(); BoneIndex++)
+						const EBoneData& Bone = Bones[BoneIndex];
+						if ((MaskSearch.Length() > 0u) && (Bone.Name.Contains(MaskSearch) == FALSE))
 						{
-							const EBoneData& Bone = Bones[BoneIndex];
-							bool bChecked = (Section.BoneMask.BoneNames.Contains(Bone.Name) != FALSE);
-							ImGui::PushID(BoneIndex);
-							if (ImGui::Checkbox(*Bone.Name, &bChecked))
-							{
-								TArray<EString> NewBones;
-								for (INT32 ExistingIndex = 0; ExistingIndex < Section.BoneMask.BoneNames.Num(); ExistingIndex++)
-								{
-									if (Section.BoneMask.BoneNames[ExistingIndex] != Bone.Name)
-									{
-										NewBones.Add(Section.BoneMask.BoneNames[ExistingIndex]);
-									}
-								}
-								if (bChecked)
-								{
-									NewBones.Add(Bone.Name);
-								}
-								Section.BoneMask.BoneNames = NewBones;
-								Section.BoneMask.Name = ((Section.BoneMask.Name.Length() > 0u)
-									? Section.BoneMask.Name : EString("Mask"));
-								CommitSection(InDocument, InSectionIndex, Section, EString("Bone mask updated."));
-								ImGui::PopID();
-								ImGui::EndChild();
-								ImGui::TreePop();
-								return;
-							}
-							ImGui::PopID();
+							continue;
 						}
+						VisibleBoneCount++;
+						bool bChecked = (Section.BoneMask.BoneNames.Contains(Bone.Name) != FALSE);
+						ImGui::PushID(BoneIndex);
+						if (ImGui::Checkbox(*Bone.Name, &bChecked))
+						{
+							TArray<EString> NewBones;
+							for (INT32 ExistingIndex = 0; ExistingIndex < Section.BoneMask.BoneNames.Num(); ExistingIndex++)
+							{
+								if (Section.BoneMask.BoneNames[ExistingIndex] != Bone.Name)
+								{
+									NewBones.Add(Section.BoneMask.BoneNames[ExistingIndex]);
+								}
+							}
+							if (bChecked)
+							{
+								NewBones.Add(Bone.Name);
+							}
+							Section.BoneMask.BoneNames = NewBones;
+							Section.BoneMask.Name = ((Section.BoneMask.Name.Length() > 0u)
+								? Section.BoneMask.Name : EString("Mask"));
+							CommitSection(InDocument, InSectionIndex, Section, EString("Bone mask updated."));
+							ImGui::PopID();
+							ImGui::EndChild();
+							ImGui::TreePop();
+							return;
+						}
+						ImGui::PopID();
+					}
+					if (VisibleBoneCount <= 0)
+					{
+						ImGui::TextDisabled("No bones match the filter.");
 					}
 				}
 				ImGui::EndChild();
 			}
-			else
-			{
-				ImGui::TextDisabled("Skeleton is not loaded.");
-			}
+		}
+		else
+		{
+			ImGui::TextDisabled("Skeleton is not loaded.");
+		}
 			ImGui::TreePop();
 		}
 

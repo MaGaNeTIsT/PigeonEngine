@@ -21,6 +21,7 @@ namespace PigeonEngine
 		if (Doc->IsObject())
 		{
 			Out.push_back(new CJsonObject(Doc));
+			return;
 		}
 		if (Doc->IsArray())
 		{
@@ -28,11 +29,13 @@ namespace PigeonEngine
 			{
 				assert(v.IsObject());
 				rapidjson::Document* TempDoc = new rapidjson::Document;
-				TempDoc->CopyFrom(v, Doc->GetAllocator());
+				// The extracted element owns its storage so later edits use its allocator.
+				TempDoc->CopyFrom(v, TempDoc->GetAllocator());
 				CJsonObject* Obj = new CJsonObject(TempDoc);
 				Out.push_back(Obj);
 			}
 		}
+		delete Doc;
 	}
 
 	std::string CJsonManager::Serialize(const CJsonObject* Obj)

@@ -600,6 +600,16 @@ namespace PigeonEngine
 			ImGui::TextDisabled("No states.");
 			return;
 		}
+		if (m_LastGraphDocument != &InDocument)
+		{
+			m_LastGraphDocument = &InDocument;
+			m_GraphPan = ImVec2(0.0f, 0.0f);
+			m_GraphZoom = 1.0f;
+			m_bGraphPanning = FALSE;
+			m_GraphPanButton = -1;
+			// First draw of a document shows the whole graph instead of only the first node.
+			m_bGraphFitRequested = TRUE;
+		}
 
 		for (INT32 StateIndex = 0; StateIndex < Machine->States.Num(); StateIndex++)
 		{
@@ -625,48 +635,16 @@ namespace PigeonEngine
 		EString PendingFromName;
 		EString PendingToName;
 
-		if (ImGui::BeginChild("##sm_graph", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar))
+		if (ImGui::BeginChild("##sm_graph", ImVec2(0.0f, 0.0f), true
+			, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 		{
 			const ImVec2 Origin = ImGui::GetCursorScreenPos();
+			const ImVec2 Available = ImGui::GetContentRegionAvail();
+			const ImVec2 CanvasSize(EMath::Max(Available.x, 120.0f), EMath::Max(Available.y, 120.0f));
 			ImDrawList* DrawList = ImGui::GetWindowDrawList();
 			constexpr FLOAT NodeWidth = 190.0f;
 			constexpr FLOAT NodeHeight = 62.0f;
-			const ImVec2 NodeSize(NodeWidth, NodeHeight);
-
-			struct FEdgeSegment
-			{
-				ImVec2 A;
-				ImVec2 B;
-				INT32 TransitionIndex;
-			};
-			TArray<FEdgeSegment> EdgeSegments;
-
-			auto GetNodePosition = [&InDocument](const EString& InName) -> ImVec2
-			{
-				const ImVec2* Stored = InDocument.NodePositions.FindValueAsPtr(InName);
-				return (Stored ? *Stored : ImVec2(40.0f, 80.0f));
-			};
-			auto MakeScreenPosition = [&Origin](const ImVec2& InLocal) -> ImVec2
-			{
-				return ImVec2(Origin.x + InLocal.x, Origin.y + InLocal.y);
-			};
-			auto DrawArrow = [DrawList](const ImVec2& InFrom, const ImVec2& InTo
-				, const ImU32 InColor, const FLOAT InThickness)
-			{
-				DrawList->AddLine(InFrom, InTo, InColor, InThickness);
-				const FLOAT DeltaX = InTo.x - InFrom.x;
-				const FLOAT DeltaY = InTo.y - InFrom.y;
-				const FLOAT Length = std::sqrt(DeltaX * DeltaX + DeltaY * DeltaY);
-				if (Length > 0.001f)
-				{
-					const FLOAT DirectionX = DeltaX / Length;
-					const FLOAT DirectionY = DeltaY / Length;
-					const ImVec2 Base(InTo.x - DirectionX * 10.0f, InTo.y - DirectionY * 10.0f);
-					const ImVec2 SideA(Base.x - DirectionY * 5.0f, Base.y + DirectionX * 5.0f);
-					const ImVec2 SideB(Base.x + DirectionY * 5.0f, Base.y - DirectionX * 5.0f);
-					DrawList->AddTriangleFilled(InTo, SideA, SideB, InColor);
-				}
-			};
+			const ImGuiIO& IO = ImGui::GetIO();
 
 			BOOL32 bHasAnyTransition = FALSE;
 			for (INT32 TransitionIndex = 0; TransitionIndex < Machine->Transitions.Num(); TransitionIndex++)
@@ -680,6 +658,165 @@ namespace PigeonEngine
 			const ImVec2 AnyLocal(40.0f, 12.0f);
 			const ImVec2 AnySize(100.0f, 32.0f);
 
+			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+			{
+				if (IO.MouseWheel != 0.0f)
+				{
+					const ImVec2 Mouse = IO.MousePos;
+					const ImVec2 LocalBefore((Mouse.x - Origin.x - m_GraphPan.x) / m_GraphZoom
+						, (Mouse.y - Origin.y - m_GraphPan.y) / m_GraphZoom);
+					m_GraphZoom = EMath::Clamp(m_GraphZoom
+						* ((IO.MouseWheel > 0.0f) ? 1.1f : 0.9f), 0.15f, 3.0f);
+					m_GraphPan.x = Mouse.x - Origin.x - LocalBefore.x * m_GraphZoom;
+					m_GraphPan.y = Mouse.y - Origin.y - LocalBefore.y * m_GraphZoom;
+				}
+				if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+				{
+					m_bGraphPanning = TRUE;
+					m_GraphPanButton = static_cast<INT32>(ImGuiMouseButton_Middle);
+				}
+				if ((IO.WantTextInput == false) && (ImGui::IsKeyPressed(ImGuiKey_Home, false) != false))
+				{
+					m_bGraphFitRequested = TRUE;
+				}
+			}
+			if (m_bGraphPanning != FALSE)
+			{
+				const BOOL32 bPanDown = ((m_GraphPanButton == static_cast<INT32>(ImGuiMouseButton_Left))
+					? ImGui::IsMouseDown(ImGuiMouseButton_Left)
+					: ((m_GraphPanButton == static_cast<INT32>(ImGuiMouseButton_Middle))
+						? ImGui::IsMouseDown(ImGuiMouseButton_Middle) : FALSE));
+				if (bPanDown != FALSE)
+				{
+					m_GraphPan.x += IO.MouseDelta.x;
+					m_GraphPan.y += IO.MouseDelta.y;
+					ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+				}
+				else
+				{
+					m_bGraphPanning = FALSE;
+					m_GraphPanButton = -1;
+				}
+			}
+
+			FLOAT MinX = FLT_MAX;
+			FLOAT MinY = FLT_MAX;
+			FLOAT MaxX = -FLT_MAX;
+			FLOAT MaxY = -FLT_MAX;
+			for (INT32 StateIndex = 0; StateIndex < Machine->States.Num(); StateIndex++)
+			{
+				const ImVec2* Stored = InDocument.NodePositions.FindValueAsPtr(Machine->States[StateIndex].Name);
+				const ImVec2 Local = (Stored ? *Stored : ImVec2(40.0f, 80.0f));
+				MinX = EMath::Min(MinX, Local.x);
+				MinY = EMath::Min(MinY, Local.y);
+				MaxX = EMath::Max(MaxX, Local.x + NodeWidth);
+				MaxY = EMath::Max(MaxY, Local.y + NodeHeight);
+			}
+			if (bHasAnyTransition != FALSE)
+			{
+				MinX = EMath::Min(MinX, AnyLocal.x);
+				MinY = EMath::Min(MinY, AnyLocal.y);
+				MaxX = EMath::Max(MaxX, AnyLocal.x + AnySize.x);
+				MaxY = EMath::Max(MaxY, AnyLocal.y + AnySize.y);
+			}
+			if ((m_bGraphFitRequested != FALSE) && (MinX <= MaxX) && (MinY <= MaxY))
+			{
+				const FLOAT GraphWidth = EMath::Max(MaxX - MinX, 1.0f);
+				const FLOAT GraphHeight = EMath::Max(MaxY - MinY, 1.0f);
+				m_GraphZoom = EMath::Clamp(EMath::Min((CanvasSize.x - 40.0f) / GraphWidth
+					, (CanvasSize.y - 40.0f) / GraphHeight), 0.15f, 1.5f);
+				m_GraphPan.x = (CanvasSize.x - GraphWidth * m_GraphZoom) * 0.5f - MinX * m_GraphZoom;
+				m_GraphPan.y = (CanvasSize.y - GraphHeight * m_GraphZoom) * 0.5f - MinY * m_GraphZoom;
+				m_bGraphFitRequested = FALSE;
+			}
+
+			const FLOAT Zoom = m_GraphZoom;
+			const ImVec2 NodeSize(NodeWidth * Zoom, NodeHeight * Zoom);
+			// A full-canvas item keeps ImGui from treating a left-drag on empty graph space as
+			// a window move. Later node buttons are allowed to overlap it.
+			ImGui::SetCursorScreenPos(Origin);
+			ImGui::SetNextItemAllowOverlap();
+			ImGui::InvisibleButton("##sm_graph_canvas", CanvasSize);
+			const BOOL32 bCanvasHovered = ImGui::IsItemHovered();
+			const BOOL32 bCanvasActive = ImGui::IsItemActive();
+			const BOOL32 bCanvasClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+			if ((bCanvasHovered != FALSE) || (bCanvasActive != FALSE))
+			{
+				// Claim the wheel every frame while the canvas is hovered/active. Otherwise
+				// ImGui forwards it to the scrollable parent window during NewFrame.
+				ImGui::SetItemKeyOwner(ImGuiKey_MouseWheelY);
+			}
+			auto GraphToScreen = [this, &Origin](const ImVec2& InLocal) -> ImVec2
+			{
+				return ImVec2(Origin.x + m_GraphPan.x + InLocal.x * m_GraphZoom
+					, Origin.y + m_GraphPan.y + InLocal.y * m_GraphZoom);
+			};
+			auto IsMouseOverGraphItem = [this, &InDocument, &Machine, &AnyLocal, &AnySize
+				, &Origin, &CanvasSize, Zoom, NodeSize, &GraphToScreen, bHasAnyTransition]() -> BOOL32
+			{
+				const ImVec2 Mouse = ImGui::GetIO().MousePos;
+				for (INT32 StateIndex = 0; StateIndex < Machine->States.Num(); StateIndex++)
+				{
+					const ImVec2* Stored = InDocument.NodePositions.FindValueAsPtr(Machine->States[StateIndex].Name);
+					const ImVec2 Local = (Stored ? *Stored : ImVec2(40.0f, 80.0f));
+					const ImVec2 Position = GraphToScreen(Local);
+					if ((Mouse.x >= Position.x) && (Mouse.x <= Position.x + NodeSize.x)
+						&& (Mouse.y >= Position.y) && (Mouse.y <= Position.y + NodeSize.y))
+					{
+						return TRUE;
+					}
+				}
+				const ImVec2 AnyPosition = GraphToScreen(AnyLocal);
+				const ImVec2 AnyScreenSize(AnySize.x * Zoom, AnySize.y * Zoom);
+				if ((bHasAnyTransition != FALSE)
+					&& (Mouse.x >= AnyPosition.x) && (Mouse.x <= AnyPosition.x + AnyScreenSize.x)
+					&& (Mouse.y >= AnyPosition.y) && (Mouse.y <= AnyPosition.y + AnyScreenSize.y))
+				{
+					return TRUE;
+				}
+				const ImVec2 FitButtonMin(Origin.x + CanvasSize.x - 74.0f, Origin.y + 8.0f);
+				if ((Mouse.x >= FitButtonMin.x) && (Mouse.x <= FitButtonMin.x + 66.0f)
+					&& (Mouse.y >= FitButtonMin.y)
+					&& (Mouse.y <= FitButtonMin.y + ImGui::GetFrameHeight()))
+				{
+					return TRUE;
+				}
+				return FALSE;
+			};
+			auto GetNodePosition = [&InDocument](const EString& InName) -> ImVec2
+			{
+				const ImVec2* Stored = InDocument.NodePositions.FindValueAsPtr(InName);
+				return (Stored ? *Stored : ImVec2(40.0f, 80.0f));
+			};
+
+			struct FEdgeSegment
+			{
+				ImVec2 A;
+				ImVec2 B;
+				INT32 TransitionIndex;
+			};
+			TArray<FEdgeSegment> EdgeSegments;
+
+			auto DrawArrow = [DrawList, Zoom](const ImVec2& InFrom, const ImVec2& InTo
+				, const ImU32 InColor, const FLOAT InThickness)
+			{
+				DrawList->AddLine(InFrom, InTo, InColor, InThickness);
+				const FLOAT DeltaX = InTo.x - InFrom.x;
+				const FLOAT DeltaY = InTo.y - InFrom.y;
+				const FLOAT Length = std::sqrt(DeltaX * DeltaX + DeltaY * DeltaY);
+				if (Length > 0.001f)
+				{
+					const FLOAT DirectionX = DeltaX / Length;
+					const FLOAT DirectionY = DeltaY / Length;
+					const FLOAT ArrowLength = 10.0f * Zoom;
+					const FLOAT ArrowHalfWidth = 5.0f * Zoom;
+					const ImVec2 Base(InTo.x - DirectionX * ArrowLength, InTo.y - DirectionY * ArrowLength);
+					const ImVec2 SideA(Base.x - DirectionY * ArrowHalfWidth, Base.y + DirectionX * ArrowHalfWidth);
+					const ImVec2 SideB(Base.x + DirectionY * ArrowHalfWidth, Base.y - DirectionX * ArrowHalfWidth);
+					DrawList->AddTriangleFilled(InTo, SideA, SideB, InColor);
+				}
+			};
+
 			const ImU32 EdgeColor = IM_COL32(170, 180, 200, 190);
 			for (INT32 TransitionIndex = 0; TransitionIndex < Machine->Transitions.Num(); TransitionIndex++)
 			{
@@ -692,10 +829,11 @@ namespace PigeonEngine
 					|| InDocument.Selection.Is(EEditorSelectionType::CONDITION))
 					&& (InDocument.Selection.ObjectIndex == TransitionIndex)) ? TRUE : FALSE;
 				const ImU32 CurrentColor = (bSelected != FALSE) ? IM_COL32(255, 205, 90, 255) : EdgeColor;
-				const FLOAT CurrentThickness = ((bSelected != FALSE) ? 3.0f : 2.0f);
+				const FLOAT CurrentThickness = ((bSelected != FALSE) ? 3.0f : 2.0f)
+					* EMath::Max(Zoom, 0.5f);
 
 				const ImVec2 ToLocal = GetNodePosition(Machine->States[Transition.ToStateIndex].Name);
-				const ImVec2 To(Origin.x + ToLocal.x, Origin.y + ToLocal.y + NodeHeight * 0.5f);
+				const ImVec2 To = GraphToScreen(ImVec2(ToLocal.x, ToLocal.y + NodeHeight * 0.5f));
 
 				ImVec2 From;
 				if (Transition.FromStateIndex < 0)
@@ -704,7 +842,8 @@ namespace PigeonEngine
 					{
 						continue;
 					}
-					From = ImVec2(Origin.x + AnyLocal.x + AnySize.x, Origin.y + AnyLocal.y + AnySize.y * 0.5f);
+					From = GraphToScreen(ImVec2(AnyLocal.x + AnySize.x
+						, AnyLocal.y + AnySize.y * 0.5f));
 				}
 				else
 				{
@@ -715,9 +854,12 @@ namespace PigeonEngine
 					const ImVec2 FromLocal = GetNodePosition(Machine->States[Transition.FromStateIndex].Name);
 					if (Transition.FromStateIndex == Transition.ToStateIndex)
 					{
-						const ImVec2 Top(Origin.x + FromLocal.x + NodeWidth * 0.5f, Origin.y + FromLocal.y);
-						const ImVec2 LoopLeft(Top.x - 18.0f, Top.y - 26.0f);
-						const ImVec2 LoopRight(Top.x + 26.0f, Top.y - 26.0f);
+						const ImVec2 TopLocal(FromLocal.x + NodeWidth * 0.5f, FromLocal.y);
+						const ImVec2 LoopLeftLocal(TopLocal.x - 18.0f, TopLocal.y - 26.0f);
+						const ImVec2 LoopRightLocal(TopLocal.x + 26.0f, TopLocal.y - 26.0f);
+						const ImVec2 Top = GraphToScreen(TopLocal);
+						const ImVec2 LoopLeft = GraphToScreen(LoopLeftLocal);
+						const ImVec2 LoopRight = GraphToScreen(LoopRightLocal);
 						DrawList->AddLine(Top, LoopLeft, CurrentColor, CurrentThickness);
 						DrawList->AddLine(LoopLeft, LoopRight, CurrentColor, CurrentThickness);
 						DrawArrow(LoopRight, Top, CurrentColor, CurrentThickness);
@@ -729,7 +871,8 @@ namespace PigeonEngine
 						EdgeSegments.Add(SegmentC);
 						continue;
 					}
-					From = ImVec2(Origin.x + FromLocal.x + NodeWidth, Origin.y + FromLocal.y + NodeHeight * 0.5f);
+					From = GraphToScreen(ImVec2(FromLocal.x + NodeWidth
+						, FromLocal.y + NodeHeight * 0.5f));
 				}
 
 				DrawArrow(From, To, CurrentColor, CurrentThickness);
@@ -742,28 +885,26 @@ namespace PigeonEngine
 
 			if (bHasAnyTransition)
 			{
-				const ImVec2 AnyPosition = MakeScreenPosition(AnyLocal);
+				const ImVec2 AnyPosition = GraphToScreen(AnyLocal);
+				const ImVec2 AnyScreenSize(AnySize.x * Zoom, AnySize.y * Zoom);
 				DrawList->AddRectFilled(AnyPosition
-					, ImVec2(AnyPosition.x + AnySize.x, AnyPosition.y + AnySize.y)
-					, IM_COL32(55, 55, 70, 255), 4.0f);
+					, ImVec2(AnyPosition.x + AnyScreenSize.x, AnyPosition.y + AnyScreenSize.y)
+					, IM_COL32(55, 55, 70, 255), 4.0f * Zoom);
 				DrawList->AddRect(AnyPosition
-					, ImVec2(AnyPosition.x + AnySize.x, AnyPosition.y + AnySize.y)
-					, IM_COL32(120, 120, 150, 255), 4.0f);
-				DrawList->AddText(ImVec2(AnyPosition.x + 8.0f, AnyPosition.y + 7.0f)
+					, ImVec2(AnyPosition.x + AnyScreenSize.x, AnyPosition.y + AnyScreenSize.y)
+					, IM_COL32(120, 120, 150, 255), 4.0f * Zoom);
+				DrawList->AddText(ImGui::GetFont(), ImGui::GetFontSize() * Zoom
+					, ImVec2(AnyPosition.x + 8.0f * Zoom, AnyPosition.y + 7.0f * Zoom)
 					, IM_COL32(210, 210, 230, 255), "Any State");
 			}
 
-			FLOAT MaxX = (bHasAnyTransition ? (AnyLocal.x + AnySize.x) : 0.0f);
-			FLOAT MaxY = (bHasAnyTransition ? (AnyLocal.y + AnySize.y) : 0.0f);
 			BOOL32 bStopGraph = FALSE;
 			for (INT32 StateIndex = 0; StateIndex < Machine->States.Num(); StateIndex++)
 			{
 				const EAnimStateMachineState& State = Machine->States[StateIndex];
 				ImVec2* StoredPosition = InDocument.NodePositions.FindValueAsPtr(State.Name);
 				const ImVec2 Local = (StoredPosition ? *StoredPosition : ImVec2(40.0f, 80.0f));
-				const ImVec2 Position = MakeScreenPosition(Local);
-				MaxX = EMath::Max(MaxX, Local.x + NodeWidth);
-				MaxY = EMath::Max(MaxY, Local.y + NodeHeight);
+				const ImVec2 Position = GraphToScreen(Local);
 
 				BOOL32 bNodeMoved = FALSE;
 				ImGui::PushID(*State.Name);
@@ -842,8 +983,8 @@ namespace PigeonEngine
 					const ImVec2 MouseDelta = ImGui::GetIO().MouseDelta;
 					if ((MouseDelta.x != 0.0f) || (MouseDelta.y != 0.0f))
 					{
-						StoredPosition->x += MouseDelta.x;
-						StoredPosition->y += MouseDelta.y;
+						StoredPosition->x += MouseDelta.x / Zoom;
+						StoredPosition->y += MouseDelta.y / Zoom;
 						bNodeMoved = TRUE;
 					}
 				}
@@ -874,21 +1015,25 @@ namespace PigeonEngine
 				const ImU32 BodyColor = IM_COL32(44, 46, 54, 255);
 				const ImU32 HeaderColor = (bEntry != FALSE)
 					? IM_COL32(50, 120, 80, 255) : IM_COL32(55, 80, 125, 255);
-				DrawList->AddRectFilled(Position, ImVec2(Position.x + NodeWidth, Position.y + NodeHeight)
-					, BodyColor, 4.0f);
-				DrawList->AddRectFilled(Position, ImVec2(Position.x + NodeWidth, Position.y + 22.0f)
-					, HeaderColor, 4.0f);
-				DrawList->AddRect(Position, ImVec2(Position.x + NodeWidth, Position.y + NodeHeight)
-					, IM_COL32(100, 105, 120, 255), 4.0f);
-				DrawList->AddText(ImVec2(Position.x + 8.0f, Position.y + 4.0f)
+				const FLOAT NodeFontSize = ImGui::GetFontSize() * Zoom;
+				DrawList->AddRectFilled(Position, ImVec2(Position.x + NodeSize.x, Position.y + NodeSize.y)
+					, BodyColor, 4.0f * Zoom);
+				DrawList->AddRectFilled(Position, ImVec2(Position.x + NodeSize.x
+					, Position.y + 22.0f * Zoom), HeaderColor, 4.0f * Zoom);
+				DrawList->AddRect(Position, ImVec2(Position.x + NodeSize.x, Position.y + NodeSize.y)
+					, IM_COL32(100, 105, 120, 255), 4.0f * Zoom);
+				DrawList->AddText(ImGui::GetFont(), NodeFontSize
+					, ImVec2(Position.x + 8.0f * Zoom, Position.y + 4.0f * Zoom)
 					, IM_COL32(235, 235, 240, 255), *State.Name);
-				DrawList->AddText(ImVec2(Position.x + 8.0f, Position.y + 26.0f)
+				DrawList->AddText(ImGui::GetFont(), NodeFontSize
+					, ImVec2(Position.x + 8.0f * Zoom, Position.y + 26.0f * Zoom)
 					, IM_COL32(190, 200, 210, 255)
 					, ((State.ClipName.Length() > 0u) ? *State.ClipName : "None"));
 				CHAR Detail[96] = "";
 				::sprintf_s(Detail, sizeof(Detail), "%s  rate %.2f%s"
 					, GetLoopModeLabel(State.LoopMode), State.PlayRate, (bEntry != FALSE ? "  ENTRY" : ""));
-				DrawList->AddText(ImVec2(Position.x + 8.0f, Position.y + 44.0f)
+				DrawList->AddText(ImGui::GetFont(), NodeFontSize
+					, ImVec2(Position.x + 8.0f * Zoom, Position.y + 44.0f * Zoom)
 					, IM_COL32(160, 170, 185, 255), Detail);
 				ImGui::PopID();
 			}
@@ -899,31 +1044,58 @@ namespace PigeonEngine
 				return;
 			}
 
-			if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
-				&& (!ImGui::IsAnyItemHovered()) && (!ImGui::IsAnyItemActive()))
+			const BOOL32 bCanvasPressed = ((bCanvasClicked != FALSE)
+				|| ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) != false)
+					&& (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) != false))) ? TRUE : FALSE;
+			if (bCanvasPressed != FALSE)
 			{
 				const ImVec2 MousePosition = ImGui::GetIO().MousePos;
-				FLOAT BestDistanceSquared = 8.0f * 8.0f;
-				INT32 BestTransitionIndex = -1;
-				for (INT32 SegmentIndex = 0; SegmentIndex < EdgeSegments.Num(); SegmentIndex++)
+				const BOOL32 bInsideCanvas = ((MousePosition.x >= Origin.x)
+					&& (MousePosition.x <= Origin.x + CanvasSize.x)
+					&& (MousePosition.y >= Origin.y)
+					&& (MousePosition.y <= Origin.y + CanvasSize.y)) ? TRUE : FALSE;
+
+				if ((IsMouseOverGraphItem() == FALSE) && (bInsideCanvas != FALSE))
 				{
-					const FEdgeSegment& Segment = EdgeSegments[SegmentIndex];
-					const FLOAT DistanceSquared = DistanceToSegmentSquared(MousePosition, Segment.A, Segment.B);
-					if (DistanceSquared < BestDistanceSquared)
+					FLOAT BestDistanceSquared = 8.0f * 8.0f;
+					INT32 BestTransitionIndex = -1;
+					for (INT32 SegmentIndex = 0; SegmentIndex < EdgeSegments.Num(); SegmentIndex++)
 					{
-						BestDistanceSquared = DistanceSquared;
-						BestTransitionIndex = Segment.TransitionIndex;
+						const FEdgeSegment& Segment = EdgeSegments[SegmentIndex];
+						const FLOAT DistanceSquared = DistanceToSegmentSquared(MousePosition, Segment.A, Segment.B);
+						if (DistanceSquared < BestDistanceSquared)
+						{
+							BestDistanceSquared = DistanceSquared;
+							BestTransitionIndex = Segment.TransitionIndex;
+						}
 					}
-				}
-				if (BestTransitionIndex >= 0)
-				{
-					InDocument.Selection.Type = EEditorSelectionType::TRANSITION;
-					InDocument.Selection.ObjectIndex = BestTransitionIndex;
+					if (BestTransitionIndex >= 0)
+					{
+						InDocument.Selection.Type = EEditorSelectionType::TRANSITION;
+						InDocument.Selection.ObjectIndex = BestTransitionIndex;
+					}
+					else
+					{
+						// Left-drag on empty canvas pans the graph like middle-drag. Clicking
+						// near an edge still selects the transition instead of panning.
+						m_bGraphPanning = TRUE;
+						m_GraphPanButton = static_cast<INT32>(ImGuiMouseButton_Left);
+					}
 				}
 			}
 
-			if (ImGui::BeginPopupContextWindow("##sm_graph_bg"
-				, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+			const ImVec2 BackgroundMouse = ImGui::GetIO().MousePos;
+			const BOOL32 bBackgroundInsideCanvas = ((BackgroundMouse.x >= Origin.x)
+				&& (BackgroundMouse.x <= Origin.x + CanvasSize.x)
+				&& (BackgroundMouse.y >= Origin.y)
+				&& (BackgroundMouse.y <= Origin.y + CanvasSize.y)) ? TRUE : FALSE;
+			if ((ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) != false)
+				&& (ImGui::IsMouseClicked(ImGuiMouseButton_Right) != false)
+				&& (bBackgroundInsideCanvas != FALSE) && (IsMouseOverGraphItem() == FALSE))
+			{
+				ImGui::OpenPopup("##sm_graph_menu");
+			}
+			if (ImGui::BeginPopup("##sm_graph_menu"))
 			{
 				if (ImGui::MenuItem("Add State"))
 				{
@@ -932,6 +1104,10 @@ namespace PigeonEngine
 				if (ImGui::MenuItem("Reset Layout"))
 				{
 					PendingAction = EGraphActionType::RESET_LAYOUT;
+				}
+				if (ImGui::MenuItem("Fit Graph"))
+				{
+					m_bGraphFitRequested = TRUE;
 				}
 				if ((InDocument.Selection.Is(EEditorSelectionType::STATE))
 					&& (InDocument.Selection.ObjectId.Length() > 0u))
@@ -947,8 +1123,13 @@ namespace PigeonEngine
 				ImGui::EndPopup();
 			}
 
-			ImGui::SetCursorScreenPos(Origin);
-			ImGui::Dummy(ImVec2(EMath::Max(MaxX + 60.0f, 320.0f), EMath::Max(MaxY + 60.0f, 300.0f)));
+			ImGui::SetCursorScreenPos(ImVec2(Origin.x + CanvasSize.x - 74.0f, Origin.y + 8.0f));
+			if (ImGui::Button("Fit", ImVec2(66.0f, 0.0f)))
+			{
+				m_bGraphFitRequested = TRUE;
+			}
+			DrawList->AddText(ImVec2(Origin.x + 8.0f, Origin.y + CanvasSize.y - 20.0f)
+				, IM_COL32(130, 135, 150, 220), "Wheel zoom | Middle/empty-drag pan | Home fit");
 		}
 		ImGui::EndChild();
 
@@ -982,6 +1163,11 @@ namespace PigeonEngine
 				break;
 			case EGraphActionType::RESET_LAYOUT:
 				InDocument.NodePositions.Empty();
+				m_GraphPan = ImVec2(0.0f, 0.0f);
+				m_GraphZoom = 1.0f;
+				m_bGraphPanning = FALSE;
+				m_GraphPanButton = -1;
+				m_bGraphFitRequested = FALSE;
 				for (INT32 StateIndex = 0; StateIndex < Machine->States.Num(); StateIndex++)
 				{
 					InDocument.NodePositions.Add(Machine->States[StateIndex].Name

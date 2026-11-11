@@ -521,7 +521,7 @@ namespace PigeonEngine
 			return;
 		}
 		ImGui::SameLine();
-		ImGui::TextDisabled("Drag a marker to retime it; Ctrl+Wheel zoom, Shift+Wheel/middle-drag pan, middle double-click fit.");
+		ImGui::TextDisabled("Drag to retime; Shift+drag box select; Ctrl+click multi-select; Esc/empty click clears; Ctrl+Wheel zoom.");
 
 		TArray<FTimelineTrack> Tracks;
 		BuildTimelineTracks(InDocument, Tracks);
@@ -531,9 +531,18 @@ namespace PigeonEngine
 		if (TimelineInteraction.bMarkerSelected != FALSE)
 		{
 			m_SelectedNotifyIndex = TimelineInteraction.SelectedMarker;
-			InDocument.Selection.Type = EEditorSelectionType::NOTIFY;
-			InDocument.Selection.ObjectIndex = m_SelectedClipIndex;
-			InDocument.Selection.SubIndex = m_SelectedNotifyIndex;
+			if (m_SelectedNotifyIndex >= 0)
+			{
+				InDocument.Selection.Type = EEditorSelectionType::NOTIFY;
+				InDocument.Selection.ObjectIndex = m_SelectedClipIndex;
+				InDocument.Selection.SubIndex = m_SelectedNotifyIndex;
+			}
+			else
+			{
+				InDocument.Selection.Type = EEditorSelectionType::CLIP;
+				InDocument.Selection.ObjectIndex = m_SelectedClipIndex;
+				InDocument.Selection.SubIndex = -1;
+			}
 			ResetNotifyBuffers();
 		}
 		if (TimelineInteraction.bScrubbed != FALSE)
@@ -579,6 +588,78 @@ namespace PigeonEngine
 					{
 						return InDocument.CommitNotifies(NewNotifies, OutError);
 					}, EString("Notify retimed."));
+				ResetNotifyBuffers();
+			}
+		}
+		if (TimelineInteraction.bMarkerMultiDragFinished != FALSE)
+		{
+			TArray<TArray<FAnimNotifyEvent>> NewNotifies = InDocument.GetDraftNotifies();
+			if ((m_SelectedClipIndex >= 0) && (m_SelectedClipIndex < NewNotifies.Num()))
+			{
+				const FLOAT ClipDuration = GetSelectedClipDuration(InDocument);
+				for (INT32 RefIndex = 0; RefIndex < TimelineInteraction.MultiDraggedMarkers.Num(); RefIndex++)
+				{
+					const FTimelineMarkerRef& Ref = TimelineInteraction.MultiDraggedMarkers[RefIndex];
+					if ((Ref.TrackIndex != 0) || (Ref.MarkerIndex < 0)
+						|| (Ref.MarkerIndex >= NewNotifies[m_SelectedClipIndex].Num()))
+					{
+						continue;
+					}
+					FAnimNotifyEvent& Notify = NewNotifies[m_SelectedClipIndex][Ref.MarkerIndex];
+					const FLOAT RangeDuration = (Notify.bIsState != FALSE)
+						? EMath::Max(Notify.StateDuration, 0.0f) : 0.0f;
+					Notify.Time = EMath::Clamp(Notify.Time + TimelineInteraction.MarkerMultiDragDelta
+						, 0.0f, EMath::Max(0.0f, ClipDuration - RangeDuration));
+				}
+				RunMutation(InDocument, [&InDocument, &NewNotifies](EString& OutError) -> BOOL32
+					{
+						return InDocument.CommitNotifies(NewNotifies, OutError);
+					}, EString("Notifies retimed."));
+				ResetNotifyBuffers();
+			}
+		}
+
+		const ImGuiIO& IO = ImGui::GetIO();
+		if ((TimelineInteraction.SelectedMarkers.Num() > 1)
+			&& (IO.WantTextInput == false)
+			&& (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) != false)
+			&& (ImGui::IsKeyPressed(ImGuiKey_Delete, false) != false))
+		{
+			TArray<TArray<FAnimNotifyEvent>> NewNotifies = InDocument.GetDraftNotifies();
+			if ((m_SelectedClipIndex >= 0) && (m_SelectedClipIndex < NewNotifies.Num()))
+			{
+				TArray<BOOL8> RemoveMask;
+				RemoveMask.SetNum(NewNotifies[m_SelectedClipIndex].Num());
+				for (INT32 NotifyIndex = 0; NotifyIndex < RemoveMask.Num(); NotifyIndex++)
+				{
+					RemoveMask[NotifyIndex] = FALSE;
+				}
+				for (INT32 RefIndex = 0; RefIndex < TimelineInteraction.SelectedMarkers.Num(); RefIndex++)
+				{
+					const FTimelineMarkerRef& Ref = TimelineInteraction.SelectedMarkers[RefIndex];
+					if ((Ref.TrackIndex == 0) && (Ref.MarkerIndex >= 0)
+						&& (Ref.MarkerIndex < RemoveMask.Num()))
+					{
+						RemoveMask[Ref.MarkerIndex] = TRUE;
+					}
+				}
+				TArray<FAnimNotifyEvent> RemainingNotifies;
+				for (INT32 NotifyIndex = 0; NotifyIndex < NewNotifies[m_SelectedClipIndex].Num(); NotifyIndex++)
+				{
+					if (RemoveMask[NotifyIndex] == FALSE)
+					{
+						RemainingNotifies.Add(NewNotifies[m_SelectedClipIndex][NotifyIndex]);
+					}
+				}
+				NewNotifies[m_SelectedClipIndex] = RemainingNotifies;
+				RunMutation(InDocument, [&InDocument, &NewNotifies](EString& OutError) -> BOOL32
+					{
+						return InDocument.CommitNotifies(NewNotifies, OutError);
+					}, EString("Notifies deleted."));
+				m_SelectedNotifyIndex = -1;
+				InDocument.Selection.Type = EEditorSelectionType::CLIP;
+				InDocument.Selection.ObjectIndex = m_SelectedClipIndex;
+				InDocument.Selection.SubIndex = -1;
 				ResetNotifyBuffers();
 			}
 		}

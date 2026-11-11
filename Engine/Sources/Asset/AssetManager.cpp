@@ -483,6 +483,14 @@ namespace PigeonEngine
 		}
 	}
 
+	void EAssetManager::OpenSkeletonSlotGroups(const EString& InAssetFullPath)
+	{
+		if ((AnimationWorkspace) && (InAssetFullPath.Length() > 0u))
+		{
+			AnimationWorkspace->OpenSlotGroupAsset(InAssetFullPath);
+		}
+	}
+
 	void EAssetManager::GenerateContentBrowser()
 	{
 		ImGui::Begin("PigeonContent", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);

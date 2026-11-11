@@ -18,7 +18,6 @@ namespace PigeonEngine
 	class ESkeletonAnimationAsset;
 	struct ESkeletonAnimationClip;
 	struct EAnimMontageSection;
-	struct EAnimMontageSlotGroup;
 
 	class FMontageEditorPanel
 	{
@@ -45,7 +44,8 @@ namespace PigeonEngine
 		void EnsureSelection(FMontageDocument& InDocument);
 		void BindPreview(FMontageDocument& InDocument);
 		void RefreshPreviewCatalog(const EString& InSkeletonName);
-		BOOL32 ApplyTransport(FMontageDocument& InDocument, const FTransportInteraction& InInteraction);		void SyncTransport(FMontageDocument& InDocument);
+		BOOL32 ApplyTransport(FMontageDocument& InDocument, const FTransportInteraction& InInteraction);
+		void SyncTransport(FMontageDocument& InDocument);
 		void BuildTimelineTracks(FMontageDocument& InDocument, TArray<FTimelineTrack>& OutTracks)const;
 		void RunMutation(FMontageDocument& InDocument
 			, const TFunction<BOOL32(EString&)>& InMutation, const EString& InSuccessMessage);
@@ -92,6 +92,7 @@ namespace PigeonEngine
 		INT32					m_SelectedNotifyIndex = -1;
 		FGrowableTextBuffer		m_SectionNameBuffer;
 		FGrowableTextBuffer		m_SlotNameBuffer;
+		FGrowableTextBuffer		m_MaskSearchBuffer;
 		EString					m_SectionBufferSource;
 		FGrowableTextBuffer		m_NotifyNameBuffer;
 		FGrowableTextBuffer		m_NotifyClassBuffer;
