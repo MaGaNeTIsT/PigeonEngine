@@ -24,9 +24,18 @@ plain copy.
 
 ## Build
 
-`CMakeLists.txt` creates four static libraries named `Recast`, `Detour`, `DetourCrowd`
-and `DetourTileCache`, built as C++98 with the engine's five configurations and the same
-static runtime (`/MTd` for Debug/DebugEditor/Develop/DevelopEditor, `/MT` for Shipping).
+`CMakeLists.txt` creates four static libraries named `Recast`, `Detour`, `DetourCrowd` and
+`DetourTileCache`, one per upstream module, built as C++98 with the engine's five
+configurations and the same static runtime (`/MTd` for Debug/DebugEditor/Develop/DevelopEditor,
+`/MT` for Shipping).
+
+The targets keep the upstream module boundaries on purpose: refreshing the copy is then a
+per-directory operation, and a module can be linked or dropped on its own. Each target picks up
+its sources with a glob over `<Module>/Source/*.cpp` and `<Module>/Include/*.h`, the same way
+upstream's premake file does, so replacing a module directory needs no CMake edit - only a
+reconfigure. All four targets are placed in the `ThirdParty/RecastNavigation` solution folder,
+so the solution root stays readable.
+
 The engine adds this directory with `add_subdirectory` from the root `CMakeLists.txt`.
 
 Configuration macros deliberately left undefined:

@@ -39,6 +39,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 	C_STANDARD 11
 	C_STANDARD_REQUIRED ON
 )
+#Grouped with the other third party libraries under one solution folder, so the solution root
+#does not fill up with third party projects.
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "ThirdParty")
 target_compile_options(${PROJECT_NAME} PRIVATE
 	$<$<CONFIG:Debug>:/MTd>
 	$<$<CONFIG:DebugEditor>:/MTd>

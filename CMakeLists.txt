@@ -7,6 +7,11 @@ set(ENGINE_PROJECT_NAME PigeonEngine)
 
 project(${ENGINE_PROJECT_NAME} VERSION 1.0 LANGUAGES CXX)
 
+#Solution folders. The FOLDER target property is ignored unless this global property is on, so
+#without it every third party target shows up at the solution root. Turning it on also moves
+#ALL_BUILD and ZERO_CHECK under CMakePredefinedTargets.
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 if(MSVC)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${ENGINE_PROJECT_NAME})
 endif()
@@ -286,8 +291,9 @@ target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE ${JOLT_PROJECT_NAME})
 
 #Pigeon Engine Third Party Recast Navigation
-#Only the four runtime modules are vendored; the engine's navigation wrapper lives in
-#EngineThirdParty/RecastNavigation and is the only place that includes their headers.
+#The upstream module split is kept as four targets so a module can be refreshed by copying
+#that one directory. All four sit in the ThirdParty/RecastNavigation solution folder.
+#The engine's navigation wrapper is the only place that includes these headers.
 add_subdirectory(${THIRD_PARTY_SOURCE_DIR}/RecastNavigation/)
 target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 	${THIRD_PARTY_SOURCE_DIR}/RecastNavigation/

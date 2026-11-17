@@ -608,7 +608,7 @@ namespace PigeonEngine
 				PE_LOG_LOG(EString(PE_TEXT("Navigation agent finished a move, status "))
 					+ EString::FromInt(static_cast<UINT32>(InStatus)) + EString(PE_TEXT(".")));
 			};
-			NavAgentComponent->MoveToLocation(Vector3(-60.0f, 0.0f, -39.0f));
+			NavAgentComponent->MoveToLocation(Vector3(-160.0f, 0.0f, -390.0f));
 		}
 
 #if 0

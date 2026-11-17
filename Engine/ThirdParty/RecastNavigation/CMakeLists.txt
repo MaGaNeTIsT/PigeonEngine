@@ -10,14 +10,18 @@ project(RecastNavigation LANGUAGES CXX)
 #DebugUtils are left out: the engine draws navigation debug geometry through its own
 #wireframe manager, so none of them is needed to build or query a navmesh.
 
-#Every module builds as its own static library so the engine can link a subset. The
-#target names are the upstream ones, which is also what the Recast documentation uses.
+#Every module builds as its own static library, mirroring the upstream layout: refreshing the
+#copy is then a per-directory operation, and a module can be linked or dropped on its own.
+#Sources are picked up from the module directory instead of being listed, so a newer upstream
+#copy only needs a CMake reconfigure. All four targets live in the
+#ThirdParty/RecastNavigation solution folder so the solution root stays readable.
 #
-#InTargetName: CMake target to create.
+#InTargetName: CMake target to create, also the module directory name.
 #InLinkTarget: target this module depends on, empty for none.
-#Remaining arguments: source files. Headers are added for IDE grouping only.
 function(PigeonRecastNavigationModule InTargetName InLinkTarget)
-	add_library(${InTargetName} STATIC ${ARGN})
+	file(GLOB MODULE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${InTargetName}/Source/*.cpp)
+	file(GLOB MODULE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${InTargetName}/Include/*.h)
+	add_library(${InTargetName} STATIC ${MODULE_SOURCES} ${MODULE_HEADERS})
 	#Static runtime, configuration names and warning policy follow the engine target, so
 	#anything linked into PigeonEngine.exe shares one CRT instance.
 	set_target_properties(${InTargetName} PROPERTIES
@@ -25,6 +29,7 @@ function(PigeonRecastNavigationModule InTargetName InLinkTarget)
 		CXX_STANDARD 98
 		CXX_STANDARD_REQUIRED ON
 		CXX_EXTENSIONS OFF
+		FOLDER "ThirdParty/RecastNavigation"
 	)
 	#The upstream sources include their own headers by bare file name ("Recast.h"), so the
 	#module's Include directory has to be on the path. The repository root is added as well
@@ -90,63 +95,13 @@ function(PigeonRecastNavigationModule InTargetName InLinkTarget)
 endfunction()
 
 #Recast: triangle geometry to navmesh
-PigeonRecastNavigationModule(Recast ""
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/Recast.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastAlloc.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastArea.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastAssert.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastContour.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastFilter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastLayers.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastMesh.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastMeshDetail.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastRasterization.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Source/RecastRegion.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Include/Recast.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Include/RecastAlloc.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Recast/Include/RecastAssert.h
-)
+PigeonRecastNavigationModule(Recast "")
 
 #Detour: navmesh storage and path queries
-PigeonRecastNavigationModule(Detour ""
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Source/DetourAlloc.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Source/DetourAssert.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Source/DetourCommon.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Source/DetourNavMesh.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Source/DetourNavMeshBuilder.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Source/DetourNavMeshQuery.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Source/DetourNode.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourAlloc.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourAssert.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourCommon.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourMath.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourNavMesh.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourNavMeshBuilder.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourNavMeshQuery.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourNode.h
-	${CMAKE_CURRENT_SOURCE_DIR}/Detour/Include/DetourStatus.h
-)
+PigeonRecastNavigationModule(Detour "")
 
 #DetourCrowd: local steering and agent avoidance
-PigeonRecastNavigationModule(DetourCrowd Detour
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Source/DetourCrowd.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Source/DetourLocalBoundary.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Source/DetourObstacleAvoidance.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Source/DetourPathCorridor.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Source/DetourPathQueue.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Source/DetourProximityGrid.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Include/DetourCrowd.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Include/DetourLocalBoundary.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Include/DetourObstacleAvoidance.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Include/DetourPathCorridor.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Include/DetourPathQueue.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourCrowd/Include/DetourProximityGrid.h
-)
+PigeonRecastNavigationModule(DetourCrowd Detour)
 
 #DetourTileCache: dynamically rebuilt navmesh tiles
-PigeonRecastNavigationModule(DetourTileCache Detour
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourTileCache/Source/DetourTileCache.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourTileCache/Source/DetourTileCacheBuilder.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourTileCache/Include/DetourTileCache.h
-	${CMAKE_CURRENT_SOURCE_DIR}/DetourTileCache/Include/DetourTileCacheBuilder.h
-)
+PigeonRecastNavigationModule(DetourTileCache Detour)
