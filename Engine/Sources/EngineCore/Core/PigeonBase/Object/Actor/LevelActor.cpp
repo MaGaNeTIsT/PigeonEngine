@@ -24,6 +24,8 @@
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/BezierGrassComponent.h>
+#include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
+#include <PigeonBase/Object/Component/Navigation/NavAgentComponent.h>
 
 //Physics Test
 #include <PhysicsTest/PhysicsTest.h>
@@ -544,6 +546,69 @@ namespace PigeonEngine
 
 			New->SetActorScale(PlaneHalfExtent * 2.f);
 			New->SetActorLocation(Vector3(0.0f, -10.0f, 0.0f));
+		}
+
+		{
+			/*
+			* Navigation volume for the demo level. The bake extent stays zero, which the component
+			* reads as "the whole world": the level is a single open space, so a volume would only
+			* be one more number to keep in sync with the geometry.
+			*
+			* The build waits for the asset queue, so the meshes appended by SponzaScene are in.
+			*/
+			PActor* New = new PActor();
+			POBJ_DEBUGNAME_SET(New, "Navigation Actor");
+
+			New->SetIsTickable(TRUE);
+			this->GetWorld()->AddActor(New);
+
+			PNavMeshComponent* NavMeshComponent = new PNavMeshComponent();
+			New->AddComponent(NavMeshComponent);
+
+			New->SetActorLocation(Vector3(0.0f, 0.0f, 0.0f));
+		}
+
+		{
+			/*
+			* One agent walking from the level centre into the hall, which exercises bake, path query
+			* and path following in a single run. The visual is the same engine cube the floor uses;
+			* the actor origin is the point the navmesh moves and the mesh is lifted by half its
+			* height so the box sits on the surface.
+			*/
+			PActor* New = new PActor();
+			POBJ_DEBUGNAME_SET(New, "Navigation Agent Actor");
+
+			New->SetIsTickable(TRUE);
+			this->GetWorld()->AddActor(New);
+
+			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+			NewStaticMeshComp->SetIsTickable(TRUE);
+			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			const FAssetImportSource ImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/BaseShapes/"))
+				, EString(PE_TEXT("Cube")), EString(PE_TEXT("obj")));
+			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Cube")), &ImportSource);
+
+			const ETransform AgentMeshTransform(Vector3(0.0f, 0.5f, 0.0f), Quaternion::Identity(), Vector3::One());
+			New->AddComponent(NewStaticMeshComp, AgentMeshTransform);
+			New->SetActorScale(Vector3(60.0f, 150.0f, 60.0f));
+
+			PNavAgentComponent* NavAgentComponent = new PNavAgentComponent();
+			// A plain actor component is not attached to the actor's component tree, so the owner
+			// is set here: the same wiring the plane actor uses for its physics component.
+			NavAgentComponent->SetOwnerActor(New);
+			New->AddComponent(NavAgentComponent);
+
+			New->SetActorLocation(Vector3(0.0f, 0.0f, 0.0f));
+
+			// The demo's only reader of the completion callback: it makes the agent's result
+			// visible in the log instead of only in the world.
+			NavAgentComponent->OnMoveFinished = [](ENavigationPathStatusType InStatus) -> void
+			{
+				PE_LOG_LOG(EString(PE_TEXT("Navigation agent finished a move, status "))
+					+ EString::FromInt(static_cast<UINT32>(InStatus)) + EString(PE_TEXT(".")));
+			};
+			NavAgentComponent->MoveToLocation(Vector3(-60.0f, 0.0f, -39.0f));
 		}
 
 #if 0

@@ -19,6 +19,7 @@ namespace PigeonEngine
 #define ENGINE_SET_ERROR                (PE_TEXT("ENGINE_SET_ERROR"))
 #define ENGINE_OCTREE_ERROR             (PE_TEXT("ENGINE_OCTREE_ERROR"))
 #define ENGINE_WORLD_ERROR              (PE_TEXT("ENGINE_WORLD_ERROR"))
+#define ENGINE_NAVIGATION_ERROR         (PE_TEXT("ENGINE_NAVIGATION_ERROR"))
 
 #define ENGINE_FILE_ERROR               (PE_TEXT("File Error"))
 

@@ -8,6 +8,7 @@ A game engine for Windows
 | imgui | Dear ImGui is a bloat-free graphical user interface library. | [imgui](https://github.com/ocornut/imgui) |
 | rapidjson | A fast JSON parser/generator for C++ with both SAX/DOM style API. | [rapidjson](https://github.com/Tencent/rapidjson/) |
 | JoltPhysics | A multi core friendly rigid body physics and collision detection library. | [JoltPhysics](https://github.com/jrouwe/JoltPhysics) |
+| recastnavigation | Navigation mesh generation (Recast) and pathfinding (Detour) toolkit. | [recastnavigation](https://github.com/recastnavigation/recastnavigation) |
 
 ## Engine Preview
 ![Image Example](./Assets/Development/Preview/PigeonEnginePreview.png)
@@ -52,6 +53,13 @@ Actor Component System :\
 JoltPhysic :\
   Body\
   ConvexComponent(Shape Constrain)
+
+### Navigation System
+Navigation :\
+  ENavigationProviderInterface(backend contract)\
+  ENavigationManager(provider lifetime + queries)\
+  PNavMeshComponent(Recast bake volume: settings, build, overlay)\
+  PNavAgentComponent(path following)
 
 ### Render System
 RenderScene :\

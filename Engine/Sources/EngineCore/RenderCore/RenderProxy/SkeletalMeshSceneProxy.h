@@ -64,10 +64,24 @@ namespace PigeonEngine
 		// The bone matrices arrive as snapshot payload rather than as an asset or a value.
 		virtual void	ApplyRuntimePayload(const FPrimitiveRenderSnapshot& InSnapshot) override;
 	protected:
+		// One entry of the fixed palette mapping. Built once per asset pair in ApplyAssets:
+		// the old per-frame path looked up the mesh's bind pose and the skeleton's bone index
+		// by string for every bone, twice per character per update. The pointers stay valid
+		// while the assets do, which is the same lifetime this proxy already relies on.
+		struct FSkeletonPaletteEntry
+		{
+			const Matrix4x4*	BindPose	= nullptr;
+			USHORT				BoneIndex	= 0u;
+			USHORT				UploadSlot	= 0u;
+		};
+	protected:
 		const ESkinnedMeshAsset*		MeshAsset;
 		const ESkeletonAsset*			SkeletonAsset;
 		ESkeletonRenderResource			SkeletonRenderResource;
 		TArray<Matrix4x4>				BoneValues;
+		// Flat bind pose slot -> (skeleton bone, palette slot) map, resolved when the assets
+		// were applied rather than on every skeleton update.
+		TArray<FSkeletonPaletteEntry>	PaletteEntries;
 		// The mesh's cull bound in mesh space. The authored adjustment is what fills it; the
 		// measured-from-bones variant replaces it only when ENGINE_SKELETAL_BOUND_FROM_BONES is
 		// on. Keeping it here makes GetWorldBound eight corner transforms either way.

@@ -6,6 +6,7 @@
 #include <imgui.h>
 #include <PhysicsConfig/PhysicsConfig.h>
 #include <RenderProxy/RenderSingletonObject.h>
+#include <Navigation/NavigationManager.h>
 #include "../Main/MainManager.h"
 
 namespace PigeonEngine
@@ -108,6 +109,26 @@ namespace PigeonEngine
 		if (ImGui::Checkbox("Show Debug Wireframe", &bShowDebugWireframe))
 		{
 			DebugWireframeManager->SetDebugWireframeVisible(bShowDebugWireframe ? TRUE : FALSE);
+		}
+
+		// The navigation overlay is drawn from the manager's cached segment list, so it keeps a
+		// switch of its own: the mesh is usually inspected without the bounds and collision
+		// overlays the checkbox above controls.
+		ENavigationManager* NavigationManager = ENavigationManager::GetManagerSingleton();
+		bool bShowNavigation = (NavigationManager->IsDebugDrawEnabled() != FALSE);
+		if (ImGui::Checkbox("Show Navigation", &bShowNavigation))
+		{
+			NavigationManager->SetDebugDrawEnabled(bShowNavigation ? TRUE : FALSE);
+		}
+		if (bShowNavigation)
+		{
+			bool bFullNavigation = (NavigationManager->GetDebugDrawMode() == ENavigationDebugModeType::NAVIGATION_DEBUG_FULL);
+			if (ImGui::Checkbox("  Full NavMesh Polygons", &bFullNavigation))
+			{
+				NavigationManager->SetDebugDrawMode(bFullNavigation
+					? ENavigationDebugModeType::NAVIGATION_DEBUG_FULL
+					: ENavigationDebugModeType::NAVIGATION_DEBUG_BOUNDARY);
+			}
 		}
 
 		if (ImGui::Button("Apply") && ResolutionCount > 0)

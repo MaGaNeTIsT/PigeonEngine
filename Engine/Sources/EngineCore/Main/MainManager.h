@@ -136,6 +136,10 @@ namespace PigeonEngine
 
 		class EWorldManager*                m_WorldManager					= nullptr;
 		class EWorldTickManager*			m_WorldTickManager				= nullptr;
+		// Owns the navigation providers the world's navigation volumes published. Initialized
+		// after the world and torn down after it, so a provider never outlives the actors that
+		// asked for it.
+		class ENavigationManager*			m_NavigationManager				= nullptr;
 		TFunction<void(FLOAT)>				m_PrePhysicsFixedTickHandler;
 		TFunction<void(FLOAT)>				m_PhysicsFixedTickHandler;
 		TFunction<void(FLOAT)>				m_PostPhysicsFixedTickHandler;

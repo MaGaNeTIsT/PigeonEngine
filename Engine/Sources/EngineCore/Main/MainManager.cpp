@@ -17,6 +17,7 @@
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/World/WorldManager.h"
 #include "PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h"
+#include "Navigation/NavigationManager.h"
 
 #include "Development/Message/Message.h"
 
@@ -84,6 +85,7 @@ namespace PigeonEngine
 
 		m_WorldManager = EWorldManager::GetManagerSingleton();
 		m_WorldTickManager = EWorldTickManager::GetManagerSingleton();
+		m_NavigationManager = ENavigationManager::GetManagerSingleton();
 		m_PrePhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
 		{
 			if (m_WorldManager && m_WorldManager->GetWorld())
@@ -240,6 +242,7 @@ namespace PigeonEngine
 		m_WindowTimer.Init();
 		m_WorldTickManager->Initialize();
 		m_WorldManager->Initialize();
+		m_NavigationManager->Initialize();
 
 		m_PhysicsManager->Initialize();
 	}
@@ -257,6 +260,9 @@ namespace PigeonEngine
 
 		m_PhysicsManager->ShutDown();
 		m_WorldManager->ShutDown();
+		// After the world: the components that published navigation data are gone by now, and
+		// whatever is left is released here rather than during world teardown.
+		m_NavigationManager->ShutDown();
 		m_WorldTickManager->ShutDown();
 
 #if _EDITOR_ONLY

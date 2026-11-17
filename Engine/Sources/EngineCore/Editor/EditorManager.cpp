@@ -11,11 +11,37 @@
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/Component/SceneComponent.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
+#include <RenderProxy/RenderSingletonObject.h>
+#include "Navigation/NavigationManager.h"
 #include <imgui.h>
 
 namespace PigeonEngine
 {
 #if _EDITOR_ONLY
+	// The navmesh overlay. The manager caches the segment list and only rebuilds it when a
+	// provider is published or the draw mode changes, so this is a loop over memory that
+	// already exists rather than a walk of every polygon each frame.
+	static void DrawNavigationDebug()
+	{
+		ENavigationManager* NavigationManager = ENavigationManager::GetManagerSingleton();
+		if (!NavigationManager->IsDebugDrawEnabled())
+		{
+			return;
+		}
+
+		const TArray<Vector3>& Segments = NavigationManager->GetDebugLineSegments();
+		if (Segments.Num<UINT32>() < 2u)
+		{
+			return;
+		}
+
+		RDebugWireframePrimitiveManager* WireframeManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+		for (UINT32 Index = 0u, SegmentNum = Segments.Num<UINT32>() / 2u; Index < SegmentNum; Index++)
+		{
+			WireframeManager->DrawSingleLine(Segments[Index * 2u], Segments[Index * 2u + 1u], Color4::Red());
+		}
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<EEditorManager, EManagerBase>();
@@ -175,6 +201,9 @@ namespace PigeonEngine
 		// Draw bounds for all actors
 		TArray<PActor*> AllActors = m_WorldManager->GetWorld()->GetAllActors();
 		DrawObjectBounds(AllActors);
+
+		// Draw the baked navigation mesh, if any volume published one.
+		DrawNavigationDebug();
 
 		// Draw translation gizmo for selected component
 		if (m_SelectedComponent)

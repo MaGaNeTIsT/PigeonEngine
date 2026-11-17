@@ -1,5 +1,6 @@
 #include "SkeletalMeshSceneProxy.h"
 
+#include <Development/Profiler.h>
 #include <ShaderAsset/ShaderInstance.h>
 #include <Shader/ShaderAssetBinding.h>
 #include <MeshAsset/MeshAsset.h>
@@ -143,6 +144,34 @@ namespace PigeonEngine
 			}
 		}
 
+		// Resolve the palette mapping once, while the asset pair is known. Every later
+		// skeleton update then walks a flat array instead of doing two string TMap lookups per
+		// bone; a mapping whose name is missing on either side is dropped here.
+		PaletteEntries.Empty();
+		if ((!!MeshAsset) && (!!SkeletonAsset) && (SkeletonAsset->IsResourceValid()))
+		{
+			const ESkinnedMesh* SkinnedMesh = MeshAsset->GetStoragedResource();
+			const ESkeleton* Skeleton = SkeletonAsset->GetStoragedResource();
+			if ((!!SkinnedMesh) && (!!Skeleton))
+			{
+				const ESkinnedMesh::EBindPoseValue& BindPoses = SkinnedMesh->GetBindPoseValue();
+				const ESkinnedMesh::EBindPoseIndex& BindPoseMappings = SkinnedMesh->GetBindPoseIndex();
+				for (ESkinnedMesh::EBindPoseIndex::TConstIterator It = BindPoseMappings.Begin(); It != BindPoseMappings.End(); It++)
+				{
+					const Matrix4x4* BindPose = BindPoses.FindValueAsPtr(It->first);
+					const USHORT BoneIndex = Skeleton->GetBoneIndex(It->first);
+					if ((!!BindPose) && (BoneIndex < Skeleton->GetBoneCount()))
+					{
+						FSkeletonPaletteEntry Entry;
+						Entry.BindPose = BindPose;
+						Entry.BoneIndex = BoneIndex;
+						Entry.UploadSlot = It->second;
+						PaletteEntries.Add(Entry);
+					}
+				}
+			}
+		}
+
 		// The base half stores the report itself and rebuilds the pass slots, which is also what
 		// resolves the program the skin variant compiles to.
 		RMeshSceneProxy::ApplyAssets(InAssets);
@@ -232,6 +261,8 @@ namespace PigeonEngine
 
 	void RSkeletalMeshSceneProxy::UpdateSkeletonRenderResource(const TArray<Matrix4x4>& InBoneToRootMatrices)
 	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_SKELETON_PALETTE);
+
 		// The upload runs on every back end: the buffers it fills are bound through the shader's
 		// own plan, which both back ends read the same way.
 		if (!!SkeletonAsset)
@@ -248,56 +279,39 @@ namespace PigeonEngine
 				const ESkinnedMesh* SkinnedMesh = MeshAsset->GetStoragedResource();
 				Check((!!SkinnedMesh), (ENGINE_RENDER_CORE_ERROR));
 				const ESkinnedMesh::EBindPoseValue& BindPoses = SkinnedMesh->GetBindPoseValue();
-				const ESkinnedMesh::EBindPoseIndex& BindPoseMappings = SkinnedMesh->GetBindPoseIndex();
 
 				Check((BindPoses.Num() <= InBoneToRootMatrices.Num()), (ENGINE_RENDER_CORE_ERROR));
-				Check(((BindPoses.Num() > 0) && (BindPoses.Num() == BindPoseMappings.Num())), (ENGINE_RENDER_CORE_ERROR));
+				Check(((BindPoses.Num() > 0) && (BindPoses.Num() == SkinnedMesh->GetBindPoseIndex().Num())), (ENGINE_RENDER_CORE_ERROR));
 				Check((BindPoses.Num() == BoneValues.Num()), (ENGINE_RENDER_CORE_ERROR));
 
-#if _EDITOR_ONLY
-				BOOL32 CheckBoneUpdate = FALSE;
-#endif
-				for (auto It = BindPoseMappings.Begin(); It != BindPoseMappings.End(); It++)
+				// The name lookup happened once in ApplyAssets; this is the flat walk it bought.
+				if (PaletteEntries.Num() > 0)
 				{
-					const Matrix4x4* BindPosePtr = BindPoses.FindValueAsPtr(It->first);
-					const USHORT BoneIndex = Skeleton->GetBoneIndex(It->first);
-#if _EDITOR_ONLY
-					if ((!!BindPosePtr) && (BoneIndex < InBoneToRootMatrices.Num<USHORT>()))
-#endif
+					for (UINT32 EntryIndex = 0u, EntryNum = PaletteEntries.Num<UINT32>(); EntryIndex < EntryNum; EntryIndex++)
 					{
+						const FSkeletonPaletteEntry& Entry = PaletteEntries[EntryIndex];
+						if ((Entry.BoneIndex < InBoneToRootMatrices.Num<USHORT>()) && (Entry.UploadSlot < BoneValues.Num<USHORT>()))
+						{
 #if (_USE_MATRIX_FOR_BONE_TO_ROOT)
-						BoneValues[It->second] = (InBoneToRootMatrices[BoneIndex]) * (*BindPosePtr);
+							BoneValues[Entry.UploadSlot] = (InBoneToRootMatrices[Entry.BoneIndex]) * (*Entry.BindPose);
 #else
-						BoneValues[It->second] = (InBoneToRootMatrices[BoneIndex].Transpose()) * (*BindPosePtr);
+							BoneValues[Entry.UploadSlot] = (InBoneToRootMatrices[Entry.BoneIndex].Transpose()) * (*Entry.BindPose);
 #endif
-#if _EDITOR_ONLY
-						CheckBoneUpdate = TRUE;
-#endif
+						}
 					}
-#if _EDITOR_ONLY
+					// Off by default: the authored BoundScale / BoundExtend pair is the shipping
+					// bound, and this per bone accumulation is a validation aid rather than a cost
+					// every animated character pays.
+					if PE_CONSTEXPR (EEngineSettings::ENGINE_SKELETAL_BOUND_FROM_BONES != FALSE)
+					{
+						UpdateSkinnedLocalBoundFromBones(*SkinnedMesh);
+					}
 					else
 					{
-						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Skeleton render resource is not valid."));
+						// The authored pair is O(1) to apply and reading it here keeps the proxy in
+						// step with an asset whose adjustment changed after it was installed.
+						SkinnedLocalBound = SkinnedMesh->GetAdjustedBoundAABB();
 					}
-#endif
-				}
-				// Off by default: the authored BoundScale / BoundExtend pair is the shipping
-				// bound, and this per bone accumulation is a validation aid rather than a cost
-				// every animated character pays.
-				if PE_CONSTEXPR (EEngineSettings::ENGINE_SKELETAL_BOUND_FROM_BONES != FALSE)
-				{
-					UpdateSkinnedLocalBoundFromBones(*SkinnedMesh);
-				}
-				else
-				{
-					// The authored pair is O(1) to apply and reading it here keeps the proxy in
-					// step with an asset whose adjustment changed after it was installed.
-					SkinnedLocalBound = SkinnedMesh->GetAdjustedBoundAABB();
-				}
-#if _EDITOR_ONLY
-				if (CheckBoneUpdate)
-#endif
-				{
 					SkeletonRenderResource.UpdateRenderResource(BoneValues);
 				}
 #if _EDITOR_ONLY

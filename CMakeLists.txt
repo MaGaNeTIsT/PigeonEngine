@@ -285,6 +285,20 @@ target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 )
 target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE ${JOLT_PROJECT_NAME})
 
+#Pigeon Engine Third Party Recast Navigation
+#Only the four runtime modules are vendored; the engine's navigation wrapper lives in
+#EngineThirdParty/RecastNavigation and is the only place that includes their headers.
+add_subdirectory(${THIRD_PARTY_SOURCE_DIR}/RecastNavigation/)
+target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
+	${THIRD_PARTY_SOURCE_DIR}/RecastNavigation/
+)
+target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
+	Recast
+	Detour
+	DetourCrowd
+	DetourTileCache
+)
+
 #Output Settings
 foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
 	string(TOUPPER ${CONFIG} CONFIG_UPPER)

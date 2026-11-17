@@ -82,6 +82,10 @@ namespace PigeonEngine
 	// do not look like the same problem.
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_SKELETON_PALETTE	= PE_TEXT("RenderThread.SkeletonPalette");
 
+	// Navmesh bake. Synchronous on the game thread today, so the row is a direct child of the
+	// game thread and its cost is visible as a frame spike rather than as steady work.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_NAVIGATION				= PE_TEXT("GameThread.Navigation");
+
 	// Render-thread sub-brackets. The whole-thread row above says how long the frame took;
 	// these say where it went. They are separate rows rather than nested children because the
 	// profiler records each scope as an independent trace.
