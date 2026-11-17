@@ -79,7 +79,9 @@ namespace PigeonEngine
 		bool bShowNavigation = (bDebugDrawEnabled != FALSE);
 		if (ImGui::Checkbox("Include In Overlay", &bShowNavigation))
 		{
-			bDebugDrawEnabled = (bShowNavigation ? TRUE : FALSE);
+			// Through the setter: it forwards the flag to the manager, so the overlay drops this
+			// provider's lines in the same frame instead of waiting for the next build.
+			SetDebugDrawEnabled((bShowNavigation ? TRUE : FALSE));
 		}
 
 		if (LastBuildStats.PolygonCount > 0u)

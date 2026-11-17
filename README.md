@@ -40,6 +40,7 @@ Asset System :\
   Mesh Asset(FBX OBJ... -> PAsset)\
   Skeleton Asset(FBX... -> PAsset)\
   Animation Asset(FBX... -> PAsset)\
+  NavMesh Asset(baked Recast tiles and tile cache layers -> PAsset)\
   Shader Asset(HLSL CSO... -> PAsset)
 
 ### Actor System
@@ -56,10 +57,11 @@ JoltPhysic :\
 
 ### Navigation System
 Navigation :\
-  ENavigationProviderInterface(backend contract)\
-  ENavigationManager(provider lifetime + queries)\
-  PNavMeshComponent(Recast bake volume: settings, build, overlay)\
-  PNavAgentComponent(path following)
+  ENavigationProviderInterface(backend contract: build, queries, persistence, obstacles, crowd)\
+  ENavigationManager(provider lifetime, async bake worker, obstacle and crowd replay)\
+  PNavMeshComponent(tiled or single tile Recast bake, dynamic obstacles, asset save/load, overlay)\
+  PNavAgentComponent(path following, or crowd steering for local avoidance)\
+  PNavObstacleComponent(dynamic obstacle for a tiled volume)
 
 ### Render System
 RenderScene :\

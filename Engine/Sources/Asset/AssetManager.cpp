@@ -81,6 +81,7 @@ namespace PigeonEngine
 			case EAssetType::ASSET_TYPE_ANIM_MONTAGE:
 			case EAssetType::ASSET_TYPE_ANIM_NOTIFY:
 			case EAssetType::ASSET_TYPE_SKELETON:
+			case EAssetType::ASSET_TYPE_NAV_MESH:
 				return TRUE;
 			default:
 				return FALSE;
@@ -397,6 +398,13 @@ namespace PigeonEngine
 				ImTextureID TextureId = EngineTextureToImgui(Asset);
 				TypeThumbNails.Add(EAssetType::ASSET_TYPE_MESH, TextureId);
 			}	
+		}
+
+		// navmesh: reuses the mesh icon. A navigation mesh is geometry, and no dedicated icon
+		// exists; adding one is a content change, not a code change.
+		if (ImTextureID* MeshThumbnail = TypeThumbNails.FindValueAsPtr(EAssetType::ASSET_TYPE_MESH))
+		{
+			TypeThumbNails.Add(EAssetType::ASSET_TYPE_NAV_MESH, *MeshThumbnail);
 		}
 
 		// shader
@@ -1580,6 +1588,11 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	void EAssetManager::RefreshAssetTree()
+	{
+		RefreshContentTree();
+	}
+
 	void EAssetManager::RefreshContentTree()
 	{
 		const EString CurrentPath = (Current ? Current->GetPath() : EString());
@@ -1673,6 +1686,10 @@ namespace PigeonEngine
 		case ASSET_TYPE_ANIM_NOTIFY	:
 			{
 				return "AnimNotify";
+			}
+		case ASSET_TYPE_NAV_MESH	:
+			{
+				return "NavMesh";
 			}
 		case ASSET_TYPE_COUNT	:
 			{

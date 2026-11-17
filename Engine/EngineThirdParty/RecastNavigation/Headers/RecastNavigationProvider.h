@@ -7,6 +7,7 @@
 // Detour types this header stores pointers to. They are declared at global scope because
 // that is where the vendored library declares them; declaring them here rather than
 // including a Detour header is what keeps the third party type out of gameplay code.
+class dtCrowd;
 class dtNavMesh;
 class dtNavMeshQuery;
 
@@ -53,6 +54,18 @@ namespace PigeonEngine
 		// so values above that are clamped, not rejected.
 		UINT32	MaxVertsPerPoly = 6u;
 		/*
+		* Cells along one tile edge. Zero builds a single tile: cheaper, simpler, and enough for a
+		* static level. Anything else builds a tile grid together with the tile cache behind it,
+		* which is what lets a dynamic obstacle rebuild only the tiles it overlaps.
+		*/
+		UINT32	TileSizeCells = 0u;
+		// Upper bound on the layers one grid cell may produce. A room with several stacked floors
+		// has more than one layer per cell.
+		UINT32	MaxLayersPerTile = 16u;
+		// Agents the crowd can steer at once. Zero disables the crowd, and agents then have to be
+		// moved by the caller.
+		UINT32	MaxCrowdAgents = 64u;
+		/*
 		* Reverses the winding of every source triangle before rasterization.
 		*
 		* Recast marks a triangle walkable when the normal of (v1 - v0) x (v2 - v0) points up.
@@ -73,6 +86,10 @@ namespace PigeonEngine
 	* class builds a single tile navmesh from a world space triangle soup and answers queries
 	* through dtNavMeshQuery, translating every result back into engine types.
 	*/
+	// Tile cache state, defined in the .cpp because everything in it derives from Detour
+	// interfaces. The header only holds the pointer.
+	struct FRecastNavigationTileCache;
+
 	class ERecastNavigationProvider final : public ENavigationProviderInterface
 	{
 	public:
@@ -87,6 +104,7 @@ namespace PigeonEngine
 		virtual BOOL32	Build(const ENavigationSourceGeometry& InGeometry, ENavigationBuildStats& OutStats) override;
 		virtual BOOL32	IsReady() const override;
 		virtual const EBoundAABB& GetBounds() const override;
+		virtual UINT32	GetCapabilities() const override;
 
 		virtual BOOL32	FindNearestPoint(const Vector3& InLocation, const Vector3& InHalfExtents, const ENavigationQueryFilter& InFilter, ENavigationProjectionResult& OutResult) const override;
 		virtual BOOL32	FindPath(const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, ENavigationPath& OutPath) const override;
@@ -96,6 +114,25 @@ namespace PigeonEngine
 
 		virtual void	CollectDebugLines(ENavigationDebugModeType InMode, TArray<Vector3>& OutLineSegments) const override;
 
+		virtual void	Tick(FLOAT InDeltaTime) override;
+		virtual UINT32	GetContentRevision() const override;
+
+		virtual ENavigationObstacleHandle	AddCylinderObstacle(const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight) override;
+		virtual ENavigationObstacleHandle	AddBoxObstacle(const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians) override;
+		virtual void						RemoveObstacle(ENavigationObstacleHandle InHandle) override;
+
+		virtual ENavigationCrowdAgentHandle	AddCrowdAgent(const Vector3& InPosition, const ENavigationAgentSettings& InSettings) override;
+		virtual void						RemoveCrowdAgent(ENavigationCrowdAgentHandle InHandle) override;
+		virtual BOOL32						RequestCrowdAgentMove(ENavigationCrowdAgentHandle InHandle, const Vector3& InTarget) override;
+		virtual void						StopCrowdAgent(ENavigationCrowdAgentHandle InHandle) override;
+		virtual BOOL32						GetCrowdAgentState(ENavigationCrowdAgentHandle InHandle, ENavigationCrowdAgentState& OutState) const override;
+
+		// Container: signature, version, dtNavMeshParams, bounds, one entry per tile, then the
+		// tile cache section (empty until dynamic obstacles are built). ImportData copies the
+		// bytes into Detour memory, so the caller keeps ownership of InData.
+		virtual BOOL32	ExportData(TArray<UINT8>& OutData) const override;
+		virtual BOOL32	ImportData(const UINT8* InData, UINT32 InSize) override;
+
 	public:
 		PE_NODISCARD const ENavMeshBuildSettings&	GetSettings() const;
 		void										SetSettings(const ENavMeshBuildSettings& InSettings);
@@ -103,13 +140,24 @@ namespace PigeonEngine
 	private:
 		// Releases the navmesh and the query. Called before every rebuild and on destruction.
 		void	ReleaseNavigationData();
+		// Crowd slot for a handle, or -1. Slots shuffle when an agent leaves, so the handle is the
+		// agent's user data rather than its index.
+		PE_NODISCARD INT32	FindCrowdAgentIndex(ENavigationCrowdAgentHandle InHandle) const;
 
 	private:
 		ENavMeshBuildSettings	Settings;
 		dtNavMesh*				NavMesh = nullptr;
 		dtNavMeshQuery*			NavMeshQuery = nullptr;
+		dtCrowd*				Crowd = nullptr;
+		UINT32					NextCrowdAgentId = 1u;
+		FRecastNavigationTileCache*	TileCache = nullptr;
 		EBoundAABB				Bounds = EBoundAABB(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f), FALSE);
 		BOOL32					bReady = FALSE;
+		// Bumped whenever the polygons change without a new build (a rebuilt tile).
+		UINT32					ContentRevision = 0u;
+		// Obstacle adds and removes since the last tick. Each one may rebuild tiles, which is what
+		// invalidates cached debug lines and paths.
+		UINT32					PendingObstacleChanges = 0u;
 	};
 
 }  // namespace PigeonEngine

@@ -27,6 +27,10 @@ namespace PigeonEngine
 	public:
 		virtual ~ENavigationProviderInterface() {}
 
+		// Bit set of ENavigationCapabilityType. Read by gameplay and the editor before offering
+		// an operation the backend may not implement.
+		virtual UINT32 GetCapabilities() const = 0;
+
 		// Replaces every existing polygon with the ones generated from InGeometry. A failed
 		// build leaves the provider in whatever state it was in before the call, so a
 		// caller can retry without losing the previous mesh.
@@ -51,6 +55,68 @@ namespace PigeonEngine
 		// Appends world space line segments, two entries per segment. The backend writes
 		// positions only; the editor decides colors and how to draw them.
 		virtual void CollectDebugLines(ENavigationDebugModeType InMode, TArray<Vector3>& OutLineSegments) const = 0;
+
+		/*
+		* Per frame work, driven by ENavigationManager::Tick before the world ticks. Local avoidance
+		* and dynamic obstacle rebuilds happen here; a backend with neither does nothing.
+		*/
+		virtual void Tick(FLOAT InDeltaTime) { (void)InDeltaTime; }
+		/*
+		* Changes whenever the polygons change without a new build: a rebuilt tile, for example.
+		* The editor caches its debug lines against this, so an obstacle that bent the mesh shows up
+		* without rebuilding the overlay every frame.
+		*/
+		virtual UINT32 GetContentRevision() const { return 0u; }
+
+		/*
+		* Runtime obstacles. A backend without NAVIGATION_CAPABILITY_OBSTACLES returns
+		* NavigationInvalidObstacleHandle. The handles are only valid for the provider that created
+		* them; a rebuilt provider starts with none.
+		*/
+		virtual ENavigationObstacleHandle AddCylinderObstacle(const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight)
+		{
+			(void)InCenter; (void)InRadius; (void)InHeight;
+			return NavigationInvalidObstacleHandle;
+		}
+		virtual ENavigationObstacleHandle AddBoxObstacle(const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians)
+		{
+			(void)InCenter; (void)InHalfExtents; (void)InYawRadians;
+			return NavigationInvalidObstacleHandle;
+		}
+		virtual void RemoveObstacle(ENavigationObstacleHandle InHandle) { (void)InHandle; }
+
+		/*
+		* Local avoidance. A backend with NAVIGATION_CAPABILITY_CROWD registers agents here and
+		* steers them itself; the caller only reads back the resulting pose. Detour's crowd is the
+		* reference implementation, which is why the settings type is the same one a directly moved
+		* agent uses.
+		*/
+		virtual ENavigationCrowdAgentHandle AddCrowdAgent(const Vector3& InPosition, const ENavigationAgentSettings& InSettings)
+		{
+			(void)InPosition; (void)InSettings;
+			return NavigationInvalidCrowdAgentHandle;
+		}
+		virtual void RemoveCrowdAgent(ENavigationCrowdAgentHandle InHandle) { (void)InHandle; }
+		virtual BOOL32 RequestCrowdAgentMove(ENavigationCrowdAgentHandle InHandle, const Vector3& InTarget)
+		{
+			(void)InHandle; (void)InTarget;
+			return FALSE;
+		}
+		virtual void StopCrowdAgent(ENavigationCrowdAgentHandle InHandle) { (void)InHandle; }
+		virtual BOOL32 GetCrowdAgentState(ENavigationCrowdAgentHandle InHandle, ENavigationCrowdAgentState& OutState) const
+		{
+			(void)InHandle; (void)OutState;
+			return FALSE;
+		}
+
+		/*
+		* Persistence. The bytes are the backend's own container: the asset stores them verbatim
+		* next to the provider name, so a backend swap only changes which name the asset names.
+		* ExportData fails when there is nothing ready to export; ImportData may be called on a
+		* fresh provider and must leave it unready when the data does not validate.
+		*/
+		virtual BOOL32 ExportData(TArray<UINT8>& OutData) const = 0;
+		virtual BOOL32 ImportData(const UINT8* InData, UINT32 InSize) = 0;
 	};
 
 }  // namespace PigeonEngine

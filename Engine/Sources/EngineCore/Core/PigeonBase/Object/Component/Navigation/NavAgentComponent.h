@@ -9,29 +9,6 @@ namespace PigeonEngine
 {
 
 	/*
-	* Movement settings for one navmesh agent. All lengths are in engine units (centimeters)
-	* and speeds in centimeters per second.
-	*
-	* Radius and Height are only used to project the agent onto the mesh; they do not have to
-	* match the bake settings, but a smaller radius than the bake used lets the agent cut
-	* corners the mesh was not eroded for.
-	*/
-	struct ENavigationAgentSettings
-	{
-	public:
-		FLOAT	Radius = 35.0f;
-		FLOAT	Height = 150.0f;
-		FLOAT	MoveSpeed = 300.0f;
-		FLOAT	TurnSpeedDegreesPerSecond = 240.0f;
-		// Distance at which a corner counts as reached. Too small and the agent jitters around
-		// a corner it can never exactly hit; too large and it cuts the path short.
-		FLOAT	AcceptanceRadius = 20.0f;
-		// Minimum time between two path queries. A target that moves every frame would
-		// otherwise run a graph search every frame per agent.
-		FLOAT	RepathInterval = 0.5f;
-	};
-
-	/*
 	* Moves the owner actor along a path found by the navigation manager.
 	*
 	* The component is backend agnostic: it asks ENavigationManager for a path and works with
@@ -58,16 +35,30 @@ namespace PigeonEngine
 		PE_NODISCARD const ENavigationAgentSettings&	GetSettings() const;
 		void											SetSettings(const ENavigationAgentSettings& InSettings);
 
+		/*
+		* When on, the agent is registered with the backend's local avoidance and steered there
+		* instead of following a path here. The radius, height, acceleration and avoidance settings
+		* then apply; a directly moved agent is projected with the bake settings instead.
+		*/
+		PE_NODISCARD BOOL32	GetUseCrowd() const;
+		void				SetUseCrowd(const BOOL32& InUseCrowd);
+
 		// Invoked once per finished move with COMPLETE, PARTIAL or INVALID.
 		TFunction<void(ENavigationPathStatusType)>	OnMoveFinished;
 
 	private:
+		// Crowd mode: register with the local avoidance, hand over the target, and drive the owner
+		// from the pose the crowd reports.
+		void	TickCrowd(FLOAT InDeltaTime);
 		// Publishes CurrentPath for MoveTarget. Leaves the request pending when no navigation
 		// data exists yet; finishes the move when the query itself fails.
 		void	RequestPath(const Vector3& InTarget);
 		void	FollowPath(FLOAT InDeltaTime);
 		void	FinishMove(ENavigationPathStatusType InStatus);
 		PE_NODISCARD PSceneComponent*	GetOwnerRootComponent() const;
+
+	protected:
+		virtual void	RemovedFromScene() override;
 		PE_NODISCARD Vector3			GetAgentLocation() const;
 
 	private:
@@ -80,6 +71,10 @@ namespace PigeonEngine
 		UINT32						NextCornerIndex = 0u;
 		ENavigationPathStatusType	LastMoveStatus = ENavigationPathStatusType::NAVIGATION_PATH_INVALID;
 		FLOAT						SecondsSincePathRequest = 0.0f;
+		BOOL32						bUseCrowd = FALSE;
+		// TRUE while the crowd holds the current target. Without it a freshly registered agent,
+		// whose target state starts as "none", would look like a finished move.
+		BOOL32						bCrowdMoveRequested = FALSE;
 
 #if _EDITOR_ONLY
 	public:

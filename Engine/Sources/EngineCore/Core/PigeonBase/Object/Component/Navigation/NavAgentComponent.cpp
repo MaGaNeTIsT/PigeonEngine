@@ -13,9 +13,28 @@
 namespace PigeonEngine
 {
 
-	// A direction shorter than this has no usable yaw: the agent is either standing still or
-	// climbing straight up.
-	PE_CONSTEXPR_STATIC FLOAT NavigationAgentMinDirectionLengthSquared = 1.0e-4f;
+	// Horizontal speed below which the actor keeps its facing. The velocity of a crowd agent that is
+	// settling on its target, or being nudged by a neighbour, is small and its direction flips from
+	// frame to frame; turning towards it would spin the actor in place instead of letting it stand.
+	PE_CONSTEXPR_STATIC FLOAT NavigationAgentMinTurnSpeedSquared = 25.0f;
+
+	// Turns the actor towards InDirection at the configured rate. Yaw only: a navigation agent that
+	// inherits pitch from a step looks broken, and the movement itself already follows the surface.
+	static void FaceDirection(PActor& InActor, const Vector3& InDirection, const FLOAT InTurnSpeedDegreesPerSecond, const FLOAT InDeltaTime)
+	{
+		const FLOAT HorizontalSpeedSquared = (InDirection.x * InDirection.x) + (InDirection.z * InDirection.z);
+		if (HorizontalSpeedSquared <= NavigationAgentMinTurnSpeedSquared)
+		{
+			return;
+		}
+		const FLOAT TargetYaw = EMath::RadiansToDegrees(EMath::Atan2(InDirection.x, InDirection.z));
+		const Euler CurrentEuler = MakeEuler(InActor.GetActorRotation());
+		const FLOAT MaxTurn = InTurnSpeedDegreesPerSecond * InDeltaTime;
+		const FLOAT YawDifference = Euler::NormalizeAxis(TargetYaw - CurrentEuler.Yaw);
+		Euler NewEuler = CurrentEuler;
+		NewEuler.Yaw = CurrentEuler.Yaw + EMath::Clamp(YawDifference, -MaxTurn, MaxTurn);
+		InActor.SetActorRotation(MakeQuaternion(NewEuler));
+	}
 
 	static void RegisterClassTypes()
 	{
@@ -39,6 +58,29 @@ namespace PigeonEngine
 		return Settings;
 	}
 
+	BOOL32 PNavAgentComponent::GetUseCrowd() const
+	{
+		return bUseCrowd;
+	}
+
+	void PNavAgentComponent::SetUseCrowd(const BOOL32& InUseCrowd)
+	{
+		if (bUseCrowd == InUseCrowd)
+		{
+			return;
+		}
+		// Switching modes drops whatever the previous mode had in flight.
+		if (bUseCrowd)
+		{
+			ENavigationManager::GetManagerSingleton()->UnregisterCrowdAgent(GetUniqueID());
+		}
+		bUseCrowd = InUseCrowd;
+		bCrowdMoveRequested = FALSE;
+		bHasPath = FALSE;
+		bHasMoveRequest = FALSE;
+		CurrentPath.Reset();
+	}
+
 	void PNavAgentComponent::SetSettings(const ENavigationAgentSettings& InSettings)
 	{
 		Settings = InSettings;
@@ -53,6 +95,11 @@ namespace PigeonEngine
 
 	void PNavAgentComponent::StopMovement()
 	{
+		if (bUseCrowd)
+		{
+			ENavigationManager::GetManagerSingleton()->StopCrowdAgent(GetUniqueID());
+			bCrowdMoveRequested = FALSE;
+		}
 		bHasMoveRequest = FALSE;
 		bHasPath = FALSE;
 		NextCornerIndex = 0u;
@@ -84,6 +131,12 @@ namespace PigeonEngine
 	{
 		PActorComponent::Tick(InDeltaTime);
 
+		if (bUseCrowd)
+		{
+			TickCrowd(InDeltaTime);
+			return;
+		}
+
 		SecondsSincePathRequest += InDeltaTime;
 
 		if (bHasMoveRequest)
@@ -101,6 +154,55 @@ namespace PigeonEngine
 		if (bHasPath)
 		{
 			FollowPath(InDeltaTime);
+		}
+	}
+
+	void PNavAgentComponent::TickCrowd(FLOAT InDeltaTime)
+	{
+		PActor* OwnerActor = GetOwnerActor();
+		if (!OwnerActor)
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: the agent component has no owner actor, so it cannot move.")));
+			FinishMove(ENavigationPathStatusType::NAVIGATION_PATH_INVALID);
+			return;
+		}
+
+		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
+		// Idempotent: it recreates the agent after its volume was rebuilt, which is what keeps a
+		// crowd agent walking when the navmesh is rebuilt underneath it.
+		if (!Manager->RegisterCrowdAgent(GetUniqueID(), OwnerActor->GetActorWorldLocation(), Settings))
+		{
+			return;
+		}
+
+		if (bHasMoveRequest)
+		{
+			bHasMoveRequest = FALSE;
+			if (!Manager->RequestCrowdAgentMove(GetUniqueID(), MoveTarget))
+			{
+				FinishMove(ENavigationPathStatusType::NAVIGATION_PATH_INVALID);
+				return;
+			}
+			bCrowdMoveRequested = TRUE;
+		}
+
+		ENavigationCrowdAgentState AgentState;
+		if (!Manager->GetCrowdAgentState(GetUniqueID(), AgentState))
+		{
+			return;
+		}
+
+		OwnerActor->SetActorLocation(AgentState.Position);
+		FaceDirection(*OwnerActor, AgentState.Velocity, Settings.TurnSpeedDegreesPerSecond, InDeltaTime);
+
+		if ((bCrowdMoveRequested) && (AgentState.bTargetReached))
+		{
+			// Detour does not clear a reached target by itself: it only slows the agent down as the
+			// remaining distance shrinks, so an agent left with its target keeps circling the goal
+			// polygon. Resetting it collapses the desired velocity to zero and the agent stands.
+			Manager->StopCrowdAgent(GetUniqueID());
+			bCrowdMoveRequested = FALSE;
+			FinishMove((AgentState.bPartial) ? ENavigationPathStatusType::NAVIGATION_PATH_PARTIAL : ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE);
 		}
 	}
 
@@ -204,19 +306,7 @@ namespace PigeonEngine
 		// here because its parent frame differs from the getter's for a nested actor.
 		OwnerActor->SetActorLocation(CurrentLocation);
 
-		const FLOAT HorizontalLengthSquared = (MoveDirection.x * MoveDirection.x) + (MoveDirection.z * MoveDirection.z);
-		if (HorizontalLengthSquared > NavigationAgentMinDirectionLengthSquared)
-		{
-			// Yaw only: a navmesh agent that inherits pitch from a step would look broken, and the
-			// movement itself already follows the surface height.
-			const FLOAT TargetYaw = EMath::RadiansToDegrees(EMath::Atan2(MoveDirection.x, MoveDirection.z));
-			const Euler CurrentEuler = MakeEuler(OwnerActor->GetActorRotation());
-			const FLOAT MaxTurn = Settings.TurnSpeedDegreesPerSecond * InDeltaTime;
-			const FLOAT YawDifference = Euler::NormalizeAxis(TargetYaw - CurrentEuler.Yaw);
-			Euler NewEuler = CurrentEuler;
-			NewEuler.Yaw = CurrentEuler.Yaw + EMath::Clamp(YawDifference, -MaxTurn, MaxTurn);
-			OwnerActor->SetActorRotation(MakeQuaternion(NewEuler));
-		}
+		FaceDirection(*OwnerActor, MoveDirection, Settings.TurnSpeedDegreesPerSecond, InDeltaTime);
 
 		if (NextCornerIndex >= CurrentPath.Num())
 		{
@@ -224,10 +314,17 @@ namespace PigeonEngine
 		}
 	}
 
+	void PNavAgentComponent::RemovedFromScene()
+	{
+		ENavigationManager::GetManagerSingleton()->UnregisterCrowdAgent(GetUniqueID());
+		PActorComponent::RemovedFromScene();
+	}
+
 	void PNavAgentComponent::FinishMove(ENavigationPathStatusType InStatus)
 	{
 		bHasPath = FALSE;
 		bHasMoveRequest = FALSE;
+		bCrowdMoveRequested = FALSE;
 		NextCornerIndex = 0u;
 		CurrentPath.Reset();
 		LastMoveStatus = InStatus;

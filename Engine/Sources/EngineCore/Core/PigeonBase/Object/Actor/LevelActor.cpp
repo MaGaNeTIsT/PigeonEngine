@@ -26,6 +26,7 @@
 #include <PigeonBase/Object/Component/Primitive/BezierGrassComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavAgentComponent.h>
+#include <PigeonBase/Object/Component/Navigation/NavObstacleComponent.h>
 
 //Physics Test
 #include <PhysicsTest/PhysicsTest.h>
@@ -563,20 +564,26 @@ namespace PigeonEngine
 			this->GetWorld()->AddActor(New);
 
 			PNavMeshComponent* NavMeshComponent = new PNavMeshComponent();
+			// Tiled, because that is what puts a tile cache behind the mesh and lets the demo's moving
+			// obstacle rebuild only the tiles it touches.
+			ENavMeshBuildSettings DemoSettings;
+			DemoSettings.TileSizeCells = 64u;
+			NavMeshComponent->SetBuildSettings(DemoSettings);
 			New->AddComponent(NavMeshComponent);
+			// The baked mesh, when one has been saved from the editor. A missing file is reported
+			// once and the component bakes from the world instead.
+			NavMeshComponent->RequestNavMeshAsset(EString(PE_TEXT("Demo_NavMesh")));
 
 			New->SetActorLocation(Vector3(0.0f, 0.0f, 0.0f));
 		}
 
 		{
 			/*
-			* One agent walking from the level centre into the hall, which exercises bake, path query
-			* and path following in a single run. The visual is the same engine cube the floor uses;
-			* the actor origin is the point the navmesh moves and the mesh is lifted by half its
-			* height so the box sits on the surface.
+			* Dynamic obstacle that patrols across the agent's route. Its box is registered with the
+			* tile cache, so the affected tiles rebuild as it moves and the agent paths around it.
 			*/
 			PActor* New = new PActor();
-			POBJ_DEBUGNAME_SET(New, "Navigation Agent Actor");
+			POBJ_DEBUGNAME_SET(New, "Navigation Obstacle Actor");
 
 			New->SetIsTickable(TRUE);
 			this->GetWorld()->AddActor(New);
@@ -589,26 +596,82 @@ namespace PigeonEngine
 				, EString(PE_TEXT("Cube")), EString(PE_TEXT("obj")));
 			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Cube")), &ImportSource);
 
-			const ETransform AgentMeshTransform(Vector3(0.0f, 0.5f, 0.0f), Quaternion::Identity(), Vector3::One());
-			New->AddComponent(NewStaticMeshComp, AgentMeshTransform);
-			New->SetActorScale(Vector3(60.0f, 150.0f, 60.0f));
+			const ETransform ObstacleMeshTransform(Vector3(0.0f, 0.5f, 0.0f), Quaternion::Identity(), Vector3::One());
+			New->AddComponent(NewStaticMeshComp, ObstacleMeshTransform);
+			New->SetActorScale(Vector3(80.0f, 150.0f, 80.0f));
 
-			PNavAgentComponent* NavAgentComponent = new PNavAgentComponent();
-			// A plain actor component is not attached to the actor's component tree, so the owner
-			// is set here: the same wiring the plane actor uses for its physics component.
-			NavAgentComponent->SetOwnerActor(New);
-			New->AddComponent(NavAgentComponent);
+			PNavObstacleComponent* NewObstacleComp = new PNavObstacleComponent();
+			NewObstacleComp->SetShapeType(ENavigationObstacleShapeType::NAVIGATION_OBSTACLE_BOX);
+			NewObstacleComp->SetBoxHalfExtents(Vector3(40.0f, 75.0f, 40.0f));
+			New->AddComponent(NewObstacleComp);
 
-			New->SetActorLocation(Vector3(0.0f, 0.0f, 0.0f));
+			New->SetActorLocation(Vector3(-40.0f, 0.0f, -26.0f));
+			DemoObstacleActor = New;
+		}
 
-			// The demo's only reader of the completion callback: it makes the agent's result
-			// visible in the log instead of only in the world.
-			NavAgentComponent->OnMoveFinished = [](ENavigationPathStatusType InStatus) -> void
+		{
+			/*
+			* Four agents walking into the hall from different corners, all aiming at the same point.
+			* They use crowd steering, so they queue and step around each other where their routes
+			* converge instead of overlapping. The visual is the same engine cube the floor uses; the
+			* actor origin is the point the navmesh moves and the mesh is lifted by half its height so
+			* the box sits on the surface.
+			*/
+			const Vector3 AgentSpawns[] =
 			{
-				PE_LOG_LOG(EString(PE_TEXT("Navigation agent finished a move, status "))
-					+ EString::FromInt(static_cast<UINT32>(InStatus)) + EString(PE_TEXT(".")));
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(220.0f, 0.0f, 160.0f),
+				Vector3(-220.0f, 0.0f, 200.0f),
+				Vector3(320.0f, 0.0f, -260.0f)
 			};
-			NavAgentComponent->MoveToLocation(Vector3(-160.0f, 0.0f, -390.0f));
+			// One target per agent, spread over the hall: pointing all four at the exact same spot
+			// would have them push each other around it forever instead of settling.
+			const Vector3 AgentTargets[] =
+			{
+				Vector3(-160.0f, 0.0f, -390.0f),
+				Vector3(-10.0f, 0.0f, -390.0f),
+				Vector3(-160.0f, 0.0f, -240.0f),
+				Vector3(-310.0f, 0.0f, -390.0f)
+			};
+
+			for (UINT32 AgentIndex = 0u, AgentNum = static_cast<UINT32>(sizeof(AgentSpawns) / sizeof(AgentSpawns[0])); AgentIndex < AgentNum; AgentIndex++)
+			{
+				PActor* New = new PActor();
+				POBJ_DEBUGNAME_SET(New, "Navigation Agent Actor");
+
+				New->SetIsTickable(TRUE);
+				this->GetWorld()->AddActor(New);
+
+				PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+				NewStaticMeshComp->SetIsTickable(TRUE);
+				const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+				const FAssetImportSource ImportSource = MakeImportSource(
+					AssetBasePath + EString(PE_TEXT("EngineModels/BaseShapes/"))
+					, EString(PE_TEXT("Cube")), EString(PE_TEXT("obj")));
+				NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Cube")), &ImportSource);
+
+				const ETransform AgentMeshTransform(Vector3(0.0f, 0.5f, 0.0f), Quaternion::Identity(), Vector3::One());
+				New->AddComponent(NewStaticMeshComp, AgentMeshTransform);
+				New->SetActorScale(Vector3(60.0f, 150.0f, 60.0f));
+
+				PNavAgentComponent* NavAgentComponent = new PNavAgentComponent();
+				// A plain actor component is not attached to the actor's component tree, so the owner
+				// is set here: the same wiring the plane actor uses for its physics component.
+				NavAgentComponent->SetOwnerActor(New);
+				NavAgentComponent->SetUseCrowd(TRUE);
+				New->AddComponent(NavAgentComponent);
+
+				New->SetActorLocation(AgentSpawns[AgentIndex]);
+
+				// The demo's only reader of the completion callback: it makes the agent's result
+				// visible in the log instead of only in the world.
+				NavAgentComponent->OnMoveFinished = [](ENavigationPathStatusType InStatus) -> void
+				{
+					PE_LOG_LOG(EString(PE_TEXT("Navigation agent finished a move, status "))
+						+ EString::FromInt(static_cast<UINT32>(InStatus)) + EString(PE_TEXT(".")));
+				};
+				NavAgentComponent->MoveToLocation(AgentTargets[AgentIndex]);
+			}
 		}
 
 #if 0
@@ -689,10 +752,16 @@ namespace PigeonEngine
 
 	void PLevelActor::UserTick(FLOAT deltaTime)
 	{
-		// Nothing to do here: the demo's assets are bound to its components, and each component retries
-		// its own pending bindings on its own tick (PSceneComponent::AddDeferredApply). That is also
-		// what keeps the scene setup above free of per-actor bookkeeping.
-		(void)deltaTime;
+		// The demo's assets are bound to its components, and each component retries its own pending
+		// bindings on its own tick (PSceneComponent::AddDeferredApply). What is left is the one piece
+		// of scene choreography: swinging the navigation obstacle across the agent's route so the
+		// tile cache has to rebuild while the agent walks.
+		if (!!DemoObstacleActor)
+		{
+			DemoObstacleTimer += deltaTime;
+			const FLOAT Offset = EMath::Sin(DemoObstacleTimer * 0.7f) * 90.0f;
+			DemoObstacleActor->SetActorLocation(Vector3(-40.0f, 0.0f, -26.0f + Offset));
+		}
 	}
 
 

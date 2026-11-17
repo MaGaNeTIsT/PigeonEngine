@@ -31,8 +31,10 @@ namespace PigeonEngine
 	public:
 		// Name the backend registers itself under in ENavigationProviderRegistry.
 		PE_NODISCARD virtual EName GetProviderName() const = 0;
-		// Collects the source geometry, bakes it and publishes the result to the manager.
-		// Returns FALSE when the bake did not produce a usable provider.
+		// Starts publishing this volume. A backend that can answer immediately (importing a baked
+		// asset) does so and returns TRUE; one that has to bake queues the work and returns FALSE,
+		// with the result published by ENavigationManager::Tick. The returned stats are only
+		// meaningful when this returns TRUE.
 		virtual BOOL32	BuildNavigation(ENavigationBuildStats& OutStats) = 0;
 
 		// The provider currently registered for this component, or null before the first build.

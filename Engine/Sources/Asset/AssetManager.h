@@ -24,7 +24,7 @@ namespace PigeonEngine
 		PE_NODISCARD EString GetPath() const;
 	private:
 		EString Path;
-		EAssetType Type;
+		EAssetType Type = EAssetType::ASSET_TYPE_UNKNOWN;
 	};
 
 	class EFolderTreeNode
@@ -76,6 +76,10 @@ namespace PigeonEngine
 		// editor links here instead of maintaining a second group list.
 		void OpenSkeletonSlotGroups(const EString& InAssetFullPath);
 
+	public:
+		// Rescans the content tree. Called by a family manager that wrote a new asset outside the
+		// browser's own actions, such as a navigation mesh bake.
+		void RefreshAssetTree();
 	protected:
 		void GenerateContentBrowser();
 		ImTextureID GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File = nullptr);

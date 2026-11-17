@@ -21,6 +21,8 @@ namespace PigeonEngine
 		ASSET_TYPE_ANIM_STATE_MACHINE,
 		ASSET_TYPE_ANIM_MONTAGE,
 		ASSET_TYPE_ANIM_NOTIFY,
+		// Baked navigation mesh: settings plus the backend's opaque data blob.
+		ASSET_TYPE_NAV_MESH,
 		ASSET_TYPE_COUNT,
 	};
 

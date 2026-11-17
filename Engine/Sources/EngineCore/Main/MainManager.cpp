@@ -18,6 +18,7 @@
 #include "PigeonBase/Object/World/WorldManager.h"
 #include "PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h"
 #include "Navigation/NavigationManager.h"
+#include <NavMeshAsset/NavMeshAsset.h>
 
 #include "Development/Message/Message.h"
 
@@ -178,7 +179,8 @@ namespace PigeonEngine
 		RegisterAssetManager(EAnimStateMachineManager::GetManagerSingleton());
 		RegisterAssetManager(EAnimMontageManager::GetManagerSingleton());
 		RegisterAssetManager(EAnimNotifyManager::GetManagerSingleton());
-		RegisterAssetManager(EShaderStageAssetManager::GetManagerSingleton());
+		RegisterAssetManager(ENavMeshAssetManager::GetManagerSingleton());
+	RegisterAssetManager(EShaderStageAssetManager::GetManagerSingleton());
 		RegisterAssetManager(EShaderAssetManager::GetManagerSingleton());
 		// Registered last so it is torn down first: the instances it owns are released before
 		// the shader assets they were assembled from, and before the render resource manager
@@ -454,7 +456,12 @@ namespace PigeonEngine
 
 		// Async with render thread
 		m_GameTimer->Update();
-		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+		// Navigation runs before the world: a bake that finished while the previous frame rendered is
+		// published here, and the per provider work (local avoidance, dynamic obstacle rebuilds) is
+		// advanced with this frame's delta, so agents read this frame's state rather than last frame's.
+		const FLOAT FrameDeltaTime = static_cast<FLOAT>(m_GameTimer->GetDeltaTime());
+		m_NavigationManager->Tick(FrameDeltaTime);
+		m_WorldManager->GetWorld()->Tick(FrameDeltaTime);
 		{
 			// Physics runs on the game thread today, so this bracket nests inside
 			// GameThread. The scope stays on the call, not on the thread: moving
