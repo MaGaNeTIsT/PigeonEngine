@@ -1,6 +1,6 @@
 #include "GPUProfiler.h"
 
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 
 #include <RHI/IRRHIDevice.h>
 #include <RHI/IRCommandList.h>

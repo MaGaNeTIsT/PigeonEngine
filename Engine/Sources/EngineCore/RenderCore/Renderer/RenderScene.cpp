@@ -12,15 +12,13 @@
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
 #include <RenderProxy/BezierGrassSceneProxy.h>
-#include <RenderProxy/FluidWaterSceneProxy.h>
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkyLightComponent.h>
 #include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/BezierGrassComponent.h>
-#include <PigeonBase/Object/Component/Primitive/FluidWaterComponent.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
 #endif
 
@@ -143,7 +141,7 @@ namespace PigeonEngine
 		{
 			TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if ((!!TempParams) && (!TempMatrices))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check update camera render state failed"));
@@ -417,6 +415,10 @@ namespace PigeonEngine
 				RPrimitiveSceneProxy* SceneProxy = RPrimitiveSceneProxyFactory::Create(Snapshot->ProxyTypeName);
 				if (SceneProxy)
 				{
+					// The scene pointer is part of the setup contract: a proxy that resolves
+					// another primitive (a water surface reading its simulation body) reads it
+					// while ApplyAssets/ApplyValues run, before the proxy is registered.
+					SceneProxy->SetRenderScene(Scene);
 					SceneProxy->SetupProxy(*Snapshot);
 					Scene->AddPrimitive_RenderThread(SceneProxy);
 				}
@@ -484,12 +486,12 @@ namespace PigeonEngine
 				}
 			});
 	}
-	RPrimitiveSceneProxy* RScene::FindPrimitiveProxy(const ObjectIdentityType& InIdentity)const
+	RPrimitiveSceneProxy* RScene::FindPrimitiveProxy(const ObjectIdentityType& InIdentity) const
 	{
 		RPrimitiveSceneProxy* const* Found = PrimitiveProxyMapping.FindValueAsPtr(InIdentity);
 		return (Found ? (*Found) : nullptr);
 	}
-	const TArray<RPrimitiveSceneProxy*>& RScene::GetPrimitives()const
+	const TArray<RPrimitiveSceneProxy*>& RScene::GetPrimitives() const
 	{
 		return Primitives;
 	}
@@ -507,6 +509,10 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("A primitive scene proxy is already registered under that identity."));
 			return;
 		}
+		// A proxy resolves other primitives through the scene, so the scene pointer is part of
+		// being registered. The generic path is the only one that builds a proxy this way; the
+		// typed light and view paths still keep their own references.
+		InSceneProxy->SetRenderScene(this);
 		PrimitiveProxyMapping.Add(Identity, InSceneProxy);
 		Primitives.Add(InSceneProxy);
 	}
@@ -517,6 +523,7 @@ namespace PigeonEngine
 			return;
 		}
 		PrimitiveProxyMapping.Remove(InSceneProxy->GetPrimitiveIdentity());
+		InSceneProxy->SetRenderScene(nullptr);
 		for (UINT32 Index = 0u, Num = Primitives.Num<UINT32>(); Index < Num; Index++)
 		{
 			if (Primitives[Index] == InSceneProxy)
@@ -682,7 +689,7 @@ namespace PigeonEngine
 	{
 		return RenderAddCommands[FrontSlotIndex];
 	}
-	const RCommand& RScene::GetAddCommandsForRender()const
+	const RCommand& RScene::GetAddCommandsForRender() const
 	{
 		return RenderAddCommands[FrontSlotIndex];
 	}
@@ -690,7 +697,7 @@ namespace PigeonEngine
 	{
 		return RenderRemoveCommands[FrontSlotIndex];
 	}
-	const RCommand& RScene::GetRemoveCommandsForRender()const
+	const RCommand& RScene::GetRemoveCommandsForRender() const
 	{
 		return RenderRemoveCommands[FrontSlotIndex];
 	}
@@ -698,7 +705,7 @@ namespace PigeonEngine
 	{
 		return RenderUpdateCommands[FrontSlotIndex];
 	}
-	const RCommand& RScene::GetUpdateCommandsForRender()const
+	const RCommand& RScene::GetUpdateCommandsForRender() const
 	{
 		return RenderUpdateCommands[FrontSlotIndex];
 	}
@@ -712,7 +719,7 @@ namespace PigeonEngine
 	{
 		return RenderSceneOctree;
 	}
-	const ROctree& RScene::GetSceneOctree()const
+	const ROctree& RScene::GetSceneOctree() const
 	{
 		return RenderSceneOctree;
 	}
@@ -720,7 +727,7 @@ namespace PigeonEngine
 	{
 		return ViewProxies;
 	}
-	const RSceneProxyMapping<RViewProxy>& RScene::GetViewProxies()const
+	const RSceneProxyMapping<RViewProxy>& RScene::GetViewProxies() const
 	{
 		return ViewProxies;
 	}
@@ -728,7 +735,7 @@ namespace PigeonEngine
 	{
 		return SkyLightProxies;
 	}
-	const RSceneProxyMapping<RSkyLightSceneProxy>& RScene::GetSkyLightProxies()const
+	const RSceneProxyMapping<RSkyLightSceneProxy>& RScene::GetSkyLightProxies() const
 	{
 		return SkyLightProxies;
 	}
@@ -736,7 +743,7 @@ namespace PigeonEngine
 	{
 		return DirectionalLightSceneProxies;
 	}
-	const RSceneProxyMapping<RDirectionalLightSceneProxy>& RScene::GetDirectionalLightSceneProxies()const
+	const RSceneProxyMapping<RDirectionalLightSceneProxy>& RScene::GetDirectionalLightSceneProxies() const
 	{
 		return DirectionalLightSceneProxies;
 	}
@@ -752,17 +759,9 @@ namespace PigeonEngine
 	{
 		return BezierGrassSceneProxies;
 	}
-	const RSceneProxyMapping<RBezierGrassSceneProxy>& RScene::GetBezierGrassSceneProxies()const
+	const RSceneProxyMapping<RBezierGrassSceneProxy>& RScene::GetBezierGrassSceneProxies() const
 	{
 		return BezierGrassSceneProxies;
-	}
-	RSceneProxyMapping<RFluidWaterSceneProxy>& RScene::GetFluidWaterSceneProxies()
-	{
-		return FluidWaterSceneProxies;
-	}
-	const RSceneProxyMapping<RFluidWaterSceneProxy>& RScene::GetFluidWaterSceneProxies()const
-	{
-		return FluidWaterSceneProxies;
 	}
 	void RScene::AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
@@ -893,59 +892,6 @@ namespace PigeonEngine
 #endif
 		(void)InSceneProxy;
 		(void)InIsAdd;
-	}
-
-	void RScene::AddFluidWater(PFluidWaterComponent* InComponent)
-	{
-		RScene* Scene = this;
-		RFluidWaterSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
-
-		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
-		const BOOL32 bCastShadow = InComponent->IsCastShadow();
-		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
-		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
-			InComponent->GetComponentWorldLocation(),
-			InComponent->GetComponentWorldRotation(),
-			InComponent->GetComponentWorldScale());
-		const EShaderInstance* TempMatAsset = InComponent->GetMaterialInstance();
-
-		EnqueueAddCommand(
-			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempMatAsset]()->void
-			{
-				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices, TempMatAsset);
-				delete TempMatrices;
-				Scene->AddOrRemoveFluidWater_RenderThread(SceneProxy, TRUE);
-			});
-	}
-
-	void RScene::RemoveFluidWater(PFluidWaterComponent* InComponent)
-	{
-		RScene* Scene = this;
-		RFluidWaterSceneProxy* SceneProxy = InComponent->SceneProxy;
-		InComponent->SceneProxy = nullptr;
-		EnqueueRemoveCommand(
-			[Scene, SceneProxy]()->void
-			{
-				Scene->AddOrRemoveFluidWater_RenderThread(SceneProxy, FALSE);
-				delete SceneProxy;
-			});
-	}
-
-	void RScene::UpdateFluidWater(PFluidWaterComponent* InComponent)
-	{
-
-	}
-
-	void RScene::AddOrRemoveFluidWater_RenderThread(RFluidWaterSceneProxy* InSceneProxy, BOOL32 InIsAdd)
-	{
-		if (InIsAdd)
-		{
-			FluidWaterSceneProxies.AddSceneProxy(InSceneProxy);
-		}
-		else
-		{
-			FluidWaterSceneProxies.RemoveSceneProxy(InSceneProxy);
-		}
 	}
 
 };

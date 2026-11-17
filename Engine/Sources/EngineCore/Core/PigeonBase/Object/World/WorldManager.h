@@ -13,14 +13,14 @@ namespace PigeonEngine
 
 		void Init();
 		void Uninit();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		void EditorInit();
 		void EditorUpdate();
 
 #endif
 	public:
-		PE_NODISCARD PWorld* GetWorld()const;
+		PE_NODISCARD PWorld* GetWorld() const;
 	private:
 		PWorld*  World;
 

@@ -67,14 +67,14 @@ namespace PigeonEngine
 	class PSkyLightComponent : public PSceneComponent
 	{
 	public:
-		const ETextureCubeAsset*	GetCubeMapAsset()const;
-		const Color3&				GetLightAdjust()const;
+		const ETextureCubeAsset*	GetCubeMapAsset() const;
+		const Color3&				GetLightAdjust() const;
 		// The mean luminance in cd/m2 the environment is adjusted to. The render side normalizes
 		// the cube by its own mean first, so this is a physical mean rather than a scale.
-		FLOAT						GetIntensity()const;
+		FLOAT						GetIntensity() const;
 		// The prefiltered environment cube's base resolution, as a power of two. 8 means 256.
-		PE_NODISCARD UINT32			GetPrefilterResolutionExponent()const noexcept;
-		PE_NODISCARD FLOAT			GetCubeMeanLinearLuminance()const noexcept;
+		PE_NODISCARD UINT32			GetPrefilterResolutionExponent() const noexcept;
+		PE_NODISCARD FLOAT			GetCubeMeanLinearLuminance() const noexcept;
 	public:
 		void	SetCubeMapAsset(const ETextureCubeAsset* InCubeMapAsset);
 		/*
@@ -109,22 +109,22 @@ namespace PigeonEngine
 	public:
 		RSkyLightSceneProxy*			SceneProxy;	// ONLY render thread could use this proxy pointer.
 	public:
-		UINT8							GetUpdateRenderState()const;
+		UINT8							GetUpdateRenderState() const;
 		RSkyLightSceneProxy*			CreateSceneProxy();
-		virtual void					CreateRenderState()override;
-		virtual void					DestroyRenderState()override;
-		virtual void					SendUpdateRenderState()override;
+		virtual void					CreateRenderState() override;
+		virtual void					DestroyRenderState() override;
+		virtual void					SendUpdateRenderState() override;
 	protected:
 		void			MarkAsDirty(PSkyLightUpdateState InState);
-		virtual void	MarkRenderTransformAsDirty()override;
-		virtual void	MarkRenderStateAsDirty()override;
-		virtual void	CleanMarkRenderStateDirty()override;
+		virtual void	MarkRenderTransformAsDirty() override;
+		virtual void	MarkRenderStateAsDirty() override;
+		virtual void	CleanMarkRenderStateDirty() override;
 	protected:
 		UINT8							UpdateState;
 		// Render proxy functions END
 
 	// ImGui
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 #endif

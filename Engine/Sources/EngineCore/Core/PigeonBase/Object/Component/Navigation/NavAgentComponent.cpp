@@ -5,7 +5,7 @@
 #include <Navigation/NavigationProviderInterface.h>
 #include <PigeonBase/Object/Actor.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
 #include <imgui.h>
 #endif
@@ -337,7 +337,7 @@ namespace PigeonEngine
 		}
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PNavAgentComponent::GenerateComponentDetail()
 	{
 		PActorComponent::GenerateComponentDetail();

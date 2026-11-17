@@ -7,7 +7,7 @@
 #include <Navigation/NavigationProviderInterface.h>
 #include <Navigation/NavigationProviderRegistry.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <AssetManager.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #include <imgui.h>
@@ -417,7 +417,7 @@ namespace PigeonEngine
 		NextAttemptSeconds = WaitedSeconds + NavigationAutoBuildRetrySeconds;
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	ERecastNavigationProvider* PNavMeshComponent::BakeProviderSynchronously(ENavigationBuildStats& OutStats)
 	{
 		OutStats = ENavigationBuildStats();
@@ -493,7 +493,7 @@ namespace PigeonEngine
 		bHasBuilt = TRUE;
 		// The browser only rescans after its own create/rename/delete actions, so a bake has to
 		// ask for one explicitly.
-		EAssetManager::GetManagerSingleton()->RefreshAssetTree();
+		EAssetManager::GetManagerSingleton()->RequestContentRefresh();
 		return TRUE;
 	}
 

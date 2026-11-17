@@ -86,18 +86,18 @@ namespace PigeonEngine
 
 		// Render proxy functions START
 	public:
-		virtual void    CreateRenderState()override;
-		virtual void    DestroyRenderState()override;
-		virtual void    SendUpdateRenderState()override;
+		virtual void    CreateRenderState() override;
+		virtual void    DestroyRenderState() override;
+		virtual void    SendUpdateRenderState() override;
 	protected:
-		virtual void    MarkRenderTransformAsDirty()override;
-		virtual void    MarkRenderStateAsDirty()override;
-		virtual void    CleanMarkRenderStateDirty()override;
+		virtual void    MarkRenderTransformAsDirty() override;
+		virtual void    MarkRenderStateAsDirty() override;
+		virtual void    CleanMarkRenderStateDirty() override;
 		virtual void    MarkMaterialAsDirty();
 		virtual void    CleanMaterialDirty();
 		// Render proxy functions END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void    GenerateComponentDetail() override;
 #endif
@@ -105,7 +105,7 @@ namespace PigeonEngine
 		BOOL32                              bMaterialDirty;
 		BOOL32                              bCastShadow;
 		BOOL32                              bReceiveShadow;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		BOOL8                               bEmitShaderDebug = FALSE;
 #endif
 

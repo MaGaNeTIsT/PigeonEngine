@@ -5,7 +5,7 @@
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #include "PigeonBase/Object/World/World.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -126,7 +126,7 @@ namespace PigeonEngine
 	PController::~PController()
 	{
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	PEditorController::PEditorController()
 	{
 		PController();

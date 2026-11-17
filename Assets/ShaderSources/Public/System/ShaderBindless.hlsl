@@ -49,28 +49,28 @@
 // material, so the index is uniform across a draw, and the wrapper is what the compiler's own
 // internal error trips over. A resource that ever needs per invocation indices would have to bring
 // the wrapper back after that compiler defect is gone.
-#define PE_BINDLESS_TEX1D_CAST(InElementType, InIndex)				((Texture1D<InElementType>)ResourceDescriptorHeap[InIndex])
-#define PE_BINDLESS_TEX2D_CAST(InElementType, InIndex)				((Texture2D<InElementType>)ResourceDescriptorHeap[InIndex])
-#define PE_BINDLESS_TEX3D_CAST(InElementType, InIndex)				((Texture3D<InElementType>)ResourceDescriptorHeap[InIndex])
-#define PE_BINDLESS_TEXCUBE_CAST(InElementType, InIndex)			((TextureCube<InElementType>)ResourceDescriptorHeap[InIndex])
-#define PE_BINDLESS_TEX2DARRAY_CAST(InElementType, InIndex)			((Texture2DArray<InElementType>)ResourceDescriptorHeap[InIndex])
-#define PE_BINDLESS_BUFFER_CAST(InElementType, InIndex)				((Buffer<InElementType>)ResourceDescriptorHeap[InIndex])
-#define PE_BINDLESS_STRUCTURED_BUFFER_CAST(InElementType, InIndex)	((StructuredBuffer<InElementType>)ResourceDescriptorHeap[InIndex])
-#define PE_BINDLESS_BYTE_ADDRESS_BUFFER_CAST(InIndex)				((ByteAddressBuffer)ResourceDescriptorHeap[InIndex])
+#define PE_BINDLESS_TEX1D_CAST(__ElementType, __Index)				((Texture1D<__ElementType>)ResourceDescriptorHeap[__Index])
+#define PE_BINDLESS_TEX2D_CAST(__ElementType, __Index)				((Texture2D<__ElementType>)ResourceDescriptorHeap[__Index])
+#define PE_BINDLESS_TEX3D_CAST(__ElementType, __Index)				((Texture3D<__ElementType>)ResourceDescriptorHeap[__Index])
+#define PE_BINDLESS_TEXCUBE_CAST(__ElementType, __Index)			((TextureCube<__ElementType>)ResourceDescriptorHeap[__Index])
+#define PE_BINDLESS_TEX2DARRAY_CAST(__ElementType, __Index)			((Texture2DArray<__ElementType>)ResourceDescriptorHeap[__Index])
+#define PE_BINDLESS_BUFFER_CAST(__ElementType, __Index)				((Buffer<__ElementType>)ResourceDescriptorHeap[__Index])
+#define PE_BINDLESS_STRUCTURED_BUFFER_CAST(__ElementType, __Index)	((StructuredBuffer<__ElementType>)ResourceDescriptorHeap[__Index])
+#define PE_BINDLESS_BYTE_ADDRESS_BUFFER_CAST(__Index)				((ByteAddressBuffer)ResourceDescriptorHeap[__Index])
 // SamplerDescriptorHeap takes the same shape as the resource heap: cast, and let the result land in
 // a typed operand before anything is called on it.
-#define PE_BINDLESS_SAMPLER_CAST(InIndex)		((SamplerState)SamplerDescriptorHeap[InIndex])
+#define PE_BINDLESS_SAMPLER_CAST(__Index)		((SamplerState)SamplerDescriptorHeap[__Index])
 
 // One binding name per declared resource, written by the compiler: PE_BINDING_<ResourceName>
 // resolves to the heap index cast to the right object type when this build made the resource index
 // driven, and to the resource itself when it did not. The two levels are what lets the name be
 // pasted and then expanded, and that is what keeps every call below identical on both paths.
-#define PE_BINDING_OF_IMPL(InName)		PE_BINDING_##InName
-#define PE_BINDING_OF(InName)			PE_BINDING_OF_IMPL(InName)
+#define PE_BINDING_OF_IMPL(__Name)		PE_BINDING_##__Name
+#define PE_BINDING_OF(__Name)			PE_BINDING_OF_IMPL(__Name)
 
-#define PE_TEXTURE_BINDING(InName)		PE_BINDING_OF(InName)
-#define PE_BUFFER_BINDING(InName)		PE_BINDING_OF(InName)
-#define PE_SAMPLER_BINDING(InName)		PE_BINDING_OF(InName)
+#define PE_TEXTURE_BINDING(__Name)		PE_BINDING_OF(__Name)
+#define PE_BUFFER_BINDING(__Name)		PE_BINDING_OF(__Name)
+#define PE_SAMPLER_BINDING(__Name)		PE_BINDING_OF(__Name)
 
 // Every access goes through one small function, because the object a binding name yields has to
 // land in a typed operand before a member is called on it: this compiler rejects a member call
@@ -79,83 +79,83 @@
 // arrives here, and the same functions serve both paths - a register bound object is passed in
 // exactly like a heap index is.
 template<typename TElement>
-TElement	PEBindlessSampleTex2D(Texture2D<TElement> InTexture, SamplerState InSampler, float2 InUV)
+TElement	PEBindlessSampleTex2D(Texture2D<TElement> InTexture, SamplerState __Sampler, float2 __UV)
 {
-	return InTexture.Sample(InSampler, InUV);
+	return InTexture.Sample(__Sampler, __UV);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTex2DLevel(Texture2D<TElement> InTexture, SamplerState InSampler, float2 InUV, float InLod)
+TElement	PEBindlessSampleTex2DLevel(Texture2D<TElement> InTexture, SamplerState __Sampler, float2 __UV, float __Lod)
 {
-	return InTexture.SampleLevel(InSampler, InUV, InLod);
+	return InTexture.SampleLevel(__Sampler, __UV, __Lod);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTex2DBias(Texture2D<TElement> InTexture, SamplerState InSampler, float2 InUV, float InBias)
+TElement	PEBindlessSampleTex2DBias(Texture2D<TElement> InTexture, SamplerState __Sampler, float2 __UV, float __Bias)
 {
-	return InTexture.SampleBias(InSampler, InUV, InBias);
+	return InTexture.SampleBias(__Sampler, __UV, __Bias);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTex2DGrad(Texture2D<TElement> InTexture, SamplerState InSampler, float2 InUV, float2 InDdx, float2 InDdy)
+TElement	PEBindlessSampleTex2DGrad(Texture2D<TElement> InTexture, SamplerState __Sampler, float2 __UV, float2 __Ddx, float2 __Ddy)
 {
-	return InTexture.SampleGrad(InSampler, InUV, InDdx, InDdy);
+	return InTexture.SampleGrad(__Sampler, __UV, __Ddx, __Ddy);
 }
 template<typename TElement>
-TElement	PEBindlessLoadTex2D(Texture2D<TElement> InTexture, int3 InCoord)
+TElement	PEBindlessLoadTex2D(Texture2D<TElement> InTexture, int3 __Coord)
 {
-	return InTexture.Load(InCoord);
+	return InTexture.Load(__Coord);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTex3D(Texture3D<TElement> InTexture, SamplerState InSampler, float3 InUVW)
+TElement	PEBindlessSampleTex3D(Texture3D<TElement> InTexture, SamplerState __Sampler, float3 __UVW)
 {
-	return InTexture.Sample(InSampler, InUVW);
+	return InTexture.Sample(__Sampler, __UVW);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTex3DLevel(Texture3D<TElement> InTexture, SamplerState InSampler, float3 InUVW, float InLod)
+TElement	PEBindlessSampleTex3DLevel(Texture3D<TElement> InTexture, SamplerState __Sampler, float3 __UVW, float __Lod)
 {
-	return InTexture.SampleLevel(InSampler, InUVW, InLod);
+	return InTexture.SampleLevel(__Sampler, __UVW, __Lod);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTexCube(TextureCube<TElement> InTexture, SamplerState InSampler, float3 InDirection)
+TElement	PEBindlessSampleTexCube(TextureCube<TElement> InTexture, SamplerState __Sampler, float3 __Direction)
 {
-	return InTexture.Sample(InSampler, InDirection);
+	return InTexture.Sample(__Sampler, __Direction);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTexCubeLevel(TextureCube<TElement> InTexture, SamplerState InSampler, float3 InDirection, float InLod)
+TElement	PEBindlessSampleTexCubeLevel(TextureCube<TElement> InTexture, SamplerState __Sampler, float3 __Direction, float __Lod)
 {
-	return InTexture.SampleLevel(InSampler, InDirection, InLod);
+	return InTexture.SampleLevel(__Sampler, __Direction, __Lod);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTex2DArray(Texture2DArray<TElement> InTexture, SamplerState InSampler, float3 InUV)
+TElement	PEBindlessSampleTex2DArray(Texture2DArray<TElement> InTexture, SamplerState __Sampler, float3 __UV)
 {
-	return InTexture.Sample(InSampler, InUV);
+	return InTexture.Sample(__Sampler, __UV);
 }
 template<typename TElement>
-TElement	PEBindlessSampleTex2DArrayLevel(Texture2DArray<TElement> InTexture, SamplerState InSampler, float3 InUV, float InLod)
+TElement	PEBindlessSampleTex2DArrayLevel(Texture2DArray<TElement> InTexture, SamplerState __Sampler, float3 __UV, float __Lod)
 {
-	return InTexture.SampleLevel(InSampler, InUV, InLod);
+	return InTexture.SampleLevel(__Sampler, __UV, __Lod);
 }
 
-#define PE_SAMPLE_TEX2D(InName, InSampler, InUV) \
-	PEBindlessSampleTex2D(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUV)
-#define PE_SAMPLE_TEX2D_LEVEL(InName, InSampler, InUV, InLod) \
-	PEBindlessSampleTex2DLevel(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUV, InLod)
-#define PE_SAMPLE_TEX2D_BIAS(InName, InSampler, InUV, InBias) \
-	PEBindlessSampleTex2DBias(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUV, InBias)
-#define PE_SAMPLE_TEX2D_GRAD(InName, InSampler, InUV, InDdx, InDdy) \
-	PEBindlessSampleTex2DGrad(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUV, InDdx, InDdy)
-#define PE_LOAD_TEX2D(InName, InCoord) \
-	PEBindlessLoadTex2D(PE_TEXTURE_BINDING(InName), InCoord)
-#define PE_SAMPLE_TEX3D(InName, InSampler, InUVW) \
-	PEBindlessSampleTex3D(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUVW)
-#define PE_SAMPLE_TEX3D_LEVEL(InName, InSampler, InUVW, InLod) \
-	PEBindlessSampleTex3DLevel(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUVW, InLod)
-#define PE_SAMPLE_TEXCUBE(InName, InSampler, InDirection) \
-	PEBindlessSampleTexCube(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InDirection)
-#define PE_SAMPLE_TEXCUBE_LEVEL(InName, InSampler, InDirection, InLod) \
-	PEBindlessSampleTexCubeLevel(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InDirection, InLod)
-#define PE_SAMPLE_TEX2DARRAY(InName, InSampler, InUV) \
-	PEBindlessSampleTex2DArray(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUV)
-#define PE_SAMPLE_TEX2DARRAY_LEVEL(InName, InSampler, InUV, InLod) \
-	PEBindlessSampleTex2DArrayLevel(PE_TEXTURE_BINDING(InName), PE_SAMPLER_BINDING(InSampler), InUV, InLod)
+#define PE_SAMPLE_TEX2D(__Name, __Sampler, __UV) \
+	PEBindlessSampleTex2D(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UV)
+#define PE_SAMPLE_TEX2D_LEVEL(__Name, __Sampler, __UV, __Lod) \
+	PEBindlessSampleTex2DLevel(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UV, __Lod)
+#define PE_SAMPLE_TEX2D_BIAS(__Name, __Sampler, __UV, __Bias) \
+	PEBindlessSampleTex2DBias(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UV, __Bias)
+#define PE_SAMPLE_TEX2D_GRAD(__Name, __Sampler, __UV, __Ddx, __Ddy) \
+	PEBindlessSampleTex2DGrad(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UV, __Ddx, __Ddy)
+#define PE_LOAD_TEX2D(__Name, __Coord) \
+	PEBindlessLoadTex2D(PE_TEXTURE_BINDING(__Name), __Coord)
+#define PE_SAMPLE_TEX3D(__Name, __Sampler, __UVW) \
+	PEBindlessSampleTex3D(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UVW)
+#define PE_SAMPLE_TEX3D_LEVEL(__Name, __Sampler, __UVW, __Lod) \
+	PEBindlessSampleTex3DLevel(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UVW, __Lod)
+#define PE_SAMPLE_TEXCUBE(__Name, __Sampler, __Direction) \
+	PEBindlessSampleTexCube(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __Direction)
+#define PE_SAMPLE_TEXCUBE_LEVEL(__Name, __Sampler, __Direction, __Lod) \
+	PEBindlessSampleTexCubeLevel(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __Direction, __Lod)
+#define PE_SAMPLE_TEX2DARRAY(__Name, __Sampler, __UV) \
+	PEBindlessSampleTex2DArray(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UV)
+#define PE_SAMPLE_TEX2DARRAY_LEVEL(__Name, __Sampler, __UV, __Lod) \
+	PEBindlessSampleTex2DArrayLevel(PE_TEXTURE_BINDING(__Name), PE_SAMPLER_BINDING(__Sampler), __UV, __Lod)
 
 #else
 
@@ -163,21 +163,21 @@ TElement	PEBindlessSampleTex2DArrayLevel(Texture2DArray<TElement> InTexture, Sam
 // JSON, so every access is written straight out: no heap object, no cast, no helper, and therefore
 // no assumption about the element type either. The binding names resolve to the declarations
 // themselves, which is what the compiler wrote for this build.
-#define PE_TEXTURE_BINDING(InName)		InName
-#define PE_BUFFER_BINDING(InName)		InName
-#define PE_SAMPLER_BINDING(InName)		InName
+#define PE_TEXTURE_BINDING(__Name)		__Name
+#define PE_BUFFER_BINDING(__Name)		__Name
+#define PE_SAMPLER_BINDING(__Name)		__Name
 
-#define PE_SAMPLE_TEX2D(InName, InSampler, InUV)					InName.Sample(InSampler, InUV)
-#define PE_SAMPLE_TEX2D_LEVEL(InName, InSampler, InUV, InLod)		InName.SampleLevel(InSampler, InUV, InLod)
-#define PE_SAMPLE_TEX2D_BIAS(InName, InSampler, InUV, InBias)		InName.SampleBias(InSampler, InUV, InBias)
-#define PE_SAMPLE_TEX2D_GRAD(InName, InSampler, InUV, InDdx, InDdy)	InName.SampleGrad(InSampler, InUV, InDdx, InDdy)
-#define PE_LOAD_TEX2D(InName, InCoord)								InName.Load(InCoord)
-#define PE_SAMPLE_TEX3D(InName, InSampler, InUVW)					InName.Sample(InSampler, InUVW)
-#define PE_SAMPLE_TEX3D_LEVEL(InName, InSampler, InUVW, InLod)		InName.SampleLevel(InSampler, InUVW, InLod)
-#define PE_SAMPLE_TEXCUBE(InName, InSampler, InDirection)			InName.Sample(InSampler, InDirection)
-#define PE_SAMPLE_TEXCUBE_LEVEL(InName, InSampler, InDirection, InLod)	InName.SampleLevel(InSampler, InDirection, InLod)
-#define PE_SAMPLE_TEX2DARRAY(InName, InSampler, InUV)				InName.Sample(InSampler, InUV)
-#define PE_SAMPLE_TEX2DARRAY_LEVEL(InName, InSampler, InUV, InLod)	InName.SampleLevel(InSampler, InUV, InLod)
+#define PE_SAMPLE_TEX2D(__Name, __Sampler, __UV)					__Name.Sample(__Sampler, __UV)
+#define PE_SAMPLE_TEX2D_LEVEL(__Name, __Sampler, __UV, __Lod)		__Name.SampleLevel(__Sampler, __UV, __Lod)
+#define PE_SAMPLE_TEX2D_BIAS(__Name, __Sampler, __UV, __Bias)		__Name.SampleBias(__Sampler, __UV, __Bias)
+#define PE_SAMPLE_TEX2D_GRAD(__Name, __Sampler, __UV, __Ddx, __Ddy)	__Name.SampleGrad(__Sampler, __UV, __Ddx, __Ddy)
+#define PE_LOAD_TEX2D(__Name, __Coord)								__Name.Load(__Coord)
+#define PE_SAMPLE_TEX3D(__Name, __Sampler, __UVW)					__Name.Sample(__Sampler, __UVW)
+#define PE_SAMPLE_TEX3D_LEVEL(__Name, __Sampler, __UVW, __Lod)		__Name.SampleLevel(__Sampler, __UVW, __Lod)
+#define PE_SAMPLE_TEXCUBE(__Name, __Sampler, __Direction)			__Name.Sample(__Sampler, __Direction)
+#define PE_SAMPLE_TEXCUBE_LEVEL(__Name, __Sampler, __Direction, __Lod)	__Name.SampleLevel(__Sampler, __Direction, __Lod)
+#define PE_SAMPLE_TEX2DARRAY(__Name, __Sampler, __UV)				__Name.Sample(__Sampler, __UV)
+#define PE_SAMPLE_TEX2DARRAY_LEVEL(__Name, __Sampler, __UV, __Lod)	__Name.SampleLevel(__Sampler, __UV, __Lod)
 
 #endif	//PE_BINDLESS_COMPILED
 

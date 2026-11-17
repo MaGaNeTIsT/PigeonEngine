@@ -31,39 +31,39 @@ namespace PigeonEngine
 	class IRD3D11Texture : public IRRHITexture
 	{
 	public:
-		virtual ID3D11Resource*				GetD3D11Resource()const = 0;
-		virtual ID3D11ShaderResourceView*	GetD3D11SRV()const { return nullptr; }
-		virtual ID3D11RenderTargetView*		GetD3D11RTV()const { return nullptr; }
-		virtual ID3D11DepthStencilView*		GetD3D11DSV()const { return nullptr; }
-		virtual ID3D11UnorderedAccessView*	GetD3D11UAV()const { return nullptr; }
+		virtual ID3D11Resource*				GetD3D11Resource() const = 0;
+		virtual ID3D11ShaderResourceView*	GetD3D11SRV() const { return nullptr; }
+		virtual ID3D11RenderTargetView*		GetD3D11RTV() const { return nullptr; }
+		virtual ID3D11DepthStencilView*		GetD3D11DSV() const { return nullptr; }
+		virtual ID3D11UnorderedAccessView*	GetD3D11UAV() const { return nullptr; }
 	};
 
 	class IRD3D11Buffer : public IRRHIBuffer
 	{
 	public:
-		virtual ID3D11Buffer*				GetD3D11Buffer()const = 0;
-		virtual ID3D11ShaderResourceView*	GetD3D11SRV()const { return nullptr; }
-		virtual ID3D11UnorderedAccessView*	GetD3D11UAV()const { return nullptr; }
+		virtual ID3D11Buffer*				GetD3D11Buffer() const = 0;
+		virtual ID3D11ShaderResourceView*	GetD3D11SRV() const { return nullptr; }
+		virtual ID3D11UnorderedAccessView*	GetD3D11UAV() const { return nullptr; }
 	};
 
 	class IRD3D11Sampler : public IRRHISampler
 	{
 	public:
-		virtual ID3D11SamplerState*			GetD3D11SamplerState()const = 0;
+		virtual ID3D11SamplerState*			GetD3D11SamplerState() const = 0;
 	};
 
 	class IRD3D11Shader : public IRRHIShader
 	{
 	public:
-		virtual ID3D11VertexShader*			GetD3D11VS()const { return nullptr; }
-		virtual ID3D11PixelShader*			GetD3D11PS()const { return nullptr; }
-		virtual ID3D11ComputeShader*		GetD3D11CS()const { return nullptr; }
-		virtual ID3D11InputLayout*			GetD3D11InputLayout()const { return nullptr; }
+		virtual ID3D11VertexShader*			GetD3D11VS() const { return nullptr; }
+		virtual ID3D11PixelShader*			GetD3D11PS() const { return nullptr; }
+		virtual ID3D11ComputeShader*		GetD3D11CS() const { return nullptr; }
+		virtual ID3D11InputLayout*			GetD3D11InputLayout() const { return nullptr; }
 		// Bytecode the shader was created from. A pipeline state that declares its own vertex data
 		// layout needs it, because D3D11 bakes an input layout against the vertex shader's signature
 		// and the shader's own layout is created before any such declaration is known.
-		virtual const void*					GetByteCode()const { return nullptr; }
-		virtual UINT64						GetByteCodeSize()const { return 0ull; }
+		virtual const void*					GetByteCode() const { return nullptr; }
+		virtual UINT64						GetByteCodeSize() const { return 0ull; }
 	};
 
 }

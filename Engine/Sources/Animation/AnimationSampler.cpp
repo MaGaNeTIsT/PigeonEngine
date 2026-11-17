@@ -1,7 +1,5 @@
 #include "AnimationSampler.h"
 
-#include <cmath>
-
 namespace PigeonEngine
 {
 
@@ -11,7 +9,7 @@ namespace PigeonEngine
 		{
 			return 0.0f;
 		}
-		FLOAT WrappedTime = std::fmod(InKeyTime, InDuration);
+		FLOAT WrappedTime = EMath::FMod(InKeyTime, InDuration);
 		if (WrappedTime < 0.0f)
 		{
 			WrappedTime += InDuration;

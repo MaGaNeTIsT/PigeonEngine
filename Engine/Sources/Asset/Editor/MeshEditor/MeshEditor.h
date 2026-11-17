@@ -1,6 +1,6 @@
 #pragma once
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Container/Array.h>
@@ -33,18 +33,18 @@ namespace PigeonEngine
 		void DrawSkinnedMeshSection() const;
 
 	private:
-		BOOL8					m_ShowEditor = FALSE;
-		const EStaticMeshAsset*	m_StaticMeshAsset = nullptr;
-		const ESkinnedMeshAsset*	m_SkinnedMeshAsset = nullptr;
-		const EMesh*			m_MeshResource = nullptr;
-		UINT32					m_MeshType = static_cast<UINT32>(-1);
-		EString					m_OpenedAssetFullPath;
-		EString					m_LastOpenError;
-		EAssetPreviewScene		m_PreviewScene;
-		TArray<EString>			m_AvailableSkeletonAssetPaths;
-		const ESkeletonAsset*	m_PreviewSkeletonAsset = nullptr;
-		INT32					m_SelectedPreviewSkeletonIndex = -1;
-		BOOL8					m_PreviewAutoRotate = TRUE;
+		BOOL8					bShowEditor = FALSE;
+		const EStaticMeshAsset*	StaticMeshAsset = nullptr;
+		const ESkinnedMeshAsset*	SkinnedMeshAsset = nullptr;
+		const EMesh*			MeshResource = nullptr;
+		UINT32					MeshType = static_cast<UINT32>(-1);
+		EString					OpenedAssetFullPath;
+		EString					LastOpenError;
+		EAssetPreviewScene		PreviewScene;
+		TArray<EString>			AvailableSkeletonAssetPaths;
+		const ESkeletonAsset*	PreviewSkeletonAsset = nullptr;
+		INT32					SelectedPreviewSkeletonIndex = -1;
+		BOOL8					bPreviewAutoRotate = TRUE;
 	};
 }
 

@@ -78,12 +78,12 @@ namespace PigeonEngine
 	}
 
 	EShaderStageAsset::EShaderStageAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	)
 		: TBaseAsset<EShaderStageData>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InDebugName
 #endif
 		)
@@ -134,7 +134,7 @@ namespace PigeonEngine
 		// hash. Computed before the cold bytes are released.
 		SourceHash = HashStageSource(Reflection.SourceHash, ResourceData->Bytecode.GetData(), ResourceData->Bytecode.Num<UINT32>());
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// Layout sanity. The compiler reports a zero layout for a variable only when it was
 		// culled (that is what CompilerCulled says) or when the variable has no cbuffer
 		// layout at all (a structured buffer's struct fields). A surviving constant buffer
@@ -186,7 +186,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 		// The creation command runs on the render thread and may not read asset members, so
 		// the cold backup and the parsed input layouts are snapshotted here, where the command
@@ -316,7 +316,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	BOOL32 EShaderStageAssetManager::ImportShaderStageAsset(const EString& InAssetName
 		, const EString& InImportBytecodeFullPath, const EString& InImportReflectionFullPath
@@ -355,7 +355,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 	BOOL32 EShaderStageAssetManager::LoadShaderStageAsset(const EString& InLoadPath, const EString& InLoadName
 		, const EShaderStageAsset*& OutAsset, const BOOL32 InIsReload)
@@ -437,11 +437,11 @@ namespace PigeonEngine
 				delete StageData;
 				StageData = nullptr;
 				OutAsset = CachedAsset;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				PE_LOG_LOG(EString("[ShaderStageAssetManager] Kept the loaded stage asset '") + InLoadName
 					+ EString("': the reload holds the same compiled content (source hash ")
 					+ ToString(NewSourceHash) + EString(")."));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 				return TRUE;
 			}
 			if (CachedAsset)
@@ -454,7 +454,7 @@ namespace PigeonEngine
 		}
 
 		EShaderStageAsset* NewAsset = new EShaderStageAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -481,7 +481,7 @@ namespace PigeonEngine
 		ShaderStageAssets.Add(AssetName, NewAsset, (InIsReload ? TRUE : FALSE));
 		OutAsset = NewAsset;
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		PE_LOG_LOG(EString("[ShaderStageAssetManager] Loaded stage asset '") + InLoadName
 			+ EString("' (revision ") + ToString(NewAsset->GetRevision())
 			+ EString(", cbuffers ") + ToString(NewAsset->GetReflection().ConstantBuffers.Num<UINT32>())
@@ -492,7 +492,7 @@ namespace PigeonEngine
 			+ EString(", culled resources ") + ToString(NewAsset->GetReflection().GetCulledResourceNum())
 			+ EString(", source hash ") + ToString(NewAsset->GetSourceHash())
 			+ EString(")."));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 		return TRUE;
 	}

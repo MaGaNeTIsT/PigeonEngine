@@ -1,0 +1,11 @@
+{
+	"Name": "M_WaterDebug",
+	"Template": "Materials/M_WaterDebug.hlsl",
+	"PEMaterial": {
+		"Domain": "DefaultLit",
+		"SurfaceMode": "Translucent",
+		"VertexOps": true,
+		"TwoSided": true,
+		"VariantDefines": []
+	}
+}

@@ -1,6 +1,7 @@
 #include "MCLogger.h"
 #include <iostream>
 #include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <sstream>
 
@@ -34,8 +35,8 @@ namespace MC
 		LogFile.open(InLogPath, std::ios::out | std::ios::trunc);
 		if (LogFile.is_open())
 		{
-			auto SysNow = std::chrono::system_clock::now();
-			auto SysTime = std::chrono::system_clock::to_time_t(SysNow);
+			std::chrono::system_clock::time_point SysNow = std::chrono::system_clock::now();
+			std::time_t SysTime = std::chrono::system_clock::to_time_t(SysNow);
 			std::tm SysTimeInfo;
 			localtime_s(&SysTimeInfo, &SysTime);
 			LogFile << "=== MaterialCompiler Log Started at " << std::put_time(&SysTimeInfo, "%Y-%m-%d %H:%M:%S") << " ===\n\n";

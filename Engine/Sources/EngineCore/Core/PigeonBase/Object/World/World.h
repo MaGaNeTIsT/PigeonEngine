@@ -28,7 +28,7 @@ namespace PigeonEngine
 	public:
 		Vector3 GravityDirection = -Vector3::YVector();
 		FLOAT GravityStrength = 981.f;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		BOOL32 bUseUpVector = TRUE;
 #else
 		BOOL32 bUseUpVector = FALSE;
@@ -67,7 +67,7 @@ namespace PigeonEngine
 	private:
 		PActor* RootActor = nullptr;
 		TSet<PActor*> AllActors;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		void AddSceneToWorld(PScene* NewScene);
 		void RemoveSceneFromWorld(PScene* Scene);
@@ -81,7 +81,7 @@ namespace PigeonEngine
 #endif
 
 	public:
-		class PController* GetController()const;
+		class PController* GetController() const;
 		PE_NODISCARD const Vector3& GetUpVector() const;
 		void SetUpVector(const Vector3& InUpVector);
 		PE_NODISCARD Vector3 GetGravity() const;
@@ -109,13 +109,13 @@ namespace PigeonEngine
 	public:
 		void                    BindRenderScene(RSceneInterface* InScene);
 		RSceneInterface*        GetRenderScene();
-		const RSceneInterface*  GetRenderScene()const;
+		const RSceneInterface*  GetRenderScene() const;
 		void                    UpdateCameraViewports(UINT32 InWidth, UINT32 InHeight);
 	private:
 		RSceneInterface*    RenderScene = nullptr;
 		//Render scene state END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// IMGUI
 	public:
 		void EditorTick(FLOAT deltaTime) override;

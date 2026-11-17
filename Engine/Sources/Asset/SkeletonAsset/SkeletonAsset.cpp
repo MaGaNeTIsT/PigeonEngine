@@ -5,7 +5,7 @@
 #include <Main/MainManager.h>
 #include <Config/EngineConfig.h>
 #include <RenderConfig/RenderConfig.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
@@ -193,7 +193,7 @@ namespace PigeonEngine
 	ESkeleton::ESkeleton(const EString& InSkeletonName)
 		: SkeletonType(ESkeletonType::SKELETON_TYPE_NORMAL), SkeletonName(InSkeletonName)
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = InSkeletonName;
 #endif
 		// Seed the conventional layer order. A skeleton can carry more groups later; the
@@ -210,7 +210,7 @@ namespace PigeonEngine
 	{
 		ReleaseResource();
 	}
-	BOOL32 ESkeleton::IsResourceValid()const
+	BOOL32 ESkeleton::IsResourceValid() const
 	{
 		return ((Bones.Num() > 0) && (Bones.Num() == BoneMapping.Num()));
 	}
@@ -226,11 +226,11 @@ namespace PigeonEngine
 		BoneMapping.Empty();
 		SlotGroups.Empty();
 	}
-	ESkeletonType ESkeleton::GetSkeletonType()const
+	ESkeletonType ESkeleton::GetSkeletonType() const
 	{
 		return SkeletonType;
 	}
-	const EString& ESkeleton::GetSkeletonName()const
+	const EString& ESkeleton::GetSkeletonName() const
 	{
 		return SkeletonName;
 	}
@@ -238,7 +238,7 @@ namespace PigeonEngine
 	{
 		return Bones;
 	}
-	const ESkeleton::EBonePart& ESkeleton::GetBonePart()const
+	const ESkeleton::EBonePart& ESkeleton::GetBonePart() const
 	{
 		return Bones;
 	}
@@ -246,18 +246,18 @@ namespace PigeonEngine
 	{
 		return BoneMapping;
 	}
-	const TMap<EString, USHORT>& ESkeleton::GetBoneMapping()const
+	const TMap<EString, USHORT>& ESkeleton::GetBoneMapping() const
 	{
 		return BoneMapping;
 	}
-	INT32 ESkeleton::GetBoneCount()const
+	INT32 ESkeleton::GetBoneCount() const
 	{
 		Check((Bones.Num() == BoneMapping.Num()));
 		return (Bones.Num());
 	}
-	USHORT ESkeleton::GetBoneIndex(const EString& InBoneName)const
+	USHORT ESkeleton::GetBoneIndex(const EString& InBoneName) const
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const USHORT* BoneIndex = BoneMapping.FindValueAsPtr(InBoneName); !!BoneIndex)
 #else
 		const USHORT* BoneIndex = BoneMapping.FindValueAsPtr(InBoneName);
@@ -265,7 +265,7 @@ namespace PigeonEngine
 		{
 			return (*BoneIndex);
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -279,11 +279,11 @@ namespace PigeonEngine
 	{
 		return SlotGroups;
 	}
-	const TArray<ESkeletonSlotGroup>& ESkeleton::GetSlotGroups()const
+	const TArray<ESkeletonSlotGroup>& ESkeleton::GetSlotGroups() const
 	{
 		return SlotGroups;
 	}
-	INT32 ESkeleton::FindSlotGroup(const EString& InSlotName)const
+	INT32 ESkeleton::FindSlotGroup(const EString& InSlotName) const
 	{
 		for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
 		{
@@ -334,7 +334,7 @@ namespace PigeonEngine
 		USHORT TempIndex = 0u;
 		if (!BoneMapping.FindValue(InBoneName, TempIndex))
 		{
-#if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
+#if (defined(ENGINE_DEBUG_MODE) || defined(ENGINE_DEVELOP_MODE))
 			EString ErrorInfo("Try to removing not exist bone [");
 			ErrorInfo = ErrorInfo + InBoneName + "] in skeleton [";
 			ErrorInfo = ErrorInfo + SkeletonName + "].";
@@ -342,7 +342,7 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-#if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
+#if (defined(ENGINE_DEBUG_MODE) || defined(ENGINE_DEVELOP_MODE))
 		if (TempIndex >= Bones.Num<USHORT>())
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Check error that index out of bones list."));
@@ -359,7 +359,7 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to removing bone from empty skeleton."));
 			return FALSE;
 		}
-#if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
+#if (defined(ENGINE_DEBUG_MODE) || defined(ENGINE_DEVELOP_MODE))
 		if (InBoneIndex >= Bones.Num<USHORT>())
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Check error that index out of bones list."));
@@ -373,12 +373,12 @@ namespace PigeonEngine
 		RemoveBoneInternal(InBoneIndex);
 		return TRUE;
 	}
-	BOOL32 ESkeleton::GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData)const
+	BOOL32 ESkeleton::GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData) const
 	{
 		USHORT TempIndex = 0u;
 		if (!BoneMapping.FindValue(InBoneName, TempIndex))
 		{
-#if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
+#if (defined(ENGINE_DEBUG_MODE) || defined(ENGINE_DEVELOP_MODE))
 			EString ErrorInfo("Try to getting not exist bone [");
 			ErrorInfo = ErrorInfo + InBoneName + "] in skeleton [";
 			ErrorInfo = ErrorInfo + SkeletonName + "].";
@@ -388,14 +388,14 @@ namespace PigeonEngine
 		}
 		return (GetBoneElement(TempIndex, OutBoneData));
 	}
-	BOOL32 ESkeleton::GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData)const
+	BOOL32 ESkeleton::GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData) const
 	{
 		if (Bones.Num() <= 0)
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to removing bone from empty skeleton."));
 			return FALSE;
 		}
-#if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
+#if (defined(ENGINE_DEBUG_MODE) || defined(ENGINE_DEVELOP_MODE))
 		if (InBoneIndex >= Bones.Num<USHORT>())
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Check error that index out of bones list."));
@@ -424,21 +424,21 @@ namespace PigeonEngine
 		{
 			BoneNum = InBoneNum;
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				BOOL32 Result =
 #endif
 					InitRenderResource();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				PE_CHECK((ENGINE_ASSET_ERROR), ("New skeleton render resource create failed."), (Result));
 #endif
 			}
 		}
 	}
-	UINT32 ESkeletonRenderResource::GetBoneNum()const
+	UINT32 ESkeletonRenderResource::GetBoneNum() const
 	{
 		return BoneNum;
 	}
-	const RStructuredBuffer& ESkeletonRenderResource::GetRenderResource(ESkeletonRenderResourceType InType)const
+	const RStructuredBuffer& ESkeletonRenderResource::GetRenderResource(ESkeletonRenderResourceType InType) const
 	{
 		Check(((InType >= ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX) && (InType < ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT)), (ENGINE_ASSET_ERROR));
 		return (RenderResource[InType]);
@@ -446,7 +446,7 @@ namespace PigeonEngine
 	void ESkeletonRenderResource::UpdateRenderResource(const TArray<Matrix4x4>& InMatrices)
 	{
 		const UINT32 InMatrixNum = InMatrices.Num<UINT32>();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if ((InMatrixNum > 0u) && (InMatrixNum <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX))
 #endif
 		{
@@ -472,7 +472,7 @@ namespace PigeonEngine
 				RenderDevice, UploadInverseTranspose.GetData(), MatrixSize, 0u);
 		}
 	}
-	BOOL32 ESkeletonRenderResource::IsRenderResourceValid()const noexcept
+	BOOL32 ESkeletonRenderResource::IsRenderResourceValid() const noexcept
 	{
 		BOOL32 Result = (BoneNum > 0u) && (BoneNum <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX);
 		if (Result)
@@ -521,7 +521,7 @@ namespace PigeonEngine
 		{
 			if (!(RenderResource[i].InitFromRHI(RenderDevice, SkeletonBufferDesc, &SkeletonSubresourceData)))
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				EString ErrorInfo("Create skeleton resource bones buffer [num = ");
 				ErrorInfo += ToString(SkeletonBoneNum);
 				ErrorInfo += "] failed.";
@@ -577,7 +577,7 @@ namespace PigeonEngine
 		BoneToRootTransforms	= Other.BoneToRootTransforms;
 		return (*this);
 	}
-	BOOL32 ESkeletonBoneMemoryPool::IsValid()const
+	BOOL32 ESkeletonBoneMemoryPool::IsValid() const
 	{
 		return ((!!RawSkeletonPtr) && (BoneRelativeTransforms.Num() > 0) && (BoneRelativeTransforms.Num() == BoneToRootTransforms.Num()));
 	}
@@ -613,47 +613,47 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::RecursionToRootTransforms()
 	{
 		PE_PROFILE_SCOPE(PROFILER_SCOPE_ANIM_BONE_TO_ROOT);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (IsValid())
 #endif
 		{
 			TArray<EBoneTransform>& UsedRelativeTransforms = BoneRelativeTransforms;
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 			TArray<Matrix4x4>& UsedToRootTransforms = BoneToRootTransforms;
 #else
 			TArray<EBoneTransform>& UsedToRootTransforms = BoneToRootTransforms;
 #endif
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			const INT32 UsedRelativeTransformNum = UsedRelativeTransforms.Num();
 #endif
 			BackwardRecursionBone(
 				0,
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 				SkeletonRootTransform.ToMatrix4x4(),
 #else
 				SkeletonRootTransform,
 #endif
 				[&UsedRelativeTransforms, &UsedToRootTransforms
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				, &UsedRelativeTransformNum
 #endif
 				](const EBoneData& InBoneData,
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 					Matrix4x4& InBoneMatrix
 #else
 					EBoneTransform& InBoneTransform
 #endif
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 				)->Matrix4x4
 #else
 				)->EBoneTransform
 #endif
 				{
 					Check((InBoneData.Index >= 0));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					Check((((INT32)(InBoneData.Index)) < UsedRelativeTransformNum));
 #endif
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 					const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
 					UsedToRootTransforms[InBoneData.Index] = TempRelativeBoneTransform.ToMatrix4x4().Transpose();
 					UsedToRootTransforms[InBoneData.Index] = InBoneMatrix * UsedToRootTransforms[InBoneData.Index];
@@ -668,7 +668,7 @@ namespace PigeonEngine
 #endif
 				},
 				[](const EBoneData& InBoneData,
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 					const Matrix4x4& InMatrix
 #else
 					const EBoneTransform& InMatrix
@@ -678,7 +678,7 @@ namespace PigeonEngine
 					return TRUE;
 				});
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Skeleton [");
@@ -687,15 +687,15 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	const ESkeleton* ESkeletonBoneMemoryPool::GetRawSkeleton()const
+	const ESkeleton* ESkeletonBoneMemoryPool::GetRawSkeleton() const
 	{
 		return RawSkeletonPtr;
 	}
-	const EBoneTransform& ESkeletonBoneMemoryPool::GetRootTransform()const
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetRootTransform() const
 	{
 		return SkeletonRootTransform;
 	}
-	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneRelativeTransforms()const
+	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneRelativeTransforms() const
 	{
 		return BoneRelativeTransforms;
 	}
@@ -703,8 +703,8 @@ namespace PigeonEngine
 	{
 		return BoneRelativeTransforms;
 	}
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
-	const TArray<Matrix4x4>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms()const
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
+	const TArray<Matrix4x4>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms() const
 	{
 		return BoneToRootTransforms;
 	}
@@ -712,10 +712,10 @@ namespace PigeonEngine
 	{
 		return BoneToRootTransforms;
 	}
-	const Matrix4x4& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName)const
+	const Matrix4x4& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName) const
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -723,7 +723,7 @@ namespace PigeonEngine
 		{
 			return (BoneToRootTransforms[BoneIndex]);
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -734,7 +734,7 @@ namespace PigeonEngine
 #endif
 	}
 #else
-	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms()const
+	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms() const
 	{
 		return BoneToRootTransforms;
 	}
@@ -742,16 +742,16 @@ namespace PigeonEngine
 	{
 		return BoneToRootTransforms;
 	}
-	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName)const
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName) const
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #endif
 		{
 			return (BoneToRootTransforms[BoneIndex]);
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -762,10 +762,10 @@ namespace PigeonEngine
 #endif
 	}
 #endif
-	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneRelativeTransform(const EString& InBoneName)const
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneRelativeTransform(const EString& InBoneName) const
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -773,7 +773,7 @@ namespace PigeonEngine
 		{
 			return (BoneRelativeTransforms[BoneIndex]);
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -792,7 +792,7 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::SetBoneRelativePosition(const EString& InBoneName, const Vector3& InPosition)
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -800,7 +800,7 @@ namespace PigeonEngine
 		{
 			BoneRelativeTransforms[BoneIndex].Position = InPosition;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -812,7 +812,7 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::SetBoneRelativeRotation(const EString& InBoneName, const Quaternion& InRotation)
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -820,7 +820,7 @@ namespace PigeonEngine
 		{
 			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -832,7 +832,7 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::SetBoneRelativeScaling(const EString& InBoneName, const Vector3& InScaling)
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -840,7 +840,7 @@ namespace PigeonEngine
 		{
 			BoneRelativeTransforms[BoneIndex].Scaling = InScaling;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -852,7 +852,7 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const Vector3& InPosition, const Quaternion& InRotation)
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -861,7 +861,7 @@ namespace PigeonEngine
 			BoneRelativeTransforms[BoneIndex].Position = InPosition;
 			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -873,7 +873,7 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const Vector3& InPosition, const Vector3& InScaling)
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -882,7 +882,7 @@ namespace PigeonEngine
 			BoneRelativeTransforms[BoneIndex].Position = InPosition;
 			BoneRelativeTransforms[BoneIndex].Scaling = InScaling;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -894,7 +894,7 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const Quaternion& InRotation, const Vector3& InScaling)
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -903,7 +903,7 @@ namespace PigeonEngine
 			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
 			BoneRelativeTransforms[BoneIndex].Scaling = InScaling;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -915,7 +915,7 @@ namespace PigeonEngine
 	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const EBoneTransform& InBoneTransform)
 	{
 		CheckSlow(IsValid());
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Num())
 #else
 		const INT32 BoneIndex = (INT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
@@ -923,7 +923,7 @@ namespace PigeonEngine
 		{
 			BoneRelativeTransforms[BoneIndex] = InBoneTransform;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			EString ErrorInfo("Can not find [");
@@ -934,11 +934,11 @@ namespace PigeonEngine
 	}
 
 	ESkeletonAsset::ESkeletonAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<ESkeleton>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -953,7 +953,7 @@ namespace PigeonEngine
 		// Skeleton resource do not need to initialize.
 		if (IsInitialized())
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skeleton name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -967,7 +967,7 @@ namespace PigeonEngine
 
 	ESkeletonAssetManager::ESkeletonAssetManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = ENGINE_SKELETON_ASSET_MANAGER_NAME;
 #endif
 	}
@@ -990,14 +990,14 @@ namespace PigeonEngine
 	{
 		ClearSkeletons();
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 ESkeletonAssetManager::ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
 		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1009,7 +1009,7 @@ namespace PigeonEngine
 		EString ImportPathName; EString ImportFileType;
 		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1021,7 +1021,7 @@ namespace PigeonEngine
 		//TODO Check import type(like fbx, ab...).
 		if (ImportPathName.Length() <= 3u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1043,7 +1043,7 @@ namespace PigeonEngine
 		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
 		if ((AssimpManager->ReadSkeletonFile(InImportFullPathName, AssimpSkeleton)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Assimp importer can not load skeleton file from path (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1081,7 +1081,7 @@ namespace PigeonEngine
 		}
 		if (SkeletonAssetDataManager.Add(TempFullPathName, ResultSkeletonAsset, TRUE) == 0u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skeleton asset path = [") + TempFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -1181,7 +1181,7 @@ namespace PigeonEngine
 		}
 
 		NewSkeletonAsset = new ESkeletonAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -1233,7 +1233,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Load skeleton asset path name check failed (load file path : ");
 				ErrorData += InLoadPath;
@@ -1253,7 +1253,7 @@ namespace PigeonEngine
 			{
 				delete[]ReadFileMem;
 			}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Load skeleton asset failed (load file path : ");
 				ErrorData += TempFullPathName;
@@ -1291,15 +1291,15 @@ namespace PigeonEngine
 			RstMemSize -= StrStride;\
 		}\
 
-#define LOAD_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __PtrType, __Ptr) \
-		__PtrType* __Ptr = nullptr;\
+#define LOAD_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __PtrType, __OutputPtr) \
+		__PtrType* __OutputPtr = nullptr;\
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			void* NewPtr = new BYTE[MemSize];\
 			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
 			::memcpy_s(NewPtr, MemSize, TempPtr, MemSize);\
-			(__Ptr) = (__PtrType*)NewPtr;\
+			(__OutputPtr) = (__PtrType*)NewPtr;\
 			RstMemPtr = &(TempPtr[MemSize]);\
 			RstMemSize -= MemSize;\
 		}\
@@ -1310,7 +1310,7 @@ namespace PigeonEngine
 				EAssetType AssetType = static_cast<EAssetType>(TempAssetType);
 				if (AssetType != EAssetType::ASSET_TYPE_SKELETON)
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					{
 						EString ErrorData("Load skeleton asset failed (load file path : ");
 						ErrorData += TempFullPathName;
@@ -1327,7 +1327,7 @@ namespace PigeonEngine
 				//ESkeletonType SkeletonType = static_cast<ESkeletonType>(TempSkeletonType);
 				if ((TempSkeletonType == ESkeletonType::SKELETON_TYPE_UNKNOWN) || (TempSkeletonType >= ESkeletonType::SKELETON_TYPE_COUNT))
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					{
 						EString ErrorData("Load skeleton asset failed (load file path : ");
 						ErrorData += TempFullPathName;
@@ -1432,7 +1432,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Save skeleton asset path name check failed (save file path : ");
 				ErrorData += InSavePath;
@@ -1553,7 +1553,7 @@ namespace PigeonEngine
 					SAVE_ASSET_MEMORY(SHORT, ChildrenDatas[ChildIndex]);
 				}
 			}
-			for (auto ItMapping = BoneMapping.Begin(); ItMapping != BoneMapping.End(); ItMapping++)
+			for (TMap<EString, USHORT>::TConstIterator ItMapping = BoneMapping.Begin(); ItMapping != BoneMapping.End(); ItMapping++)
 			{
 				SAVE_ASSET_STRING_MEMORY(ItMapping->first, EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX);
 				SAVE_ASSET_MEMORY(USHORT, ItMapping->second);
@@ -1596,7 +1596,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const BOOL32 bHasImport = (!!InImportPath) && (!!InImportName) && (!!InImportFileType);
 		if (bHasImport)
 		{

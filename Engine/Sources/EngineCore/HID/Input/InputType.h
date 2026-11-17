@@ -15,8 +15,8 @@ namespace PigeonEngine
 		EKey() = default;
 		EKey(EString InKeyName, const UINT8& InKeyCode) : KeyName(std::move(InKeyName)), KeyCode(InKeyCode){}
 
-		PE_NODISCARD const EString& GetKeyName()const{return this->KeyName;}
-		PE_NODISCARD const UINT8&   GetKeyCode()const{return this->KeyCode;}
+		PE_NODISCARD const EString& GetKeyName() const{return this->KeyName;}
+		PE_NODISCARD const UINT8&   GetKeyCode() const{return this->KeyCode;}
 
 	private:
 		EString KeyName;

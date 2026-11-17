@@ -12,13 +12,13 @@ namespace PigeonEngine
 	{
 	public:
 		EAnimStateMachineAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~EAnimStateMachineAsset();
 	public:
-		virtual BOOL32 InitResource()override;
+		virtual BOOL32 InitResource() override;
 	public:
 		EAnimStateMachineAsset() = delete;
 
@@ -30,11 +30,11 @@ namespace PigeonEngine
 	public:
 		typedef TAssetManager<EString, EAnimStateMachineAsset>	EAnimStateMachineAssetManager;
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		/*
 		* Imports a JSON state machine source into a PAsset. The JSON is validated before it
 		* is written; a file that fails to parse or references unknown states/parameters does

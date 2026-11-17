@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <iomanip>
+#include <Base/DataStructure/BuiltInType.h>
 
 
 // Reserved variant name used by the variant compiled without any define override.
@@ -46,7 +47,7 @@ struct MCVariantDesc
 	std::string			Name			= "";
 	std::vector<MC::MCDefine>	Defines			= {};
 	std::vector<MC::MCReplace>	Replaces		= {};
-	bool				bIsVariant		= true;
+	bool				bIsVariant		= TRUE;
 };
 
 struct MCCompileArgs
@@ -59,10 +60,10 @@ struct MCCompileArgs
 	std::string			LogPath			= "";
 	std::string			ManifestFilePath	= "";
 	std::vector<MCVariantDesc>	Variants		= {};
-	bool				bDx11			= false;
-	bool				bSm66			= false;
-	bool				bDebug			= false;
-	bool				bDumpHlsl		= false;
+	bool				bDx11			= FALSE;
+	bool				bSm66			= FALSE;
+	bool				bDebug			= FALSE;
+	bool				bDumpHlsl		= FALSE;
 };
 
 struct MCVariantResult
@@ -75,7 +76,7 @@ struct MCVariantResult
 	std::string			PdbFile			= "";
 	std::string			Errors			= "";
 	std::vector<MC::MCDefine>	Defines			= {};
-	bool				bSuccess		= false;
+	bool				bSuccess		= FALSE;
 };
 
 // ---------------------------------------------------------------------------
@@ -95,7 +96,7 @@ static bool IsUsageRequested(int InArgc, char** InArgv) noexcept
 {
 	if (InArgc != 2)
 	{
-		return false;
+		return FALSE;
 	}
 	const std::string Argument = InArgv[1];
 	return ((Argument == "--help") || (Argument == "-h"));
@@ -105,7 +106,7 @@ static bool ParseCommandLine(int InArgc, char** InArgv, std::string& OutCompileJ
 {
 	if (InArgc != 2)
 	{
-		return false;
+		return FALSE;
 	}
 	OutCompileJsonPath = InArgv[1];
 	return (!OutCompileJsonPath.empty());
@@ -119,12 +120,12 @@ static bool ReadTextFile(const std::string& InPath, std::string& OutText) noexce
 	std::ifstream FileStream(InPath, std::ios::binary);
 	if (!FileStream.is_open())
 	{
-		return false;
+		return FALSE;
 	}
 	std::ostringstream StrStream;
 	StrStream << FileStream.rdbuf();
 	OutText = StrStream.str();
-	return true;
+	return TRUE;
 }
 
 static bool WriteTextFile(const std::string& InPath, const std::string& InText) noexcept
@@ -132,10 +133,10 @@ static bool WriteTextFile(const std::string& InPath, const std::string& InText) 
 	std::ofstream FileStream(InPath, std::ios::binary);
 	if (!FileStream.is_open())
 	{
-		return false;
+		return FALSE;
 	}
 	FileStream << InText;
-	return true;
+	return TRUE;
 }
 
 static bool WriteBinaryFile(const std::string& InPath, const std::vector<uint8_t>& InBytes) noexcept
@@ -143,10 +144,10 @@ static bool WriteBinaryFile(const std::string& InPath, const std::vector<uint8_t
 	std::ofstream FileStream(InPath, std::ios::binary);
 	if (!FileStream.is_open())
 	{
-		return false;
+		return FALSE;
 	}
 	FileStream.write(reinterpret_cast<const char*>(InBytes.data()), static_cast<std::streamsize>(InBytes.size()));
-	return true;
+	return TRUE;
 }
 
 // ---------------------------------------------------------------------------
@@ -203,16 +204,16 @@ static bool EnsureDirectory(const std::string& InDir, std::string& OutError) noe
 {
 	if (InDir.empty())
 	{
-		return true;
+		return TRUE;
 	}
 	std::error_code ErrorCode;
 	std::filesystem::create_directories(InDir, ErrorCode);
 	if (ErrorCode)
 	{
 		OutError = "cannot create directory: " + InDir;
-		return false;
+		return FALSE;
 	}
-	return true;
+	return TRUE;
 }
 
 // ---------------------------------------------------------------------------
@@ -223,19 +224,19 @@ static bool ParseShaderStage(const std::string& InStageStr, MCShaderStageType& O
 	if (InStageStr == "VS")
 	{
 		OutStage = MCShaderStageType::ShaderStage_VS;
-		return true;
+		return TRUE;
 	}
 	if (InStageStr == "PS")
 	{
 		OutStage = MCShaderStageType::ShaderStage_PS;
-		return true;
+		return TRUE;
 	}
 	if (InStageStr == "CS")
 	{
 		OutStage = MCShaderStageType::ShaderStage_CS;
-		return true;
+		return TRUE;
 	}
-	return false;
+	return FALSE;
 }
 
 static std::string StageSuffixOf(MCShaderStageType InStage) noexcept
@@ -387,9 +388,9 @@ static bool ReadJsonString(const rapidjson::Value& InJson, const char* InMemberN
 	if (InJson.HasMember(InMemberName) && InJson[InMemberName].IsString())
 	{
 		OutValue = InJson[InMemberName].GetString();
-		return true;
+		return TRUE;
 	}
-	return false;
+	return FALSE;
 }
 
 static bool ReadJsonBool(const rapidjson::Value& InJson, const char* InMemberName, bool& OutValue) noexcept
@@ -397,40 +398,40 @@ static bool ReadJsonBool(const rapidjson::Value& InJson, const char* InMemberNam
 	if (InJson.HasMember(InMemberName) && InJson[InMemberName].IsBool())
 	{
 		OutValue = InJson[InMemberName].GetBool();
-		return true;
+		return TRUE;
 	}
-	return false;
+	return FALSE;
 }
 
 static bool ReadJsonUint(const rapidjson::Value& InJson, const char* InMemberName, uint32_t& OutValue) noexcept
 {
 	if (!InJson.HasMember(InMemberName))
 	{
-		return false;
+		return FALSE;
 	}
 	if (InJson[InMemberName].IsUint())
 	{
 		OutValue = InJson[InMemberName].GetUint();
-		return true;
+		return TRUE;
 	}
 	if (InJson[InMemberName].IsInt())
 	{
 		const int IntValue = InJson[InMemberName].GetInt();
 		if (IntValue < 0)
 		{
-			return false;
+			return FALSE;
 		}
 		OutValue = static_cast<uint32_t>(IntValue);
-		return true;
+		return TRUE;
 	}
-	return false;
+	return FALSE;
 }
 
 static bool IsValidVariantName(const std::string& InName) noexcept
 {
 	if (InName.empty())
 	{
-		return false;
+		return FALSE;
 	}
 	for (char Ch : InName)
 	{
@@ -439,10 +440,10 @@ static bool IsValidVariantName(const std::string& InName) noexcept
 		const bool bIsLower = (Ch >= 'a') && (Ch <= 'z');
 		if (!(bIsDigit || bIsUpper || bIsLower || (Ch == '_')))
 		{
-			return false;
+			return FALSE;
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 static bool ParseVariantDefines(const rapidjson::Value& InJson, std::vector<MC::MCDefine>& OutDefines, std::string& OutError) noexcept
@@ -453,25 +454,25 @@ static bool ParseVariantDefines(const rapidjson::Value& InJson, std::vector<MC::
 
 	if (!InJson.HasMember(DefinesTxt))
 	{
-		return true;
+		return TRUE;
 	}
 	if (!InJson[DefinesTxt].IsArray())
 	{
 		OutError = "'Defines' must be an array";
-		return false;
+		return FALSE;
 	}
-	for (const auto& DefElem : InJson[DefinesTxt].GetArray())
+	for (const rapidjson::Value& DefElem : InJson[DefinesTxt].GetArray())
 	{
 		if (!DefElem.IsObject())
 		{
 			OutError = "'Defines' entries must be objects";
-			return false;
+			return FALSE;
 		}
 		std::string DefName = "";
 		if (!ReadJsonString(DefElem, DefineNameTxt, DefName) || DefName.empty())
 		{
 			OutError = "'Defines' entry missing valid 'Name'";
-			return false;
+			return FALSE;
 		}
 		int DefValue = 1;
 		if (DefElem.HasMember(DefineValueTxt))
@@ -479,7 +480,7 @@ static bool ParseVariantDefines(const rapidjson::Value& InJson, std::vector<MC::
 			if (!DefElem[DefineValueTxt].IsInt())
 			{
 				OutError = "'Defines' entry '" + DefName + "' has invalid 'Value' (int expected)";
-				return false;
+				return FALSE;
 			}
 			DefValue = DefElem[DefineValueTxt].GetInt();
 		}
@@ -488,7 +489,7 @@ static bool ParseVariantDefines(const rapidjson::Value& InJson, std::vector<MC::
 		Def.Value = DefValue;
 		OutDefines.emplace_back(std::move(Def));
 	}
-	return true;
+	return TRUE;
 }
 
 static bool ParseVariantReplaces(const rapidjson::Value& InJson, std::vector<MC::MCReplace>& OutReplaces, std::string& OutError) noexcept
@@ -499,38 +500,38 @@ static bool ParseVariantReplaces(const rapidjson::Value& InJson, std::vector<MC:
 
 	if (!InJson.HasMember(ReplacesTxt))
 	{
-		return true;
+		return TRUE;
 	}
 	if (!InJson[ReplacesTxt].IsArray())
 	{
 		OutError = "'Replaces' must be an array";
-		return false;
+		return FALSE;
 	}
-	for (const auto& RplElem : InJson[ReplacesTxt].GetArray())
+	for (const rapidjson::Value& RplElem : InJson[ReplacesTxt].GetArray())
 	{
 		if (!RplElem.IsObject())
 		{
 			OutError = "'Replaces' entries must be objects";
-			return false;
+			return FALSE;
 		}
 		std::string RplName = "";
 		if (!ReadJsonString(RplElem, ReplaceNameTxt, RplName) || RplName.empty())
 		{
 			OutError = "'Replaces' entry missing valid 'Name'";
-			return false;
+			return FALSE;
 		}
 		std::string RplElement = "";
 		if (!ReadJsonString(RplElem, ReplaceElementTxt, RplElement))
 		{
 			OutError = "'Replaces' entry '" + RplName + "' missing valid 'Element'";
-			return false;
+			return FALSE;
 		}
 		MC::MCReplace Rpl;
 		Rpl.Name = RplName;
 		Rpl.Element = RplElement;
 		OutReplaces.emplace_back(std::move(Rpl));
 	}
-	return true;
+	return TRUE;
 }
 
 static bool ParseVariantDesc(const rapidjson::Value& InJson, MCVariantDesc& OutVariant, std::string& OutError) noexcept
@@ -538,26 +539,26 @@ static bool ParseVariantDesc(const rapidjson::Value& InJson, MCVariantDesc& OutV
 	if (!InJson.IsObject())
 	{
 		OutError = "'Variants' entries must be objects";
-		return false;
+		return FALSE;
 	}
 	if (!ReadJsonString(InJson, "Name", OutVariant.Name) || OutVariant.Name.empty())
 	{
 		OutError = "'Variants' entry missing valid 'Name'";
-		return false;
+		return FALSE;
 	}
 	if (!IsValidVariantName(OutVariant.Name))
 	{
 		OutError = "'Variants' entry name '" + OutVariant.Name + "' must be file name safe ([A-Za-z0-9_])";
-		return false;
+		return FALSE;
 	}
 	ReadJsonBool(InJson, "IsVariant", OutVariant.bIsVariant);
 	if (!ParseVariantDefines(InJson, OutVariant.Defines, OutError))
 	{
-		return false;
+		return FALSE;
 	}
 	if (!ParseVariantReplaces(InJson, OutVariant.Replaces, OutError))
 	{
-		return false;
+		return FALSE;
 	}
 
 	if (!OutVariant.bIsVariant)
@@ -565,12 +566,12 @@ static bool ParseVariantDesc(const rapidjson::Value& InJson, MCVariantDesc& OutV
 		if (OutVariant.Name != BaseVariantName)
 		{
 			OutError = "the variant without defines must be named '" + std::string(BaseVariantName) + "', got '" + OutVariant.Name + "'";
-			return false;
+			return FALSE;
 		}
 		if ((!OutVariant.Defines.empty()) || (!OutVariant.Replaces.empty()))
 		{
 			OutError = "the variant '" + OutVariant.Name + "' must not carry 'Defines' / 'Replaces'";
-			return false;
+			return FALSE;
 		}
 	}
 	else
@@ -578,7 +579,7 @@ static bool ParseVariantDesc(const rapidjson::Value& InJson, MCVariantDesc& OutV
 		if (OutVariant.Name == BaseVariantName)
 		{
 			OutError = "'" + std::string(BaseVariantName) + "' is reserved for the variant without defines";
-			return false;
+			return FALSE;
 		}
 		if (OutVariant.Defines.empty() && OutVariant.Replaces.empty())
 		{
@@ -586,7 +587,7 @@ static bool ParseVariantDesc(const rapidjson::Value& InJson, MCVariantDesc& OutV
 			MCLog.Warning("variant '" + OutVariant.Name + "' carries neither 'Defines' nor 'Replaces', it is compiled as a duplicate of '" + std::string(BaseVariantName) + "'");
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 static bool ParseCompileArgs(const rapidjson::Document& InDoc, MCCompileArgs& OutArgs, std::string& OutError) noexcept
@@ -596,7 +597,7 @@ static bool ParseCompileArgs(const rapidjson::Document& InDoc, MCCompileArgs& Ou
 	if (!InDoc.IsObject())
 	{
 		OutError = "compile json must be an object";
-		return false;
+		return FALSE;
 	}
 	ReadJsonString(InDoc, "RootDir", OutArgs.RootDir);
 	ReadJsonString(InDoc, "JsonFilePath", OutArgs.JsonFilePath);
@@ -615,31 +616,31 @@ static bool ParseCompileArgs(const rapidjson::Document& InDoc, MCCompileArgs& Ou
 		if (!InDoc[VariantsTxt].IsArray())
 		{
 			OutError = "'Variants' must be an array";
-			return false;
+			return FALSE;
 		}
-		for (const auto& VariantElem : InDoc[VariantsTxt].GetArray())
+		for (const rapidjson::Value& VariantElem : InDoc[VariantsTxt].GetArray())
 		{
 			MCVariantDesc Variant;
 			if (!ParseVariantDesc(VariantElem, Variant, OutError))
 			{
-				return false;
+				return FALSE;
 			}
 			OutArgs.Variants.emplace_back(std::move(Variant));
 		}
 		if (OutArgs.Variants.empty())
 		{
 			OutError = "'Variants' must not be empty, omit the field to compile '" + std::string(BaseVariantName) + "' only";
-			return false;
+			return FALSE;
 		}
 	}
 	else
 	{
 		MCVariantDesc BaseVariant;
 		BaseVariant.Name = BaseVariantName;
-		BaseVariant.bIsVariant = false;
+		BaseVariant.bIsVariant = FALSE;
 		OutArgs.Variants.emplace_back(std::move(BaseVariant));
 	}
-	return true;
+	return TRUE;
 }
 
 static bool ValidateCompileArgs(MCCompileArgs& InOutArgs, std::string& OutError) noexcept
@@ -647,34 +648,34 @@ static bool ValidateCompileArgs(MCCompileArgs& InOutArgs, std::string& OutError)
 	if (InOutArgs.RootDir.empty())
 	{
 		OutError = "missing 'RootDir'";
-		return false;
+		return FALSE;
 	}
 	if (InOutArgs.JsonFilePath.empty())
 	{
 		OutError = "missing 'JsonFilePath'";
-		return false;
+		return FALSE;
 	}
 	if (InOutArgs.Stage.empty())
 	{
 		OutError = "missing 'Stage'";
-		return false;
+		return FALSE;
 	}
 	if (InOutArgs.OutputDir.empty())
 	{
 		OutError = "missing 'OutputDir'";
-		return false;
+		return FALSE;
 	}
 	if (std::filesystem::path(InOutArgs.JsonFilePath).is_absolute())
 	{
 		OutError = "'JsonFilePath' must be relative to 'RootDir'";
-		return false;
+		return FALSE;
 	}
 
 	MCShaderStageType StageType = MCShaderStageType::ShaderStage_VS;
 	if (!ParseShaderStage(InOutArgs.Stage, StageType))
 	{
 		OutError = "'Stage' must be one of \"VS\" / \"PS\" / \"CS\", got '" + InOutArgs.Stage + "'";
-		return false;
+		return FALSE;
 	}
 	if (InOutArgs.bDx11 && InOutArgs.bSm66)
 	{
@@ -686,7 +687,7 @@ static bool ValidateCompileArgs(MCCompileArgs& InOutArgs, std::string& OutError)
 	if (RootDirStr.empty())
 	{
 		OutError = "cannot resolve 'RootDir': " + InOutArgs.RootDir;
-		return false;
+		return FALSE;
 	}
 	InOutArgs.RootDir = RootDirStr;
 
@@ -695,19 +696,19 @@ static bool ValidateCompileArgs(MCCompileArgs& InOutArgs, std::string& OutError)
 	if (!std::filesystem::is_regular_file(EntryJsonPath, ErrorCode))
 	{
 		OutError = "entry json not found: " + EntryJsonPath;
-		return false;
+		return FALSE;
 	}
 
 	const std::string OutputDirStr = NormalizeDir(InOutArgs.OutputDir);
 	if (OutputDirStr.empty())
 	{
 		OutError = "cannot resolve 'OutputDir': " + InOutArgs.OutputDir;
-		return false;
+		return FALSE;
 	}
 	InOutArgs.OutputDir = OutputDirStr;
 	if (!EnsureDirectory(InOutArgs.OutputDir, OutError))
 	{
-		return false;
+		return FALSE;
 	}
 
 	if (InOutArgs.ShaderIncludeDir.empty())
@@ -720,7 +721,7 @@ static bool ValidateCompileArgs(MCCompileArgs& InOutArgs, std::string& OutError)
 		if (IncludeDirStr.empty())
 		{
 			OutError = "cannot resolve 'ShaderIncludeDir': " + InOutArgs.ShaderIncludeDir;
-			return false;
+			return FALSE;
 		}
 		InOutArgs.ShaderIncludeDir = IncludeDirStr;
 	}
@@ -735,12 +736,12 @@ static bool ValidateCompileArgs(MCCompileArgs& InOutArgs, std::string& OutError)
 		if (LogPathStr.empty())
 		{
 			OutError = "cannot resolve 'LogPath': " + InOutArgs.LogPath;
-			return false;
+			return FALSE;
 		}
 		InOutArgs.LogPath = LogPathStr;
 		if (!EnsureDirectory(ParentDirOf(InOutArgs.LogPath), OutError))
 		{
-			return false;
+			return FALSE;
 		}
 	}
 
@@ -750,15 +751,15 @@ static bool ValidateCompileArgs(MCCompileArgs& InOutArgs, std::string& OutError)
 		if (ManifestPathStr.empty())
 		{
 			OutError = "cannot resolve 'ManifestFilePath': " + InOutArgs.ManifestFilePath;
-			return false;
+			return FALSE;
 		}
 		InOutArgs.ManifestFilePath = ManifestPathStr;
 		if (!EnsureDirectory(ParentDirOf(InOutArgs.ManifestFilePath), OutError))
 		{
-			return false;
+			return FALSE;
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 // ---------------------------------------------------------------------------
@@ -771,7 +772,7 @@ static bool ProbeEntryJson(const std::string& InFullJsonPath, std::string& OutSh
 	if (!ReadTextFile(InFullJsonPath, JsonText))
 	{
 		OutError = "cannot read entry json: " + InFullJsonPath;
-		return false;
+		return FALSE;
 	}
 
 	rapidjson::Document Doc;
@@ -779,22 +780,22 @@ static bool ProbeEntryJson(const std::string& InFullJsonPath, std::string& OutSh
 	if (Doc.HasParseError())
 	{
 		OutError = std::string("entry json parse error: ") + rapidjson::GetParseError_En(Doc.GetParseError());
-		return false;
+		return FALSE;
 	}
 	if (!(Doc.HasMember("Name") && Doc["Name"].IsString() && (Doc["Name"].GetStringLength() > 0)))
 	{
 		OutError = "entry json missing valid 'Name': " + InFullJsonPath;
-		return false;
+		return FALSE;
 	}
 	if (!(Doc.HasMember("Entry") && Doc["Entry"].IsString() && (Doc["Entry"].GetStringLength() > 0)))
 	{
 		OutError = "entry json missing valid 'Entry': " + InFullJsonPath;
-		return false;
+		return FALSE;
 	}
 
 	OutShaderName = Doc["Name"].GetString();
 	OutEntryName = Doc["Entry"].GetString();
-	return true;
+	return TRUE;
 }
 
 static std::string ResolveManifestPath(const MCCompileArgs& InArgs, const std::string& InShaderName, MCShaderStageType InStage) noexcept
@@ -882,7 +883,7 @@ static const MC::MCDxcBinding* FindBinding(const std::vector<MC::MCDxcBinding>& 
 static void WriteReflectionBindingCulled(const std::vector<MC::MCDxcBinding>& InBindings, rapidjson::Value& InOutSection, MC::MCDxcBindingKind InKind, const char* InEntryLabel, rapidjson::Document::AllocatorType& InAllocator) noexcept
 {
 	MC::MCLogger& MCLog = MC::MCLogger::Get();
-	for (auto& EntryJson : InOutSection.GetArray())
+	for (rapidjson::Value& EntryJson : InOutSection.GetArray())
 	{
 		if (!EntryJson.IsObject())
 		{
@@ -914,7 +915,7 @@ static bool WriteReflectionLayout(const std::string& InReflectionPath, const MC:
 	if (!ReadTextFile(InReflectionPath, ReflectionText))
 	{
 		OutError = "cannot read reflection: " + InReflectionPath;
-		return false;
+		return FALSE;
 	}
 
 	rapidjson::Document ReflectionDoc;
@@ -922,13 +923,13 @@ static bool WriteReflectionLayout(const std::string& InReflectionPath, const MC:
 	if (ReflectionDoc.HasParseError())
 	{
 		OutError = std::string("reflection parse error: ") + rapidjson::GetParseError_En(ReflectionDoc.GetParseError());
-		return false;
+		return FALSE;
 	}
-	auto& ReflectionAllocator = ReflectionDoc.GetAllocator();
+	rapidjson::Document::AllocatorType& ReflectionAllocator = ReflectionDoc.GetAllocator();
 
 	if (ReflectionDoc.HasMember("CBuffers") && ReflectionDoc["CBuffers"].IsArray())
 	{
-		for (auto& CbJson : ReflectionDoc["CBuffers"].GetArray())
+		for (rapidjson::Value& CbJson : ReflectionDoc["CBuffers"].GetArray())
 		{
 			if (!CbJson.IsObject())
 			{
@@ -947,7 +948,7 @@ static bool WriteReflectionLayout(const std::string& InReflectionPath, const MC:
 
 			// Root constant buffers are pushed as root 32 bit constants, their shader visible size must
 			// fit the root constant budget. A culled one has no layout, nothing is pushed for it.
-			bool bRootConstant = false;
+			bool bRootConstant = FALSE;
 			ReadJsonBool(CbJson, "RootConstant", bRootConstant);
 			if (bRootConstant && (CbLayout != nullptr))
 			{
@@ -955,7 +956,7 @@ static bool WriteReflectionLayout(const std::string& InReflectionPath, const MC:
 				if (CbLayout->ByteSize > static_cast<uint32_t>(MC_ROOT_CONSTANT_CB_MAX_BYTES))
 				{
 					OutError = "CBuffer '" + CbName + "' is marked 'RootConstant' but its ByteSize = " + std::to_string(CbLayout->ByteSize) + " exceeds the root constant limit of " + std::to_string(MC_ROOT_CONSTANT_CB_MAX_BYTES) + " bytes";
-					return false;
+					return FALSE;
 				}
 			}
 
@@ -963,7 +964,7 @@ static bool WriteReflectionLayout(const std::string& InReflectionPath, const MC:
 			{
 				continue;
 			}
-			for (auto& FieldJson : CbJson["Fields"].GetArray())
+			for (rapidjson::Value& FieldJson : CbJson["Fields"].GetArray())
 			{
 				if (!FieldJson.IsObject())
 				{
@@ -1016,9 +1017,9 @@ static bool WriteReflectionLayout(const std::string& InReflectionPath, const MC:
 	if (!WriteTextFile(InReflectionPath, StrBuff.GetString()))
 	{
 		OutError = "cannot write reflection: " + InReflectionPath;
-		return false;
+		return FALSE;
 	}
-	return true;
+	return TRUE;
 }
 
 static bool CheckCBufferByteSizeBudget(const std::vector<MC::MCDxcCbLayout>& InLayouts, std::string& OutError) noexcept
@@ -1030,10 +1031,10 @@ static bool CheckCBufferByteSizeBudget(const std::vector<MC::MCDxcCbLayout>& InL
 		if (Layout.ByteSize > static_cast<uint32_t>(MC_MATERIAL_CB_MAX_BYTES))
 		{
 			OutError = "CBuffer '" + Layout.Name + "' ByteSize = " + std::to_string(Layout.ByteSize) + " exceeds the limit of " + std::to_string(MC_MATERIAL_CB_MAX_BYTES) + " bytes";
-			return false;
+			return FALSE;
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 // ---------------------------------------------------------------------------
@@ -1098,7 +1099,7 @@ static bool CompileShaderVariant(
 	if (!MC::ParseShader(LoadParam, FinalDefines, InVariant.Replaces, HlslSource))
 	{
 		OutResult.Errors = "ParseShader failed, see log for details";
-		return false;
+		return FALSE;
 	}
 	OutResult.Defines = FinalDefines;
 
@@ -1131,7 +1132,7 @@ static bool CompileShaderVariant(
 	if (!DxcResult.Success)
 	{
 		OutResult.Errors = DxcResult.Errors.empty() ? std::string("shader compile failed") : DxcResult.Errors;
-		return false;
+		return FALSE;
 	}
 
 	std::string StrError = "";
@@ -1139,12 +1140,12 @@ static bool CompileShaderVariant(
 	if (!WriteReflectionLayout(ReflectionPath, DxcResult, StrError))
 	{
 		OutResult.Errors = StrError;
-		return false;
+		return FALSE;
 	}
 	if (!CheckCBufferByteSizeBudget(DxcResult.CBuffers, StrError))
 	{
 		OutResult.Errors = StrError;
-		return false;
+		return FALSE;
 	}
 	OutResult.ReflectionFile = LoadParam.OutFileName;
 
@@ -1152,7 +1153,7 @@ static bool CompileShaderVariant(
 	if (!WriteBinaryFile(InArgs.OutputDir + BinaryFile, DxcResult.DxilBytes))
 	{
 		OutResult.Errors = "cannot write binary: " + InArgs.OutputDir + BinaryFile;
-		return false;
+		return FALSE;
 	}
 	OutResult.BinaryFile = BinaryFile;
 
@@ -1169,8 +1170,8 @@ static bool CompileShaderVariant(
 		}
 	}
 
-	OutResult.bSuccess = true;
-	return true;
+	OutResult.bSuccess = TRUE;
+	return TRUE;
 }
 
 // ---------------------------------------------------------------------------
@@ -1181,15 +1182,15 @@ static bool CompileShaderVariant(
 // every compile, so the name is what decides whether an entry is this compile's or an earlier one's.
 static bool ManifestHasVariant(const rapidjson::Value& InVariants, const std::string& InName) noexcept
 {
-	for (auto& Variant : InVariants.GetArray())
+	for (const rapidjson::Value& Variant : InVariants.GetArray())
 	{
-		const auto NameIt = Variant.FindMember("Name");
+		const rapidjson::Value::ConstMemberIterator NameIt = Variant.FindMember("Name");
 		if ((NameIt != Variant.MemberEnd()) && (NameIt->value.IsString()) && (InName == NameIt->value.GetString()))
 		{
-			return true;
+			return TRUE;
 		}
 	}
-	return false;
+	return FALSE;
 }
 
 // Folds the variants an earlier compile of the same stage source left in the manifest into this
@@ -1218,10 +1219,10 @@ static void AppendExistingManifestVariants(rapidjson::Document& InOutManifest, c
 		return;
 	}
 
-	const auto ExistingName = ExistingDoc.FindMember("Name");
-	const auto NewName = InOutManifest.FindMember("Name");
-	const auto ExistingVariants = ExistingDoc.FindMember("Variants");
-	const auto NewVariants = InOutManifest.FindMember("Variants");
+	const rapidjson::Value::MemberIterator ExistingName = ExistingDoc.FindMember("Name");
+	const rapidjson::Value::MemberIterator NewName = InOutManifest.FindMember("Name");
+	const rapidjson::Value::MemberIterator ExistingVariants = ExistingDoc.FindMember("Variants");
+	const rapidjson::Value::MemberIterator NewVariants = InOutManifest.FindMember("Variants");
 	if ((ExistingName == ExistingDoc.MemberEnd()) || (NewName == InOutManifest.MemberEnd())
 		|| (ExistingVariants == ExistingDoc.MemberEnd()) || (NewVariants == InOutManifest.MemberEnd())
 		|| (!ExistingName->value.IsString()) || (!NewName->value.IsString())
@@ -1234,10 +1235,10 @@ static void AppendExistingManifestVariants(rapidjson::Document& InOutManifest, c
 		return;
 	}
 
-	auto& ManifestAllocator = InOutManifest.GetAllocator();
-	for (auto& ExistingVariant : ExistingVariants->value.GetArray())
+	rapidjson::Document::AllocatorType& ManifestAllocator = InOutManifest.GetAllocator();
+	for (rapidjson::Value& ExistingVariant : ExistingVariants->value.GetArray())
 	{
-		const auto NameIt = ExistingVariant.FindMember("Name");
+		const rapidjson::Value::MemberIterator NameIt = ExistingVariant.FindMember("Name");
 		if ((NameIt == ExistingVariant.MemberEnd()) || (!NameIt->value.IsString()))
 		{
 			continue;
@@ -1263,7 +1264,7 @@ static bool WriteManifest(
 {
 	rapidjson::Document ManifestDoc;
 	ManifestDoc.SetObject();
-	auto& ManifestAllocator = ManifestDoc.GetAllocator();
+	rapidjson::Document::AllocatorType& ManifestAllocator = ManifestDoc.GetAllocator();
 
 	ManifestDoc.AddMember("Name", rapidjson::Value(InShaderName.c_str(), ManifestAllocator), ManifestAllocator);
 	ManifestDoc.AddMember("Entry", rapidjson::Value(InEntryName.c_str(), ManifestAllocator), ManifestAllocator);
@@ -1398,7 +1399,7 @@ int main(int InArgc, char** InArgv)
 	const std::string ManifestPath = ResolveManifestPath(Args, ShaderName, StageType);
 	MCLog.Info("Manifest: " + ManifestPath);
 
-	bool bAllOk = true;
+	bool bAllOk = TRUE;
 	std::vector<MCVariantResult> VariantResults;
 	VariantResults.reserve(Args.Variants.size());
 	for (int VariantIdx = 0, NumVariants = static_cast<int>(Args.Variants.size()); VariantIdx < NumVariants; ++VariantIdx)
@@ -1409,7 +1410,7 @@ int main(int InArgc, char** InArgv)
 		MCVariantResult VariantResult;
 		if (!CompileShaderVariant(Args, StageType, ShaderName, EntryName, Variant, DxcCompiler, VariantResult))
 		{
-			bAllOk = false;
+			bAllOk = FALSE;
 			MCLog.Error("variant '" + Variant.Name + "' failed: " + VariantResult.Errors);
 		}
 		else
@@ -1422,7 +1423,7 @@ int main(int InArgc, char** InArgv)
 	MCLog.Stage("WriteManifest", ManifestPath);
 	if (!WriteManifest(Args, StageType, ShaderName, EntryName, VariantResults, ManifestPath))
 	{
-		bAllOk = false;
+		bAllOk = FALSE;
 		MCLog.Error("cannot write manifest: " + ManifestPath);
 	}
 

@@ -52,7 +52,7 @@ namespace PigeonEngine
 		ENavigationBuildStats	LastBuildStats;
 		BOOL32					bDebugDrawEnabled = TRUE;
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 #endif

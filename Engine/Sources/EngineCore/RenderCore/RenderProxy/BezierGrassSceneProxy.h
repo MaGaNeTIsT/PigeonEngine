@@ -63,12 +63,12 @@ namespace PigeonEngine
 		void			UpdateTileParams(const Vector2& InTileAnchor, const Vector2& InTileSize, UINT32 InNumTilesX, UINT32 InNumTilesZ);
 		void			UpdateWindParams(const Vector3& InWindDirection, FLOAT InWindStrength);
 	public:
-		virtual BOOL32	IsRenderValid()const override;
+		virtual BOOL32	IsRenderValid() const override;
 		void			UpdateInstanceResource();
 		void			UpdateRenderResource();
-		void			BindRenderResource()const;
+		void			BindRenderResource() const;
 		void			DispatchComputeShader();
-		void			Draw()const;
+		void			Draw() const;
 	protected:
 		void			SetupVertexIndexBuffer();
 		void			SetupComputeBuffers();
@@ -76,10 +76,10 @@ namespace PigeonEngine
 		void			SetupComputeConstantBuffer();
 		void			SetupLayerTypeBuffer();
 		void			SetupShaders();
-		void			BindVertexShader()const;
-		void			BindPixelShader()const;
-		void			BindMeshAndInstanceResource()const;
-		void			BindPrimitiveParameter()const;
+		void			BindVertexShader() const;
+		void			BindPixelShader() const;
+		void			BindMeshAndInstanceResource() const;
+		void			BindPrimitiveParameter() const;
 	protected:
 		// Resolved from the grass material instance, or from the engine fallback while
 		// the component carries none. One program drives the vertex and the pixel stage.

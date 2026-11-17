@@ -4,7 +4,7 @@
 #include <RenderDevice/DeviceD3D11.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
 #endif
 
@@ -28,7 +28,7 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	static UINT32 ReadUInt32BigEndian(const BYTE* InBytes) noexcept
 	{
 		return ((static_cast<UINT32>(InBytes[0]) << 24u) | (static_cast<UINT32>(InBytes[1]) << 16u)
@@ -725,13 +725,13 @@ namespace PigeonEngine
 			UINT32 RenderDataByteCount = 0u;
 			BOOL32 NeedSwitchRB = FALSE;
 
-#define WICPixelFormatToRenderFormat(_WICPixelFormatType, _WICFormatByteCount, _RenderFormat, _RenderDataByteCount, _NeedSwitchRB) \
-			else if (FramePixelFormat == _WICPixelFormatType)\
+#define WICPixelFormatToRenderFormat(__WICPixelFormatType, __WICFormatByteCount, __RenderFormat, __RenderDataByteCount, __NeedSwitchRB) \
+			else if (FramePixelFormat == __WICPixelFormatType)\
 			{\
-				FormatByteCount	= _WICFormatByteCount;\
-				FormatType = _RenderFormat;\
-				RenderDataByteCount = _RenderDataByteCount;\
-				NeedSwitchRB = _NeedSwitchRB;\
+				FormatByteCount	= __WICFormatByteCount;\
+				FormatType = __RenderFormat;\
+				RenderDataByteCount = __RenderDataByteCount;\
+				NeedSwitchRB = __NeedSwitchRB;\
 			}\
 
 			if (FramePixelFormat == GUID_WICPixelFormat8bppGray)
@@ -893,7 +893,7 @@ namespace PigeonEngine
 	{
 		ReleaseResource();
 	}
-	BOOL32 ETexture::IsResourceValid()const
+	BOOL32 ETexture::IsResourceValid() const
 	{
 		return ((!!ByteCode) && (ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN) && (ResourceProperties.Width > 0u) && (ResourceProperties.Height > 0u) && (ResourceProperties.PixelByteCount > 0u));
 	}
@@ -962,7 +962,7 @@ namespace PigeonEngine
 		}
 		return (*this);
 	}
-	BOOL32 ETexture2D::IsResourceValid()const
+	BOOL32 ETexture2D::IsResourceValid() const
 	{
 		return ((TextureType == ETextureType::TEXTURE_TYPE_TEXTURE2D) && (ResourceProperties.Depth == 0u) && ETexture::IsResourceValid());
 	}
@@ -1020,7 +1020,7 @@ namespace PigeonEngine
 		}
 		return (*this);
 	}
-	BOOL32 ETextureCube::IsResourceValid()const
+	BOOL32 ETextureCube::IsResourceValid() const
 	{
 		// A cube carries an sRGB reading the same way a 2D texture does - the flag describes the
 		// data, it does not make the cube invalid.
@@ -1162,11 +1162,11 @@ namespace PigeonEngine
 	}
 
 	ETexture2DAsset::ETexture2DAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<ETexture2D>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -1179,7 +1179,7 @@ namespace PigeonEngine
 	{
 		if (IsInitialized())
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Texture2D name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -1245,11 +1245,11 @@ namespace PigeonEngine
 	}
 
 	ETextureCubeAsset::ETextureCubeAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<ETextureCube>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -1262,7 +1262,7 @@ namespace PigeonEngine
 	{
 		if (IsInitialized())
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("TextureCube name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -1319,7 +1319,7 @@ namespace PigeonEngine
 			ViewFormat = RFormatTraits::GetLinearCounterpart(InResource->ResourceProperties.Format);
 		}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		/*
 		* A payload of zeroes is worth saying out loud, because everything downstream of it looks like
 		* a different bug: the environment bake projects it into zero coefficients (a dispatch that ran
@@ -1364,7 +1364,7 @@ namespace PigeonEngine
 					+ EString(PE_TEXT("' mean linear luminance is unavailable: the stored format is not decoded by the editor helper.")));
 			}
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 		Result = new RTextureCubeResource();
 		if (!(Result->InitFromRHI(RenderDevice,
@@ -1384,7 +1384,7 @@ namespace PigeonEngine
 
 	ETextureAssetManager::ETextureAssetManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = ENGINE_TEXTURE_ASSET_MANAGER_NAME;
 #endif
 	}
@@ -1407,14 +1407,14 @@ namespace PigeonEngine
 		ClearTexture2Ds();
 		ClearTextureCubes();
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 ETextureAssetManager::ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, BOOL32 InFallbackSRGB)
 	{
 		EString TempFullPathName(InSavePath);
 		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1426,7 +1426,7 @@ namespace PigeonEngine
 		EString ImportPathName; EString ImportFileType;
 		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1438,7 +1438,7 @@ namespace PigeonEngine
 		//TODO Check import type(like jpg, png, tiff...).
 		if (ImportPathName.Length() <= 3u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1500,7 +1500,7 @@ namespace PigeonEngine
 			}
 			if (!ImportPathValid)
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				{
 					EString ErrorData("Error file path for texture cube importer (import file path : ");
 					ErrorData = ErrorData + ", save assset path : " + TempFullPathName + ").";
@@ -1527,7 +1527,7 @@ namespace PigeonEngine
 			EString ImportPathName; EString ImportFileType;
 			if (!(SplitByLastSign('.', TempImportFullPathName, ImportPathName, ImportFileType)))
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				{
 					EString ErrorData("Error file path for texture cube importer (import file path : ");
 					ErrorData = ErrorData + TempImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1540,7 +1540,7 @@ namespace PigeonEngine
 			//TODO Check import type(like jpg, png, tiff...).
 			if (ImportPathName.Length() <= 3u)
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				{
 					EString ErrorData("Error file path for texture 2d importer (import file path : ");
 					ErrorData = ErrorData + TempImportFullPathName + ", save assset path : " + TempFullPathName + ").";
@@ -1648,7 +1648,7 @@ namespace PigeonEngine
 		}
 		if (Texture2DManager.Add(TempFullPathName, ResultAsset, TRUE) == 0u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Texture2D path = [") + TempFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -1682,7 +1682,7 @@ namespace PigeonEngine
 		}
 		if (TextureCubeManager.Add(TempFullPathName, ResultAsset, TRUE) == 0u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("TextureCube path = [") + TempFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
@@ -1785,7 +1785,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Loading texture 2d asset error.(load file path : ");
 				ErrorData = ErrorData + TempFullPathName + ").";
@@ -1802,7 +1802,7 @@ namespace PigeonEngine
 			{
 				delete[]ReadFileMem;
 			}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Load texture 2d asset failed (load file path : ");
 				ErrorData += TempFullPathName;
@@ -1863,7 +1863,7 @@ namespace PigeonEngine
 				ReadSRGB = (*InSRGBOverride);
 			}
 			OutTextureAsset = new ETexture2DAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				, InLoadName
 #endif
 			);
@@ -1892,7 +1892,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((TempFullPathName.Length() < 10u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Saving texture 2d asset error.(save file path : ");
 				ErrorData = ErrorData + TempFullPathName + ", is asset valid : " +
@@ -1942,7 +1942,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Loading texture cube asset error.(load file path : ");
 				ErrorData = ErrorData + TempFullPathName + ").";
@@ -1959,7 +1959,7 @@ namespace PigeonEngine
 			{
 				delete[]ReadFileMem;
 			}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Load texture cube asset failed (load file path : ");
 				ErrorData += TempFullPathName;
@@ -2018,7 +2018,7 @@ namespace PigeonEngine
 			::memcpy_s(ReadByteCode, ByteCodeSize, TempPtr, RstSize);
 
 			OutTextureAsset = new ETextureCubeAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				, InLoadName
 #endif
 			);
@@ -2047,7 +2047,7 @@ namespace PigeonEngine
 		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((TempFullPathName.Length() < 10u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			{
 				EString ErrorData("Saving texture cube asset error.(save file path : ");
 				ErrorData = ErrorData + TempFullPathName + ", is asset valid : " +
@@ -2100,7 +2100,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const BOOL32 bHasImport = (!!InImportPath) && (!!InImportName) && (!!InImportFileType);
 		if (bHasImport)
 		{
@@ -2143,7 +2143,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const BOOL32 bHasImport = (!!InImportPath) && (!!InImportName) && (!!InImportFileType);
 		if (bHasImport)
 		{

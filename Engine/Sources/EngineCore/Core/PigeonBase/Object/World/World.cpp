@@ -6,7 +6,7 @@
 #include "PigeonBase/Object/Actor/LevelActor.h"
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
 #endif
 
@@ -44,7 +44,7 @@ namespace PigeonEngine
 
 	void PWorld::Init()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		EditorController = nullptr;
 #endif
 		Controller = nullptr;
@@ -100,7 +100,7 @@ namespace PigeonEngine
 
 	void PWorld::CreateDefaultController()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		this->EditorController = new PEditorController();
 		this->EditorController->SetIsTickable(TRUE);
 		POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
@@ -131,7 +131,7 @@ namespace PigeonEngine
 
 	void PWorld::Destroy()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		EditorController = nullptr;
 #endif
 		Controller = nullptr;
@@ -152,9 +152,9 @@ namespace PigeonEngine
 	const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const
 	{
 		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::GetActorByUniqueId : RootActor is nullptr.", RootActor != nullptr);
-		for(auto& elem : RootActor->ChildrenActors)
+		for (PActor* Actor : RootActor->ChildrenActors)
 		{
-			const PActor* Ret = elem->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
+			const PActor* Ret = Actor->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
 			if(Ret)
 			{
 				return Ret;
@@ -167,9 +167,9 @@ namespace PigeonEngine
 	const PActorComponent* PWorld::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID,
 		const BOOL8& bIncludeChildComponent) const
 	{
-		for(auto& elem : RootActor->ChildrenActors)
+		for (PActor* Actor : RootActor->ChildrenActors)
 		{
-			const PActorComponent* Ret = elem->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
+			const PActorComponent* Ret = Actor->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
 			if(Ret)
 			{
 				return Ret;
@@ -205,7 +205,7 @@ namespace PigeonEngine
 	}
 
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PWorld::AddSceneToWorld(PScene* NewScene)
 	{
 		Scenes.Add(NewScene);
@@ -230,7 +230,7 @@ namespace PigeonEngine
 
 	PController* PWorld::GetController() const
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		return this->EditorController;
 #else
 		return this->Controller;
@@ -327,7 +327,7 @@ namespace PigeonEngine
 	{
 		return RenderScene;
 	}
-	const RSceneInterface* PWorld::GetRenderScene()const
+	const RSceneInterface* PWorld::GetRenderScene() const
 	{
 		return RenderScene;
 	}
@@ -345,7 +345,7 @@ namespace PigeonEngine
 		}
 		Camera->SetViewport(0.f, 0.f, static_cast<FLOAT>(InWidth), static_cast<FLOAT>(InHeight));
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	void PWorld::SetSelectedActor(PActor* Selected)
 	{
@@ -383,9 +383,9 @@ namespace PigeonEngine
 
 	void PWorld::GenerateWorldOutline()
 	{
-		for(const auto& elem : RootActor->GetAllActorsAttached())
+		for (PActor* Actor : RootActor->GetAllActorsAttached())
 		{
-			elem->GenerateWorldOutline(ImguiSelectedActor);
+			Actor->GenerateWorldOutline(ImguiSelectedActor);
 		}
 	}
 

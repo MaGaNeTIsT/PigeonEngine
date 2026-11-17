@@ -396,7 +396,7 @@ void RCommandListD3D12::BeginRenderPass(const RRHIRenderPassDesc& InDesc)
 	}
 
 	// GPU profiler: open event + first timestamp. No-op when PassName is
-	// null or _GPU_ENABLE_PROFILER is off. The flag is what makes EndRenderPass
+	// null or ENGINE_ENABLE_GPU_PROFILER is off. The flag is what makes EndRenderPass
 	// close only a record this list opened.
 	PE_GPU_PROFILER_PASS_BEGIN(this, InDesc.PassName);
 	bProfilerPassOpen = ((InDesc.PassName != nullptr) ? TRUE : FALSE);
@@ -709,7 +709,7 @@ void RCommandListD3D12::SetPipelineState(IRRHIPipelineState* InPipelineState)
 
 void RCommandListD3D12::ValidateBoundTargetFormats(IRRHIPipelineState* InPipelineState) const
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	if (!InPipelineState)
 	{
 		return;
@@ -1520,7 +1520,7 @@ void RCommandListD3D12::DispatchIndirect(IRRHIBuffer* InArgBuffer, SIZE_T InArgO
 
 void RCommandListD3D12::BeginDebugMarker(const EString& InName)
 {
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 	if (CommandList)
 	{
 		WCHAR WideName[256] = {};
@@ -1541,7 +1541,7 @@ void RCommandListD3D12::BeginDebugMarker(const EString& InName)
 
 void RCommandListD3D12::EndDebugMarker()
 {
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 	if (CommandList)
 	{
 		CommandList->EndEvent();

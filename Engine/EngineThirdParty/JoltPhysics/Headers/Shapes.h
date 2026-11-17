@@ -4,7 +4,7 @@
 #include "PhysicsUtility.h"
 #include "JoltIncludes.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 
@@ -34,13 +34,13 @@ class FShape : public ERTTIObject
 public:
 	FShape();
 	virtual ~FShape();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager,const Vector3& inPosition, const Quaternion& inRotation) const = 0;
 #endif
 	virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale) { return AABBBox(); }
 protected:
-	Shape* m_Shape = nullptr;
-	ShapeSettings* m_ShapeSettings = nullptr;
+	Shape* ShapeInstance = nullptr;
+	ShapeSettings* ShapeSettingsInstance = nullptr;
 protected:
 	virtual Shape* CreateShapeInternal() = 0;
 	virtual ShapeSettings* CreateShapeSettingsInternal() = 0;
@@ -91,7 +91,7 @@ public:
 		//	Material = nullptr;
 		//}
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 #endif
 protected:
@@ -121,7 +121,7 @@ public:
 	~FSphereShape()
 	{
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 #endif
 protected:
@@ -153,7 +153,7 @@ public:
 	~FCapsuleShape()
 	{
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 #endif
 protected:
@@ -187,7 +187,7 @@ public:
 	~FCylinerShape()
 	{
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 #endif
 protected:
@@ -221,7 +221,7 @@ public:
 	{
 		delete HostedShape;
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 #endif
 protected:

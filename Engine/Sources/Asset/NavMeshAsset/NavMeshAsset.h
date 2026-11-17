@@ -61,7 +61,7 @@ namespace PigeonEngine
 	{
 	public:
 		ENavMeshAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);

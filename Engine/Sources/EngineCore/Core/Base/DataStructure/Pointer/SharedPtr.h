@@ -19,8 +19,8 @@ namespace PigeonEngine
 		TSharedPtr(const std::shared_ptr<T>& Other);
 		TSharedPtr(T* value = nullptr);
 
-		T&              operator*()const;
-		T*              operator->()const;
+		T&              operator*() const;
+		T*              operator->() const;
 		TSharedPtr<T>&  operator=(T* value);
 		TSharedPtr<T>&  operator=(const TSharedPtr<T>& Other);
 		TSharedPtr<T>&  operator=(const std::shared_ptr<T>& Other);
@@ -29,7 +29,7 @@ namespace PigeonEngine
 		BOOL8           operator==(const TSharedPtr<T>& Other) const;
 		BOOL8           operator!=(const TSharedPtr<T>& Other);
 
-		PE_NODISCARD BOOL8 IsValid()const;
+		PE_NODISCARD BOOL8 IsValid() const;
 
 		T* Get() const;
 

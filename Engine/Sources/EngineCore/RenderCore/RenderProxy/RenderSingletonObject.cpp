@@ -9,7 +9,7 @@
 // The full screen triangle asks the program's reflection for its input slot in every
 // configuration, so the shader binding bridge is not editor-only.
 #include <Shader/ShaderAssetBinding.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <RenderConfig/RenderConfig.h>
 #include <Shader/ShaderParameter.h>
 #include <ShaderAsset/ShaderAsset.h>
@@ -24,12 +24,12 @@ namespace PigeonEngine
 {
 	// The debug overlay binds the two instance buffers and nothing else; the material it draws
 	// with publishes its own values under the material scope.
-	static const FShaderBindingClaim g_DebugWireframeBindingClaims[] =
+	static const FShaderBindingClaim GDebugWireframeBindingClaims[] =
 	{
 		{ EName(PE_TEXT("DebugPrimitiveTransforms")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 		{ EName(PE_TEXT("DebugPrimitiveColors")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_DebugWireframeBindingClaims, EName(SHADER_BINDING_SCOPE_DEBUG_WIREFRAME));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GDebugWireframeBindingClaims, EName(SHADER_BINDING_SCOPE_DEBUG_WIREFRAME));
 
 	static RBufferResource _GFullScreenTriangleVertexBuffer;
 	static RBufferResource _GFullScreenTriangleIndexBuffer;
@@ -52,7 +52,7 @@ namespace PigeonEngine
 				EMainManager::GetManagerSingleton()->GetRenderDevice(),
 				RBufferDesc((sizeof(FLOAT) * 2u * 4u), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
 				&SubData);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if (!Result)
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create full screen triangle vertex buffer failed.")));
@@ -82,7 +82,7 @@ namespace PigeonEngine
 				EMainManager::GetManagerSingleton()->GetRenderDevice(),
 				RBufferDesc((2u * 6u), RBindFlagType::BIND_INDEX_BUFFER, 2u),
 				&SubData);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if (!Result)
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create full screen triangle index buffer failed.")));
@@ -113,11 +113,11 @@ namespace PigeonEngine
 		CreateFullScreenTriangleIndexBuffer();
 		return (*this);
 	}
-	UINT32 RFullScreenTriangle::GetIndexCount()const
+	UINT32 RFullScreenTriangle::GetIndexCount() const
 	{
 		return 6u;	//TODO
 	}
-	void RFullScreenTriangle::BindPrimitiveBuffers(IRCommandList* InCommandList, const EShaderProgram& InProgram)const
+	void RFullScreenTriangle::BindPrimitiveBuffers(IRCommandList* InCommandList, const EShaderProgram& InProgram) const
 	{
 		// Phase 4.3.e fix: previously this hard-gated on D3D11 backend and
 		// returned early under D3D12 - so FinalOutputPass's DrawIndexed had no
@@ -128,7 +128,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check full screen triangle vertex buffer is invalid.")), (_GFullScreenTriangleVertexBuffer.IsRenderResourceValid()));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check full screen triangle index buffer is invalid.")), (_GFullScreenTriangleIndexBuffer.IsRenderResourceValid()));
 #endif
@@ -159,7 +159,7 @@ namespace PigeonEngine
 		InCommandList->SetIndexBuffer(IB, ERHIIndexFormat::RHI_INDEX_FORMAT_UINT16, 0u);
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	// The engine debug wireframe program. Loaded once per process and shared: the manager
 	// keeps only the resolved program, which is what the debug pass builds its pipeline state
 	// from.
@@ -360,23 +360,23 @@ namespace PigeonEngine
 
 		return Result;
 	}
-	BOOL32 RDebugWireframePrimitive::IsUseShortIndex()const
+	BOOL32 RDebugWireframePrimitive::IsUseShortIndex() const
 	{
 		return UseShortIndex;
 	}
-	UINT32 RDebugWireframePrimitive::GetIndexCount()const
+	UINT32 RDebugWireframePrimitive::GetIndexCount() const
 	{
 		return IndexCount;
 	}
-	const EBoundAABB& RDebugWireframePrimitive::GetBound()const
+	const EBoundAABB& RDebugWireframePrimitive::GetBound() const
 	{
 		return Bound;
 	}
-	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveVertexBuffer()const
+	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveVertexBuffer() const
 	{
 		return VertexBuffer;
 	}
-	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveIndexBuffer()const
+	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveIndexBuffer() const
 	{
 		return IndexBuffer;
 	}
@@ -454,11 +454,11 @@ namespace PigeonEngine
 				PrimitiveTransforms[i].Empty();
 				PrimitiveColors[i].Empty();
 			}
-			for (auto It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
+			for (TMap<EString, TArray<Matrix4x4>>::TIterator It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
 			{
 				It->second.Empty();
 			}
-			for (auto It = CustomPrimitiveColors.Begin(); It != CustomPrimitiveColors.End(); It++)
+			for (TMap<EString, TArray<Color4>>::TIterator It = CustomPrimitiveColors.Begin(); It != CustomPrimitiveColors.End(); It++)
 			{
 				It->second.Empty();
 			}
@@ -470,7 +470,7 @@ namespace PigeonEngine
 			RequireCommands[FrontSlotIndex].DoCommands();
 			RequireCommands[FrontSlotIndex].EmptyQueue();
 
-#if _DEBUG_MODE
+#if ENGINE_DEBUG_MODE
 			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
 			{
 				Check(PrimitiveTransforms[i].Num() == PrimitiveColors[i].Num());
@@ -689,7 +689,7 @@ namespace PigeonEngine
 				}
 			}
 
-			for (auto It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
+			for (TMap<EString, TArray<Matrix4x4>>::TIterator It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
 			{
 				const EString& Name = (It->first);
 

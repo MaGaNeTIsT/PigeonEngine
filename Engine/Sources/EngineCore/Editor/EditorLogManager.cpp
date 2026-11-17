@@ -1,5 +1,5 @@
 #include "EditorLogManager.h"
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 #include "Base/Timer/Timer.h"
 #include <imgui.h>
 
@@ -69,7 +69,7 @@ namespace PigeonEngine
 
 	void EEditorLogManager::ShutDown()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		WriteDownLogs();
 #endif
 

@@ -201,7 +201,7 @@ namespace PigeonEngine
 		// Render proxy functions END
 
 	// ImGui
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 #endif

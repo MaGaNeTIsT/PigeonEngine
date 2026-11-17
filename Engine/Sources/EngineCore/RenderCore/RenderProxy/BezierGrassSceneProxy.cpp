@@ -27,7 +27,7 @@
 // is parked: a rebuilt pass starts from the correct ownership instead of tripping the plan audit.
 namespace PigeonEngine
 {
-	static const FShaderBindingClaim g_BezierGrassBindingClaims[] =
+	static const FShaderBindingClaim GBezierGrassBindingClaims[] =
 	{
 		{ EName(PE_TEXT("LandscapeHeightTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 		{ EName(PE_TEXT("BezierGrassLayerIndexTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
@@ -38,7 +38,7 @@ namespace PigeonEngine
 		{ EName(PE_TEXT("DispatchDatas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 		{ EName(PE_TEXT("DrawIndirectDatas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_BezierGrassBindingClaims, EName(SHADER_BINDING_SCOPE_BEZIER_GRASS));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GBezierGrassBindingClaims, EName(SHADER_BINDING_SCOPE_BEZIER_GRASS));
 }
 
 #if 0
@@ -502,7 +502,7 @@ namespace PigeonEngine
 		WindDirection = InWindDirection;
 		WindStrength = InWindStrength;
 	}
-	BOOL32 RBezierGrassSceneProxy::IsRenderValid()const
+	BOOL32 RBezierGrassSceneProxy::IsRenderValid() const
 	{
 		//TODO
 		return TRUE;
@@ -523,7 +523,7 @@ namespace PigeonEngine
 #endif
 		CBufferParameter.UploadBuffer();
 	}
-	void RBezierGrassSceneProxy::BindRenderResource()const
+	void RBezierGrassSceneProxy::BindRenderResource() const
 	{
 		BindVertexShader();
 		BindPixelShader();
@@ -764,14 +764,14 @@ namespace PigeonEngine
 		}
 		ComputeProgram = (GrassConstructShader ? GrassConstructShader->GetProgram() : nullptr);
 	}
-	void RBezierGrassSceneProxy::BindVertexShader()const
+	void RBezierGrassSceneProxy::BindVertexShader() const
 	{
 		if (!IsLegacyD3D11PathActive())
 		{
 			return;
 		}
 		const RShaderStageResource* VertexStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_VERTEX) : nullptr);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (VertexStage)
 #endif
 		{
@@ -786,21 +786,21 @@ namespace PigeonEngine
 				RenderDevice->SetVSShader(NativeVertexShader);
 			}
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh vertex shader is invalid."));
 		}
 #endif
 	}
-	void RBezierGrassSceneProxy::BindPixelShader()const
+	void RBezierGrassSceneProxy::BindPixelShader() const
 	{
 		if (!IsLegacyD3D11PathActive())
 		{
 			return;
 		}
 		const RShaderStageResource* PixelStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_PIXEL) : nullptr);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (PixelStage)
 #endif
 		{
@@ -810,20 +810,20 @@ namespace PigeonEngine
 				RDeviceD3D11::GetDeviceSingleton()->SetPSShader(NativePixelShader);
 			}
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh pixel shader is invalid."));
 		}
 #endif
 	}
-	void RBezierGrassSceneProxy::BindMeshAndInstanceResource()const
+	void RBezierGrassSceneProxy::BindMeshAndInstanceResource() const
 	{
 		if (!IsLegacyD3D11PathActive())
 		{
 			return;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const RShaderStageResource* VertexStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_VERTEX) : nullptr);
 		const RShaderStageResource* PixelStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_PIXEL) : nullptr);
 		if ((!!VertexStage) && (!!PixelStage))
@@ -851,14 +851,14 @@ namespace PigeonEngine
 				RenderDevice->BindVSShaderResourceView(LayerTypeBuffer.ShaderResourceView, 2);
 			}
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check bezier grass scene proxy is invalid."));
 		}
 #endif
 	}
-	void RBezierGrassSceneProxy::BindPrimitiveParameter()const
+	void RBezierGrassSceneProxy::BindPrimitiveParameter() const
 	{
 		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
 		if (!CmdList) { return; }
@@ -1134,7 +1134,7 @@ namespace PigeonEngine
 		RenderDevice->BindNoCSUnorderedAccessView(1);
 		RenderDevice->BindNoCSUnorderedAccessView(2);
 	}
-	void RBezierGrassSceneProxy::Draw()const
+	void RBezierGrassSceneProxy::Draw() const
 	{
 		// The engine fallbacks are asked for rather than resolved, so the first frames of a cold start
 		// may legitimately have none. Re-running the resolution here is what makes the grass appear
@@ -1147,7 +1147,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const RIndexBufferResource& IndexRenderResource = IndexBuffer;
 		if (IndexRenderResource.IsRenderResourceValid())
 #endif
@@ -1161,7 +1161,7 @@ namespace PigeonEngine
 			RDeviceD3D11::GetDeviceSingleton()->DrawIndexedInstance(NumInstances, UsedIndexCount, 0, UsedIndexOffset, UsedVertexOffset);
 #endif
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Draw bezier grass indexed is invalid."));

@@ -371,9 +371,9 @@ class FBodyActivationListener : public BodyActivationListener
 public:
 	void AddListener(FBodyActivationEventListenerInterface* InListener)
 	{
-		if (InListener && !m_Listeners.Contains(InListener))
+		if (InListener && !Listeners.Contains(InListener))
 		{
-			m_Listeners.Add(InListener);
+			Listeners.Add(InListener);
 		}
 	}
 
@@ -381,7 +381,7 @@ public:
 	{
 		if (InListener)
 		{
-			m_Listeners.Remove(InListener);
+			Listeners.Remove(InListener);
 		}
 	}
 
@@ -390,7 +390,7 @@ public:
 		FPhysicsBodyId PhysicsBodyId;
 		PhysicsBodyId.ID = inBodyID;
 		const ObjectIdentityType ObjectID = static_cast<ObjectIdentityType>(inBodyUserData);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -404,7 +404,7 @@ public:
 		FPhysicsBodyId PhysicsBodyId;
 		PhysicsBodyId.ID = inBodyID;
 		const ObjectIdentityType ObjectID = static_cast<ObjectIdentityType>(inBodyUserData);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -414,7 +414,7 @@ public:
 	}
 
 private:
-	TArray<FBodyActivationEventListenerInterface*> m_Listeners;
+	TArray<FBodyActivationEventListenerInterface*> Listeners;
 };
 
 class FContactListener : public ContactListener
@@ -422,9 +422,9 @@ class FContactListener : public ContactListener
 public:
 	void AddListener(FContactEventListenerInterface* InListener)
 	{
-		if (InListener && !m_Listeners.Contains(InListener))
+		if (InListener && !Listeners.Contains(InListener))
 		{
-			m_Listeners.Add(InListener);
+			Listeners.Add(InListener);
 		}
 	}
 
@@ -432,7 +432,7 @@ public:
 	{
 		if (InListener)
 		{
-			m_Listeners.Remove(InListener);
+			Listeners.Remove(InListener);
 		}
 	}
 
@@ -445,7 +445,7 @@ public:
 		BodyId2.ID = inBody2.GetID();
 		const Vector3 BaseOffset = PhysicsUtility::Convert2Centimeter(Vec3(inBaseOffset.GetX(), inBaseOffset.GetY(), inBaseOffset.GetZ()));
 		const FPhysicsContactValidateResult CollisionResult = FPhysicsContactValidateResult::Create(inCollisionResult);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -468,7 +468,7 @@ public:
 		BodyId2.ID = inBody2.GetID();
 		const FPhysicsContactManifold Manifold = FPhysicsContactManifold::Create(inManifold);
 		FPhysicsContactSettings Settings = FPhysicsContactSettings::Create(ioSettings);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -486,7 +486,7 @@ public:
 		BodyId2.ID = inBody2.GetID();
 		const FPhysicsContactManifold Manifold = FPhysicsContactManifold::Create(inManifold);
 		FPhysicsContactSettings Settings = FPhysicsContactSettings::Create(ioSettings);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -499,7 +499,7 @@ public:
 	virtual void OnContactRemoved(const SubShapeIDPair& inSubShapePair) override
 	{
 		const FPhysicsSubShapePair SubShapePair = FPhysicsSubShapePair::Create(inSubShapePair);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -509,7 +509,7 @@ public:
 	}
 
 private:
-	TArray<FContactEventListenerInterface*> m_Listeners;
+	TArray<FContactEventListenerInterface*> Listeners;
 };
 
 /// This class receives callbacks when a virtual character hits something.
@@ -518,9 +518,9 @@ class FCharacterContactListener :public CharacterContactListener
 public:
 	void AddListener(FCharacterContactEventListenerInterface* InListener)
 	{
-		if (InListener && !m_Listeners.Contains(InListener))
+		if (InListener && !Listeners.Contains(InListener))
 		{
-			m_Listeners.Add(InListener);
+			Listeners.Add(InListener);
 		}
 	}
 
@@ -528,7 +528,7 @@ public:
 	{
 		if (InListener)
 		{
-			m_Listeners.Remove(InListener);
+			Listeners.Remove(InListener);
 		}
 	}
 
@@ -543,7 +543,7 @@ public:
 		BodyId2.ID = inBody2.GetID();
 		Vector3 LinearVelocity = PhysicsUtility::Convert(ioLinearVelocity);
 		Vector3 AngularVelocity = PhysicsUtility::Convert(ioAngularVelocity);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -559,7 +559,7 @@ public:
 	{
 		FPhysicsBodyId BodyId2;
 		BodyId2.ID = inBodyID2;
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener && !Listener->OnContactValidate(BodyId2, inSubShapeID2.GetValue()))
 			{
@@ -584,7 +584,7 @@ public:
 		const Vector3 ContactPosition = PhysicsUtility::Convert2Centimeter(Vec3(inContactPosition.GetX(), inContactPosition.GetY(), inContactPosition.GetZ()));
 		const Vector3 ContactNormal = PhysicsUtility::Convert(inContactNormal);
 		FPhysicsCharacterContactSettings Settings = FPhysicsCharacterContactSettings::Create(ioSettings);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -613,7 +613,7 @@ public:
 		const Vector3 ContactVelocity = PhysicsUtility::Convert2Centimeter(inContactVelocity);
 		const Vector3 CharacterVelocity = PhysicsUtility::Convert2Centimeter(inCharacterVelocity);
 		Vector3 NewCharacterVelocity = PhysicsUtility::Convert2Centimeter(ioNewCharacterVelocity);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -624,7 +624,7 @@ public:
 	}
 
 private:
-	TArray<FCharacterContactEventListenerInterface*> m_Listeners;
+	TArray<FCharacterContactEventListenerInterface*> Listeners;
 };
 
 class FSoftBodyContactListener : public SoftBodyContactListener
@@ -632,9 +632,9 @@ class FSoftBodyContactListener : public SoftBodyContactListener
 public:
 	void AddListener(FSoftBodyContactEventListenerInterface* InListener)
 	{
-		if (InListener && !m_Listeners.Contains(InListener))
+		if (InListener && !Listeners.Contains(InListener))
 		{
-			m_Listeners.Add(InListener);
+			Listeners.Add(InListener);
 		}
 	}
 
@@ -642,7 +642,7 @@ public:
 	{
 		if (InListener)
 		{
-			m_Listeners.Remove(InListener);
+			Listeners.Remove(InListener);
 		}
 	}
 
@@ -653,7 +653,7 @@ public:
 		FPhysicsBodyId OtherBodyId;
 		OtherBodyId.ID = inOtherBody.GetID();
 		FPhysicsSoftBodyContactSettings Settings = FPhysicsSoftBodyContactSettings::Create(ioSettings);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -675,7 +675,7 @@ public:
 		FPhysicsBodyId SoftBodyId;
 		SoftBodyId.ID = inSoftBody.GetID();
 		const FPhysicsSoftBodyManifold Manifold = FPhysicsSoftBodyManifold::Create(inManifold);
-		for (auto* Listener : m_Listeners)
+		for (auto* Listener : Listeners)
 		{
 			if (Listener)
 			{
@@ -685,7 +685,7 @@ public:
 	}
 
 private:
-	TArray<FSoftBodyContactEventListenerInterface*> m_Listeners;
+	TArray<FSoftBodyContactEventListenerInterface*> Listeners;
 };
 
 PIGEONENGINE_NAMESPACE_END

@@ -294,12 +294,12 @@ namespace PigeonEngine
 			EmptyID = 0u;
 			DataSize = 0u;
 		}
-		PE_NODISCARD UINT32 DataLength()const
+		PE_NODISCARD UINT32 DataLength() const
 		{
 			return DataSize;
 		}
 		template<typename _TOtherSizeType = INT32, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
-		PE_NODISCARD _TOtherSizeType Num()const
+		PE_NODISCARD _TOtherSizeType Num() const
 		{
 			return static_cast<_TOtherSizeType>(Datas.size());
 		}

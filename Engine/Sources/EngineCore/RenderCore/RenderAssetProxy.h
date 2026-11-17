@@ -148,7 +148,7 @@ namespace PigeonEngine
 		// render thread is already stopped and nothing can still be referring to them.
 		void	ReleaseAll()
 		{
-			for (auto It = Proxies.Begin(); It != Proxies.End(); It++)
+			for (TMap<TKeyType, TProxyType*>::TIterator It = Proxies.Begin(); It != Proxies.End(); It++)
 			{
 				TProxyType* Proxy = It->second;
 				if (Proxy)

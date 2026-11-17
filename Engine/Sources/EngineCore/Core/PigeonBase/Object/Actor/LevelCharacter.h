@@ -20,7 +20,7 @@ namespace PigeonEngine
 		class FCharacterVirtual* GetPhysicsCharacter();
 		class PMovementComponent* GetMovementComponent();
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		void EditorTick(FLOAT deltaTime) override;
 #endif
 

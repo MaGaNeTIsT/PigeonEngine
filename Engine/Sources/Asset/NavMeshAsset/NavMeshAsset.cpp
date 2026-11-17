@@ -129,11 +129,11 @@ namespace PigeonEngine
 	}
 
 	ENavMeshAsset::ENavMeshAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<ENavMeshData>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -390,7 +390,7 @@ namespace PigeonEngine
 		}
 
 		ENavMeshAsset* NewAsset = new ENavMeshAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);

@@ -22,7 +22,7 @@ namespace PigeonEngine
 		void    Uninit() override;
 		void	Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
 		void    Destroy() override;
@@ -56,9 +56,9 @@ namespace PigeonEngine
 		virtual void SetActorRotation (const Quaternion& Rotation);
 		virtual void SetActorScale    (const Vector3& Scale);
 
-		PE_NODISCARD virtual Vector3 GetActorForwardVector()const;
-		PE_NODISCARD virtual Vector3 GetActorRightVector()const;
-		PE_NODISCARD virtual Vector3 GetActorUpVector()const;
+		PE_NODISCARD virtual Vector3 GetActorForwardVector() const;
+		PE_NODISCARD virtual Vector3 GetActorRightVector() const;
+		PE_NODISCARD virtual Vector3 GetActorUpVector() const;
 
 		PE_NODISCARD virtual EMobilityType GetMobility() const;
 
@@ -80,7 +80,7 @@ namespace PigeonEngine
 
 	public:
 
-		PE_NODISCARD EBoundAABB GetBounds()const;
+		PE_NODISCARD EBoundAABB GetBounds() const;
 
 	public:
 
@@ -104,7 +104,7 @@ namespace PigeonEngine
 		TArray<PActor*> ChildrenActors;
 
 		// Imgui
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void GenerateWorldOutline(const PActor* WorldCurrentSelectedActor);
 		virtual void GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent);

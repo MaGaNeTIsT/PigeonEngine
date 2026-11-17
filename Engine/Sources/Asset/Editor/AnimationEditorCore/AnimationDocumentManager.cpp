@@ -1,6 +1,6 @@
 #include "AnimationDocumentManager.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
 #include <AnimationMontageAsset/AnimationMontageAsset.h>

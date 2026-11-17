@@ -100,9 +100,9 @@ namespace PigeonEngine
 		PE_NODISCARD EShaderAssetVariantData*		FindVariant(const EName& InVariantName);
 		PE_NODISCARD const EShaderAssetVariantData*	FindVariant(const EName& InVariantName) const;
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	};
 
 	/*
@@ -116,7 +116,7 @@ namespace PigeonEngine
 	{
 	public:
 		EShaderAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
@@ -181,9 +181,9 @@ namespace PigeonEngine
 	class EShaderAssetManager : public EManagerBase
 	{
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
 		// Reads <InLoadPath><InLoadName>.PAsset, restores the cold backup and composes
 		// the runtime object. Runtime and editor.
@@ -202,10 +202,10 @@ namespace PigeonEngine
 		BOOL32	RequireLoadShaderAsset(const EString& InLoadPath, const EString& InLoadName
 			, const EShaderAsset*& OutAsset, EAssetLoadCompleteType InOnLoadComplete = nullptr);
 		EShaderAsset*			FindShaderAsset(const EName& InAssetName);
-		const EShaderAsset*		FindShaderAsset(const EName& InAssetName)const;
-		PE_NODISCARD UINT32		GetShaderAssetNum()const;
-		PE_NODISCARD const EShaderProgram*	FindProgram(const EName& InAssetName, const EName& InVariantName)const;
-#if _EDITOR_ONLY
+		const EShaderAsset*		FindShaderAsset(const EName& InAssetName) const;
+		PE_NODISCARD UINT32		GetShaderAssetNum() const;
+		PE_NODISCARD const EShaderProgram*	FindProgram(const EName& InAssetName, const EName& InVariantName) const;
+#if ENGINE_EDITOR_ONLY
 		// Folds one compiled stage manifest into the shader PAsset, importing the stage
 		// binaries it references. A full shader is imported by calling this once per
 		// stage; earlier stages stay in the PAsset because the existing cold backup is
@@ -218,7 +218,7 @@ namespace PigeonEngine
 		// own import wants.
 		BOOL32	ImportShaderAssetFromManifest(const EString& InManifestFullPath
 			, const EString& InSavePath, const EString& InSaveName, const EName* InOnlyVariantName = nullptr);
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	private:
 		BOOL32	LoadShaderAssetData(const EString& InFullPathName, EShaderAssetData& OutAssetData);
 		BOOL32	SaveShaderAssetData(const EString& InFullPathName, const EShaderAssetData& InAssetData);
@@ -244,10 +244,10 @@ namespace PigeonEngine
 		// Releases every asset this manager caches. Shared by ShutDown and Uninit so the two
 		// paths cannot drift apart.
 		void	ReleaseAllAssets();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		BOOL32	ImportStageRefs(const EString& InArtifactDirectory, const EShaderManifest& InManifest
 			, const EShaderManifestVariant& InVariant, const EString& InSavePath, EShaderAssetStageRef& OutStageRef);
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	private:
 		typedef TAssetManager<EName, EShaderAsset>	EShaderAssetCache;
 	private:

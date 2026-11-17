@@ -1,6 +1,6 @@
 #pragma once
 #include "Base/DataStructure/ObjectBase.h"
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #include "BaseAsset.h"
 #include "Base/DataStructure/Container/Array.h"
@@ -77,9 +77,12 @@ namespace PigeonEngine
 		void OpenSkeletonSlotGroups(const EString& InAssetFullPath);
 
 	public:
-		// Rescans the content tree. Called by a family manager that wrote a new asset outside the
-		// browser's own actions, such as a navigation mesh bake.
+		// Rescans the content tree now. Called by a family manager that wrote a new asset outside
+		// the browser's own actions, such as a navigation mesh bake.
 		void RefreshAssetTree();
+		// Requests that rescan for the next editor frame instead, so several writes in one frame
+		// coalesce into a single rebuild of the tree.
+		void RequestContentRefresh();
 	protected:
 		void GenerateContentBrowser();
 		ImTextureID GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File = nullptr);
@@ -142,6 +145,8 @@ namespace PigeonEngine
 		EString		m_ManageAssetError;
 		BOOL8		m_bRenameRequested = FALSE;
 		BOOL8		m_bDeleteRequested = FALSE;
+		// Set by RequestContentRefresh, consumed at the top of the next EditorUpdate.
+		BOOL8		m_bContentRefreshRequested = FALSE;
 
 
 	};

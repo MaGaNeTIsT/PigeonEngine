@@ -154,11 +154,11 @@ namespace PigeonEngine
 			{
 				CascadeShadowData = new ECascadeShadowData();
 			}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if (InCascadeShadowData)
 #endif
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				const INT32 CascadeLayerNum = InCascadeShadowData->Layers.Num();
 				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check directional light is cascade shadow but setup data is null."), (CascadeLayerNum > 0));
 				if (CascadeLayerNum > 0)

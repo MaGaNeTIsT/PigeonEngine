@@ -40,16 +40,16 @@ namespace PigeonEngine
 		TArray<BYTE>		Bytecode;
 		EString				ReflectionText;
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	};
 
 	class EShaderStageAsset : public TBaseAsset<EShaderStageData>
 	{
 	public:
 		EShaderStageAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
@@ -57,35 +57,35 @@ namespace PigeonEngine
 	public:
 		// Parses the reflection and creates the device object. The reflection has to be
 		// parsed first: the vertex shader object needs the input layout it describes.
-		virtual BOOL32	InitResource()override;
+		virtual BOOL32	InitResource() override;
 	public:
 		// Render thread only: the proxy this asset's cold data was turned into, or null while
 		// the creation command is still queued.
-		PE_NODISCARD const RShaderStageResource*	GetRenderResource()const
+		PE_NODISCARD const RShaderStageResource*	GetRenderResource() const
 		{
 			return static_cast<const RShaderStageResource*>(RenderBinding.Resolve());
 		}
-		PE_NODISCARD BOOL32	IsRenderResourceValid()const
+		PE_NODISCARD BOOL32	IsRenderResourceValid() const
 		{
 			const RShaderStageResource* Resource = GetRenderResource();
 			return ((!!Resource) && (Resource->IsRenderResourceValid()));
 		}
-		virtual void	UninitResource()override
+		virtual void	UninitResource() override
 		{
 			TBaseAsset<EShaderStageData>::UninitResource();
 			RenderBinding.Release();
 		}
 	public:
-		PE_NODISCARD EShaderStageType	GetStage()const { return Stage; }
-		PE_NODISCARD EShaderModelType	GetShaderModel()const { return ShaderModel; }
-		PE_NODISCARD BOOL32				HasReflection()const { return bHasReflection; }
-		PE_NODISCARD const EShaderReflection&	GetReflection()const { return Reflection; }
-		PE_NODISCARD UINT32				GetRevision()const { return Revision; }
+		PE_NODISCARD EShaderStageType	GetStage() const { return Stage; }
+		PE_NODISCARD EShaderModelType	GetShaderModel() const { return ShaderModel; }
+		PE_NODISCARD BOOL32				HasReflection() const { return bHasReflection; }
+		PE_NODISCARD const EShaderReflection&	GetReflection() const { return Reflection; }
+		PE_NODISCARD UINT32				GetRevision() const { return Revision; }
 		// Identity of this stage's compiled input. The compiler emits no hash, so the
 		// engine derives it: the reflection text hash mixed with the bytecode. Useful as
 		// a cache / hot reload key; it is recomputed on every load, never stored.
-		PE_NODISCARD UINT64				GetSourceHash()const { return SourceHash; }
-		PE_NODISCARD const RShaderStageResource*	GetShaderStageResource()const { return GetRenderResource(); }
+		PE_NODISCARD UINT64				GetSourceHash() const { return SourceHash; }
+		PE_NODISCARD const RShaderStageResource*	GetShaderStageResource() const { return GetRenderResource(); }
 	protected:
 		// Runs on the render thread. Everything it needs is passed in: the cold backup plus
 		// the reflection snapshot taken where the creation command was enqueued, because a
@@ -116,9 +116,9 @@ namespace PigeonEngine
 	class EShaderStageAssetManager : public EManagerBase
 	{
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
 		// Reads <InLoadPath><InLoadName>.PAsset, restores the cold backup and builds the
 		// device object. The asset is returned from the cache unless InIsReload asks for
@@ -137,17 +137,17 @@ namespace PigeonEngine
 		*/
 		BOOL32	RequireLoadShaderStageAsset(const EString& InLoadPath, const EString& InLoadName
 			, const EShaderStageAsset*& OutAsset, EAssetLoadCompleteType InOnLoadComplete = nullptr);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// Converts a compiled artifact (bytecode file + reflection json) into a stage
 		// PAsset. This is the import step; Load never needs the artifact tree.
 		BOOL32	ImportShaderStageAsset(const EString& InAssetName
 			, const EString& InImportBytecodeFullPath, const EString& InImportReflectionFullPath
 			, const EShaderStageType InStage, const EShaderModelType InShaderModel
 			, const EString& InSavePath);
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		EShaderStageAsset*			FindShaderStageAsset(const EName& InAssetName);
-		const EShaderStageAsset*	FindShaderStageAsset(const EName& InAssetName)const;
-		PE_NODISCARD UINT32			GetShaderStageAssetNum()const;
+		const EShaderStageAsset*	FindShaderStageAsset(const EName& InAssetName) const;
+		PE_NODISCARD UINT32			GetShaderStageAssetNum() const;
 		/*
 		* The names this manager replaced under their own name since the previous call, drained into
 		* OutNames.

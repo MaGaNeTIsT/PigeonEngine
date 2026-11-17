@@ -81,7 +81,7 @@ namespace PigeonEngine
 		bPoseDirty = ((AnimationAsset != nullptr) ? TRUE : FALSE);
 	}
 
-	PSkeletalMeshComponent* EAnimInstance::GetSkeletalMeshComponent()const
+	PSkeletalMeshComponent* EAnimInstance::GetSkeletalMeshComponent() const
 	{
 		return Component;
 	}
@@ -129,7 +129,7 @@ namespace PigeonEngine
 		return bBound;
 	}
 
-	const ESkeletonAnimationAsset* EAnimInstance::GetAnimationAsset()const
+	const ESkeletonAnimationAsset* EAnimInstance::GetAnimationAsset() const
 	{
 		return AnimationAsset;
 	}
@@ -250,7 +250,7 @@ namespace PigeonEngine
 		ClipPlayer.SetPlayRate(InPlayRate);
 	}
 
-	FLOAT EAnimInstance::GetPlayRate()const
+	FLOAT EAnimInstance::GetPlayRate() const
 	{
 		return ClipPlayer.GetPlayRate();
 	}
@@ -265,12 +265,12 @@ namespace PigeonEngine
 		ClipPlayer.SetLoopMode(InLoopMode);
 	}
 
-	EAnimationLoopMode EAnimInstance::GetLoopMode()const
+	EAnimationLoopMode EAnimInstance::GetLoopMode() const
 	{
 		return ClipPlayer.GetLoopMode();
 	}
 
-	BOOL32 EAnimInstance::IsLooping()const
+	BOOL32 EAnimInstance::IsLooping() const
 	{
 		const EAnimationLoopMode LoopMode = ClipPlayer.GetLoopMode();
 		return (((LoopMode == ANIMATION_LOOP_REPEAT) || (LoopMode == ANIMATION_LOOP_PINGPONG)) ? TRUE : FALSE);
@@ -288,22 +288,22 @@ namespace PigeonEngine
 		bPoseDirty = TRUE;
 	}
 
-	FLOAT EAnimInstance::GetPositionSeconds()const
+	FLOAT EAnimInstance::GetPositionSeconds() const
 	{
 		return ClipPlayer.GetPositionSeconds();
 	}
 
-	BOOL32 EAnimInstance::IsPlaying()const
+	BOOL32 EAnimInstance::IsPlaying() const
 	{
 		return ClipPlayer.IsPlaying();
 	}
 
-	const ESkeletonAnimationClip* EAnimInstance::GetCurrentClip()const
+	const ESkeletonAnimationClip* EAnimInstance::GetCurrentClip() const
 	{
 		return ClipPlayer.GetClip();
 	}
 
-	INT32 EAnimInstance::GetCurrentClipIndex()const
+	INT32 EAnimInstance::GetCurrentClipIndex() const
 	{
 		return CurrentClipIndex;
 	}
@@ -336,7 +336,7 @@ namespace PigeonEngine
 		StateMachineInstance.reset();
 	}
 
-	EAnimStateMachineInstance* EAnimInstance::GetStateMachineInstance()const
+	EAnimStateMachineInstance* EAnimInstance::GetStateMachineInstance() const
 	{
 		return StateMachineInstance.get();
 	}
@@ -502,7 +502,7 @@ namespace PigeonEngine
 		}
 	}
 
-	BOOL32 EAnimInstance::IsMontagePlaying()const
+	BOOL32 EAnimInstance::IsMontagePlaying() const
 	{
 		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
@@ -514,7 +514,7 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-	BOOL32 EAnimInstance::IsMontagePlaying(const EString& InSlotName)const
+	BOOL32 EAnimInstance::IsMontagePlaying(const EString& InSlotName) const
 	{
 		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
@@ -528,7 +528,7 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-	EAnimMontageInstance* EAnimInstance::GetMontageInstance()const
+	EAnimMontageInstance* EAnimInstance::GetMontageInstance() const
 	{
 		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
@@ -540,7 +540,7 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
-	EAnimMontageInstance* EAnimInstance::GetMontageInstanceBySlot(const EString& InSlotName)const
+	EAnimMontageInstance* EAnimInstance::GetMontageInstanceBySlot(const EString& InSlotName) const
 	{
 		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
@@ -554,12 +554,12 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
-	INT32 EAnimInstance::GetMontageInstanceCount()const
+	INT32 EAnimInstance::GetMontageInstanceCount() const
 	{
 		return MontageInstances.Num();
 	}
 
-	EAnimMontageInstance* EAnimInstance::GetMontageInstanceAt(INT32 InIndex)const
+	EAnimMontageInstance* EAnimInstance::GetMontageInstanceAt(INT32 InIndex) const
 	{
 		if ((InIndex < 0) || (InIndex >= MontageInstances.Num()))
 		{
@@ -574,7 +574,7 @@ namespace PigeonEngine
 		ResetRootMotionState();
 	}
 
-	BOOL32 EAnimInstance::IsRootMotionEnabled()const
+	BOOL32 EAnimInstance::IsRootMotionEnabled() const
 	{
 		return bRootMotionEnabled;
 	}
@@ -585,7 +585,7 @@ namespace PigeonEngine
 		ResetRootMotionState();
 	}
 
-	INT32 EAnimInstance::GetRootMotionBoneIndex()const
+	INT32 EAnimInstance::GetRootMotionBoneIndex() const
 	{
 		return RootMotionBoneIndex;
 	}
@@ -952,11 +952,11 @@ namespace PigeonEngine
 			{
 				if (!InA)
 				{
-					return false;
+					return FALSE;
 				}
 				if (!InB)
 				{
-					return true;
+					return TRUE;
 				}
 				return (InA->GetLayerPriority() < InB->GetLayerPriority());
 			});
@@ -1201,7 +1201,7 @@ namespace PigeonEngine
 		}
 	}
 
-	INT32 EAnimInstance::GetAnimationClipNum()const
+	INT32 EAnimInstance::GetAnimationClipNum() const
 	{
 		const ESkeletonAnimation* Animation = (AnimationAsset ? AnimationAsset->GetStoragedResource() : nullptr);
 		return (Animation ? Animation->GetAnimationClipNum() : 0);

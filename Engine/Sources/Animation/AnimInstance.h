@@ -43,7 +43,7 @@ namespace PigeonEngine
 		EAnimInstance& operator=(EAnimInstance&&) = delete;
 
 		void SetSkeletalMeshComponent(PSkeletalMeshComponent* InComponent);
-		PE_NODISCARD PSkeletalMeshComponent* GetSkeletalMeshComponent()const;
+		PE_NODISCARD PSkeletalMeshComponent* GetSkeletalMeshComponent() const;
 
 		/*
 		* Stores the asset and binds it against the component's current skeleton. Returns
@@ -51,7 +51,7 @@ namespace PigeonEngine
 		* asset is still remembered so a later skeleton change can retry the bind.
 		*/
 		BOOL32 SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset);
-		PE_NODISCARD const ESkeletonAnimationAsset* GetAnimationAsset()const;
+		PE_NODISCARD const ESkeletonAnimationAsset* GetAnimationAsset() const;
 
 		/*
 		* InFadeSeconds blends from the clip that is currently playing to the new one. Zero
@@ -67,18 +67,18 @@ namespace PigeonEngine
 		void Stop();
 
 		void SetPlayRate(FLOAT InPlayRate);
-		PE_NODISCARD FLOAT GetPlayRate()const;
+		PE_NODISCARD FLOAT GetPlayRate() const;
 		// Convenience form: TRUE maps to REPEAT, FALSE maps to ONCE.
 		void SetLoop(BOOL32 bInLoop);
 		void SetLoopMode(EAnimationLoopMode InLoopMode);
-		PE_NODISCARD EAnimationLoopMode GetLoopMode()const;
-		PE_NODISCARD BOOL32 IsLooping()const;
+		PE_NODISCARD EAnimationLoopMode GetLoopMode() const;
+		PE_NODISCARD BOOL32 IsLooping() const;
 		void SetPositionSeconds(FLOAT InPositionSeconds);
-		PE_NODISCARD FLOAT GetPositionSeconds()const;
+		PE_NODISCARD FLOAT GetPositionSeconds() const;
 
-		PE_NODISCARD BOOL32 IsPlaying()const;
-		PE_NODISCARD const ESkeletonAnimationClip* GetCurrentClip()const;
-		PE_NODISCARD INT32 GetCurrentClipIndex()const;
+		PE_NODISCARD BOOL32 IsPlaying() const;
+		PE_NODISCARD const ESkeletonAnimationClip* GetCurrentClip() const;
+		PE_NODISCARD INT32 GetCurrentClipIndex() const;
 
 		// State machine START
 	public:
@@ -90,7 +90,7 @@ namespace PigeonEngine
 		*/
 		BOOL32 SetStateMachine(const EAnimStateMachine* InMachine);
 		void ClearStateMachine();
-		PE_NODISCARD EAnimStateMachineInstance* GetStateMachineInstance()const;
+		PE_NODISCARD EAnimStateMachineInstance* GetStateMachineInstance() const;
 		// State machine END
 
 		// Montage START
@@ -115,13 +115,13 @@ namespace PigeonEngine
 		void SetMontagePositionSeconds(FLOAT InPositionSeconds);
 		void SetMontagePlayRate(FLOAT InPlayRate);
 		void SetMontageLoopMode(EAnimationLoopMode InLoopMode);
-		PE_NODISCARD BOOL32 IsMontagePlaying()const;
-		PE_NODISCARD BOOL32 IsMontagePlaying(const EString& InSlotName)const;
+		PE_NODISCARD BOOL32 IsMontagePlaying() const;
+		PE_NODISCARD BOOL32 IsMontagePlaying(const EString& InSlotName) const;
 		// Returns the lowest-priority active layer; useful for callers that only expect one.
-		PE_NODISCARD EAnimMontageInstance* GetMontageInstance()const;
-		PE_NODISCARD EAnimMontageInstance* GetMontageInstanceBySlot(const EString& InSlotName)const;
-		PE_NODISCARD INT32 GetMontageInstanceCount()const;
-		PE_NODISCARD EAnimMontageInstance* GetMontageInstanceAt(INT32 InIndex)const;
+		PE_NODISCARD EAnimMontageInstance* GetMontageInstance() const;
+		PE_NODISCARD EAnimMontageInstance* GetMontageInstanceBySlot(const EString& InSlotName) const;
+		PE_NODISCARD INT32 GetMontageInstanceCount() const;
+		PE_NODISCARD EAnimMontageInstance* GetMontageInstanceAt(INT32 InIndex) const;
 		// Montage END
 
 		// Root motion START
@@ -132,9 +132,9 @@ namespace PigeonEngine
 		* is reset to its bind transform so the mesh is not displaced twice.
 		*/
 		void SetRootMotionEnabled(BOOL32 bInEnabled);
-		PE_NODISCARD BOOL32 IsRootMotionEnabled()const;
+		PE_NODISCARD BOOL32 IsRootMotionEnabled() const;
 		void SetRootMotionBoneIndex(INT32 InBoneIndex);
-		PE_NODISCARD INT32 GetRootMotionBoneIndex()const;
+		PE_NODISCARD INT32 GetRootMotionBoneIndex() const;
 		// Root motion END
 
 		/*
@@ -208,7 +208,7 @@ namespace PigeonEngine
 		void ApplyRootMotionDelta(const FAnimRootMotionDelta& InDelta);
 		void ResetRootMotionState();
 		void ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose);
-		PE_NODISCARD INT32 GetAnimationClipNum()const;
+		PE_NODISCARD INT32 GetAnimationClipNum() const;
 
 	private:
 		PSkeletalMeshComponent*			Component = nullptr;

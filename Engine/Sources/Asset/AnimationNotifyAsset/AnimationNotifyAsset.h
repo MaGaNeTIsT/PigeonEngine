@@ -18,9 +18,9 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(EAnimNotifyDefinition)
 
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 
 	public:
 		EString					Name;
@@ -36,7 +36,7 @@ namespace PigeonEngine
 
 	public:
 		void	Reset();
-		BOOL32	IsValid()const;
+		BOOL32	IsValid() const;
 	};
 
 	/*
@@ -50,13 +50,13 @@ namespace PigeonEngine
 	{
 	public:
 		EAnimNotifyAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~EAnimNotifyAsset();
 	public:
-		virtual BOOL32 InitResource()override;
+		virtual BOOL32 InitResource() override;
 	public:
 		EAnimNotifyAsset() = delete;
 
@@ -68,11 +68,11 @@ namespace PigeonEngine
 	public:
 		typedef TAssetManager<EString, EAnimNotifyAsset>	EAnimNotifyAssetManager;
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		BOOL32	ImportNotify(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath);
 #endif
 		BOOL32	LoadNotifyAsset(const EString& InLoadPath, const EString& InLoadName, const EAnimNotifyAsset*& OutAsset);

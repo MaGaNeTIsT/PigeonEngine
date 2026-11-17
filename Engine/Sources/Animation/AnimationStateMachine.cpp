@@ -15,7 +15,7 @@ namespace PigeonEngine
 	{
 	}
 
-	BOOL32 EAnimStateMachine::IsResourceValid()const
+	BOOL32 EAnimStateMachine::IsResourceValid() const
 	{
 		return IsValid();
 	}
@@ -71,7 +71,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL32 EAnimStateMachine::IsValid()const
+	BOOL32 EAnimStateMachine::IsValid() const
 	{
 		if ((States.Num() <= 0) || (EntryStateIndex < 0) || (EntryStateIndex >= States.Num()))
 		{
@@ -111,14 +111,14 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	INT32 EAnimStateMachine::FindState(const EString& InName)const
+	INT32 EAnimStateMachine::FindState(const EString& InName) const
 	{
 		INT32 Result = -1;
 		StateMapping.FindValue(InName, Result);
 		return Result;
 	}
 
-	INT32 EAnimStateMachine::FindParameter(const EString& InName)const
+	INT32 EAnimStateMachine::FindParameter(const EString& InName) const
 	{
 		INT32 Result = -1;
 		ParameterMapping.FindValue(InName, Result);
@@ -163,17 +163,17 @@ namespace PigeonEngine
 		bEnterStateFailureLogged = FALSE;
 	}
 
-	const EAnimStateMachine* EAnimStateMachineInstance::GetMachine()const
+	const EAnimStateMachine* EAnimStateMachineInstance::GetMachine() const
 	{
 		return Machine;
 	}
 
-	INT32 EAnimStateMachineInstance::GetCurrentStateIndex()const
+	INT32 EAnimStateMachineInstance::GetCurrentStateIndex() const
 	{
 		return CurrentStateIndex;
 	}
 
-	FLOAT EAnimStateMachineInstance::GetTimeInState()const
+	FLOAT EAnimStateMachineInstance::GetTimeInState() const
 	{
 		return TimeInState;
 	}
@@ -220,7 +220,7 @@ namespace PigeonEngine
 		}
 	}
 
-	FLOAT EAnimStateMachineInstance::GetFloat(const EString& InName)const
+	FLOAT EAnimStateMachineInstance::GetFloat(const EString& InName) const
 	{
 		if (!Machine)
 		{
@@ -234,7 +234,7 @@ namespace PigeonEngine
 		return 0.0f;
 	}
 
-	BOOL32 EAnimStateMachineInstance::GetBool(const EString& InName)const
+	BOOL32 EAnimStateMachineInstance::GetBool(const EString& InName) const
 	{
 		if (!Machine)
 		{
@@ -339,7 +339,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL32 EAnimStateMachineInstance::EvaluateCondition(const EAnimStateMachineCondition& InCondition)const
+	BOOL32 EAnimStateMachineInstance::EvaluateCondition(const EAnimStateMachineCondition& InCondition) const
 	{
 		if ((!Machine) || (InCondition.ParameterIndex < 0) || (InCondition.ParameterIndex >= Machine->Parameters.Num()))
 		{
@@ -391,7 +391,7 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-	BOOL32 EAnimStateMachineInstance::EvaluateTransition(const EAnimStateMachineTransition& InTransition)const
+	BOOL32 EAnimStateMachineInstance::EvaluateTransition(const EAnimStateMachineTransition& InTransition) const
 	{
 		for (INT32 ConditionIndex = 0; ConditionIndex < InTransition.Conditions.Num(); ConditionIndex++)
 		{

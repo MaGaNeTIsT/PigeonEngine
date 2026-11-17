@@ -114,25 +114,25 @@ namespace PigeonEngine
 	public:
 		RBezierGrassSceneProxy* SceneProxy;
 	public:
-		UINT8                   GetUpdateRenderState()const;
+		UINT8                   GetUpdateRenderState() const;
 		RBezierGrassSceneProxy* CreateSceneProxy();
-		virtual void            CreateRenderState()override;
-		virtual void            DestroyRenderState()override;
-		virtual void            SendUpdateRenderState()override;
+		virtual void            CreateRenderState() override;
+		virtual void            DestroyRenderState() override;
+		virtual void            SendUpdateRenderState() override;
 	protected:
 		void                    MarkAsDirty(PBezierGrassUpdateState InState);
-		virtual void            MarkRenderTransformAsDirty()override;
-		virtual void            MarkRenderStateAsDirty()override;
-		virtual void            CleanMarkRenderStateDirty()override;
+		virtual void            MarkRenderTransformAsDirty() override;
+		virtual void            MarkRenderStateAsDirty() override;
+		virtual void            CleanMarkRenderStateDirty() override;
 	protected:
 		UINT8                   UpdateState;
 		// Render proxy functions END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
-		virtual void GenerateComponentOutline(const class PActorComponent* WorldCurrentSelectedComponent)override;
-		virtual void GenerateComponentDetail()override;
-		virtual void OnSelectedByImGui()override;
+		virtual void GenerateComponentOutline(const class PActorComponent* WorldCurrentSelectedComponent) override;
+		virtual void GenerateComponentDetail() override;
+		virtual void OnSelectedByImGui() override;
 #endif
 
 	private:

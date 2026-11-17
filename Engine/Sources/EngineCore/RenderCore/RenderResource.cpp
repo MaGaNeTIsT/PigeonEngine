@@ -317,7 +317,8 @@ namespace PigeonEngine
 		// them because they are always built and released as a set.
 		const BOOL32 NeedRecreateTexture = (TextureSize.x != UsedTextureSize.x)
 			|| (TextureSize.y != UsedTextureSize.y)
-			|| (SceneColor.IsRenderResourceValid() == FALSE);
+			|| (SceneColor.IsRenderResourceValid() == FALSE)
+			|| (WaterRefractionColor.IsRenderResourceValid() == FALSE);
 		const BOOL32 NeedRecreateDepthStencil = NeedRecreateTexture || (NeedStencil != IsNeedStencil);
 
 		if ((!NeedRecreateTexture) && (!NeedRecreateDepthStencil))
@@ -349,7 +350,7 @@ namespace PigeonEngine
 					RBindFlagType::BIND_DEPTH_STENCIL | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_UNKNOWN, nullptr, nullptr, nullptr, 32u, NeedStencil));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 		}
@@ -378,7 +379,18 @@ namespace PigeonEngine
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_R16G16B16A16_FLOAT));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
+#endif
+
+			// Same format as the scene colour: the copy is sampled as linear scene luminance,
+			// before the display transform the final output applies.
+			Result = WaterRefractionColor.InitFromRHI(RenderDevice,
+				RTextureDesc(TextureWidth, TextureHeight,
+					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
+					RFormatType::FORMAT_R16G16B16A16_FLOAT));
+			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
@@ -387,7 +399,7 @@ namespace PigeonEngine
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_R16G16B16A16_FLOAT));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
@@ -396,7 +408,7 @@ namespace PigeonEngine
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_R16G16B16A16_UNORM));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
@@ -405,7 +417,7 @@ namespace PigeonEngine
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_R8G8B8A8_UNORM));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
@@ -414,7 +426,7 @@ namespace PigeonEngine
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_R16G16B16A16_UINT));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
@@ -423,7 +435,7 @@ namespace PigeonEngine
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_R11G11B10_FLOAT));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
@@ -434,7 +446,7 @@ namespace PigeonEngine
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 					RFormatType::FORMAT_R8_UNORM));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check create scene textures failed.")), (Result));
 #endif
 
@@ -451,7 +463,7 @@ namespace PigeonEngine
 					RFormatType::FORMAT_R8G8B8A8_UNORM),
 				Color4(1.f, 1.f, 1.f, 1.f));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check create scene textures failed.")), (Result));
 #endif
 		}
@@ -461,7 +473,7 @@ namespace PigeonEngine
 			TextureSize = UsedTextureSize;
 			NeedStencil = IsNeedStencil;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Scene textures could not be created; the views are retried by the next frame."));
@@ -472,6 +484,7 @@ namespace PigeonEngine
 	{
 		SceneDepthStencil.ReleaseRenderResource();
 		SceneColor.ReleaseRenderResource();
+		WaterRefractionColor.ReleaseRenderResource();
 		GBufferA.ReleaseRenderResource();
 		GBufferB.ReleaseRenderResource();
 		GBufferC.ReleaseRenderResource();
@@ -480,11 +493,11 @@ namespace PigeonEngine
 		GBufferF.ReleaseRenderResource();
 		DirectionalShadowMask.ReleaseRenderResource();
 	}
-	const Vector2Int& RSceneTextures::GetTextureSize()const
+	const Vector2Int& RSceneTextures::GetTextureSize() const
 	{
 		return TextureSize;
 	}
-	BOOL32 RSceneTextures::IsNeedStencil()const
+	BOOL32 RSceneTextures::IsNeedStencil() const
 	{
 		return NeedStencil;
 	}

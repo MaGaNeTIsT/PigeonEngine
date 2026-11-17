@@ -67,20 +67,20 @@ namespace PigeonEngine
 	}
 
 
-	EString EString::operator+(const EString& Other)const
+	EString EString::operator+(const EString& Other) const
 	{
 		EString Res = Str + Other.Str;
 		return Res;
 	}
 
 
-	EString EString::operator+(const std::string& Other)const
+	EString EString::operator+(const std::string& Other) const
 	{
 		EString Res = Str + Other;
 		return Res;
 	}
 
-	EString EString::operator+(const CHAR* Other)const
+	EString EString::operator+(const CHAR* Other) const
 	{
 		EString Res = Str + Other;
 		return Res;
@@ -161,14 +161,14 @@ namespace PigeonEngine
 
 	INT32 EString::Find(const EString& SubString) const
 	{
-		const auto index = Str.find(*SubString);
-		return index == std::string::npos ? -1 : static_cast<INT32>(index);
+		const std::string::size_type FoundIndex = Str.find(*SubString);
+		return FoundIndex == std::string::npos ? -1 : static_cast<INT32>(FoundIndex);
 	}
 
 	INT32 EString::RightFind(const EString& SubString) const
 	{
-		const auto index = Str.rfind(*SubString);
-		return index == std::string::npos ? -1 : static_cast<INT32>(index);
+		const std::string::size_type FoundIndex = Str.rfind(*SubString);
+		return FoundIndex == std::string::npos ? -1 : static_cast<INT32>(FoundIndex);
 	}
 
 	EString EString::Replace(const EString& From, const EString& To) const
@@ -217,9 +217,9 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		for (const auto& elem : Str)
+		for (const CHAR Char : Str)
 		{
-			if (!((elem <= '9') && (elem >= '0')))
+			if (!((Char <= '9') && (Char >= '0')))
 			{
 				return FALSE;
 			}
@@ -264,9 +264,9 @@ namespace PigeonEngine
 	EString EString::ToLower() const
 	{
 		std::string Result = Str;
-		for (auto& C : Result)
+		for (CHAR& Char : Result)
 		{
-			C = static_cast<CHAR>(std::tolower(static_cast<unsigned char>(C)));
+			Char = static_cast<CHAR>(std::tolower(static_cast<unsigned char>(Char)));
 		}
 		return EString(std::move(Result));
 	}

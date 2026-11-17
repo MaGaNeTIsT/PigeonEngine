@@ -15,49 +15,49 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	FShape::FShape() :
-		m_Shape(nullptr),
-		m_ShapeSettings(nullptr)
+		ShapeInstance(nullptr),
+		ShapeSettingsInstance(nullptr)
 	{
 	}
 
 	FShape::~FShape()
 	{
-		//if (m_Shape)
+		//if (ShapeInstance)
 		//{
-		//	delete m_Shape;
-		//	m_Shape = nullptr;
+		//	delete ShapeInstance;
+		//	ShapeInstance = nullptr;
 		//}
-		//if (m_ShapeSettings)
+		//if (ShapeSettingsInstance)
 		//{
-		//	delete m_ShapeSettings;
-		//	m_ShapeSettings = nullptr;
+		//	delete ShapeSettingsInstance;
+		//	ShapeSettingsInstance = nullptr;
 		//}
 	}
 
 	Shape* FShape::CreateShape(BOOL32 bCreateNew)
 	{
-		if (m_Shape && !bCreateNew)
-			return m_Shape;
-		else if (m_Shape)
-			delete m_Shape;
-		m_Shape = CreateShapeInternal();
-		return m_Shape;
+		if (ShapeInstance && !bCreateNew)
+			return ShapeInstance;
+		else if (ShapeInstance)
+			delete ShapeInstance;
+		ShapeInstance = CreateShapeInternal();
+		return ShapeInstance;
 	}
 
 	ShapeSettings* FShape::CreateShapeSettings(BOOL32 bCreateNew)
 	{
-		if (m_ShapeSettings && !bCreateNew)
-			return m_ShapeSettings;
-		else if (m_ShapeSettings)
-			delete m_ShapeSettings;
-		m_ShapeSettings = CreateShapeSettingsInternal();
-		return m_ShapeSettings;
+		if (ShapeSettingsInstance && !bCreateNew)
+			return ShapeSettingsInstance;
+		else if (ShapeSettingsInstance)
+			delete ShapeSettingsInstance;
+		ShapeSettingsInstance = CreateShapeSettingsInternal();
+		return ShapeSettingsInstance;
 	}
 
 	FCastRay::FCastRay()
 	{
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void FBoxShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
 	{
 		Manager->DrawCuboid(inPosition, inRotation, HalfExtent.x * 2, HalfExtent.y * 2, HalfExtent.z * 2, Color4::Green());

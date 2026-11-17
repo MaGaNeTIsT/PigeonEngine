@@ -438,7 +438,7 @@ namespace PigeonEngine
 			PE_LOG_LOG(EString(PE_TEXT("[SponzaScene] Built ")) + ToString(_GSponzaSceneState.Objects.Num<UINT32>())
 				+ EString(PE_TEXT(" objects with ")) + ToString(_GSponzaSceneState.Materials.Num<UINT32>())
 				+ EString(PE_TEXT(" material instances.")));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			// The mapping the draws actually use, one line per material with the number of objects
 			// that ended up on it. The manifest is the import's answer; this is the runtime's, and a
 			// texture that lands on the wrong object is normally a difference between the two.
@@ -458,7 +458,7 @@ namespace PigeonEngine
 					+ EString(PE_TEXT(" object(s), base colour '")) + Material.DiffuseMapPath
 					+ EString(PE_TEXT("', normal '")) + Material.NormalMapPath + EString(PE_TEXT("'.")));
 			}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 			return TRUE;
 		}
 	}

@@ -76,7 +76,7 @@ namespace PigeonEngine
 		// whose target state starts as "none", would look like a finished move.
 		BOOL32						bCrowdMoveRequested = FALSE;
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 		virtual void	EditorTick(FLOAT InDeltaTime) override;

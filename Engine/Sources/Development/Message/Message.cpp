@@ -9,17 +9,17 @@ namespace PigeonEngine
 
 	EMessageBase::~EMessageBase() = default;
 
-	const EName& EMessageBase::GetMessageName()const
+	const EName& EMessageBase::GetMessageName() const
 	{
 		return MessageName;
 	}
 
-	SIZE_T EMessageBase::GetMessageTypeID()const
+	SIZE_T EMessageBase::GetMessageTypeID() const
 	{
 		return GetClassHashCode(this);
 	}
 
-	BOOL32 EMessageBase::IsObjectMessage()const
+	BOOL32 EMessageBase::IsObjectMessage() const
 	{
 		return FALSE;
 	}
@@ -37,12 +37,12 @@ namespace PigeonEngine
 
 	EObjectMessageBase::~EObjectMessageBase() = default;
 
-	const EObjectBase* EObjectMessageBase::GetObject()const
+	const EObjectBase* EObjectMessageBase::GetObject() const
 	{
 		return Object;
 	}
 
-	ObjectIdentityType EObjectMessageBase::GetObjectUniqueID()const
+	ObjectIdentityType EObjectMessageBase::GetObjectUniqueID() const
 	{
 		if (Object)
 		{
@@ -51,7 +51,7 @@ namespace PigeonEngine
 		return 0u;
 	}
 
-	BOOL32 EObjectMessageBase::IsObjectMessage()const
+	BOOL32 EObjectMessageBase::IsObjectMessage() const
 	{
 		return TRUE;
 	}
@@ -61,17 +61,17 @@ namespace PigeonEngine
 		Object = InObject;
 	}
 
-	BOOL32 FMessageListenerHandle::IsValid()const
+	BOOL32 FMessageListenerHandle::IsValid() const
 	{
 		return (MessageName.IsValid() && (ListenerID > 0u));
 	}
 
-	BOOL32 FMessageListenerHandle::operator==(const FMessageListenerHandle& Other)const
+	BOOL32 FMessageListenerHandle::operator==(const FMessageListenerHandle& Other) const
 	{
 		return ((MessageName == Other.MessageName) && (ListenerID == Other.ListenerID));
 	}
 
-	BOOL32 FMessageListenerHandle::operator!=(const FMessageListenerHandle& Other)const
+	BOOL32 FMessageListenerHandle::operator!=(const FMessageListenerHandle& Other) const
 	{
 		return (!((*this) == Other));
 	}
@@ -237,13 +237,13 @@ namespace PigeonEngine
 		return Broadcast(static_cast<const EMessageBase&>(InMessage));
 	}
 
-	BOOL32 EMessageManager::HasMessage(const EName& InMessageName)const
+	BOOL32 EMessageManager::HasMessage(const EName& InMessageName) const
 	{
 		const TArray<FMessageListener>* ListenerList = MessageListeners.FindValueAsPtr(InMessageName);
 		return ((ListenerList != nullptr) && (!ListenerList->IsEmpty()));
 	}
 
-	UINT32 EMessageManager::GetListenerNum(const EName& InMessageName)const
+	UINT32 EMessageManager::GetListenerNum(const EName& InMessageName) const
 	{
 		const TArray<FMessageListener>* ListenerList = MessageListeners.FindValueAsPtr(InMessageName);
 		if (!ListenerList)

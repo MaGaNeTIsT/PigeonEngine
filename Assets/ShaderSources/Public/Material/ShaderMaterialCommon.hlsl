@@ -43,17 +43,17 @@
 // Short spellings, for material code only. Engine code uses the PE_ names, so
 // that the places that must be touched when the binding path changes stay
 // greppable.
-#define SAMPLE_TEX2D(InName, InSampler, InUV)					PE_SAMPLE_TEX2D(InName, InSampler, InUV)
-#define SAMPLE_TEX2D_LEVEL(InName, InSampler, InUV, InLod)		PE_SAMPLE_TEX2D_LEVEL(InName, InSampler, InUV, InLod)
-#define SAMPLE_TEX2D_BIAS(InName, InSampler, InUV, InBias)		PE_SAMPLE_TEX2D_BIAS(InName, InSampler, InUV, InBias)
-#define SAMPLE_TEX2D_GRAD(InName, InSampler, InUV, InDdx, InDdy)	PE_SAMPLE_TEX2D_GRAD(InName, InSampler, InUV, InDdx, InDdy)
-#define LOAD_TEX2D(InName, InCoord)								PE_LOAD_TEX2D(InName, InCoord)
-#define SAMPLE_TEX3D(InName, InSampler, InUVW)					PE_SAMPLE_TEX3D(InName, InSampler, InUVW)
-#define SAMPLE_TEX3D_LEVEL(InName, InSampler, InUVW, InLod)		PE_SAMPLE_TEX3D_LEVEL(InName, InSampler, InUVW, InLod)
-#define SAMPLE_TEXCUBE(InName, InSampler, InDirection)			PE_SAMPLE_TEXCUBE(InName, InSampler, InDirection)
-#define SAMPLE_TEXCUBE_LEVEL(InName, InSampler, InDirection, InLod)	PE_SAMPLE_TEXCUBE_LEVEL(InName, InSampler, InDirection, InLod)
-#define SAMPLE_TEX2DARRAY(InName, InSampler, InUV)				PE_SAMPLE_TEX2DARRAY(InName, InSampler, InUV)
-#define SAMPLE_TEX2DARRAY_LEVEL(InName, InSampler, InUV, InLod)	PE_SAMPLE_TEX2DARRAY_LEVEL(InName, InSampler, InUV, InLod)
+#define SAMPLE_TEX2D(__Name, __Sampler, __UV)					PE_SAMPLE_TEX2D(__Name, __Sampler, __UV)
+#define SAMPLE_TEX2D_LEVEL(__Name, __Sampler, __UV, __Lod)		PE_SAMPLE_TEX2D_LEVEL(__Name, __Sampler, __UV, __Lod)
+#define SAMPLE_TEX2D_BIAS(__Name, __Sampler, __UV, __Bias)		PE_SAMPLE_TEX2D_BIAS(__Name, __Sampler, __UV, __Bias)
+#define SAMPLE_TEX2D_GRAD(__Name, __Sampler, __UV, __Ddx, __Ddy)	PE_SAMPLE_TEX2D_GRAD(__Name, __Sampler, __UV, __Ddx, __Ddy)
+#define LOAD_TEX2D(__Name, __Coord)								PE_LOAD_TEX2D(__Name, __Coord)
+#define SAMPLE_TEX3D(__Name, __Sampler, __UVW)					PE_SAMPLE_TEX3D(__Name, __Sampler, __UVW)
+#define SAMPLE_TEX3D_LEVEL(__Name, __Sampler, __UVW, __Lod)		PE_SAMPLE_TEX3D_LEVEL(__Name, __Sampler, __UVW, __Lod)
+#define SAMPLE_TEXCUBE(__Name, __Sampler, __Direction)			PE_SAMPLE_TEXCUBE(__Name, __Sampler, __Direction)
+#define SAMPLE_TEXCUBE_LEVEL(__Name, __Sampler, __Direction, __Lod)	PE_SAMPLE_TEXCUBE_LEVEL(__Name, __Sampler, __Direction, __Lod)
+#define SAMPLE_TEX2DARRAY(__Name, __Sampler, __UV)				PE_SAMPLE_TEX2DARRAY(__Name, __Sampler, __UV)
+#define SAMPLE_TEX2DARRAY_LEVEL(__Name, __Sampler, __UV, __Lod)	PE_SAMPLE_TEX2DARRAY_LEVEL(__Name, __Sampler, __UV, __Lod)
 
 // The sampler names a material is allowed to reference. There are three, they
 // come from the engine's sampler configuration, and a material may not declare

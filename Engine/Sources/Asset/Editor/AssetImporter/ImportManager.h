@@ -4,7 +4,7 @@
 #include <Base/DataStructure/Container/Array.h>
 #include <Base/DataStructure/Container/Map.h>
 #include <Base/DataStructure/Pointer/SharedPtr.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include "IImporter.h"
 #include <imgui.h>
 namespace PigeonEngine
@@ -20,6 +20,12 @@ namespace PigeonEngine
 		void EditorInit();
 	public:
 		void EditorUpdate();
+		// Marks the content browser's folder tree as stale. Importers call this after writing
+		// their assets; multiple calls in one frame coalesce into one rescan. Game thread only:
+		// the importer UI and the content browser both run there.
+		void NotifyImportFinished();
+		// Consumed by the content browser on the next editor frame.
+		PE_NODISCARD BOOL32 ConsumeContentBrowserRefreshRequest();
 		/// <summary>
 		/// Add a Importer to handle file import,one importer one file extension.
 		/// </summary>
@@ -29,8 +35,9 @@ namespace PigeonEngine
 	private:
 		void ShowEditor();
 	private:
-		TMap<EString, IImporter*> m_Importers;
-		BOOL8 m_ShowEditor = FALSE;
+		TMap<EString, IImporter*> Importers;
+		BOOL8 bShowEditor = FALSE;
+		BOOL32 bContentBrowserRefreshRequested = FALSE;
 	};
 };
 #endif

@@ -37,81 +37,81 @@ namespace PigeonEngine
 		RCommandListD3D11& operator=(const RCommandListD3D11&) = delete;
 
 		// IRCommandList lifecycle ---------------------------------------------
-		virtual void Reset()override;
-		virtual void Close()override;
+		virtual void Reset() override;
+		virtual void Close() override;
 
 		// IRCommandList record mode -------------------------------------------
 		// D3D11 ignores state tracking entirely: the immediate context has no barrier call
 		// and the back-end never reads IRRHIResource::CurrentState. The mode is stored so a
 		// caller can assert the single recorder contract, but it changes no command.
-		virtual void SetRecordMode(ERHIRecordModeType InMode)override;
+		virtual void SetRecordMode(ERHIRecordModeType InMode) override;
 		virtual ERHIRecordModeType GetRecordMode() const noexcept override { return RecordMode; }
 
 		// IRCommandList render passes -----------------------------------------
-		virtual void BeginRenderPass(const RRHIRenderPassDesc& InDesc)override;
-		virtual void EndRenderPass()override;
+		virtual void BeginRenderPass(const RRHIRenderPassDesc& InDesc) override;
+		virtual void EndRenderPass() override;
 
 		// IRCommandList barriers (releases a UAV write binding) ---------------
-		virtual void ResourceBarrier(IRRHIResource* InResource, ERHIResourceState InBefore, ERHIResourceState InAfter)override;
+		virtual void ResourceBarrier(IRRHIResource* InResource, ERHIResourceState InBefore, ERHIResourceState InAfter) override;
 
 		// IRCommandList pipeline / fixed-function ------------------------------
-		virtual void SetPipelineState(IRRHIPipelineState* InPipelineState)override;
+		virtual void SetPipelineState(IRRHIPipelineState* InPipelineState) override;
 		virtual IRRHIPipelineState* GetBoundPipelineState() const noexcept override { return BoundPipelineState; }
-		virtual void SetPrimitiveTopology(RPrimitiveTopologyType InTopology)override;
-		virtual void SetViewports(const EViewport* InViewports, UINT32 InCount)override;
-		virtual void SetScissorRects(const ERect* InRects, UINT32 InCount)override;
-		virtual void SetBlendFactor(const Color4& InBlendFactor)override;
-		virtual void SetStencilRef(UINT32 InStencilRef)override;
+		virtual void SetPrimitiveTopology(RPrimitiveTopologyType InTopology) override;
+		virtual void SetViewports(const EViewport* InViewports, UINT32 InCount) override;
+		virtual void SetScissorRects(const ERect* InRects, UINT32 InCount) override;
+		virtual void SetBlendFactor(const Color4& InBlendFactor) override;
+		virtual void SetStencilRef(UINT32 InStencilRef) override;
 
 		// IRCommandList input assembly ----------------------------------------
-		virtual void SetVertexBuffers(UINT32 InStartSlot, UINT32 InCount, IRRHIBuffer* const* InBuffers, const UINT32* InStrides, const UINT32* InOffsets)override;
-		virtual void SetIndexBuffer(IRRHIBuffer* InBuffer, ERHIIndexFormat InFormat, UINT32 InOffset)override;
+		virtual void SetVertexBuffers(UINT32 InStartSlot, UINT32 InCount, IRRHIBuffer* const* InBuffers, const UINT32* InStrides, const UINT32* InOffsets) override;
+		virtual void SetIndexBuffer(IRRHIBuffer* InBuffer, ERHIIndexFormat InFormat, UINT32 InOffset) override;
 
 		// IRCommandList graphics root params ----------------------------------
-		virtual void SetGraphicsRootConstantBuffer(UINT32 InRootIndex, IRRHIBuffer* InBuffer, SIZE_T InOffset = 0)override;
-		virtual void SetGraphicsRoot32BitConstants(UINT32 InRootIndex, const void* InData, UINT32 InNum32BitValues, UINT32 InOffsetIn32BitValues = 0)override;
+		virtual void SetGraphicsRootConstantBuffer(UINT32 InRootIndex, IRRHIBuffer* InBuffer, SIZE_T InOffset = 0) override;
+		virtual void SetGraphicsRoot32BitConstants(UINT32 InRootIndex, const void* InData, UINT32 InNum32BitValues, UINT32 InOffsetIn32BitValues = 0) override;
 
 		// IRCommandList compute root params -----------------------------------
-		virtual void SetComputeRootConstantBuffer(UINT32 InRootIndex, IRRHIBuffer* InBuffer, SIZE_T InOffset = 0)override;
-		virtual void SetComputeRoot32BitConstants(UINT32 InRootIndex, const void* InData, UINT32 InNum32BitValues, UINT32 InOffsetIn32BitValues = 0)override;
+		virtual void SetComputeRootConstantBuffer(UINT32 InRootIndex, IRRHIBuffer* InBuffer, SIZE_T InOffset = 0) override;
+		virtual void SetComputeRoot32BitConstants(UINT32 InRootIndex, const void* InData, UINT32 InNum32BitValues, UINT32 InOffsetIn32BitValues = 0) override;
 
 		// IRCommandList slot-based bindings -----------------------------------
-		virtual void BeginResourceTable()override;
-		virtual void SetShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture)override;
-		virtual void SetShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer)override;
-		virtual void ClearShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot)override;
-		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture)override;
-		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer)override;
-		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITextureUAVView* InView)override;
-		virtual void ClearUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot)override;
-		virtual void SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHISampler* InSampler)override;
+		virtual void BeginResourceTable() override;
+		virtual void SetShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture) override;
+		virtual void SetShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer) override;
+		virtual void ClearShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot) override;
+		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture) override;
+		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer) override;
+		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITextureUAVView* InView) override;
+		virtual void ClearUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot) override;
+		virtual void SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHISampler* InSampler) override;
 
 		// IRCommandList clears -------------------------------------------------
-		virtual void ClearRenderTarget(IRRHITexture* InTarget, const Color4& InColor)override;
-		virtual void ClearDepthStencil(IRRHITexture* InTarget, UINT8 InClearFlags, FLOAT InDepth, UINT8 InStencil)override;
-		virtual void ClearUnorderedAccessFloat(IRRHITexture* InTarget, const Color4& InValue)override;
-		virtual void ClearUnorderedAccessUint(IRRHITexture* InTarget, const Vector4Int& InValue)override;
+		virtual void ClearRenderTarget(IRRHITexture* InTarget, const Color4& InColor) override;
+		virtual void ClearDepthStencil(IRRHITexture* InTarget, UINT8 InClearFlags, FLOAT InDepth, UINT8 InStencil) override;
+		virtual void ClearUnorderedAccessFloat(IRRHITexture* InTarget, const Color4& InValue) override;
+		virtual void ClearUnorderedAccessUint(IRRHITexture* InTarget, const Vector4Int& InValue) override;
 
 		// IRCommandList copy ---------------------------------------------------
-		virtual void CopyResource(IRRHIResource* InDest, IRRHIResource* InSource)override;
-		virtual void CopyBufferRegion(IRRHIBuffer* InDest, SIZE_T InDestOffset, IRRHIBuffer* InSource, SIZE_T InSourceOffset, SIZE_T InSize)override;
+		virtual void CopyResource(IRRHIResource* InDest, IRRHIResource* InSource) override;
+		virtual void CopyBufferRegion(IRRHIBuffer* InDest, SIZE_T InDestOffset, IRRHIBuffer* InSource, SIZE_T InSourceOffset, SIZE_T InSize) override;
 
 		// IRCommandList draw / dispatch ---------------------------------------
-		virtual void Draw(UINT32 InVertexCount, UINT32 InInstanceCount, UINT32 InStartVertex, UINT32 InStartInstance)override;
-		virtual void DrawIndexed(UINT32 InIndexCount, UINT32 InInstanceCount, UINT32 InStartIndex, INT32 InBaseVertex, UINT32 InStartInstance)override;
-		virtual void Dispatch(UINT32 InThreadGroupCountX, UINT32 InThreadGroupCountY, UINT32 InThreadGroupCountZ)override;
-		virtual void DispatchIndirect(IRRHIBuffer* InArgBuffer, SIZE_T InArgOffset)override;
+		virtual void Draw(UINT32 InVertexCount, UINT32 InInstanceCount, UINT32 InStartVertex, UINT32 InStartInstance) override;
+		virtual void DrawIndexed(UINT32 InIndexCount, UINT32 InInstanceCount, UINT32 InStartIndex, INT32 InBaseVertex, UINT32 InStartInstance) override;
+		virtual void Dispatch(UINT32 InThreadGroupCountX, UINT32 InThreadGroupCountY, UINT32 InThreadGroupCountZ) override;
+		virtual void DispatchIndirect(IRRHIBuffer* InArgBuffer, SIZE_T InArgOffset) override;
 
 		// IRCommandList debug markers -----------------------------------------
-		virtual void BeginDebugMarker(const EString& InName)override;
-		virtual void EndDebugMarker()override;
+		virtual void BeginDebugMarker(const EString& InName) override;
+		virtual void EndDebugMarker() override;
 
 		// IRCommandList GPU timestamp -----------------------------------------
-		virtual void WriteTimestamp(RRHITimestampHeap* InHeap, UINT32 InSlot)override;
-		virtual void ResolveTimestampHeap(RRHITimestampHeap* InHeap, UINT32 InBeginSlot, UINT32 InCount)override;
+		virtual void WriteTimestamp(RRHITimestampHeap* InHeap, UINT32 InSlot) override;
+		virtual void ResolveTimestampHeap(RRHITimestampHeap* InHeap, UINT32 InBeginSlot, UINT32 InCount) override;
 
 		// Native access (used by RDeviceD3D11::SubmitCommandList) -------------
-		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		GetImmediateContext()const { return ImmediateContext; }
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		GetImmediateContext() const { return ImmediateContext; }
 
 	private:
 		RDeviceD3D11*										OwnerDevice;

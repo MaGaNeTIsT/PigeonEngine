@@ -1,4 +1,5 @@
 #include "ScenePass.h"
+#include "RenderFilter.h"
 
 #include <ShaderAsset/ShaderProgram.h>
 
@@ -274,6 +275,45 @@ namespace PigeonEngine
 					RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP), FALSE),
 				RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 				1u, { RFormatType::FORMAT_R8G8B8A8_UNORM }, 0u, FALSE, TRUE,
+				0u, 0u, 1u
+			},
+			// RENDER_PASS_TYPE_WATER_SURFACE - the transparent water surface. It runs after
+			// the scene colour has been lit and writes straight into it: source alpha over
+			// inverse source alpha, depth tested against the opaque scene but never written,
+			// so overlapping water sorts back to front. The program is a material program, so
+			// the fixed function slot stays invalid and the surface proxy supplies the state.
+			{
+				ERenderPassType::RENDER_PASS_TYPE_WATER_SURFACE, PE_TEXT("WaterSurface"), PE_TEXT("WaterSurface"),
+				FALSE, TRUE, RENDER_PASS_STAGE_MASK_GRAPHICS, RENDER_PASS_INVALID_PIPELINE_SLOT,
+				RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID),
+				RBlendState(RBlendOptionType::BLEND_SRC_ALPHA, RBlendOptionType::BLEND_INV_SRC_ALPHA, RBlendOperationType::BLEND_OP_ADD,
+					RBlendOptionType::BLEND_ONE, RBlendOptionType::BLEND_INV_SRC_ALPHA, RBlendOperationType::BLEND_OP_ADD,
+					RColorWriteMaskType::COLOR_WRITE_MASK_ALL, TRUE),
+				RDepthState(RComparisonFunctionType::COMPARISON_LESS_EQUAL, RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO, TRUE),
+				RStencilState(0xffu, 0xffu,
+					RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP),
+					RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP), FALSE),
+				RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+				1u, { RFormatType::FORMAT_R16G16B16A16_FLOAT }, 32u, FALSE, FALSE,
+				0u, 0u, 1u, ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_WATER, 0ull
+			},
+			// RENDER_PASS_TYPE_WATER_REFRACTION_COPY - the linear scene colour copy the water
+			// material samples for refraction. One full screen triangle, no depth, no blending:
+			// every channel of the copy target is written exactly as the scene colour target
+			// holds it, before the display transform.
+			{
+				ERenderPassType::RENDER_PASS_TYPE_WATER_REFRACTION_COPY, PE_TEXT("WaterRefractionCopy"), PE_TEXT("WaterRefractionCopy"),
+				FALSE, FALSE, RENDER_PASS_STAGE_MASK_GRAPHICS, 8u,
+				RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID),
+				RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+					RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+					RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
+				RDepthState(RComparisonFunctionType::COMPARISON_ALWAYS, RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO, FALSE),
+				RStencilState(0xffu, 0xffu,
+					RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP),
+					RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP), FALSE),
+				RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+				1u, { RFormatType::FORMAT_R16G16B16A16_FLOAT }, 0u, FALSE, TRUE,
 				0u, 0u, 1u
 			},
 		};

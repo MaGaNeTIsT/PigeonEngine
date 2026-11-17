@@ -61,25 +61,25 @@ namespace PigeonEngine
 			: Ptr(InPtr)
 		{
 		}
-		PE_CONSTEXPR PE_INLINE _Ty& operator*()const
+		PE_CONSTEXPR PE_INLINE _Ty& operator*() const
 		{
 			return (*(Ptr - 1));
 		}
-		PE_CONSTEXPR PE_INLINE TReversePointerIterator& operator++()const
+		PE_CONSTEXPR PE_INLINE TReversePointerIterator& operator++() const
 		{
 			--Ptr;
 			return (*this);
 		}
-		PE_CONSTEXPR PE_INLINE TReversePointerIterator& operator--()const
+		PE_CONSTEXPR PE_INLINE TReversePointerIterator& operator--() const
 		{
 			++Ptr;
 			return (*this);
 		}
-		PE_CONSTEXPR PE_INLINE BOOL8 operator!=(const TReversePointerIterator& _In)const
+		PE_CONSTEXPR PE_INLINE BOOL8 operator!=(const TReversePointerIterator& _In) const
 		{
 			return (Ptr != (_In.Ptr));
 		}
-		PE_CONSTEXPR PE_INLINE BOOL8 operator==(const TReversePointerIterator& _In)const
+		PE_CONSTEXPR PE_INLINE BOOL8 operator==(const TReversePointerIterator& _In) const
 		{
 			return (Ptr == (_In.Ptr));
 		}
@@ -120,19 +120,19 @@ namespace PigeonEngine
 		}
 	public:
 		template <typename _Ty>
-		static PE_FORCEINLINE PE_NODISCARD PE_CONSTEXPR TRemoveRefType<_Ty>&& Move(_Ty&& _In)noexcept
+		static PE_FORCEINLINE PE_NODISCARD PE_CONSTEXPR TRemoveRefType<_Ty>&& Move(_Ty&& _In) noexcept
 		{
 			return std::move<_Ty>(std::forward<_Ty>(_In));
 		}
 
 		template <typename _Ty>
-		static PE_FORCEINLINE PE_NODISCARD PE_CONSTEXPR _Ty&& Forward(TRemoveRefType<_Ty>& _In)noexcept
+		static PE_FORCEINLINE PE_NODISCARD PE_CONSTEXPR _Ty&& Forward(TRemoveRefType<_Ty>& _In) noexcept
 		{
 			return std::forward<_Ty>(_In);
 		}
 
 		template <typename _Ty>
-		static PE_FORCEINLINE PE_NODISCARD PE_CONSTEXPR _Ty&& Forward(TRemoveRefType<_Ty>&& _In)noexcept
+		static PE_FORCEINLINE PE_NODISCARD PE_CONSTEXPR _Ty&& Forward(TRemoveRefType<_Ty>&& _In) noexcept
 		{
 			return std::forward<_Ty>(_In);
 		}
@@ -160,12 +160,12 @@ namespace PigeonEngine
 		SMART_PTR_GET(TWeakPtr)
 
 	private:
-		EMemory()noexcept {}
-		EMemory(const EMemory&)noexcept {}
-		EMemory(EMemory&)noexcept {}
+		EMemory() noexcept {}
+		EMemory(const EMemory&) noexcept {}
+		EMemory(EMemory&) noexcept {}
 		~EMemory() {}
-		EMemory& operator=(const EMemory&)noexcept { return (*this); }
-		EMemory& operator=(EMemory&&)noexcept { return (*this); }
+		EMemory& operator=(const EMemory&) noexcept { return (*this); }
+		EMemory& operator=(EMemory&&) noexcept { return (*this); }
 	public:
 		static EMemory* GetSingleton()
 		{
@@ -406,12 +406,12 @@ namespace PigeonEngine
 		{
 			return ((void*)(EMemory::GetPtr(HeapPtr)));
 		}
-		PE_INLINE PE_NODISCARD const void* Data()const
+		PE_INLINE PE_NODISCARD const void* Data() const
 		{
 			return ((const void*)(EMemory::GetPtr(HeapPtr)));
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_INLINE PE_NODISCARD _TResultType Size()const
+		PE_INLINE PE_NODISCARD _TResultType Size() const
 		{
 			if PE_CONSTEXPR(TIsSame<_TResultType, _TSizeType>::value)
 			{
@@ -427,41 +427,41 @@ namespace PigeonEngine
 		{
 			Release();
 		}
-		PE_FORCEINLINE THeapBase()noexcept
+		PE_FORCEINLINE THeapBase() noexcept
 			: HeapPtr(nullptr), HeapSize((_TSizeType)0)
 		{
 			Reallocate(_AllocateSize);
 		}
 		template<typename _TOtherSizeType, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
-		PE_FORCEINLINE THeapBase(_TOtherSizeType InInitSize)noexcept
+		PE_FORCEINLINE THeapBase(_TOtherSizeType InInitSize) noexcept
 			: HeapPtr(nullptr), HeapSize((_TSizeType)0)
 		{
 			Reallocate(InInitSize);
 		}
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateSize>
-		PE_FORCEINLINE explicit THeapBase(const THeapBase<_TOtherSizeType, _OtherAllocateSize>& Other)noexcept
+		PE_FORCEINLINE explicit THeapBase(const THeapBase<_TOtherSizeType, _OtherAllocateSize>& Other) noexcept
 			: HeapPtr(nullptr), HeapSize((_TSizeType)0)
 		{
 			Copy(Other);
 		}
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateSize>
-		PE_FORCEINLINE explicit THeapBase(THeapBase<_TOtherSizeType, _OtherAllocateSize>&& Other)noexcept
+		PE_FORCEINLINE explicit THeapBase(THeapBase<_TOtherSizeType, _OtherAllocateSize>&& Other) noexcept
 			: HeapPtr(nullptr), HeapSize((_TSizeType)0)
 		{
 			Move(EMemory::Forward<THeapBase<_TOtherSizeType, _OtherAllocateSize>>(Other));
 		}
-		PE_FORCEINLINE THeapBase(const THeapBase& Other)noexcept
+		PE_FORCEINLINE THeapBase(const THeapBase& Other) noexcept
 			: HeapPtr(nullptr), HeapSize((_TSizeType)0)
 		{
 			Copy(Other);
 		}
-		PE_FORCEINLINE THeapBase(THeapBase&& Other)noexcept
+		PE_FORCEINLINE THeapBase(THeapBase&& Other) noexcept
 			: HeapPtr(nullptr), HeapSize((_TSizeType)0)
 		{
 			Move(EMemory::Forward<THeapBase>(Other));
 		}
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateSize>
-		THeapBase& operator=(const THeapBase<_TOtherSizeType, _OtherAllocateSize>& Other)noexcept
+		THeapBase& operator=(const THeapBase<_TOtherSizeType, _OtherAllocateSize>& Other) noexcept
 		{
 			Release();
 			if (Other.HeapSize > (_TOtherSizeType)0)
@@ -472,7 +472,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateSize>
-		THeapBase& operator=(THeapBase<_TOtherSizeType, _OtherAllocateSize>&& Other)noexcept
+		THeapBase& operator=(THeapBase<_TOtherSizeType, _OtherAllocateSize>&& Other) noexcept
 		{
 			Release();
 			if (Other.HeapSize > (_TOtherSizeType)0)
@@ -481,7 +481,7 @@ namespace PigeonEngine
 			}
 			return (*this);
 		}
-		THeapBase& operator=(const THeapBase& Other)noexcept
+		THeapBase& operator=(const THeapBase& Other) noexcept
 		{
 			Release();
 			if (Other.HeapSize > (_TSizeType)0)
@@ -491,7 +491,7 @@ namespace PigeonEngine
 			}
 			return (*this);
 		}
-		THeapBase& operator=(THeapBase&& Other)noexcept
+		THeapBase& operator=(THeapBase&& Other) noexcept
 		{
 			Release();
 			if (Other.HeapSize > (_TSizeType)0)
@@ -588,12 +588,12 @@ namespace PigeonEngine
 		{
 			return ((TObjectType*)(Heap.Data()));
 		}
-		PE_INLINE PE_NODISCARD const TObjectType* HeapData()const
+		PE_INLINE PE_NODISCARD const TObjectType* HeapData() const
 		{
 			return ((const TObjectType*)(Heap.Data()));
 		}
 		template<typename _TResultType = _TSizeType, TEnableIfType<TIsIntegral<_TResultType>::value, _TResultType> = 0>
-		PE_INLINE PE_NODISCARD _TResultType HeapSize()const
+		PE_INLINE PE_NODISCARD _TResultType HeapSize() const
 		{
 			return (Heap.Size<_TResultType>());
 		}
@@ -602,28 +602,28 @@ namespace PigeonEngine
 		{
 			Release();
 		}
-		PE_FORCEINLINE TAllocatorBase()noexcept
+		PE_FORCEINLINE TAllocatorBase() noexcept
 		{
 		}
 		template<typename _TOtherSizeType, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
-		PE_FORCEINLINE TAllocatorBase(_TOtherSizeType InInitSize)noexcept
+		PE_FORCEINLINE TAllocatorBase(_TOtherSizeType InInitSize) noexcept
 			: Heap(InInitSize)
 		{
 		}
 	public:
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateStepSize>
-		PE_FORCEINLINE TAllocatorBase(const TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>& Other)noexcept = delete;
+		PE_FORCEINLINE TAllocatorBase(const TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>& Other) noexcept = delete;
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateStepSize>
-		PE_FORCEINLINE TAllocatorBase(TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>&& Other)noexcept = delete;
-		TAllocatorBase(const TAllocatorBase& Other)noexcept = delete;
-		TAllocatorBase(TAllocatorBase&& Other)noexcept = delete;
+		PE_FORCEINLINE TAllocatorBase(TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>&& Other) noexcept = delete;
+		TAllocatorBase(const TAllocatorBase& Other) noexcept = delete;
+		TAllocatorBase(TAllocatorBase&& Other) noexcept = delete;
 
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateStepSize>
-		TAllocatorBase& operator=(const TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>& Other)noexcept = delete;
+		TAllocatorBase& operator=(const TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>& Other) noexcept = delete;
 		template<typename _TOtherSizeType, _TOtherSizeType _OtherAllocateStepSize>
-		TAllocatorBase& operator=(TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>&& Other)noexcept = delete;
-		TAllocatorBase& operator=(const TAllocatorBase& Other)noexcept = delete;
-		TAllocatorBase& operator=(TAllocatorBase&& Other)noexcept = delete;
+		TAllocatorBase& operator=(TAllocatorBase<TObjectType, _TOtherSizeType, _OtherAllocateStepSize>&& Other) noexcept = delete;
+		TAllocatorBase& operator=(const TAllocatorBase& Other) noexcept = delete;
+		TAllocatorBase& operator=(TAllocatorBase&& Other) noexcept = delete;
 	private:
 		THeapType Heap;
 	};

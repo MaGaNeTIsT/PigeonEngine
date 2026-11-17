@@ -74,7 +74,7 @@ namespace PigeonEngine
 		PreSceneRenderCallback = InCallback;
 	}
 
-	BOOL8 RRenderThread::IsRunning()const
+	BOOL8 RRenderThread::IsRunning() const
 	{
 		return bStarted;
 	}

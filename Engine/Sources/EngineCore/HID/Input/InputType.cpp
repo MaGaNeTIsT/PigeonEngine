@@ -247,11 +247,11 @@ namespace PigeonEngine
 		AllKeys.Add(&EKeysBuiltIn::LeftAlt);
 		AllKeys.Add(&EKeysBuiltIn::RightAlt);
 
-		for(const auto& elem : AllKeys)
+		for (const EKey* Key : AllKeys)
 		{
-			if(elem->GetKeyCode() == KeyCode)
+			if(Key->GetKeyCode() == KeyCode)
 			{
-				return *elem;
+				return *Key;
 			}
 		}
 

@@ -1,5 +1,5 @@
 #include "AssetManager.h"
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include "../EngineCore/IO/FileHelper.h"
 #include "Editor/AnimationEditorCore/AnimationWorkspace.h"
 #include <AnimationAsset/AnimationAsset.h>
@@ -479,6 +479,16 @@ namespace PigeonEngine
 
 	void EAssetManager::EditorUpdate()
 	{
+		// A refresh request may come from an importer (through EImportManager) or from a family
+		// manager that wrote an asset. Both are consumed here, before anything draws, so the tree is
+		// never rebuilt while GenerateContentBrowser iterates it.
+		const BOOL32 bImportRefreshRequested = EImportManager::GetManagerSingleton()->ConsumeContentBrowserRefreshRequest();
+		if ((m_bContentRefreshRequested != FALSE) || (bImportRefreshRequested != FALSE))
+		{
+			m_bContentRefreshRequested = FALSE;
+			RefreshContentTree();
+		}
+
 		ProcessPendingOpen();
 		GenerateContentBrowser();
 		if (AnimationWorkspace)
@@ -1591,6 +1601,11 @@ namespace PigeonEngine
 	void EAssetManager::RefreshAssetTree()
 	{
 		RefreshContentTree();
+	}
+
+	void EAssetManager::RequestContentRefresh()
+	{
+		m_bContentRefreshRequested = TRUE;
 	}
 
 	void EAssetManager::RefreshContentTree()

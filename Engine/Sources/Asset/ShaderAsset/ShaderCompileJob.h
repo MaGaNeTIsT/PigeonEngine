@@ -73,7 +73,7 @@ namespace PigeonEngine
 	* Editor only: turns a request into artifacts. Nothing in here is needed by a
 	* shipping build, which simply loads the manifests a build step produced.
 	*/
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	class EShaderCompileJob
 	{
@@ -90,7 +90,7 @@ namespace PigeonEngine
 		EShaderCompileJob() = delete;
 	};
 
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 	/*
 	* Loads the shader asset for a request. In an editor build it compiles first when

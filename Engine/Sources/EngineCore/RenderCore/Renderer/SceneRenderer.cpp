@@ -24,14 +24,14 @@
 #include <RenderProxy/BezierGrassSceneProxy.h>
 #include <MultiThread/Thread.h>
 // The diagnostics this file reports are written from code that runs in every configuration, and
-// the header itself is a no-op under _SHIPPING_MODE, which is what keeps this include out of the
+// the header itself is a no-op under ENGINE_SHIPPING_MODE, which is what keeps this include out of the
 // editor-only block below.
 #include <EngineCore/Editor/EditorLogManager.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <cstdio>
 #include <RenderDevice/D3D12Native.h>
 #include <imGUI/Headers/imGUIManager.h>
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 namespace PigeonEngine
 {
@@ -39,14 +39,14 @@ namespace PigeonEngine
 	// The passes this file drives own their resource bindings by name, so the claim tables live
 	// next to the drawing code. EnvironmentCube overlaps with the sky dome (each publishes its own
 	// cube); everything else here has exactly one publisher.
-	static const FShaderBindingClaim g_EnvironmentSHBindingClaims[] =
+	static const FShaderBindingClaim GEnvironmentSHBindingClaims[] =
 	{
 		{ EName(PE_TEXT("EnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 		{ EName(PE_TEXT("EnvironmentSHOutput")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_EnvironmentSHBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_SH));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GEnvironmentSHBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_SH));
 
-	static const FShaderBindingClaim g_LightingBindingClaims[] =
+	static const FShaderBindingClaim GLightingBindingClaims[] =
 	{
 		// The depth buffer, the normal target and the light list are also published by the shadow
 		// mask pass for its own draw. A name two scopes publish has to be OVERLAPPING in both - a
@@ -68,14 +68,17 @@ namespace PigeonEngine
 		// render target rather than publishing it as a binding, so the lighting pass is its only
 		// publisher.
 		{ EName(PE_TEXT("DirectionalShadowMask0")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		// Published by AddWaterLightingParameters for the water program: the scene colour copy
+		// the refraction term samples. The deferred lighting pass does not declare it.
+		{ EName(PE_TEXT("WaterRefractionColor")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 		// The local light shadow term samples the atlas and the slot table from the same list this
 		// pass binds, and the mask pass publishes the same two names for its own draw.
 		{ EName(PE_TEXT("ShadowMapAtlas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 		{ EName(PE_TEXT("ShadowSlots")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_LightingBindingClaims, EName(SHADER_BINDING_SCOPE_LIGHTING));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GLightingBindingClaims, EName(SHADER_BINDING_SCOPE_LIGHTING));
 
-	static const FShaderBindingClaim g_ShadowMaskBindingClaims[] =
+	static const FShaderBindingClaim GShadowMaskBindingClaims[] =
 	{
 		// Read from the base pass's targets and the light list the lighting pass also reads; both
 		// passes publish them for their own draw, so the claim overlaps.
@@ -87,9 +90,9 @@ namespace PigeonEngine
 		{ EName(PE_TEXT("ShadowMapAtlas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 		{ EName(PE_TEXT("ShadowSlots")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_ShadowMaskBindingClaims, EName(SHADER_BINDING_SCOPE_SHADOW_MASK));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GShadowMaskBindingClaims, EName(SHADER_BINDING_SCOPE_SHADOW_MASK));
 
-	static const FShaderBindingClaim g_EnvironmentPrefilterBindingClaims[] =
+	static const FShaderBindingClaim GEnvironmentPrefilterBindingClaims[] =
 	{
 		// The raw cube is read by the sky dome, the SH bake and this pass; each publishes its
 		// own value for its own draw.
@@ -97,20 +100,20 @@ namespace PigeonEngine
 		// Written by this pass and read by the lighting pass.
 		{ EName(PE_TEXT("PrefilteredEnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_EnvironmentPrefilterBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GEnvironmentPrefilterBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER));
 
-	static const FShaderBindingClaim g_EnvironmentBRDFBindingClaims[] =
+	static const FShaderBindingClaim GEnvironmentBRDFBindingClaims[] =
 	{
 		// Generated here and sampled by the lighting pass.
 		{ EName(PE_TEXT("EnvironmentBRDFLUT")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_EnvironmentBRDFBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GEnvironmentBRDFBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF));
 
-	static const FShaderBindingClaim g_CopyBindingClaims[] =
+	static const FShaderBindingClaim GCopyBindingClaims[] =
 	{
 		{ EName(PE_TEXT("CopySourceTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_CopyBindingClaims, EName(SHADER_BINDING_SCOPE_COPY));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GCopyBindingClaims, EName(SHADER_BINDING_SCOPE_COPY));
 
 	static void RegisterClassTypes()
 	{
@@ -130,6 +133,25 @@ namespace PigeonEngine
 		EShaderAssemblyRequest Request;
 		Request.ShaderName = EName(PE_TEXT("M_EngineFullScreenTriangle"));
 		Request.ProgramName = EName(PE_TEXT("Copy"));
+		Request.VertexFactory = EShaderVertexFactoryType::FULLSCREEN;
+		Request.Profile.StreamProfile = SHADER_VERTEX_ATTRIBUTE_UV0;
+		Request.StageMask = ENGINE_SHADER_STAGE_MASK_GRAPHICS;
+
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+	}
+	/*
+	* The water refraction background copy. Same full-screen vertex shader as the display copy,
+	* with a name and a program of its own; the pixel shader copies the linear scene colour
+	* without applying the display transform, because the water material samples the result in
+	* the same frame.
+	*/
+	static const EShaderInstance* GetWaterRefractionCopyProgramInstance()
+	{
+		EShaderAssemblyRequest Request;
+		// A name of its own: the assembly cache keys on it, and a second program under the
+		// display copy's name would resolve to that assembly and its stage sources.
+		Request.ShaderName = EName(PE_TEXT("M_EngineWaterRefractionCopy"));
+		Request.ProgramName = EName(PE_TEXT("WaterRefractionCopy"));
 		Request.VertexFactory = EShaderVertexFactoryType::FULLSCREEN;
 		Request.Profile.StreamProfile = SHADER_VERTEX_ATTRIBUTE_UV0;
 		Request.StageMask = ENGINE_SHADER_STAGE_MASK_GRAPHICS;
@@ -332,8 +354,8 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	}
 
 	RSceneRenderer::RSceneRenderer()
-		: Scene(nullptr), CurrentCommandList(nullptr), CurrentViewProxy(nullptr), FullScreenProgram(nullptr), SceneLightingProgram(nullptr)
-		, ShadowMaskProgram(nullptr)
+		: Scene(nullptr), CurrentCommandList(nullptr), CurrentViewProxy(nullptr), FullScreenProgram(nullptr)
+		, WaterRefractionCopyProgram(nullptr), SceneLightingProgram(nullptr), ShadowMaskProgram(nullptr)
 		, FinalOutputView(0u), NeedStencil(FALSE)
 		, EnvironmentSHPipelineState(nullptr), EnvironmentSHProgram(nullptr), EnvironmentSHBakedSource(nullptr)
 		, bIndirectLightingParamsReported(FALSE)
@@ -348,7 +370,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			PipelineStates[i] = nullptr;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		{
 			DebugWireframePrimitiveManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
 		}
@@ -360,9 +382,14 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	}
 	void RSceneRenderer::Initialize()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		{
-			DebugWireframePrimitiveManager->Initialize();
+			// The debug primitive frame is process wide state owned by the window renderer.
+			// A secondary renderer never draws it, so it must not build it either.
+			if (bManageDebugWireframe != FALSE)
+			{
+				DebugWireframePrimitiveManager->Initialize();
+			}
 		}
 #endif
 		// The renderer wide sampler table. It is built in the register order the shaders
@@ -481,6 +508,9 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			FullScreenProgramInstance = GetFullScreenProgramInstance();
 			FullScreenProgram = (FullScreenProgramInstance ? FullScreenProgramInstance->GetProgram() : nullptr);
 
+			WaterRefractionCopyProgramInstance = GetWaterRefractionCopyProgramInstance();
+			WaterRefractionCopyProgram = (WaterRefractionCopyProgramInstance ? WaterRefractionCopyProgramInstance->GetProgram() : nullptr);
+
 			SceneLightingProgramInstance = GetSceneLightingProgramInstance();
 			SceneLightingProgram = (SceneLightingProgramInstance ? SceneLightingProgramInstance->GetProgram() : nullptr);
 
@@ -518,6 +548,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// actually record, and D3D11 answers one.
 		BasePassObject = EMemory::MakeUnique<FBasePass>(this);
 		ShadowPassObject = EMemory::MakeUnique<FShadowPass>(this);
+		WaterSurfacePassObject = EMemory::MakeUnique<FWaterSurfacePass>(this);
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if (RenderDevice)
 		{
@@ -553,6 +584,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// and re-reading is all this may do, because a re-resolution that missed the cache would
 		// load, and this runs on the render thread.
 		FullScreenProgram = (FullScreenProgramInstance ? FullScreenProgramInstance->GetProgram() : nullptr);
+		WaterRefractionCopyProgram = (WaterRefractionCopyProgramInstance ? WaterRefractionCopyProgramInstance->GetProgram() : nullptr);
 		SceneLightingProgram = (SceneLightingProgramInstance ? SceneLightingProgramInstance->GetProgram() : nullptr);
 		ShadowMaskProgram = (ShadowMaskProgramInstance ? ShadowMaskProgramInstance->GetProgram() : nullptr);
 		EnvironmentSHProgram = (EnvironmentSHProgramInstance ? EnvironmentSHProgramInstance->GetProgram() : nullptr);
@@ -605,12 +637,17 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		* program, exactly the way this function does for its own.
 		*/
 		RSkyLightSceneProxy::OnShaderAssetReplaced();
-#if _EDITOR_ONLY
-		if (DebugWireframePrimitiveManager)
+#if ENGINE_EDITOR_ONLY
+		if ((bManageDebugWireframe != FALSE) && (DebugWireframePrimitiveManager != nullptr))
 		{
 			DebugWireframePrimitiveManager->OnShaderAssetReplaced();
 		}
-		CImGUIManager::GetManagerSingleton()->OnShaderAssetReplaced();
+		// The overlay belongs to the window renderer: a preview replacing a shader must not
+		// reset the main window's overlay state.
+		if (IsWindowOutput() != FALSE)
+		{
+			CImGUIManager::GetManagerSingleton()->OnShaderAssetReplaced();
+		}
 #endif
 	}
 	void RSceneRenderer::EnsureEnginePassPipelineStates()
@@ -636,6 +673,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		if (FullScreenProgram)
 		{
 			EnginePassPrograms.Add(EName(PE_TEXT("Copy")), FullScreenProgram);
+		}
+		if (WaterRefractionCopyProgram)
+		{
+			EnginePassPrograms.Add(EName(PE_TEXT("WaterRefractionCopy")), WaterRefractionCopyProgram);
 		}
 		if (ShadowMaskProgram)
 		{
@@ -685,6 +726,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		RecordScheduler.Shutdown();
 		BasePassObject.reset();
 		ShadowPassObject.reset();
+		WaterSurfacePassObject.reset();
 		FrameData.EndFrame();
 		FrameData.ReleaseAll();
 
@@ -692,6 +734,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// views hand their descriptors back and the textures queue through the device's
 		// deferred delete path.
 		ReleaseSpecularIBLResources();
+		// The offscreen output is a device resource like the bakes above, so it goes before
+		// the device does. A window renderer never built one, so this is a no-op there.
+		OffscreenOutput.ReleaseRenderResource();
+		OffscreenOutputSize = Vector2Int::Zero();
 		// The cache invalidates the states below; a renderer that comes back up must not keep
 		// the pointers from the previous device.
 		EnvironmentSHPipelineState = nullptr;
@@ -705,7 +751,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		if (ViewSceneTextures.Num() > 0)
 		{
-			for (auto It = ViewSceneTextures.Begin(); It != ViewSceneTextures.End(); It++)
+			for (TMap<ObjectIdentityType, RSceneTextures*>::TIterator It = ViewSceneTextures.Begin(); It != ViewSceneTextures.End(); It++)
 			{
 				RSceneTextures*& TempPtr = It->second;
 				if (TempPtr)
@@ -762,9 +808,14 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			Scene = nullptr;
 		}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		{
-			DebugWireframePrimitiveManager->ShutDown();
+			// A secondary renderer does not own the debug primitive frame; shutting it down
+			// here would tear down state the main view still uses.
+			if (bManageDebugWireframe != FALSE)
+			{
+				DebugWireframePrimitiveManager->ShutDown();
+			}
 		}
 #endif
 	}
@@ -775,7 +826,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	void RSceneRenderer::ResizeRenderTargets(UINT32 InWidth, UINT32 InHeight)
 	{
 		const Vector2Int NewSize(static_cast<INT32>(InWidth), static_cast<INT32>(InHeight));
-		for (auto It = ViewSceneTextures.Begin(); It != ViewSceneTextures.End(); It++)
+		for (TMap<ObjectIdentityType, RSceneTextures*>::TIterator It = ViewSceneTextures.Begin(); It != ViewSceneTextures.End(); It++)
 		{
 			RSceneTextures* SceneTextures = It->second;
 			if (SceneTextures)
@@ -784,6 +835,29 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			}
 		}
 	}
+	void RSceneRenderer::SetOutputDescription(const FRendererOutputDescription& InOutputDescription)
+	{
+		OutputDescription = InOutputDescription;
+		if (OutputDescription.Type == RRendererOutputType::RENDERER_OUTPUT_WINDOW)
+		{
+			// A renderer that goes back to the window owns no image of its own, and the
+			// target it built belongs to the configuration that is gone.
+			OffscreenOutput.ReleaseRenderResource();
+			OffscreenOutputSize = Vector2Int::Zero();
+		}
+	}
+	BOOL32 RSceneRenderer::IsWindowOutput() const
+	{
+		return ((OutputDescription.Type == RRendererOutputType::RENDERER_OUTPUT_WINDOW) ? TRUE : FALSE);
+	}
+	IRRHITexture* RSceneRenderer::GetOutputColorTexture()
+	{
+		if ((IsWindowOutput() != FALSE) || (OffscreenOutput.IsRenderResourceValid() == FALSE))
+		{
+			return nullptr;
+		}
+		return OffscreenOutput.GetResolvedRHITexture();
+	}
 	void RSceneRenderer::InitNewFrame()
 	{
 		// SwapCommandSlots is called by the GameThread at frame boundary
@@ -791,8 +865,13 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// guaranteed the front slot is the freshly-published GameThread
 		// payload and BackSlot is reserved for the next GameThread tick.
 
-#if _EDITOR_ONLY
-		DebugWireframePrimitiveManager->InitNewFrame();
+#if ENGINE_EDITOR_ONLY
+		// A secondary renderer (the asset preview) does not own the debug primitive frame:
+		// draining it here would consume the commands the main view is about to draw.
+		if (bManageDebugWireframe != FALSE)
+		{
+			DebugWireframePrimitiveManager->InitNewFrame();
+		}
 #endif
 		InitRendererSettings();
 
@@ -813,9 +892,16 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 
 		// The proxies a frame draws bind their engine blocks through the renderer published
-		// here. A secondary renderer (the asset preview) publishes itself while it records, and
-		// the main scene records after it, so this is what makes the main view current again.
+		// here. Saving and restoring the previous one is what keeps the ambient handle
+		// meaningful for whichever renderer records next: a secondary renderer (the asset
+		// preview) publishes itself while it records, and the main scene records after it.
+		RSceneRenderer* PreviousActiveRenderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(this);
+
+		// The GPU profiler's frame slot is process wide and the window renderer owns it. An
+		// offscreen renderer records inside the same device frame, so its passes are not part
+		// of that slice and are dropped instead of charged to it.
+		EGPUProfiler::GetManagerSingleton()->SetPassRecordingEnabled(static_cast<BOOL8>(IsWindowOutput()));
 
 		FrameData.BeginFrame(RenderDevice->GetCurrentFrameIndex());
 		FrameData.SetRenderDevice(RenderDevice);
@@ -837,12 +923,25 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		// Prepare: build the pass instances, then collect and publish every item they consume.
 		PassStatePlan.Reset();
-		TArray<FPassViewInstance> PassInstances;
+		FramePassInstances.SetNum(0);
+		TArray<FPassViewInstance>& PassInstances = FramePassInstances;
 		{
 			PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_INIT_FRAME);
 			BuildPassInstances(PassInstances);
 			PreparePassInstances(PassInstances);
 			FrameData.EndPrepare();
+		}
+
+		// Record the simulation stage before anything is shaded. The stage has no items: its
+		// sync list dispatches the water simulation bodies in order, because the SWE passes
+		// depend on each other and their resource barriers are recorded there.
+		{
+			TArray<FRecordTask> SimulationTasks;
+			RecordScheduler.ExecuteStage(ERenderPassStageType::RENDER_PASS_STAGE_SIMULATION, SimulationTasks
+				, [this](IRCommandList* InList) -> void
+				{
+					RecordStageSync(ERenderPassStageType::RENDER_PASS_STAGE_SIMULATION, InList);
+				});
 		}
 
 		// Record the shadow stage: its sync list carries the frame's GPU setup and the atlas
@@ -889,7 +988,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 			// Close the GPU profile frame before submit so the readback is queued to fill in by
 			// the time the frame's fence retires.
-			PE_GPU_PROFILER_END_FRAME(MainList);
+			if (IsWindowOutput() != FALSE)
+			{
+				PE_GPU_PROFILER_END_FRAME(MainList);
+			}
 			MainList->Close();
 			CurrentCommandList = nullptr;
 		}
@@ -906,6 +1008,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		RecordScheduler.EndFrame();
 		FrameData.EndFrame();
+
+		// The next renderer to record publishes itself, and the one after that restores this
+		// value in turn; keeping it in step is what makes the handle describe the renderer
+		// whose frame is current instead of whichever recorded last.
+		EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(PreviousActiveRenderer);
 	}
 	FBasePass::FBasePass(RSceneRenderer* InRenderer)
 		: FRenderPass(FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_BASE))
@@ -941,6 +1048,53 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		Renderer->BeginItemPass(InContext);
 	}
 	void FShadowPass::RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, const UINT32 InBegin, const UINT32 InEnd) const
+	{
+		Renderer->RecordItemRange(InContext, InItems, InBegin, InEnd);
+	}
+
+	FWaterSurfacePass::FWaterSurfacePass(RSceneRenderer* InRenderer)
+		: FRenderPass(FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_WATER_SURFACE))
+		, Renderer(InRenderer)
+	{
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("FWaterSurfacePass: a pass needs its renderer.")), (Renderer != nullptr));
+	}
+	BOOL32 FWaterSurfacePass::ShouldUseView(const RViewProxy& InView) const
+	{
+		return (((InView.GetViewKind() == EViewKindType::VIEW_KIND_CAMERA) && (InView.IsMainRenderView() != FALSE)) ? TRUE : FALSE);
+	}
+	void FWaterSurfacePass::CollectItems(const FPassViewContext& InContext, const RViewPrimitiveList& InPrimitiveList
+		, TArray<FPassItem>& OutItems) const
+	{
+		FRenderPass::CollectItems(InContext, InPrimitiveList, OutItems);
+		if ((!InContext.View) || (OutItems.Num<UINT32>() < 2u))
+		{
+			return;
+		}
+		// Alpha blending is not commutative, so the items go back to front. The primitive
+		// bounds centre is enough for water surfaces, which are large flat patches.
+		const Vector3 ViewLocation = InContext.View->GetWorldLocation();
+		std::sort(OutItems.GetData(), OutItems.GetData() + OutItems.Num<UINT32>()
+			, [&ViewLocation](const FPassItem& InLeft, const FPassItem& InRight) -> BOOL32
+			{
+				const Vector3 LeftLocation = ((InLeft.Primitive != nullptr) ? InLeft.Primitive->GetWorldLocation() : Vector3::Zero());
+				const Vector3 RightLocation = ((InRight.Primitive != nullptr) ? InRight.Primitive->GetWorldLocation() : Vector3::Zero());
+				const Vector3 LeftDelta = LeftLocation - ViewLocation;
+				const Vector3 RightDelta = RightLocation - ViewLocation;
+				const FLOAT LeftDistance = (LeftDelta.x * LeftDelta.x) + (LeftDelta.y * LeftDelta.y) + (LeftDelta.z * LeftDelta.z);
+				const FLOAT RightDistance = (RightDelta.x * RightDelta.x) + (RightDelta.y * RightDelta.y) + (RightDelta.z * RightDelta.z);
+				return ((LeftDistance > RightDistance) ? TRUE : FALSE);
+			});
+	}
+	void FWaterSurfacePass::BeginPass(FPassRecordContext& InContext) const
+	{
+		Renderer->BeginItemPass(InContext);
+	}
+	void FWaterSurfacePass::EndPass(FPassRecordContext& InContext) const
+	{
+		Renderer->EndItemPass(InContext);
+	}
+	void FWaterSurfacePass::RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems
+		, const UINT32 InBegin, const UINT32 InEnd) const
 	{
 		Renderer->RecordItemRange(InContext, InItems, InBegin, InEnd);
 	}
@@ -1065,6 +1219,31 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			PassStatePlan.AddClear(ERenderPassStageType::RENDER_PASS_STAGE_BASE, DepthClear);
 
 			OutInstances.Add(Instance);
+
+			// The water surface pass is prepared with the base pass but recorded on the tail
+			// list, after lighting. Its instance carries the scene colour and depth it draws
+			// into; the items are collected from the same view list and sorted back to front.
+			if (WaterSurfacePassObject)
+			{
+				IRRHITexture* WaterColorTarget = SceneTextures->SceneColor.GetResolvedRHITexture();
+				IRRHITexture* WaterDepthTarget = SceneTextures->SceneDepthStencil.GetResolvedRHITexture();
+				if ((WaterColorTarget) && (WaterDepthTarget))
+				{
+					FPassViewInstance WaterInstance;
+					WaterInstance.Pass		= WaterSurfacePassObject.get();
+					WaterInstance.View		= ViewProxy;
+					WaterInstance.ViewData	= FrameData.EnsureView(*ViewProxy);
+					WaterInstance.Targets.Viewport = ViewProxy->GetRenderViewport();
+					const EViewport& WaterViewport = WaterInstance.Targets.Viewport;
+					WaterInstance.Targets.Scissor = ERect(WaterViewport.TopLeftX, WaterViewport.TopLeftY
+						, WaterViewport.TopLeftX + WaterViewport.Width, WaterViewport.TopLeftY + WaterViewport.Height);
+					WaterInstance.Targets.RenderTargetCount = 1u;
+					WaterInstance.Targets.RenderTargets[0] = WaterColorTarget;
+					WaterInstance.Targets.DepthTarget = WaterDepthTarget;
+					WaterInstance.Targets.ClearDepth = 1.0f;
+					OutInstances.Add(WaterInstance);
+				}
+			}
 		}
 	}
 
@@ -1161,12 +1340,26 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			return;
 		}
 
+		if (InStage == ERenderPassStageType::RENDER_PASS_STAGE_SIMULATION)
+		{
+			// The simulation stage is executed first, so its sync list opens the GPU profile
+			// frame. Only the window renderer owns that frame: an offscreen renderer records
+			// inside the same device frame and must not advance the process wide slot.
+			if (IsWindowOutput() != FALSE)
+			{
+				PE_GPU_PROFILER_BEGIN_FRAME(InCommandList);
+			}
+			PE_GPU_PROFILER_PASS_BEGIN(InCommandList, PE_TEXT("WaterSimulation"));
+			RenderWaterSimulation(InCommandList);
+			PE_GPU_PROFILER_PASS_END(InCommandList);
+			return;
+		}
+
 		if (InStage == ERenderPassStageType::RENDER_PASS_STAGE_SHADOW)
 		{
-			// The first executed list opens the GPU profile frame. The environment bakes and the
-			// renderer wide sampler table are recorded here too: they must run before any draw
-			// that samples them, and this list executes before the whole frame's item lists.
-			PE_GPU_PROFILER_BEGIN_FRAME(InCommandList);
+			// The environment bakes and the renderer wide sampler table are recorded here:
+			// they must run before any draw that samples them, and this list executes before
+			// the whole frame's item lists.
 			CurrentCommandList = InCommandList;
 			for (UINT32 SamplerIndex = 0u; SamplerIndex < RSamplerType::SAMPLER_TYPE_COUNT; SamplerIndex++)
 			{
@@ -1210,6 +1403,147 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				InCommandList->ClearDepthStencil(Target, Clear.ClearFlags, Clear.ClearDepth, Clear.ClearStencil);
 			}
 		}
+	}
+
+	void RSceneRenderer::RenderWaterSimulation(IRCommandList* InCommandList)
+	{
+		if ((!InCommandList) || (!Scene))
+		{
+			return;
+		}
+		// The body proxies are not collected into any view; they live in the scene's primitive
+		// list and are dispatched here, once per frame, before the shadow and base stages.
+		const FRenderPassDesc& PassDescription = FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_SWE_INTEGRATE);
+		const TArray<RPrimitiveSceneProxy*>& Primitives = Scene->GetPrimitives();
+		const UINT64 WaterSimulationCategory = static_cast<UINT64>(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_WATER_SIMULATION);
+		for (UINT32 Index = 0u, Num = Primitives.Num<UINT32>(); Index < Num; Index++)
+		{
+			RPrimitiveSceneProxy* Primitive = Primitives[Index];
+			if ((Primitive) && ((Primitive->GetPrimitiveCategoryMask() & WaterSimulationCategory) != 0ull))
+			{
+				Primitive->RecordCompute(InCommandList, PassDescription);
+			}
+		}
+	}
+
+	void RSceneRenderer::RenderWaterSurface(IRCommandList* InCommandList, RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
+	{
+		if ((!InCommandList) || (!InViewProxy) || (!WaterSurfacePassObject))
+		{
+			return;
+		}
+		FPassViewInstance* WaterInstance = nullptr;
+		for (UINT32 Index = 0u, Num = FramePassInstances.Num<UINT32>(); Index < Num; Index++)
+		{
+			FPassViewInstance& Candidate = FramePassInstances[Index];
+			if ((Candidate.Pass == WaterSurfacePassObject.get()) && (Candidate.View == InViewProxy))
+			{
+				WaterInstance = &Candidate;
+				break;
+			}
+		}
+		if ((!WaterInstance) || (WaterInstance->Items.Num<UINT32>() == 0u))
+		{
+			return;
+		}
+
+		// The water material samples the scene colour behind it for refraction, and a draw cannot
+		// sample the target it writes. Copy the colour into the view's linear refraction target
+		// first; the copy stays in scene referred luminance so the material can blend it with the
+		// water's own scattering term before the display transform.
+		IRRHITexture* RefractionTarget = ((InSceneTextures)
+			? InSceneTextures->WaterRefractionColor.GetResolvedRHITexture() : nullptr);
+		IRRHITexture* SceneColorSource = ((InSceneTextures)
+			? InSceneTextures->SceneColor.GetResolvedRHITexture() : nullptr);
+		IRRHIPipelineState* CopyState = PipelineStates[PIPELINE_STATE_WATER_REFRACTION_COPY];
+		if (InSceneTextures)
+		{
+			InSceneTextures->bWaterRefractionValid = FALSE;
+		}
+		if ((CopyState != nullptr) && (WaterRefractionCopyProgram != nullptr)
+			&& (RefractionTarget != nullptr) && (SceneColorSource != nullptr))
+		{
+			const ERHIResourceState SceneColorState = SceneColorSource->GetCurrentState();
+			if (SceneColorState != ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE)
+			{
+				InCommandList->ResourceBarrier(SceneColorSource, SceneColorState, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
+			}
+			const ERHIResourceState RefractionState = RefractionTarget->GetCurrentState();
+			if (RefractionState != ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET)
+			{
+				InCommandList->ResourceBarrier(RefractionTarget, RefractionState, ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET);
+			}
+
+			RRHIRenderPassDesc CopyPass;
+			CopyPass.RenderTargetCount		= 1u;
+			CopyPass.RenderTargets[0].Target = RefractionTarget;
+			CopyPass.RenderTargets[0].LoadOp = ERHILoadOp::RHI_LOAD_OP_DONT_CARE;
+			CopyPass.RenderTargets[0].StoreOp = ERHIStoreOp::RHI_STORE_OP_STORE;
+			CopyPass.DepthStencil.Target	= nullptr;
+			CopyPass.PassName				= PE_TEXT("WaterRefractionCopy");
+			// The tail list records with EXTERNAL state and the transitions above, exactly like
+			// the water pass that follows on the same list.
+			CopyPass.bStatePrepared			= TRUE;
+			InCommandList->BeginRenderPass(CopyPass);
+
+			InCommandList->SetPipelineState(CopyState);
+			BindEngineParameters(InCommandList, *WaterRefractionCopyProgram, InViewProxy);
+			FullScreenTriangle.BindPrimitiveBuffers(InCommandList, *WaterRefractionCopyProgram);
+			const EShaderStageEntry* PixelEntry = ResolveShaderStageEntry(*WaterRefractionCopyProgram, EShaderStageType::SHADER_STAGE_PIXEL);
+			if (PixelEntry)
+			{
+				EShaderParameterSet Parameters;
+				Parameters.SetTexture(EName(), EName(PE_TEXT("CopySourceTexture")), SceneColorSource);
+				BindShaderResources(InCommandList, Parameters, PixelEntry->BindingPlan
+					, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, EName(SHADER_BINDING_SCOPE_COPY));
+			}
+			InCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
+			InCommandList->EndRenderPass();
+
+			const ERHIResourceState CopiedState = RefractionTarget->GetCurrentState();
+			if (CopiedState != ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE)
+			{
+				InCommandList->ResourceBarrier(RefractionTarget, CopiedState, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
+			}
+			if (InSceneTextures)
+			{
+				InSceneTextures->bWaterRefractionValid = TRUE;
+			}
+		}
+
+		// The pass instance was prepared with the base pass, but it is recorded after the
+		// forward pass, on the same immediate tail list. State the two targets it needs here;
+		// BeginItemPass assumes the stage sync list already did this, and there is no sync
+		// list for a pass recorded on the tail.
+		IRRHITexture* ColorTarget = WaterInstance->Targets.RenderTargets[0];
+		if (ColorTarget)
+		{
+			const ERHIResourceState ColorState = ColorTarget->GetCurrentState();
+			if (ColorState != ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET)
+			{
+				InCommandList->ResourceBarrier(ColorTarget, ColorState, ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET);
+			}
+		}
+		IRRHITexture* DepthTarget = WaterInstance->Targets.DepthTarget;
+		if (DepthTarget)
+		{
+			const ERHIResourceState DepthState = DepthTarget->GetCurrentState();
+			if (DepthState != ERHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE)
+			{
+				InCommandList->ResourceBarrier(DepthTarget, DepthState, ERHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE);
+			}
+		}
+
+		FPassRecordContext Context;
+		Context.CommandList		= InCommandList;
+		Context.Instance		= WaterInstance;
+		Context.FrameData		= &FrameData;
+		Context.FrameIndex		= FrameData.GetFrameIndex();
+		PE_GPU_PROFILER_PASS_BEGIN(InCommandList, PE_TEXT("WaterSurface"));
+		WaterInstance->Pass->BeginPass(Context);
+		WaterInstance->Pass->RecordItems(Context, WaterInstance->Items, 0u, WaterInstance->Items.Num<UINT32>());
+		WaterInstance->Pass->EndPass(Context);
+		PE_GPU_PROFILER_PASS_END(InCommandList);
 	}
 
 	void RSceneRenderer::BeginItemPass(FPassRecordContext& InContext) const
@@ -1325,6 +1659,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			RenderDirectionalShadowMask(ViewProxy, SceneTextures);
 			RenderLighting(ViewProxy, SceneTextures);
 			RenderForward(ViewProxy, SceneTextures);
+			RenderWaterSurface(InCommandList, ViewProxy, SceneTextures);
 		}
 		CurrentViewProxy = nullptr;
 	}
@@ -1336,13 +1671,16 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			return;
 		}
 
-		// The shading belongs to the view, the blit and the overlay belong to the window. A
-		// renderer that draws into an offscreen target records only the first half.
+		// The shading belongs to the view; the overlay belongs to the window. An offscreen
+		// renderer records the same shading and copy, and stops before the overlay.
 		RecordViewTailPasses(InCommandList);
 
 		FinalOutputPass();
-#if _EDITOR_ONLY
-		ImGuiPass();
+#if ENGINE_EDITOR_ONLY
+		if (IsWindowOutput() != FALSE)
+		{
+			ImGuiPass();
+		}
 #endif
 	}
 
@@ -1436,22 +1774,81 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			InView->BindParameters(InCommandList, InProgram);
 		}
 	}
+	IRRHITexture* RSceneRenderer::ResolveOffscreenOutputTarget()
+	{
+		RViewProxy* OutputView = FindViewProxy(FinalOutputView);
+		if (!OutputView)
+		{
+			return nullptr;
+		}
+
+		const EViewport& Viewport = OutputView->GetRenderViewport();
+		const UINT32 OutputWidth  = static_cast<UINT32>(EMath::Max(Viewport.Width, 2.f));
+		const UINT32 OutputHeight = static_cast<UINT32>(EMath::Max(Viewport.Height, 2.f));
+		if ((OffscreenOutput.IsRenderResourceValid() != FALSE)
+			&& (OffscreenOutputSize.x == static_cast<INT32>(OutputWidth))
+			&& (OffscreenOutputSize.y == static_cast<INT32>(OutputHeight)))
+		{
+			return OffscreenOutput.GetResolvedRHITexture();
+		}
+
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return nullptr;
+		}
+
+		// The format comes from the final output pass row unless the owner named one: a
+		// pipeline change to that row then moves the target with it, instead of leaving the
+		// copy drawing into a target the state was not built for.
+		const RFormatType OutputFormat = ((OutputDescription.OffscreenFormat != RFormatType::FORMAT_UNKNOWN)
+			? OutputDescription.OffscreenFormat
+			: FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_FINAL_OUTPUT).RenderTargetFormats[0]);
+
+		OffscreenOutput.ReleaseRenderResource();
+		if (OffscreenOutput.InitFromRHI(RenderDevice,
+			RTextureDesc(OutputWidth, OutputHeight,
+				RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
+				OutputFormat)) == FALSE)
+		{
+			return nullptr;
+		}
+
+		// The recorded size only moves once the target was built: a failed creation is then
+		// retried by the next frame instead of being remembered as done.
+		OffscreenOutputSize = Vector2Int(static_cast<INT32>(OutputWidth), static_cast<INT32>(OutputHeight));
+		return OffscreenOutput.GetResolvedRHITexture();
+	}
+
 	void RSceneRenderer::FinalOutputPass()
 	{
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return;
+		}
 
-		// Backbuffer pass: blit SceneColor. The pass does not clear: the blit covers every
-		// pixel of the back buffer, and the editor overlay draws over it afterwards, so a
-		// clear would only be a full screen write nobody sees. It would also take the slow
-		// path - the back buffer is a DXGI resource, and the engine cannot register the
-		// optimized clear value a DXGI swap chain picks for it, so clearing it to a value of
-		// our own is always a mismatching clear (D3D12 #820). A frame with no main view has no
-		// blit either, so the back buffer then keeps the previous frame's contents instead of
-		// a defined grey, which is what a frame that draws nothing deserves.
-		IRRHITexture* BackBuffer = RenderDevice->GetCurrentBackBuffer();
+		// The final copy belongs to the output view: it reads that view's scene colour and
+		// applies that view's exposure. A window renderer writes the back buffer; an
+		// offscreen renderer writes the target it owns at the same viewport size.
+		//
+		// The pass does not clear: the copy covers every pixel of its target, and the editor
+		// overlay draws over the back buffer afterwards, so a clear would only be a full
+		// screen write nobody sees. It would also take the slow path on the back buffer,
+		// which is a DXGI resource whose optimized clear value the engine cannot register
+		// (D3D12 #820). A frame with no output view has no copy either, so the target keeps
+		// its previous contents instead of a defined grey.
+		IRRHITexture* OutputTarget = ((IsWindowOutput() != FALSE)
+			? RenderDevice->GetCurrentBackBuffer()
+			: ResolveOffscreenOutputTarget());
+		if (!OutputTarget)
+		{
+			return;
+		}
+
 		RRHIRenderPassDesc Pass;
 		Pass.RenderTargetCount				= 1u;
-		Pass.RenderTargets[0].Target		= BackBuffer;
+		Pass.RenderTargets[0].Target		= OutputTarget;
 		Pass.RenderTargets[0].LoadOp		= ERHILoadOp::RHI_LOAD_OP_DONT_CARE;
 		Pass.RenderTargets[0].StoreOp		= ERHIStoreOp::RHI_STORE_OP_STORE;
 		Pass.DepthStencil.Target			= nullptr;
@@ -1460,18 +1857,15 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		// D3D12 has no implicit viewport / scissor from OMSetRenderTargets
 		// (D3D11 inherits them from the bound RT). Set both explicitly to
-		// the backbuffer extents so the FullScreenTriangle actually covers
-		// the framebuffer; without this the draw clip-rejects and the back
-		// buffer keeps whatever it held before.
-		if (BackBuffer)
-		{
-			const FLOAT BackBufferWidth  = static_cast<FLOAT>(BackBuffer->GetWidth());
-			const FLOAT BackBufferHeight = static_cast<FLOAT>(BackBuffer->GetHeight());
-			const EViewport FullViewport(0.f, 0.f, BackBufferWidth, BackBufferHeight, 0.f, 1.f);
-			CurrentCommandList->SetViewports(&FullViewport, 1u);
-			const ERect FullScissor(0.f, 0.f, BackBufferWidth, BackBufferHeight);
-			CurrentCommandList->SetScissorRects(&FullScissor, 1u);
-		}
+		// the target extents so the FullScreenTriangle actually covers the
+		// framebuffer; without this the draw clip-rejects and the target
+		// keeps whatever it held before.
+		const FLOAT OutputWidth  = static_cast<FLOAT>(OutputTarget->GetWidth());
+		const FLOAT OutputHeight = static_cast<FLOAT>(OutputTarget->GetHeight());
+		const EViewport FullViewport(0.f, 0.f, OutputWidth, OutputHeight, 0.f, 1.f);
+		CurrentCommandList->SetViewports(&FullViewport, 1u);
+		const ERect FullScissor(0.f, 0.f, OutputWidth, OutputHeight);
+		CurrentCommandList->SetScissorRects(&FullScissor, 1u);
 
 		// The blit belongs to a view: it reads that view's scene colour and it applies that
 		// view's exposure, so the view block has to be published and bound here. BasePass
@@ -1528,19 +1922,25 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		CurrentCommandList->EndRenderPass();
 
-#if !_EDITOR_ONLY
-		// Non-editor build: nothing follows FinalOutput, so flip the
-		// backbuffer straight to PRESENT here. Editor build defers this to
-		// ImGuiPass which needs the buffer in RENDER_TARGET to overlay UI.
-		if (BackBuffer)
+		if (IsWindowOutput() != FALSE)
 		{
-			CurrentCommandList->ResourceBarrier(BackBuffer,
+#if !ENGINE_EDITOR_ONLY
+			// Non-editor build: nothing follows FinalOutput, so flip the back buffer straight
+			// to PRESENT here. Editor build defers this to ImGuiPass, which needs the buffer
+			// in RENDER_TARGET to overlay UI.
+			CurrentCommandList->ResourceBarrier(OutputTarget,
 				ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET,
 				ERHIResourceState::RHI_RESOURCE_STATE_PRESENT);
-		}
 #endif
+		}
+		else
+		{
+			// The editor samples this image in the same frame's overlay, so it has to be
+			// readable before the list is submitted.
+			TransitionToShaderReadable(OutputTarget);
+		}
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void RSceneRenderer::ImGuiPass()
 	{
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
@@ -1929,7 +2329,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		for (UINT32 SkyLightIndex = 0u; SkyLightIndex < SkyLightNum; SkyLightIndex++)
 		{
 			RSkyLightSceneProxy* SkyLight = SkyLights.SceneProxies[SkyLightIndex];
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if (!SkyLight)
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a null sky light proxy.")));
@@ -1943,7 +2343,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 #endif
 			SkyLight->BindRenderResource();
 			SkyLight->Draw(CurrentCommandList, InViewProxy);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			break;
 #endif
 		}
@@ -1974,8 +2374,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		CurrentCommandList->BeginRenderPass(Pass);
 
 		// The debug primitives build and bind their own state, so the pass frames the targets
-		// and leaves the pipeline state to them.
-#if _EDITOR_ONLY
+		// and leaves the pipeline state to them. A renderer that does not own the debug
+		// primitive frame leaves the pass empty instead of drawing another view's overlay.
+#if ENGINE_EDITOR_ONLY
+		if (bRenderDebugWireframe != FALSE)
 		{
 			CurrentCommandList->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST);
 			DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(CurrentCommandList, InViewProxy);
@@ -2031,7 +2433,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
 			{
 				RViewProxy* ViewProxy = ViewProxies[ViewIndex];
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that view proxy can not be null")), (!!ViewProxy));
 				if (!ViewProxy)
 				{
@@ -2049,7 +2451,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
 		{
 			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that view proxy can not be null")), (!!ViewProxy));
 			if (!ViewProxy)
 			{
@@ -2109,7 +2511,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// whether a view's shadow data is usable depends on them, and encoding addresses the
 		// resolver cannot honour would make the frame inconsistent.
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		ValidateLightBufferLayout();
 #endif
 	}
@@ -2184,7 +2586,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			break;
 		}
 		RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that light proxy can not be null")), (!!LightProxy));
 			if (!LightProxy)
 			{
@@ -2223,7 +2625,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				break;
 			}
 			RLocalLightSceneProxy* LightProxy = LocalLightSceneProxies.SceneProxies[LocalLightIndex];
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that local light proxy can not be null")), (!!LightProxy));
 			if (!LightProxy)
 			{
@@ -2381,9 +2783,9 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		// One line per bake and a bake only happens when the cube behind the sky changes, so this
 		// is the record that the dispatch ran rather than that the pass was skipped.
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		PE_LOG_LOG(EString(PE_TEXT("[SceneRenderer] Baked the environment SH from the sky's cube.")));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 	BOOL32 RSceneRenderer::EnsureEnvironmentSHPipelineState()
 	{
@@ -2677,13 +3079,13 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 		bEnvironmentBRDFLUTBaked = TRUE;
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// The counterpart of the prefilter's line: the two halves of the split sum each say they
 		// were produced, so a session that shows no reflection can be told from a session that
 		// never baked one.
 		PE_LOG_LOG(EString(PE_TEXT("[SceneRenderer] Baked the environment BRDF LUT at "))
 			+ ToString(Resolution) + EString(PE_TEXT(" with ")) + ToString(SampleCount) + EString(PE_TEXT(" samples.")));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 	void RSceneRenderer::RenderEnvironmentPrefilter()
 	{
@@ -2835,11 +3237,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		EnvironmentPrefilterBakedSource = SourceTexture;
 		EnvironmentPrefilterBakedMean = CubeMeanLuminance;
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		PE_LOG_LOG(EString(PE_TEXT("[SceneRenderer] Prefiltered the environment cube at "))
 			+ ToString(BaseResolution) + EString(PE_TEXT(" base with ")) + ToString(PrefilteredEnvironmentMipCount)
 			+ EString(PE_TEXT(" mips, cube mean ")) + ToString(CubeMeanLuminance) + EString(PE_TEXT(" (divided out).")));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 	RSkyLightSceneProxy* RSceneRenderer::FindPrimarySkyLight() noexcept
 	{
@@ -2916,9 +3318,74 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		IndirectLightingParameterBlock.Upload(RenderDevice);
 		IndirectLightingParameterBlock.Bind(InCommandList, InProgram);
 	}
+	void RSceneRenderer::AddWaterLightingParameters(EShaderParameterSet& InOutOverrides, const RViewProxy* InView)
+	{
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return;
+		}
+
+		// The light lists are this view's; the counts that bound the loops travel in GlobalParams
+		// and were bound with the rest of the engine block before this call.
+		if (InView)
+		{
+			RViewLightBuffers** ViewBuffersPtr = ViewLightBuffers.FindValueAsPtr(InView->GetUniqueID());
+			if ((ViewBuffersPtr != nullptr) && (*ViewBuffersPtr != nullptr))
+			{
+				InOutOverrides.SetStructuredBuffer(EName(), EName(PE_TEXT("DirectionalLights"))
+					, &(*ViewBuffersPtr)->DirectionalLightBuffer);
+				InOutOverrides.SetStructuredBuffer(EName(), EName(PE_TEXT("LocalLights"))
+					, &(*ViewBuffersPtr)->LocalLightBuffer);
+			}
+		}
+		InOutOverrides.SetStructuredBuffer(EName(), EName(PE_TEXT("EnvironmentSH")), &EnvironmentSHBuffer);
+
+		// The split sum's two halves, with the same "not baked yet" defaults the lighting pass
+		// uses: a black cube and a black table mean zero reflection, not a stale descriptor.
+		IRRHITexture* PrefilteredTexture = RenderDevice->GetDefaultTexture(RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_CUBE);
+		if ((EnvironmentPrefilterBakedSource != nullptr) && (PrefilteredEnvironmentCube.IsRenderResourceValid() != FALSE))
+		{
+			PrefilteredTexture = PrefilteredEnvironmentCube.Texture;
+		}
+		IRRHITexture* BRDFLUTTexture = RenderDevice->GetDefaultTexture(RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_2D);
+		if ((bEnvironmentBRDFLUTBaked != FALSE) && (EnvironmentBRDFLUT.IsRenderResourceValid() != FALSE))
+		{
+			BRDFLUTTexture = EnvironmentBRDFLUT.Texture;
+		}
+		InOutOverrides.SetTexture(EName(), EName(PE_TEXT("PrefilteredEnvironmentCube")), PrefilteredTexture);
+		InOutOverrides.SetTexture(EName(), EName(PE_TEXT("EnvironmentBRDFLUT")), BRDFLUTTexture);
+
+		// The refraction copy this view's water pass samples. It was recorded immediately before
+		// the pass, so the contents are this frame's pre-water scene colour.
+		if (InView)
+		{
+			// Black when this frame did not record the copy: the material's luma test then emits
+			// no refraction correction instead of adding the previous frame's scene.
+			IRRHITexture* RefractionTexture = RenderDevice->GetDefaultTexture(RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_2D);
+			RSceneTextures** SceneTexturesPtr = ViewSceneTextures.FindValueAsPtr(InView->GetUniqueID());
+			if ((SceneTexturesPtr != nullptr) && (*SceneTexturesPtr != nullptr)
+				&& ((*SceneTexturesPtr)->bWaterRefractionValid != FALSE))
+			{
+				IRRHITexture* CopiedTexture = (*SceneTexturesPtr)->WaterRefractionColor.GetResolvedRHITexture();
+				if (CopiedTexture != nullptr)
+				{
+					RefractionTexture = CopiedTexture;
+				}
+			}
+			InOutOverrides.SetTexture(EName(), EName(PE_TEXT("WaterRefractionColor")), RefractionTexture);
+		}
+	}
+	void RSceneRenderer::BindWaterIndirectLightingParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram)
+	{
+		// The indirect block belongs to the lighting pass but the values are frame wide, and the
+		// water program declares the same block at its own slot. Publishing here uploads only the
+		// mirrors that moved, so calling it per water draw is a comparison rather than a copy.
+		BindIndirectLightingParameters(InCommandList, InProgram);
+	}
 	void RSceneRenderer::ValidateLightBufferLayout()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (!SceneLightingProgram)
 		{
 			return;
@@ -3047,7 +3514,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				}
 			}
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 	void RSceneRenderer::ProcessOcclusionCull(RViewProxy* InViewProxy)
 	{

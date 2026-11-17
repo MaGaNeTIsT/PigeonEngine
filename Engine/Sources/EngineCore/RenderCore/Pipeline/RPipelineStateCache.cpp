@@ -35,7 +35,7 @@ namespace PigeonEngine
 		// GPU is done with the work that used it, so a state that is still in flight is safe.
 		if (Device)
 		{
-			for (const auto& Entry : States)
+			for (const TMap<UINT64, FPipelineStateEntry>::TValueType& Entry : States)
 			{
 				if (Entry.second.State)
 				{
@@ -61,7 +61,7 @@ namespace PigeonEngine
 		// Collect first, remove after: TMap only offers key based removal, and the entries have
 		// to be walked to find out which shader a state came from.
 		TArray<UINT64> DroppedKeys;
-		for (const auto& Entry : States)
+		for (const TMap<UINT64, FPipelineStateEntry>::TValueType& Entry : States)
 		{
 			const FPipelineStateEntry& StateEntry = Entry.second;
 			if ((StateEntry.Program != nullptr) && (StateEntry.Program->GetShaderName() == InShaderName))

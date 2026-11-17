@@ -3,121 +3,121 @@
 namespace PigeonEngine
 {
 
-#define CLASS_REMOVE_COPY_BODY(_ClassName) \
+#define CLASS_REMOVE_COPY_BODY(__ClassName) \
 	public:\
-		_ClassName(const _ClassName&) = delete;\
-		_ClassName(_ClassName&&) = delete;\
-		_ClassName& operator=(const _ClassName&) = delete;\
-		_ClassName& operator=(_ClassName&&) = delete;\
+		__ClassName(const __ClassName&) = delete;\
+		__ClassName(__ClassName&&) = delete;\
+		__ClassName& operator=(const __ClassName&) = delete;\
+		__ClassName& operator=(__ClassName&&) = delete;\
 
-#define CLASS_NOCOPY_BODY(_ClassName) \
+#define CLASS_NOCOPY_BODY(__ClassName) \
 	public:\
-		_ClassName();\
-		~_ClassName();\
+		__ClassName();\
+		~__ClassName();\
 	public:\
-		_ClassName(const _ClassName&) = delete;\
-		_ClassName(_ClassName&&) = delete;\
-		_ClassName& operator=(const _ClassName&) = delete;\
-		_ClassName& operator=(_ClassName&&) = delete;\
+		__ClassName(const __ClassName&) = delete;\
+		__ClassName(__ClassName&&) = delete;\
+		__ClassName& operator=(const __ClassName&) = delete;\
+		__ClassName& operator=(__ClassName&&) = delete;\
 
-#define CLASS_VIRTUAL_NOCOPY_BODY(_ClassName) \
+#define CLASS_VIRTUAL_NOCOPY_BODY(__ClassName) \
 	public:\
-		_ClassName();\
-		virtual ~_ClassName();\
+		__ClassName();\
+		virtual ~__ClassName();\
 	public:\
-		_ClassName(const _ClassName&) = delete;\
-		_ClassName(_ClassName&&) = delete;\
-		_ClassName& operator=(const _ClassName&) = delete;\
-		_ClassName& operator=(_ClassName&&) = delete;\
+		__ClassName(const __ClassName&) = delete;\
+		__ClassName(__ClassName&&) = delete;\
+		__ClassName& operator=(const __ClassName&) = delete;\
+		__ClassName& operator=(__ClassName&&) = delete;\
 
-#define CLASS_COPY_BODY(_ClassName) \
+#define CLASS_COPY_BODY(__ClassName) \
 	public:\
-		_ClassName();\
-		~_ClassName();\
+		__ClassName();\
+		~__ClassName();\
 	public:\
-		_ClassName(const _ClassName& Other);\
-		_ClassName(_ClassName&& Other);\
-		_ClassName& operator=(const _ClassName& Other);\
-		_ClassName& operator=(_ClassName&& Other);\
+		__ClassName(const __ClassName& Other);\
+		__ClassName(__ClassName&& Other);\
+		__ClassName& operator=(const __ClassName& Other);\
+		__ClassName& operator=(__ClassName&& Other);\
 
-#define CLASS_VIRTUAL_COPY_BODY(_ClassName) \
+#define CLASS_VIRTUAL_COPY_BODY(__ClassName) \
 	public:\
-		_ClassName();\
-		virtual ~_ClassName();\
+		__ClassName();\
+		virtual ~__ClassName();\
 	public:\
-		_ClassName(const _ClassName& Other);\
-		_ClassName(_ClassName&& Other);\
-		_ClassName& operator=(const _ClassName& Other);\
-		_ClassName& operator=(_ClassName&& Other);\
+		__ClassName(const __ClassName& Other);\
+		__ClassName(__ClassName&& Other);\
+		__ClassName& operator=(const __ClassName& Other);\
+		__ClassName& operator=(__ClassName&& Other);\
 
-#define RENDER_PROXY_CLASS_BODY(_ClassName) \
+#define RENDER_PROXY_CLASS_BODY(__ClassName) \
 	public:\
-		_ClassName();\
-		_ClassName(const _ClassName& Other);\
-		virtual ~_ClassName();\
-		_ClassName(_ClassName&& Other) = delete;\
-		_ClassName& operator=(const _ClassName&) = delete;\
-		_ClassName& operator=(_ClassName&&) = delete;\
+		__ClassName();\
+		__ClassName(const __ClassName& Other);\
+		virtual ~__ClassName();\
+		__ClassName(__ClassName&& Other) = delete;\
+		__ClassName& operator=(const __ClassName&) = delete;\
+		__ClassName& operator=(__ClassName&&) = delete;\
 
-#define CLASS_SINGLETON_BODY(_ClassName) \
+#define CLASS_SINGLETON_BODY(__ClassName) \
 	private:\
-		_ClassName();\
-		_ClassName(const _ClassName&) {}\
-		_ClassName(_ClassName&&) {}\
-		~_ClassName();\
-		_ClassName& operator=(const _ClassName&) { return (*this); }\
-		_ClassName& operator=(_ClassName&&) { return (*this); }\
+		__ClassName();\
+		__ClassName(const __ClassName&) {}\
+		__ClassName(__ClassName&&) {}\
+		~__ClassName();\
+		__ClassName& operator=(const __ClassName&) { return (*this); }\
+		__ClassName& operator=(__ClassName&&) { return (*this); }\
 	public:\
-		static _ClassName* GetSingleton()\
+		static __ClassName* GetSingleton()\
 		{\
-			static _ClassName _StaticSingletonObject;\
+			static __ClassName _StaticSingletonObject;\
 			return (&_StaticSingletonObject);\
 		}\
 
-#define CLASS_VIRTUAL_SINGLETON_BODY(_ClassName) \
+#define CLASS_VIRTUAL_SINGLETON_BODY(__ClassName) \
 	private:\
-		_ClassName();\
-		_ClassName(const _ClassName&) {}\
-		_ClassName(_ClassName&&) {}\
-		virtual ~_ClassName();\
-		_ClassName& operator=(const _ClassName&) { return (*this); }\
-		_ClassName& operator=(_ClassName&&) { return (*this); }\
+		__ClassName();\
+		__ClassName(const __ClassName&) {}\
+		__ClassName(__ClassName&&) {}\
+		virtual ~__ClassName();\
+		__ClassName& operator=(const __ClassName&) { return (*this); }\
+		__ClassName& operator=(__ClassName&&) { return (*this); }\
 	public:\
-		static _ClassName* GetSingleton()\
+		static __ClassName* GetSingleton()\
 		{\
-			static _ClassName _StaticSingletonObject;\
+			static __ClassName _StaticSingletonObject;\
 			return (&_StaticSingletonObject);\
 		}\
 
-#define CLASS_MANAGER_SINGLETON_BODY(_ClassName) \
+#define CLASS_MANAGER_SINGLETON_BODY(__ClassName) \
 	public:\
-		_ClassName(const _ClassName&) = delete;\
-		_ClassName(_ClassName&&) = delete;\
-		_ClassName& operator=(const _ClassName&) = delete;\
-		_ClassName& operator=(_ClassName&&) = delete;\
+		__ClassName(const __ClassName&) = delete;\
+		__ClassName(__ClassName&&) = delete;\
+		__ClassName& operator=(const __ClassName&) = delete;\
+		__ClassName& operator=(__ClassName&&) = delete;\
 	private:\
-		_ClassName();\
-		~_ClassName();\
+		__ClassName();\
+		~__ClassName();\
 	public:\
-		static _ClassName* GetManagerSingleton()\
+		static __ClassName* GetManagerSingleton()\
 		{\
-			static _ClassName _StaticSingletonObject;\
+			static __ClassName _StaticSingletonObject;\
 			return (&_StaticSingletonObject);\
 		}\
 
-#define CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(_ClassName) \
+#define CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(__ClassName) \
 	public:\
-		_ClassName(const _ClassName&) = delete;\
-		_ClassName(_ClassName&&) = delete;\
-		_ClassName& operator=(const _ClassName&) = delete;\
-		_ClassName& operator=(_ClassName&&) = delete;\
+		__ClassName(const __ClassName&) = delete;\
+		__ClassName(__ClassName&&) = delete;\
+		__ClassName& operator=(const __ClassName&) = delete;\
+		__ClassName& operator=(__ClassName&&) = delete;\
 	private:\
-		_ClassName();\
-		virtual ~_ClassName();\
+		__ClassName();\
+		virtual ~__ClassName();\
 	public:\
-		static _ClassName* GetManagerSingleton()\
+		static __ClassName* GetManagerSingleton()\
 		{\
-			static _ClassName _StaticSingletonObject;\
+			static __ClassName _StaticSingletonObject;\
 			return (&_StaticSingletonObject);\
 		}\
 

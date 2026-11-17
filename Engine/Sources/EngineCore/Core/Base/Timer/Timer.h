@@ -16,7 +16,7 @@ namespace PigeonEngine
 	//    These touch only OS APIs (QPC) and a lazy-initialised cached frequency.
 	//    Safe to call from any thread concurrently - no shared mutable state.
 	//
-	// 2) **Instance-based** (existing engine timing code): per-instance m_T1/m_T2
+	// 2) **Instance-based** (existing engine timing code): per-instance T1/T2
 	//    cache the last sample. Each instance is owned by exactly one thread; two
 	//    threads must NOT share a single EBaseTimer instance. Internally the
 	//    instance methods call the static helpers above, so the only thread-safety
@@ -34,18 +34,18 @@ namespace PigeonEngine
 		void	Init();
 		void	Update();
 	public:
-		DOUBLE	GetClockTime()const;
-		DOUBLE	GetDeltaTime()const;
+		DOUBLE	GetClockTime() const;
+		DOUBLE	GetDeltaTime() const;
 	public:
 		EBaseTimer();
 		virtual ~EBaseTimer();
 	protected:
-		::LARGE_INTEGER	m_T1;
-		::LARGE_INTEGER	m_T2;
-		::LARGE_INTEGER	m_Ticks;
+		::LARGE_INTEGER	T1;
+		::LARGE_INTEGER	T2;
+		::LARGE_INTEGER	Ticks;
 	protected:
-		DOUBLE			m_Delta;
-		DOUBLE			m_Clock;
+		DOUBLE			Delta;
+		DOUBLE			Clock;
 	};
 
 	class EGameTimer
@@ -54,21 +54,21 @@ namespace PigeonEngine
 		void	Reset();
 		void	Update();
 	public:
-		DOUBLE	GetClockTime()const;
-		DOUBLE	GetDeltaTime()const;
+		DOUBLE	GetClockTime() const;
+		DOUBLE	GetDeltaTime() const;
 		// How many successful Update() calls this timer has seen. The component animation
 		// update uses it to advance a skeleton at most once per frame: the editor ticks the
 		// same component tree through World::Tick and World::EditorTick, and both call
 		// TickRender. Zero means no frame has been produced yet.
-		UINT64	GetFrameIndex()const;
+		UINT64	GetFrameIndex() const;
 	public:
 		EGameTimer(EBaseTimer* timer);
 		virtual ~EGameTimer();
 	protected:
-		EBaseTimer*		m_Timer;
-		DOUBLE			m_Total;
-		DOUBLE			m_Delta;
-		UINT64			m_FrameIndex;
+		EBaseTimer*		Timer;
+		DOUBLE			Total;
+		DOUBLE			Delta;
+		UINT64			FrameIndex;
 	};
 
 	namespace EngineSystemTime
@@ -78,11 +78,11 @@ namespace PigeonEngine
 		{
 			ESystemTime(const USHORT InYear, const USHORT InMonth, const USHORT InDayOfWeek,
 				const USHORT InDay, const USHORT InHour, const USHORT InMinute, const USHORT InSecond,
-				const USHORT InMilliseconds)noexcept : Year(InYear), Month(InMonth), DayOfWeek(InDayOfWeek),
+				const USHORT InMilliseconds) noexcept : Year(InYear), Month(InMonth), DayOfWeek(InDayOfWeek),
 				Day(InDay), Hour(InHour), Minute(InMinute), Second(InSecond), Milliseconds(InMilliseconds) {}
-			ESystemTime()noexcept : Year(0u), Month(0u), DayOfWeek(0u), Day(0u),
+			ESystemTime() noexcept : Year(0u), Month(0u), DayOfWeek(0u), Day(0u),
 				Hour(0u), Minute(0u), Second(0u), Milliseconds(0u) {}
-			ESystemTime(const ESystemTime& Other)noexcept : Year(Other.Year), Month(Other.Month),
+			ESystemTime(const ESystemTime& Other) noexcept : Year(Other.Year), Month(Other.Month),
 				DayOfWeek(Other.DayOfWeek), Day(Other.Day), Hour(Other.Hour), Minute(Other.Minute),
 				Second(Other.Second), Milliseconds(Other.Milliseconds) {}
 			ESystemTime& operator=(const ESystemTime& Other)

@@ -38,7 +38,7 @@ namespace PigeonEngine
 		THashMap<K, V, Hash, Pred, Alloc>& operator= (std::unordered_map<K, V, Pred, Alloc>&& Other);
 
 		V&                                 operator[](const K& Key);
-		const V&                           operator[](const K& Key)const;
+		const V&                           operator[](const K& Key) const;
 
 		template<typename _TOtherSizeType = INT32, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
 		PE_NODISCARD _TOtherSizeType Num() const
@@ -85,8 +85,8 @@ namespace PigeonEngine
 		* DO NOT USE DIRECTLY
 		* STL-like iterators to enable range-based for loop support.
 		*/
-		typename TConstIterator begin()const{return HashMap.begin();}
-		typename TConstIterator end()const{return HashMap.end();}
+		typename TConstIterator begin() const{return HashMap.begin();}
+		typename TConstIterator end() const{return HashMap.end();}
 		typename TIterator      begin(){return HashMap.begin();}
 		typename TIterator      end(){return HashMap.end();}
 	private:
@@ -166,7 +166,7 @@ namespace PigeonEngine
 	}
 
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
-	const V& THashMap<K, V, Hash, Pred, Alloc>::operator[](const K& Key)const
+	const V& THashMap<K, V, Hash, Pred, Alloc>::operator[](const K& Key) const
 	{
 		return HashMap.at(Key);
 	}
@@ -180,7 +180,7 @@ namespace PigeonEngine
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	void THashMap<K, V, Hash, Pred, Alloc>::Remove(const K& Key)
 	{
-		const auto It = HashMap.find(Key);
+		const TIterator It = HashMap.find(Key);
 		if (It != HashMap.end())
 		{
 			HashMap.erase(It);
@@ -196,7 +196,7 @@ namespace PigeonEngine
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	BOOL32 THashMap<K, V, Hash, Pred, Alloc>::FindKey(const V& Value, K& OutKey) const
 	{
-		for(const auto& elem : HashMap)
+		for (const std::pair<const K, V>& elem : HashMap)
 		{
 			if(elem.second == Value)
 			{
@@ -210,46 +210,46 @@ namespace PigeonEngine
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	BOOL32 THashMap<K, V, Hash, Pred, Alloc>::FindValue(const K& Key, V& OutValue) const
 	{
-		const auto it = HashMap.find(Key);
-		if (it == HashMap.end())
+		const TConstIterator It = HashMap.find(Key);
+		if (It == HashMap.end())
 		{
 			return FALSE;
 		}
-		OutValue = it->second;
+		OutValue = It->second;
 		return TRUE;
 	}
 
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	std::optional<std::reference_wrapper<V>> THashMap<K, V, Hash, Pred, Alloc>::FindValueRef(const K& Key)
 	{
-		auto it = HashMap.find(Key);
-		if (it == HashMap.end())
+		TIterator It = HashMap.find(Key);
+		if (It == HashMap.end())
 		{
 			return std::nullopt;
 		}
-		return std::ref(it->second);
+		return std::ref(It->second);
 	}
 
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	std::optional<std::reference_wrapper<const V>> THashMap<K, V, Hash, Pred, Alloc>::FindValueRef(const K& Key) const
 	{
-		auto it = HashMap.find(Key);
-		if (it == HashMap.end())
+		TConstIterator It = HashMap.find(Key);
+		if (It == HashMap.end())
 		{
 			return std::nullopt;
 		}
-		return std::cref(it->second);
+		return std::cref(It->second);
 	}
 
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	V* THashMap<K, V, Hash, Pred, Alloc>::FindValuePtr(const K& Key)
 	{
-		auto it = HashMap.find(Key);
-		if (it == HashMap.end())
+		TIterator It = HashMap.find(Key);
+		if (It == HashMap.end())
 		{
 			return nullptr;
 		}
-		return (&(it->second));
+		return (&(It->second));
 	}
 
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
@@ -264,7 +264,7 @@ namespace PigeonEngine
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	void THashMap<K, V, Hash, Pred, Alloc>::GenerateKeyArray(TArray<K>& OutKeys)
 	{
-		for(const auto& elem : HashMap)
+		for (const std::pair<const K, V>& elem : HashMap)
 		{
 			OutKeys.Add(elem.first);
 		}
@@ -273,7 +273,7 @@ namespace PigeonEngine
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	void THashMap<K, V, Hash, Pred, Alloc>::GenerateValueArray(TArray<V>& OutValues)
 	{
-		for(const auto& elem : HashMap)
+		for (const std::pair<const K, V>& elem : HashMap)
 		{
 			OutValues.Add(elem.second);
 		}

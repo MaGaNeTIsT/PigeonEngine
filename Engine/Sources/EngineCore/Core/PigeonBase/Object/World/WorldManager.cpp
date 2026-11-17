@@ -3,7 +3,7 @@
 #include "World.h"
 #include "../../Development/Message/Message.h"
 #include <Editor/EditorLogManager.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -65,7 +65,7 @@ namespace PigeonEngine
 		}
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void EWorldManager::EditorInit()
 	{
 

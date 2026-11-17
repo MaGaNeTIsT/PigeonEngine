@@ -66,7 +66,7 @@ namespace PigeonEngine
 		FLOAT							LastYawDegrees = 0.0f;
 		BOOL32							bWarnedUnsupported = FALSE;
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	GenerateComponentDetail() override;
 		virtual void	EditorTick(FLOAT InDeltaTime) override;

@@ -27,7 +27,7 @@ namespace PigeonEngine
 	public:
 		void DoRegister()
 		{
-			for (auto& It : FunctionRegistry)
+			for (_TFunctionType& It : FunctionRegistry)
 			{
 				It();
 			}
@@ -36,7 +36,7 @@ namespace PigeonEngine
 		{
 			FunctionRegistry.clear();
 		}
-		UINT32 GetRegisterNum()const
+		UINT32 GetRegisterNum() const
 		{
 			return static_cast<UINT32>(FunctionRegistry.size());
 		}

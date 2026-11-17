@@ -26,6 +26,30 @@ namespace PigeonEngine
 	class IRCommandList;
 	class FBasePass;
 	class FShadowPass;
+	class FWaterSurfacePass;
+
+	/*
+	* Where a renderer's final image goes.
+	*
+	* The window output owns the device back buffer and the editor overlay. An offscreen
+	* output owns a colour target the renderer builds at its output view's size and leaves
+	* shader readable, which is the image an editor panel samples. Everything before the
+	* final copy is the same for both, and that is what lets a preview run the whole
+	* pipeline instead of a hand written subset of it.
+	*/
+	enum RRendererOutputType : UINT8
+	{
+		RENDERER_OUTPUT_WINDOW = 0,
+		RENDERER_OUTPUT_OFFSCREEN
+	};
+
+	struct FRendererOutputDescription
+	{
+		RRendererOutputType	Type			= RRendererOutputType::RENDERER_OUTPUT_WINDOW;
+		// Offscreen only. FORMAT_UNKNOWN takes the format the final output pass row declares,
+		// so a pipeline change to that row reaches the target instead of drifting from it.
+		RFormatType			OffscreenFormat	= RFormatType::FORMAT_UNKNOWN;
+	};
 
 	class RSceneRenderer : public EManagerBase
 	{
@@ -108,9 +132,9 @@ namespace PigeonEngine
 			UINT32							LocalLightCount = 0u;
 		};
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-	#if _EDITOR_ONLY
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+	#if ENGINE_EDITOR_ONLY
 		void			SetManageDebugWireframe(BOOL32 InManageDebugWireframe) { bManageDebugWireframe = InManageDebugWireframe; }
 		void			SetRenderDebugWireframe(BOOL32 InRenderDebugWireframe) { bRenderDebugWireframe = InRenderDebugWireframe; }
 	#endif
@@ -119,6 +143,19 @@ namespace PigeonEngine
 		void			InitNewFrame();
 		void			Render();
 		void			ResizeRenderTargets(UINT32 InWidth, UINT32 InHeight);
+		/*
+		* Selects where the frame's final copy lands. The renderer owns an offscreen target:
+		* it is built from the output view's viewport on the render thread and rebuilt when
+		* that size changes. A window renderer never builds one.
+		*/
+		void			SetOutputDescription(const FRendererOutputDescription& InOutputDescription);
+		PE_NODISCARD BOOL32	IsWindowOutput() const;
+		/*
+		* The last recorded offscreen image, or null while the renderer is a window renderer.
+		* RenderThread only: the target is built and replaced there, and the editor layer knows
+		* how to turn it into its own handle. A caller on another thread reads a cached handle.
+		*/
+		PE_NODISCARD IRRHITexture*	GetOutputColorTexture();
 		/*
 		* Render thread: a new asset object was published for InShaderName, so everything derived
 		* from the previous one is stale. Called from a command the load thread recorded right after
@@ -157,6 +194,17 @@ namespace PigeonEngine
 		// state on purpose: switching a signature voids every root binding, so a pass that bound
 		// its blocks before its state would lose them.
 		void	BindEngineParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram, const RViewProxy* InView = nullptr);
+		// Adds the per view shading resources a forward material program declares - the two light
+		// lists, the environment irradiance, the split sum pair and the water refraction copy - to
+		// InOutOverrides. The caller binds them with the material's own set in one call, so the
+		// program's single descriptor table carries the material resources, the water simulation
+		// outputs and these together. The deferred lighting pass publishes the same values for its
+		// own program; a forward pass that shades has its own binding plan slots and has to bind
+		// them again. The water surface pass is the caller.
+		void	AddWaterLightingParameters(EShaderParameterSet& InOutOverrides, const RViewProxy* InView);
+		// Binds the renderer's indirect lighting block for a forward program. Separate from the
+		// resource set above because the block is a constant buffer, not a table entry.
+		void	BindWaterIndirectLightingParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram);
 	protected:
 		// Builds the pass instances for this frame: one per (item pass, view). ShadowPass and
 		// BasePass are the two item passes; every later pass keeps the same shape.
@@ -189,14 +237,19 @@ namespace PigeonEngine
 		// commands its asset load queued, and the first call happens before that thread exists,
 		// so a one shot build would latch those passes as permanently unbuildable.
 		void			EnsureEnginePassPipelineStates();
+		// The offscreen colour target, built to the output view's viewport. Null while the
+		// renderer is a window renderer or while the output view has no size yet.
+		PE_NODISCARD IRRHITexture*	ResolveOffscreenOutputTarget();
 		void			FinalOutputPass();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		void			ImGuiPass();
 #endif
 	protected:
 		void			RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
 		void			RenderSky(const RViewProxy* InViewProxy);
 		void			RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
+		void			RenderWaterSimulation(IRCommandList* InCommandList);
+		void			RenderWaterSurface(IRCommandList* InCommandList, RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
 		/*
 		* Resolves every directional light's cascade shadow into the view's mask target, before the
 		* lighting pass that samples it. Every main view has its own state, its own atlas and its own
@@ -394,12 +447,13 @@ namespace PigeonEngine
 			PIPELINE_STATE_FORWARD,							// (env) Forward / debug primitives
 			PIPELINE_STATE_FINAL_OUTPUT,					// (full) Full-screen blit to back buffer
 			PIPELINE_STATE_DIRECTIONAL_SHADOW_MASK,			// (full) Full-screen directional shadow mask
+			PIPELINE_STATE_WATER_REFRACTION_COPY,			// (full) Linear scene colour copy for water refraction
 			PIPELINE_STATE_COUNT
 		};
 	protected:
 		RScene*						Scene;
 		RFullScreenTriangle			FullScreenTriangle;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		RDebugWireframePrimitiveManager* DebugWireframePrimitiveManager;
 		BOOL32					bManageDebugWireframe = TRUE;
 		BOOL32					bRenderDebugWireframe = TRUE;
@@ -418,6 +472,11 @@ namespace PigeonEngine
 		FPassStatePlan				PassStatePlan;
 		TUniquePtr<FBasePass>		BasePassObject;
 		TUniquePtr<FShadowPass>		ShadowPassObject;
+		TUniquePtr<FWaterSurfacePass>	WaterSurfacePassObject;
+		// This frame's prepared pass instances. The stage scheduler consumes the shadow and base
+		// entries; the water surface pass is recorded on the tail list and reads its own entry
+		// from here after Prepare has resolved its items.
+		TArray<FPassViewInstance>	FramePassInstances;
 		// Pipeline states of the frame, created on demand from a program and its layout.
 		RPipelineStateCache			PipelineStateCache;
 		// TRUE once every engine driven pass state exists, so the per frame retry in
@@ -439,15 +498,25 @@ namespace PigeonEngine
 		// how a replaced shader reaches these, and reading is all the refresh may do - it runs on
 		// the render thread, where a resolution that missed the cache would load.
 		const EShaderInstance*		FullScreenProgramInstance = nullptr;
+		const EShaderInstance*		WaterRefractionCopyProgramInstance = nullptr;
 		const EShaderInstance*		SceneLightingProgramInstance = nullptr;
 		const EShaderInstance*		ShadowMaskProgramInstance = nullptr;
 		const EShaderInstance*		EnvironmentSHProgramInstance = nullptr;
 		const EShaderProgram*		FullScreenProgram;
+		const EShaderProgram*		WaterRefractionCopyProgram;
 		const EShaderProgram*		SceneLightingProgram;
 		const EShaderProgram*		ShadowMaskProgram;
 	protected:
 		ObjectIdentityType			FinalOutputView;
 		BOOL32						NeedStencil;
+		// Where this renderer's final copy goes. The window renderer takes the back buffer;
+		// an offscreen renderer takes the target built from the output view.
+		FRendererOutputDescription	OutputDescription;
+		// The display-referred copy an offscreen renderer hands to its owner, and the size it
+		// was built for. Owned here because it is rebuilt on the render thread when the view
+		// resizes, and released with the renderer.
+		RRenderTexture2D			OffscreenOutput;
+		Vector2Int					OffscreenOutputSize = Vector2Int::Zero();
 		RViewSceneTextureType		ViewSceneTextures;
 		// Per main view shadow state: the depth atlas, the slot table, and the shadow views that
 		// feed them. Keyed by view identity because a cascade belongs to the view it was derived
@@ -536,6 +605,7 @@ namespace PigeonEngine
 
 		friend class FBasePass;
 		friend class FShadowPass;
+		friend class FWaterSurfacePass;
 
 	};
 
@@ -570,6 +640,28 @@ namespace PigeonEngine
 		virtual ERenderPassStageType	GetStage() const override { return ERenderPassStageType::RENDER_PASS_STAGE_SHADOW; }
 		virtual BOOL32					ShouldUseView(const RViewProxy& InView) const override;
 		virtual void					BeginPass(FPassRecordContext& InContext) const override;
+		virtual void					RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, UINT32 InBegin, UINT32 InEnd) const override;
+	private:
+		RSceneRenderer*	Renderer;
+	};
+
+	/*
+	* The translucent water surface pass. It consumes the main camera view's primitive list
+	* after lighting and forward, sorts back to front, and records every prepared item through
+	* the primitive's own record sequence. It is currently recorded on the engine tail list,
+	* which is why it is prepared with the other passes but never scheduled as a stage.
+	*/
+	class FWaterSurfacePass final : public FRenderPass
+	{
+	public:
+		explicit FWaterSurfacePass(RSceneRenderer* InRenderer);
+	public:
+		virtual ERenderPassStageType	GetStage() const override { return ERenderPassStageType::RENDER_PASS_STAGE_TRANSLUCENT; }
+		virtual BOOL32					ShouldUseView(const RViewProxy& InView) const override;
+		virtual void					CollectItems(const FPassViewContext& InContext, const RViewPrimitiveList& InPrimitiveList, TArray<FPassItem>& OutItems) const override;
+		virtual BOOL32					IsItemParallel() const override { return FALSE; }
+		virtual void					BeginPass(FPassRecordContext& InContext) const override;
+		virtual void					EndPass(FPassRecordContext& InContext) const override;
 		virtual void					RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, UINT32 InBegin, UINT32 InEnd) const override;
 	private:
 		RSceneRenderer*	Renderer;

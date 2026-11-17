@@ -68,8 +68,8 @@ void CSMain(uint3 InDispatchThreadID : SV_DispatchThreadID)
 {
 	float2 Resolution;
 	{
-		float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize;
-		FluxSimulationUV(Location, Scale, InvScale, Height, TexelSize, Resolution);
+		float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize;
+		FluxSimulationUV(Location, Scale, InvScale, ReferenceY, TexelSize, Resolution);
 	}
 
 	int2 Coord = int2(InDispatchThreadID.xy);

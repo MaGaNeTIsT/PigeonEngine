@@ -32,7 +32,7 @@ namespace PigeonEngine
 	{
 	}
 
-	BOOL32 EAnimNotifyDefinition::IsResourceValid()const
+	BOOL32 EAnimNotifyDefinition::IsResourceValid() const
 	{
 		return IsValid();
 	}
@@ -59,7 +59,7 @@ namespace PigeonEngine
 		CachedNotify.reset();
 	}
 
-	BOOL32 EAnimNotifyDefinition::IsValid()const
+	BOOL32 EAnimNotifyDefinition::IsValid() const
 	{
 		if ((NotifyClassName.Length() <= 0u) || (!CachedNotify))
 		{
@@ -92,11 +92,11 @@ namespace PigeonEngine
 	}
 
 	EAnimNotifyAsset::EAnimNotifyAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<EAnimNotifyDefinition>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -119,7 +119,7 @@ namespace PigeonEngine
 
 	EAnimNotifyManager::EAnimNotifyManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = "AnimationNotifyManager";
 #endif
 	}
@@ -152,7 +152,7 @@ namespace PigeonEngine
 		NotifyAssetManager.Clear();
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 EAnimNotifyManager::ImportNotify(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath)
 	{
 		EString JsonText;
@@ -196,7 +196,7 @@ namespace PigeonEngine
 		}
 
 		EAnimNotifyAsset* NewAsset = new EAnimNotifyAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -240,7 +240,7 @@ namespace PigeonEngine
 		}
 
 		EAnimNotifyAsset* FreshAsset = new EAnimNotifyAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -370,7 +370,7 @@ namespace PigeonEngine
 		}
 
 		EAnimNotifyAsset* FreshAsset = new EAnimNotifyAsset(InAsset->GetAssetPath(), InAsset->GetAssetName()
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InAsset->GetAssetName()
 #endif
 		);

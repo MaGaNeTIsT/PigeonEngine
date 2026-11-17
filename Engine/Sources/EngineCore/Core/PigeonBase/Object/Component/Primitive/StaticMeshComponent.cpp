@@ -24,7 +24,7 @@ namespace PigeonEngine
 		// Nothing to release here: the proxy belongs to the render scene and is deleted by the
 		// remove command, so the component never holds a pointer to it.
 	}
-	const EStaticMeshAsset* PStaticMeshComponent::GetMeshAsset()const
+	const EStaticMeshAsset* PStaticMeshComponent::GetMeshAsset() const
 	{
 		return MeshAsset;
 	}
@@ -42,7 +42,7 @@ namespace PigeonEngine
 		if (!!InMeshAsset)
 		{
 			const EStaticMesh* Mesh = InMeshAsset->GetStoragedResource();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Static mesh asset does not contain mesh resource."), (!!Mesh));
 			if (Mesh)
 #endif

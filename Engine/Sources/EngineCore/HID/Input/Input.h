@@ -40,8 +40,8 @@ public:
 		void DisableMouseRaw();
 		BOOL32 IsMouseRawEnabled() const;
 
-		BOOL32 IsLeftMouseButtonDown()const;
-		BOOL32 IsRightMouseButtonDown()const;
+		BOOL32 IsLeftMouseButtonDown() const;
+		BOOL32 IsRightMouseButtonDown() const;
 		TOptional<IMouse::RawDelta> ReadRawDelta();
 
 	private:
@@ -92,8 +92,8 @@ public:
 		//	static BOOL32		GetKeyPress(BYTE KeyCode);
 		//	static BOOL32		GetKeyTrigger(BYTE KeyCode);
 		//private:
-		//	static BYTE		m_OldKeyState[256];
-		//	static BYTE		m_KeyState[256];
+		//	static BYTE		OldKeyState[256];
+		//	static BYTE		KeyState[256];
 public:
 		static TOptional<IMouse::RawDelta>	ReadRawDelta();
 		static TOptional<WCHAR>				ReadChar();

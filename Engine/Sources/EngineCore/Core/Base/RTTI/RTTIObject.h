@@ -16,7 +16,7 @@ namespace PigeonEngine
 		/// <typeparam name="_Type"></typeparam>
 		/// <returns></returns>
 		template<typename _Type>
-		BOOL32 IsTypeOf()const
+		BOOL32 IsTypeOf() const
 		{
 			return (IsClass(this->GetTypeHash(), GetClassHashCode<_Type>()));
 		}
@@ -27,7 +27,7 @@ namespace PigeonEngine
 		/// <typeparam name="_Type"></typeparam>
 		/// <returns></returns>
 		template<typename _Type>
-		BOOL32 IsChildOf()const
+		BOOL32 IsChildOf() const
 		{
 			return (IsParentClass<_Type>(this->GetTypeHash()));
 		}
@@ -38,7 +38,7 @@ namespace PigeonEngine
 		/// <typeparam name="_Type"></typeparam>
 		/// <returns></returns>
 		template<typename _Type>
-		BOOL32 IsParentOf()const
+		BOOL32 IsParentOf() const
 		{
 			return (IsChildClass<_Type>(this->GetTypeHash()));
 		}
@@ -71,7 +71,7 @@ namespace PigeonEngine
 		/// <typeparam name="_Type"></typeparam>
 		/// <returns></returns>
 		template<typename _Type>
-		const _Type* AsType()const
+		const _Type* AsType() const
 		{
 			const _Type* Result = nullptr;
 			if (this->IsTypeOf<_Type>())
@@ -89,7 +89,7 @@ namespace PigeonEngine
 		/// Get c plus plus class name by typeid
 		/// </summary>
 		/// <returns></returns>
-		virtual const CHAR* StaticClassName()const
+		virtual const CHAR* StaticClassName() const
 		{
 			return (EngineStaticClassName(this));
 		}
@@ -98,7 +98,7 @@ namespace PigeonEngine
 		/// Get hash code of [*this] type
 		/// </summary>
 		/// <returns></returns>
-		virtual size_t GetTypeHash()const
+		virtual size_t GetTypeHash() const
 		{
 			return (GetClassHashCode(this));
 		}

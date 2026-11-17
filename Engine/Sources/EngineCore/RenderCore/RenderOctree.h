@@ -10,8 +10,8 @@ namespace PigeonEngine
 
 	struct ROctreeElement
 	{
-		ROctreeElement()noexcept : NodeIndex(-1) {}
-		ROctreeElement(const ROctreeElement& Other)noexcept : NodeIndex(Other.NodeIndex), Primitives(Other.Primitives), PrimitiveMapping(Other.PrimitiveMapping) {}
+		ROctreeElement() noexcept : NodeIndex(-1) {}
+		ROctreeElement(const ROctreeElement& Other) noexcept : NodeIndex(Other.NodeIndex), Primitives(Other.Primitives), PrimitiveMapping(Other.PrimitiveMapping) {}
 		ROctreeElement& operator=(const ROctreeElement& Other)
 		{
 			NodeIndex			= Other.NodeIndex;
@@ -27,8 +27,8 @@ namespace PigeonEngine
 
 	struct ROctreeNode
 	{
-		ROctreeNode()noexcept : Origin(Vector3::Zero()), ElementIndex(-1), ParentIndex(-1) {}
-		ROctreeNode(const ROctreeNode& Other)noexcept : Origin(Other.Origin), ElementIndex(Other.ElementIndex), ParentIndex(Other.ParentIndex), ChildrenIndex(Other.ChildrenIndex) {}
+		ROctreeNode() noexcept : Origin(Vector3::Zero()), ElementIndex(-1), ParentIndex(-1) {}
+		ROctreeNode(const ROctreeNode& Other) noexcept : Origin(Other.Origin), ElementIndex(Other.ElementIndex), ParentIndex(Other.ParentIndex), ChildrenIndex(Other.ChildrenIndex) {}
 		ROctreeNode& operator=(const ROctreeNode& Other)
 		{
 			ChildrenIndex.Empty();
@@ -47,8 +47,8 @@ namespace PigeonEngine
 
 	struct ROctreeLayerInfo
 	{
-		ROctreeLayerInfo()noexcept : NodeNum(0), Extent(Vector3::Zero()), StartIndex(-1) {}
-		ROctreeLayerInfo(const ROctreeLayerInfo& Other)noexcept : NodeNum(Other.NodeNum), Extent(Other.Extent), StartIndex(Other.StartIndex) {}
+		ROctreeLayerInfo() noexcept : NodeNum(0), Extent(Vector3::Zero()), StartIndex(-1) {}
+		ROctreeLayerInfo(const ROctreeLayerInfo& Other) noexcept : NodeNum(Other.NodeNum), Extent(Other.Extent), StartIndex(Other.StartIndex) {}
 		ROctreeLayerInfo& operator=(const ROctreeLayerInfo& Other)
 		{
 			NodeNum		= Other.NodeNum;
@@ -79,7 +79,7 @@ namespace PigeonEngine
 		BOOL32	AddPrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
 		BOOL32	RemovePrimitive(const RPrimitiveSceneProxy* InSceneProxy);
 		BOOL32	RemovePrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
-		UINT32	GetPrimitiveNum()const;
+		UINT32	GetPrimitiveNum() const;
 		void	ClearPrimitives();
 		BOOL32	RebuildOctreeForWholeLevel(const EBoundAABB* InBounds);
 		BOOL32	FinalizeOctree();
@@ -105,7 +105,7 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
-		void BackwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		void BackwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond) const
 		{
 			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
 			{
@@ -145,7 +145,7 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TLambdaType, typename _TConditionType>
-		void BackwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		void BackwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond) const
 		{
 			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
 			{
@@ -179,7 +179,7 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
-		void ForwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		void ForwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond) const
 		{
 			if ((InNodeIndex < 0) || (InNodeIndex >= (Nodes.Num())))
 			{
@@ -207,7 +207,7 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TLambdaType, typename _TConditionType>
-		void ForwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		void ForwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond) const
 		{
 			if ((InNodeIndex < 0) || (InNodeIndex >= (Nodes.Num())))
 			{
@@ -221,16 +221,16 @@ namespace PigeonEngine
 			}
 		}
 	public:
-		const Vector3&					GetTargetCellSize()const;
-		const Vector3&					GetBoundOrigin()const;
-		const Vector3&					GetBoundSize()const;
-		const Vector3&					GetUsedCellSize()const;
-		UINT32							GetAxisCellNum(EOctreeAxisType InAxisType)const;
-		UINT32							GetAxisDepth(EOctreeAxisType InAxisType)const;
-		UINT32							GetMaxDepth()const;
-		const TArray<ROctreeNode>&		GetNodes()const;
-		const TArray<ROctreeElement>&	GetElements()const;
-		const TArray<ROctreeLayerInfo>&	GetLayerInfos()const;
+		const Vector3&					GetTargetCellSize() const;
+		const Vector3&					GetBoundOrigin() const;
+		const Vector3&					GetBoundSize() const;
+		const Vector3&					GetUsedCellSize() const;
+		UINT32							GetAxisCellNum(EOctreeAxisType InAxisType) const;
+		UINT32							GetAxisDepth(EOctreeAxisType InAxisType) const;
+		UINT32							GetMaxDepth() const;
+		const TArray<ROctreeNode>&		GetNodes() const;
+		const TArray<ROctreeElement>&	GetElements() const;
+		const TArray<ROctreeLayerInfo>&	GetLayerInfos() const;
 	public:
 		void	SetTargetCellSize(const Vector3& InTargetCellSize);
 	protected:

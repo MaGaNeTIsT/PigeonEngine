@@ -5,7 +5,7 @@
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -30,23 +30,23 @@ namespace PigeonEngine
 	{
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in sky light component distruction."), (!SceneProxy));
 	}
-	const ETextureCubeAsset* PSkyLightComponent::GetCubeMapAsset()const
+	const ETextureCubeAsset* PSkyLightComponent::GetCubeMapAsset() const
 	{
 		return CubeMapAsset;
 	}
-	const Color3& PSkyLightComponent::GetLightAdjust()const
+	const Color3& PSkyLightComponent::GetLightAdjust() const
 	{
 		return LightAdjust;
 	}
-	FLOAT PSkyLightComponent::GetIntensity()const
+	FLOAT PSkyLightComponent::GetIntensity() const
 	{
 		return Intensity;
 	}
-	UINT32 PSkyLightComponent::GetPrefilterResolutionExponent()const noexcept
+	UINT32 PSkyLightComponent::GetPrefilterResolutionExponent() const noexcept
 	{
 		return PrefilterResolutionExponent;
 	}
-	FLOAT PSkyLightComponent::GetCubeMeanLinearLuminance()const noexcept
+	FLOAT PSkyLightComponent::GetCubeMeanLinearLuminance() const noexcept
 	{
 		return CubeMeanLinearLuminance;
 	}
@@ -120,7 +120,7 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions START
-	UINT8 PSkyLightComponent::GetUpdateRenderState()const
+	UINT8 PSkyLightComponent::GetUpdateRenderState() const
 	{
 		return UpdateState;
 	}
@@ -179,7 +179,7 @@ namespace PigeonEngine
 	}
 	// Render proxy functions END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PSkyLightComponent::GenerateComponentDetail()
 	{
 		PSceneComponent::GenerateComponentDetail();

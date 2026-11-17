@@ -2,7 +2,7 @@
 
 #include <IO/FileHelper.h>
 #include <RapidJson/Headers/JsonObject.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
 #endif
 
@@ -90,7 +90,7 @@ namespace PigeonEngine
 
 	EAnimStateMachineManager::EAnimStateMachineManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = "AnimationStateMachineManager";
 #endif
 	}
@@ -100,11 +100,11 @@ namespace PigeonEngine
 	}
 
 	EAnimStateMachineAsset::EAnimStateMachineAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<EAnimStateMachine>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -149,7 +149,7 @@ namespace PigeonEngine
 		StateMachineAssetManager.Clear();
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 EAnimStateMachineManager::ImportStateMachine(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath)
 	{
 		EString JsonText;
@@ -239,7 +239,7 @@ namespace PigeonEngine
 		}
 
 		EAnimStateMachineAsset* NewAsset = new EAnimStateMachineAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -283,7 +283,7 @@ namespace PigeonEngine
 		}
 
 		EAnimStateMachineAsset* FreshAsset = new EAnimStateMachineAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -406,7 +406,7 @@ namespace PigeonEngine
 
 		EAnimStateMachineAsset* FreshAsset = new EAnimStateMachineAsset(InAsset->GetAssetPath()
 			, InAsset->GetAssetName()
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InAsset->GetAssetName()
 #endif
 		);

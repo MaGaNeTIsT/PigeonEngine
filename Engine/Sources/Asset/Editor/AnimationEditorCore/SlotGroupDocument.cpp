@@ -1,6 +1,6 @@
 #include "SlotGroupDocument.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <Base/DataStructure/Text/Path.h>
 #include <Config/EngineConfig.h>

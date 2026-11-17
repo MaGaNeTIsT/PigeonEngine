@@ -5,7 +5,7 @@
 #include <Pipeline/RPipelineStateCache.h>
 #include <Shader/ShaderEngineParameters.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 struct ImDrawData;
 struct ImTextureData;
@@ -153,4 +153,4 @@ namespace PigeonEngine
 
 };
 
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY

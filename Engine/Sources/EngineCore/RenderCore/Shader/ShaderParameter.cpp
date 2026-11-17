@@ -4,7 +4,7 @@
 #include <RHI/IRCommandList.h>
 #include <Main/MainManager.h>
 #include <TextureAsset/TextureAsset.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -83,14 +83,14 @@ namespace PigeonEngine
 	{
 		EndSetupCBuffer();
 		OutHeapSize = InitStructSize;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		// Only a block that declared no field at all is a mistake. The queued init commands
 		// are NOT part of this test: AddStructVariable only enqueues when the caller passed an
 		// initial value, so a block whose fields are all written by hand through SetFieldValue
 		// leaves the queue empty - which is the normal case for every engine block. Testing the
 		// queue length here rejected exactly those blocks and tripped this Check.
 		Check((InitStructSize > 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::EndSetupVariable] Invalid Empty Struct")));
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		// A constant buffer is read in 16 byte registers, so the allocation is rounded up the
 		// way the reflection layout rounds a block. This runs in every build on purpose: an
 		// editor build that returned early would size its buffers differently from a shipping
@@ -111,17 +111,17 @@ namespace PigeonEngine
 	{
 		Check((GetMemSize() > 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::CreateBuffer] Create constant buffer failed(size is zero).")));
 		Check((!(Buffer.IsRenderResourceValid())), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::CreateBuffer] Forgot release old constant buffer.")));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		BOOL32 Result =
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 			Buffer.InitFromRHI(EMainManager::GetManagerSingleton()->GetRenderDevice(),
 				RBufferDesc(GetMemSize(), RBindFlagType::BIND_CONSTANT_BUFFER, 0u));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (!Result)
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::CreateBuffer] Create constant buffer failed(render resource create failed).")));
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 	void EConstantBufferParameter::UploadBuffer() noexcept
 	{
@@ -131,9 +131,9 @@ namespace PigeonEngine
 	}
 	void EConstantBufferParameter::ReleaseBuffer() noexcept
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (Buffer.IsRenderResourceValid())
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		{
 			Buffer.ReleaseRenderResource();
 		}
@@ -184,34 +184,34 @@ namespace PigeonEngine
 		Check((((TotalMemSize % GetNumElements()) == 0u) && ((TotalMemSize % 4u) == 0u)), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] Invalid Memory Size")));
 		Check((!(Buffer.IsRenderResourceValid())), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] Forgot release old constant buffer.")));
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (RenderDevice)
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		{
 			// The element stride is what makes this a structured resource on both
 			// back-ends, so it rides in the buffer description instead of in a
 			// back-end specific create call.
 			const UINT32 ElementSize = TotalMemSize / GetNumElements();
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			BOOL32 Result =
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 				Buffer.InitFromRHI(RenderDevice, RBufferDesc(TotalMemSize
 					, RBindFlagType::BIND_SHADER_RESOURCE | RBindFlagType::BIND_UNORDERED_ACCESS
 					, ElementSize, RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if (!Result)
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] Structured buffer create buffer failed(render resource create failed).")));
 			}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] RenderDevice is null.")));
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 	void EStructuredBufferParameter::UploadBuffer() noexcept
 	{
@@ -220,24 +220,24 @@ namespace PigeonEngine
 		Check((((TotalMemSize % GetNumElements()) == 0u) && ((TotalMemSize % 4u) == 0u)), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::UploadBuffer] Invalid Memory Size")));
 		Check((Buffer.IsRenderResourceValid()), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::UploadBuffer] Check constant buffer failed(buffer is null).")));
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (RenderDevice)
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		{
 			Buffer.UploadDataViaRHI(RenderDevice, GetData(), TotalMemSize);
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		else
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::UploadBuffer] RenderDevice is null.")));
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	}
 	void EStructuredBufferParameter::ReleaseBuffer() noexcept
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (Buffer.IsRenderResourceValid())
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 		{
 			Buffer.ReleaseRenderResource();
 		}

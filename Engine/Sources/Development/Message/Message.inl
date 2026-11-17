@@ -7,7 +7,7 @@ TMessageArgs<TArgs...>::TMessageArgs(const EName& InMessageName, TForwardArgs&&.
 }
 
 template<typename... TArgs>
-const typename TMessageArgs<TArgs...>::FArgumentTuple& TMessageArgs<TArgs...>::GetArguments()const
+const typename TMessageArgs<TArgs...>::FArgumentTuple& TMessageArgs<TArgs...>::GetArguments() const
 {
 	return Arguments;
 }
@@ -27,7 +27,7 @@ TObjectMessageArgs<TArgs...>::TObjectMessageArgs(const EName& InMessageName, con
 }
 
 template<typename... TArgs>
-const typename TObjectMessageArgs<TArgs...>::FArgumentTuple& TObjectMessageArgs<TArgs...>::GetArguments()const
+const typename TObjectMessageArgs<TArgs...>::FArgumentTuple& TObjectMessageArgs<TArgs...>::GetArguments() const
 {
 	return Arguments;
 }

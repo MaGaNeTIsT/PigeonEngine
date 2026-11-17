@@ -1,6 +1,6 @@
 #include "AssetPreviewScene.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <Animation/AnimInstance.h>
 #include <Animation/AnimationMontage.h>

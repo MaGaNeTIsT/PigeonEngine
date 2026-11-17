@@ -1,6 +1,6 @@
 #include "Profiler.h"
 
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 #include <RHI/IRCommandList.h>
 #endif
 
@@ -109,7 +109,7 @@ namespace PigeonEngine
 		}
 	}
 
-	BOOL8 EProfiler::GetRingStatsInternal(const TMap<EName, EProfilerRing>& InMap, const EName& InName, EProfileScopeStat& OutStat)const
+	BOOL8 EProfiler::GetRingStatsInternal(const TMap<EName, EProfilerRing>& InMap, const EName& InName, EProfileScopeStat& OutStat) const
 	{
 		if (InName.IsNone()) { return FALSE; }
 		EScopedLock Lock(StatsMutex);
@@ -120,10 +120,10 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void EProfiler::SnapshotRingsInternal(const TMap<EName, EProfilerRing>& InMap, TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot)const
+	void EProfiler::SnapshotRingsInternal(const TMap<EName, EProfilerRing>& InMap, TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot) const
 	{
 		EScopedLock Lock(StatsMutex);
-		for (auto It = InMap.Begin(); It != InMap.End(); ++It)
+		for (TMap<EName, EProfilerRing>::TConstIterator It = InMap.Begin(); It != InMap.End(); ++It)
 		{
 			EProfileScopeStat Stat;
 			FillScopeStatFromRing(It->second, Stat);
@@ -142,11 +142,11 @@ namespace PigeonEngine
 	{
 		RecordSampleInternal(CounterRings, InName, InValue);
 	}
-	BOOL8 EProfiler::GetScopeStat(const EName& InName, EProfileScopeStat& OutStat)const
+	BOOL8 EProfiler::GetScopeStat(const EName& InName, EProfileScopeStat& OutStat) const
 	{
 		return GetRingStatsInternal(ScopeRings, InName, OutStat);
 	}
-	BOOL8 EProfiler::GetCounterStat(const EName& InName, EProfileCounterStat& OutStat)const
+	BOOL8 EProfiler::GetCounterStat(const EName& InName, EProfileCounterStat& OutStat) const
 	{
 		if (InName.IsNone()) { return FALSE; }
 		EScopedLock Lock(StatsMutex);
@@ -156,14 +156,14 @@ namespace PigeonEngine
 		FillCounterStatFromRing(*RingPtr, OutStat);
 		return TRUE;
 	}
-	void EProfiler::SnapshotScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot)const
+	void EProfiler::SnapshotScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot) const
 	{
 		SnapshotRingsInternal(ScopeRings, OutSnapshot);
 	}
-	void EProfiler::SnapshotCounters(TArray<TPair<EName, EProfileCounterStat>>& OutSnapshot)const
+	void EProfiler::SnapshotCounters(TArray<TPair<EName, EProfileCounterStat>>& OutSnapshot) const
 	{
 		EScopedLock Lock(StatsMutex);
-		for (auto It = CounterRings.Begin(); It != CounterRings.End(); ++It)
+		for (TMap<EName, EProfilerRing>::TConstIterator It = CounterRings.Begin(); It != CounterRings.End(); ++It)
 		{
 			EProfileCounterStat Stat;
 			FillCounterStatFromRing(It->second, Stat);
@@ -181,16 +181,16 @@ namespace PigeonEngine
 	{
 		RecordSampleInternal(GPURings, InName, InSeconds);
 	}
-	BOOL8 EProfiler::GetGPUStat(const EName& InName, EProfileScopeStat& OutStat)const
+	BOOL8 EProfiler::GetGPUStat(const EName& InName, EProfileScopeStat& OutStat) const
 	{
 		return GetRingStatsInternal(GPURings, InName, OutStat);
 	}
-	void EProfiler::SnapshotGPUScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot)const
+	void EProfiler::SnapshotGPUScopes(TArray<TPair<EName, EProfileScopeStat>>& OutSnapshot) const
 	{
 		SnapshotRingsInternal(GPURings, OutSnapshot);
 	}
 
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 
 	// ----------------------------------------------------------------------
 	// GPU event scope: opens / closes a debug marker bracket on the command

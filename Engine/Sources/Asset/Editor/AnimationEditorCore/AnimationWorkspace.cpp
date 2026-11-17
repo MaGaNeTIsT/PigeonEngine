@@ -1,6 +1,6 @@
 #include "AnimationWorkspace.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
 #include "ClipDocument.h"

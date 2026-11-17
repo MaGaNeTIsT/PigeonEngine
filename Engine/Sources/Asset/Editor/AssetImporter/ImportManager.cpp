@@ -2,7 +2,7 @@
 #include "Asset/Editor/FileDialogHelper/FileDialogHelper.h"
 #include <Base/DataStructure/Text/Path.h>
 #include <Base/RTTI/RTTIManager.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 //Importer
 #include "MeshImporter.h"
 #include "TextureImporter.h"
@@ -19,7 +19,6 @@ namespace PigeonEngine
 		PigeonEngine::RegisterClassType<PigeonEngine::EImportManager, PigeonEngine::EManagerBase>();
 	}
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-};
 
 PigeonEngine::EImportManager::EImportManager()
 {
@@ -37,19 +36,32 @@ void PigeonEngine::EImportManager::Initialize()
 void PigeonEngine::EImportManager::ShutDown()
 {
 	//delete managed data.
-	for (auto Item = m_Importers.Begin(); Item != m_Importers.End(); Item++)
+	for (TMap<EString, IImporter*>::TIterator Item = Importers.Begin(); Item != Importers.End(); Item++)
 	{
 		if (Item->second)
 			delete Item->second;
 	}
+	bContentBrowserRefreshRequested = FALSE;
 }
 
 void PigeonEngine::EImportManager::ShowImporterButton()
 {
 	if (ImGui::Button("Import"))
 	{
-		m_ShowEditor = TRUE;
+		bShowEditor = TRUE;
 	}
+}
+
+void PigeonEngine::EImportManager::NotifyImportFinished()
+{
+	bContentBrowserRefreshRequested = TRUE;
+}
+
+BOOL32 PigeonEngine::EImportManager::ConsumeContentBrowserRefreshRequest()
+{
+	const BOOL32 bRequested = bContentBrowserRefreshRequested;
+	bContentBrowserRefreshRequested = FALSE;
+	return bRequested;
 }
 
 void PigeonEngine::EImportManager::EditorInit()
@@ -65,11 +77,11 @@ void PigeonEngine::EImportManager::EditorInit()
 
 void PigeonEngine::EImportManager::EditorUpdate()
 {
-	for (auto Item = m_Importers.Begin(); Item != m_Importers.End(); ++Item)
+	for (TMap<EString, IImporter*>::TIterator Item = Importers.Begin(); Item != Importers.End(); Item++)
 	{
 		Item->second->UpdateEditor();
 	}
-	if (m_ShowEditor)
+	if (bShowEditor)
 	{
 		ShowEditor();
 	}
@@ -77,35 +89,37 @@ void PigeonEngine::EImportManager::EditorUpdate()
 
 void PigeonEngine::EImportManager::AddImporter(EString FileExtension, IImporter* Importer)
 {
-	m_Importers.Add(FileExtension, Importer);
+	Importers.Add(FileExtension, Importer);
 }
 void PigeonEngine::EImportManager::ShowEditor()
 {
-	ImGui::Begin("Importer Select", &m_ShowEditor, ImGuiWindowFlags_::ImGuiWindowFlags_None);
+	ImGui::Begin("Importer Select", &bShowEditor, ImGuiWindowFlags_::ImGuiWindowFlags_None);
 	{
-		for (auto Item = m_Importers.Begin(); Item != m_Importers.End(); Item++)
+		for (TMap<EString, IImporter*>::TIterator Item = Importers.Begin(); Item != Importers.End(); Item++)
 		{
 			if (ImGui::Button(*Item->first,ImVec2(250,0)))
 			{
-				PathSet PathSet;
-				PathSet.count = 0;
+				PathSet SelectedPaths;
+				SelectedPaths.count = 0;
 				EString FilterList = Item->second->GetFileFilterList();
-				OpenDialogMultiSelect(*FilterList, NULL, &PathSet);
+				OpenDialogMultiSelect(*FilterList, NULL, &SelectedPaths);
 				TArray<EString> Paths;
-				for (INT32 i = 0; i < PathSet.count; i++)
+				for (SIZE_T PathIndex = 0u, PathNum = SelectedPaths.count; PathIndex < PathNum; PathIndex++)
 				{
-					const CHAR* Path = GetPath(&PathSet, i);
+					const CHAR* Path = GetPath(&SelectedPaths, PathIndex);
 					Paths.Add(Path);
 				}
-				if (PathSet.count)
+				if (SelectedPaths.count)
 				{
 					Item->second->CreateImportEditor(Paths);
-					FreePathSet(&PathSet);
+					FreePathSet(&SelectedPaths);
 				}
-				m_ShowEditor = FALSE;
+				bShowEditor = FALSE;
 			}
 		}
 	}
 	ImGui::End();
 }
+
+}	// namespace PigeonEngine
 #endif

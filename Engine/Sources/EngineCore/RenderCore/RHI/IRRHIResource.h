@@ -72,7 +72,7 @@ namespace PigeonEngine
 			CurrentState = InState;
 		}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		const EString& GetDebugName() const noexcept
 		{
 			return DebugName;
@@ -82,7 +82,7 @@ namespace PigeonEngine
 		{
 			DebugName = InDebugName;
 		}
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 
 	public:
 		IRRHIResource(const IRRHIResource&) = delete;
@@ -93,9 +93,9 @@ namespace PigeonEngine
 	protected:
 		UINT64					UniqueID			= 0ull;
 		ERHIResourceState		CurrentState		= ERHIResourceState::RHI_RESOURCE_STATE_COMMON;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		EString					DebugName;
-#endif	// _EDITOR_ONLY
+#endif	// ENGINE_EDITOR_ONLY
 	};
 
 	/*

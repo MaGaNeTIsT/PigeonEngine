@@ -3,7 +3,7 @@
 #include <PigeonBase/Object/World/World.h>
 #include <PigeonBase/Object/World/WorldTickManager.h>
 #include <PhysicsConfig/PhysicsConfig.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 
@@ -19,7 +19,7 @@ namespace PigeonEngine
 
 	PPhysicsComponent::~PPhysicsComponent()
 	{
-		if (m_Shape)
+		if (Shape)
 			RemoveShape();
 	}
 
@@ -87,7 +87,7 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::Destroy()
 	{
-		if (m_Shape)
+		if (Shape)
 			RemoveShape();
 		RemoveShape();
 		PActorComponent::Destroy();
@@ -96,7 +96,7 @@ namespace PigeonEngine
 	void PPhysicsComponent::HandlePostPhysicsTick(FLOAT deltaTime)
 	{
 		(void)deltaTime;
-		if (m_BodyId.IsInvalid() || !GetOwnerActor() || MotionType == PhysicsUtility::EMotionType::Static)
+		if (BodyId.IsInvalid() || !GetOwnerActor() || MotionType == PhysicsUtility::EMotionType::Static)
 		{
 			return;
 		}
@@ -106,8 +106,8 @@ namespace PigeonEngine
 			return;
 		}
 
-	const Vector3 NewPosition = FPhysicsManager::GetManagerSingleton()->GetPosition(m_BodyId);
-		const Quaternion NewRotation = FPhysicsManager::GetManagerSingleton()->GetRotation(m_BodyId);
+	const Vector3 NewPosition = FPhysicsManager::GetManagerSingleton()->GetPosition(BodyId);
+		const Quaternion NewRotation = FPhysicsManager::GetManagerSingleton()->GetRotation(BodyId);
 		if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
 		{
 			GetOwnerActor()->SetActorLocation(NewPosition);
@@ -117,7 +117,7 @@ namespace PigeonEngine
 			bHasSyncedTransform = TRUE;
 		}
 	}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PPhysicsComponent::EditorTick(FLOAT deltaTime)
 	{
 		if (FPhysicsCommonSettings::GetSingleton()->bDrawCollision != FALSE)
@@ -130,31 +130,31 @@ namespace PigeonEngine
 		RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();
 		const Vector3 Pos = GetOwnerActor()->GetActorLocation();
 		const Quaternion Rot = GetOwnerActor()->GetActorRotation();
-		if (m_Shape)
+		if (Shape)
 		{
-			m_Shape->DrawPrimitive(Manager, Pos, Rot);
+			Shape->DrawPrimitive(Manager, Pos, Rot);
 		}
 	}
 #endif
 	void PPhysicsComponent::SetShape(FShape* InShape)
 	{
-		if (m_Shape)
+		if (Shape)
 		{
 			UninitPhysicsComponent();
-			m_Shape = InShape;
+			Shape = InShape;
 			InitPhysicsComponent();
 		}
 		else
-			m_Shape = InShape;
+			Shape = InShape;
 	}
 
 	void PPhysicsComponent::InitPhysicsComponent()
 	{
 		Vector3 pos = GetOwnerActor()->GetRootComponent()->GetComponentWorldLocation();
 		Quaternion rot = GetOwnerActor()->GetRootComponent()->GetComponentWorldRotation();
-		if (FPhysicsManager::GetManagerSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), m_BodyId))
+		if (FPhysicsManager::GetManagerSingleton()->TryCreateBody(Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), BodyId))
 		{
-		FPhysicsManager::GetManagerSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
+		FPhysicsManager::GetManagerSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), BodyId);
 			LastSyncedPosition = pos;
 			LastSyncedRotation = rot;
 			bHasSyncedTransform = TRUE;
@@ -169,14 +169,14 @@ namespace PigeonEngine
 
 	FShape* PPhysicsComponent::GetShape()
 	{
-		return m_Shape;
+		return Shape;
 	}
 
 	void PPhysicsComponent::RemoveShape()
 	{
 		FPhysicsManager::GetManagerSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
-		m_BodyId = FPhysicsBodyId();
-		m_Shape = nullptr;
+		BodyId = FPhysicsBodyId();
+		Shape = nullptr;
 		bBodyActive = FALSE;
 		bHasSyncedTransform = FALSE;
 		LastSyncedPosition = Vector3::Zero();
@@ -185,12 +185,12 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::AddForce(Vector3 InForce)
 	{
-		FPhysicsManager::GetManagerSingleton()->AddForce(m_BodyId, InForce);
+		FPhysicsManager::GetManagerSingleton()->AddForce(BodyId, InForce);
 	}
 
 	void PPhysicsComponent::AddImpluse(Vector3 InImpluse)
 	{
-		FPhysicsManager::GetManagerSingleton()->AddImpulse(m_BodyId, InImpluse);
+		FPhysicsManager::GetManagerSingleton()->AddImpulse(BodyId, InImpluse);
 	}
 
 	void PPhysicsComponent::SetLayer(FPhysicsObjectLayer InLayer)
@@ -205,7 +205,7 @@ namespace PigeonEngine
 
 	const FPhysicsBodyId& PPhysicsComponent::GetBodyId() const
 	{
-		return m_BodyId;
+		return BodyId;
 	}
 
 	void PPhysicsComponent::OnBodyActivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID)
@@ -262,7 +262,7 @@ namespace PigeonEngine
 
 	BOOL32 PPhysicsComponent::ContainsBody(const FPhysicsBodyId& InBodyID) const
 	{
-		return m_BodyId == InBodyID;
+		return BodyId == InBodyID;
 	}
 
 	BOOL32 PPhysicsComponent::ContainsAnyBody(const FPhysicsBodyId& InBodyID1, const FPhysicsBodyId& InBodyID2) const

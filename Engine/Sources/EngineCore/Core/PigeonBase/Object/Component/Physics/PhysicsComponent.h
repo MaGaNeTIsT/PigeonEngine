@@ -9,11 +9,11 @@ namespace PigeonEngine
 	class PPhysicsComponent : public PActorComponent, public FBodyActivationEventListenerInterface, public FContactEventListenerInterface
 	{
 	public:
-		PPhysicsComponent() : m_Shape(nullptr)
+		PPhysicsComponent() : Shape(nullptr)
 		{
 			POBJ_DEBUGNAME_SET(this, "PhysicsComponent");
 		}
-		PPhysicsComponent(FShape* InShape) : m_Shape(InShape)
+		PPhysicsComponent(FShape* InShape) : Shape(InShape)
 		{
 			POBJ_DEBUGNAME_SET(this, "PhysicsComponent");
 			//InitPhysicsComponent();
@@ -25,7 +25,7 @@ namespace PigeonEngine
 	public:
 		virtual void Destroy() override;
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		virtual void EditorTick(FLOAT deltaTime) override;
 
 		virtual void DrawPrimitive();
@@ -77,8 +77,8 @@ namespace PigeonEngine
 		void TryRegisterPostPhysicsTick();
 		void TryUnregisterPostPhysicsTick();
 		void HandlePostPhysicsTick(FLOAT deltaTime);
-		FShape* m_Shape = nullptr;
-		FPhysicsBodyId m_BodyId;
+		FShape* Shape = nullptr;
+		FPhysicsBodyId BodyId;
 		TFunction<void(FLOAT)> PostPhysicsTickHandler;
 	private:
 		BOOL32 bPostPhysicsTickRegistered = FALSE;

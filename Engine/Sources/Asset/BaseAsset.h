@@ -50,7 +50,7 @@ namespace PigeonEngine
 		// Defined in BaseAsset.cpp, which is also where this layer registers itself in the RTTI
 		// chain. A non-template base belongs in its own translation unit.
 		EAssetBase(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
@@ -89,12 +89,12 @@ namespace PigeonEngine
 	{
 	public:
 		TBaseAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		)
 			: EAssetBase(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				, InDebugName
 #endif
 			)
@@ -106,14 +106,14 @@ namespace PigeonEngine
 			UninitResource();
 		}
 	public:
-		virtual BOOL32	IsValid()const override { return IsResourceValid(); }
-		virtual void	UninitResource()override
+		virtual BOOL32	IsValid() const override { return IsResourceValid(); }
+		virtual void	UninitResource() override
 		{
 			EAssetBase::UninitResource();
 			ReleaseResourceInternal();
 		}
 	public:
-		BOOL32 IsResourceValid()const
+		BOOL32 IsResourceValid() const
 		{
 			if (!!ResourceData)
 			{
@@ -121,7 +121,7 @@ namespace PigeonEngine
 			}
 			return FALSE;
 		}
-		const TResourceType*	GetStoragedResource()const { return ResourceData; }
+		const TResourceType*	GetStoragedResource() const { return ResourceData; }
 		/*
 		* Stores the cold backup of a freshly built asset. There is deliberately no "replace the
 		* stored backup" counterpart: overwriting the data of an asset that is already published is
@@ -135,7 +135,7 @@ namespace PigeonEngine
 			TResourceType* TempData = lStorageFunc();
 			if (ResourceData)
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				EString errorInfo = DebugName + " try to init a new resource, but already storage a resource.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*errorInfo));
 #endif
@@ -151,7 +151,7 @@ namespace PigeonEngine
 			}
 			if (!ResourceData)
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				EString errorInfo = DebugName + " try to storage a null resource.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*errorInfo));
 #endif
@@ -239,7 +239,7 @@ namespace PigeonEngine
 		{
 			if (RenderRef.IsValid())
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				PE_FAILED((ENGINE_ASSET_ERROR), (PE_TEXT("[RAssetRenderBinding::QueueCreate] A render proxy is already queued or bound.")));
 #endif
 				return FALSE;
@@ -427,7 +427,7 @@ namespace PigeonEngine
 		* Check if contains item with InKeyValue in mapped datas.
 		* Return [BOOL32]: If contains return TRUE. If not return FALSE.
 		*/
-		BOOL32 Contain(const TKeyType& InKeyValue)const
+		BOOL32 Contain(const TKeyType& InKeyValue) const
 		{
 			EScopedLock ScopedLock(TableMutex);
 			return (SavedDatas.ContainsKey(InKeyValue));
@@ -444,9 +444,9 @@ namespace PigeonEngine
 				{
 					return;
 				}
-				for (auto it = SavedDatas.Begin(); it != SavedDatas.End(); it++)
+				for (TMap<TKeyType, TAssetType*>::TIterator It = SavedDatas.Begin(); It != SavedDatas.End(); It++)
 				{
-					ReleasedAssets.Add(it->second);
+					ReleasedAssets.Add(It->second);
 				}
 				for (INT32 RetiredIndex = 0; RetiredIndex < RetiredDatas.Num(); RetiredIndex++)
 				{
@@ -489,7 +489,7 @@ namespace PigeonEngine
 		/*
 		* Get size of mapped datas.
 		*/
-		UINT32 Size()const
+		UINT32 Size() const
 		{
 			EScopedLock ScopedLock(TableMutex);
 			return (SavedDatas.Num<UINT32>());

@@ -38,7 +38,7 @@
 //   UCGVectorParams
 //       new named SWEParams fields, declared in the component JSON: the same
 //       twenty fields the two already migrated SWE passes declare, then Gravity,
-//       VelocityClamp, ScaleZ, Friction, Damping, AccelerationClamp,
+//       VelocityClamp, ScaleY, Friction, Damping, AccelerationClamp,
 //       OvershootingBlend, OvershootingLimit and MinWater in the legacy order
 //   old #if SWE_COMPUTE_PATH, with the pixel branch of ComputeIntegrateVelocity
 //   and the MainVS / MainPS fallback pair behind its #else
@@ -154,17 +154,17 @@ float Overshooting(
 }
 
 // The per texel step: the momentum half of the shallow water update. Hc, Hr and
-// Hb are the local surface heights of the centre and the two neighbours the
-// gradient is taken against, and the acceleration is that gradient over ScaleZ.
+// Hb are the local surface heights (world Y) of the centre and the two neighbours
+// the gradient is taken against, and the acceleration is that gradient over ScaleY.
 bool ComputeIntegrateMomentum(
 	in int2		InCoord,
 	out float4	OutValue)
 {
-	float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize; float2 Resolution;
-	FluxSimulationUV( Location, Scale, InvScale, Height, TexelSize, Resolution );
+	float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize; float2 Resolution;
+	FluxSimulationUV( Location, Scale, InvScale, ReferenceY, TexelSize, Resolution );
 
-	int2 LocalCoord = InCoord - asint( PixelAnchor );
-	int2 LocalRes = asint( PixelSize );
+	int2 LocalCoord = InCoord - PixelAnchor;
+	int2 LocalRes = PixelSize;
 	int2 Res = int2( (int)(Resolution.x), (int)(Resolution.y) );
 
 	// The bounds test is a predicate now and not a return. The early exit below
@@ -217,15 +217,15 @@ bool ComputeIntegrateMomentum(
 	float Hr = GroundHLr + Vr;
 	float Hb = GroundHLb + Vb;
 
-	float InvScaleZ = 1.0 / (ScaleZ);
+	float InvScaleY = 1.0 / (ScaleY);
 
-	float2 Acceleration = (Hc.xx - float2( Hr, Hb )) * InvScaleZ;
+	float2 Acceleration = (Hc.xx - float2( Hr, Hb )) * InvScaleY;
 
 	float2 Velocity = FluxClampMax2( Acceleration.xy * (SimulationDeltaTime) * (Gravity), (AccelerationClamp) ) + Velc.xy;
 
-	float Ac = Vc * InvScaleZ;
-	float Ar = Vr * InvScaleZ;
-	float Ab = Vb * InvScaleZ;
+	float Ac = Vc * InvScaleY;
+	float Ar = Vr * InvScaleY;
+	float Ab = Vb * InvScaleY;
 
 	float2 Wet = float2( FluxRemoveFluid( Ac, Ar, Acceleration.x ), FluxRemoveFluid( Ac, Ab, Acceleration.y ) );
 
@@ -281,7 +281,7 @@ void CSMain(uint3 InDispatchThreadID : SV_DispatchThreadID
 	}
 	GroupMemoryBarrierWithGroupSync();
 #endif	//SWE_EARLY_EXIT_USES_TILE_MASK
-	int2 Coord = int2( InDispatchThreadID.xy ) + asint( PixelAnchor );
+	int2 Coord = int2( InDispatchThreadID.xy ) + PixelAnchor;
 	float4 Value;
 	if (!(ComputeIntegrateMomentum( Coord, Value )))
 	{

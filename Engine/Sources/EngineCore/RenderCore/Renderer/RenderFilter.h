@@ -24,7 +24,10 @@ namespace PigeonEngine
 		RENDER_PRIMITIVE_CATEGORY_DEBUG			= 1ull << 4u,
 		RENDER_PRIMITIVE_CATEGORY_COLLISION		= 1ull << 5u,
 		RENDER_PRIMITIVE_CATEGORY_EDITOR_ONLY	= 1ull << 6u,
-		RENDER_PRIMITIVE_CATEGORY_TRANSPARENT	= 1ull << 7u
+		RENDER_PRIMITIVE_CATEGORY_TRANSPARENT	= 1ull << 7u,
+		// A simulation body does not draw. It lives in the scene's primitive list only so
+		// the simulation stage can find it; view collection and every draw pass skip it.
+		RENDER_PRIMITIVE_CATEGORY_WATER_SIMULATION	= 1ull << 8u
 	};
 
 	/*

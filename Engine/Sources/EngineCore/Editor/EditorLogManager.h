@@ -2,7 +2,7 @@
 
 #include <Base/DataStructure/ObjectBase.h>
 
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 #include "Base/DataStructure/Container/Array.h"
 #include "Base/DataStructure/Pointer/SharedPtr.h"
 #include "Base/Timer/Timer.h"

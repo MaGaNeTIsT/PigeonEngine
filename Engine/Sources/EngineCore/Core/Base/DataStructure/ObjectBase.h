@@ -15,15 +15,15 @@ namespace PigeonEngine
 	class EObjectBase : public ERTTIObject
 	{
 	public:
-		const ObjectIdentityType& GetUniqueID()const;
+		const ObjectIdentityType& GetUniqueID() const;
 	public:
 		BOOL32 operator==(const EObjectBase& obj);
 		BOOL32 operator!=(const EObjectBase& obj);
 	private:
 		ObjectIdentityType UniqueID;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	public:
-		const EString&	GetDebugName()const;
+		const EString&	GetDebugName() const;
 		void			SetDebugName(const EString& InDebugName);
 	protected:
 		EString DebugName;
@@ -33,7 +33,7 @@ namespace PigeonEngine
 
 	};
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #define POBJ_DEBUGNAME_GET(__Ptr) \
 	(__Ptr)->GetDebugName()\

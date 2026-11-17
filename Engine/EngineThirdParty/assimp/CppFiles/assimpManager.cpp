@@ -1,6 +1,6 @@
 #include "../Headers/assimpManager.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <Base/DataStructure/Container/Map.h>
 #include <assimp/Importer.hpp>
@@ -311,7 +311,7 @@ namespace PigeonEngine
 	}
 	CAssimpManager::CAssimpManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = ENGINE_ASSIMP_MANAGER_NAME;
 #endif
 	}
@@ -554,7 +554,7 @@ namespace PigeonEngine
 							}
 						}
 					}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					else
 					{
 						PE_FAILED((ENGINE_ASSET_ERROR), ("Read skinned mesh bone's vertex id is not matching vertex max count, maybe used wrong bone list."));
@@ -643,20 +643,20 @@ namespace PigeonEngine
 			//TODO We hard coding to finding VertexBaseType for now.
 			CurrentDesc.BaseVertexLayout = TranslateSemanticBaseTypeToVertexBaseLayout(SemanticBaseType);
 		}
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 		if ((BlendIndicesSlots.Num()) > 0)
 #else
 		if (((BlendIndicesSlots.Num()) > 0) && ((BlendIndicesSlots.Num()) == (BlendWeightsSlots.Num())))
 #endif
 		{
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 			PE_CHECK((ENGINE_ASSET_ERROR), ("number of [BlendIndices] and number of [BlendWeight] is not matched."), ((BlendIndicesSlots.Num()) == (BlendWeightsSlots.Num())));
 #endif
 			for (INT32 BlendIndex = 0, BlendNum = BlendIndicesSlots.Num(); BlendIndex < BlendNum; BlendIndex++)
 			{
 				UINT32 BlendIndicesSlot = BlendIndicesSlots[BlendIndex];
 				UINT32 BlendWeightsSlot = BlendWeightsSlots[BlendIndex];
-#if !(_SHIPPING_MODE)
+#if !(ENGINE_SHIPPING_MODE)
 				PE_CHECK((ENGINE_ASSET_ERROR), ("slot of [BlendIndices] and slot of [BlendWeight] is not matched."), (BlendIndicesSlot == BlendWeightsSlot));
 #else
 				if (BlendIndicesSlot != BlendWeightsSlot)
@@ -690,7 +690,7 @@ namespace PigeonEngine
 			{
 				if ((FaceIndex * 3u + TriangleIndex) < ElementNum)
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					if (IndexStride == 2u)
 					{
 						PE_CHECK((ENGINE_ASSET_ERROR), ("Half type index buffer can not greater than 65535u."), ((TempFace.mIndices[TriangleIndex]) <= 0xffffu));
@@ -859,11 +859,11 @@ namespace PigeonEngine
 				EVertexData& NewVertexData = NewVertexDatas[LayoutIndex * 4u + LayoutPartIndex];
 				if (!!(NewVertexData.Datas))
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					BOOL32 Result =
 #endif
 						OutMesh.AddVertexElement(&NewVertexData);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					Check((Result), (ENGINE_ASSET_ERROR));
 #endif
 				}
@@ -938,14 +938,14 @@ namespace PigeonEngine
 			const ESkinnedMesh&				UsedMesh				= InMeshes[MeshIndex];
 			const EMesh::EVertexPart&		VertexPart				= UsedMesh.GetVertexPart();
 			const EMesh::EIndexPart&		IndexPart				= UsedMesh.GetIndexPart();
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			const ESkinnedMesh::ESkinPart&	SkinPart				= UsedMesh.GetSkinPart();
 #endif
 			const UINT32					UsedMeshVertexLayout	= UsedMesh.GetVertexLayout();
 			Check((UsedMeshVertexLayout != 0x0u), (ENGINE_ASSET_ERROR));
 			Check(((IndexPart.ElementNum > 0u) && ((IndexPart.Stride == 2u) || (IndexPart.Stride == 4u))), (ENGINE_ASSET_ERROR));
 			Check((VertexPart.Num() > 0), (ENGINE_ASSET_ERROR));
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			Check((SkinPart.Num() > 0), (ENGINE_ASSET_ERROR));
 			Check((VertexPart[0].ElementNum == SkinPart[0].ElementNum), (ENGINE_ASSET_ERROR));
 #endif
@@ -1105,7 +1105,7 @@ namespace PigeonEngine
 								}
 							}
 						}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 						else
 						{
 							EString ErrorInfo("Skin does not contain this[");
@@ -1125,11 +1125,11 @@ namespace PigeonEngine
 				EVertexData& NewVertexData = NewVertexDatas[LayoutIndex * 4u + LayoutPartIndex];
 				if (!!(NewVertexData.Datas))
 				{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					BOOL32 Result =
 #endif
 						OutMesh.AddVertexElement(&NewVertexData);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 					Check((Result), (ENGINE_ASSET_ERROR));
 #endif
 				}
@@ -1140,11 +1140,11 @@ namespace PigeonEngine
 			ESkinData& NewSkinData = NewSkinDatas[LayoutPartIndex];
 			if ((!!(NewSkinData.Indices)) && (!!(NewSkinData.Weights)))
 			{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				BOOL32 Result =
 #endif
 					OutMesh.AddSkinElement(&NewSkinData);
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				Check((Result), (ENGINE_ASSET_ERROR));
 #endif
 			}

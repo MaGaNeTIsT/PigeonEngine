@@ -1,6 +1,6 @@
 #include "StateMachinePreviewPanel.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
 #include <IO/FileHelper.h>

@@ -65,7 +65,9 @@ namespace PigeonEngine
 		Matrix4x4	LocalToWorldMatrix;
 	public:
 		const RScene*	GetRenderScene() const;
-		PE_INLINE void	SetRenderScene(const RScene* InScene);
+		// Defined in the cpp, so it is not declared inline: an inline declaration whose only
+		// definition lives in another translation unit emits no symbol for its callers.
+		void			SetRenderScene(const RScene* InScene);
 	protected:
 		const RScene*	Scene;
 

@@ -6,8 +6,6 @@
 #include <AnimationAsset/AnimationAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 
-#include <cmath>
-
 namespace PigeonEngine
 {
 
@@ -42,7 +40,7 @@ namespace PigeonEngine
 		}
 	}
 
-	const ESkeletonAnimationClip* EAnimationClipPlayer::GetClip()const
+	const ESkeletonAnimationClip* EAnimationClipPlayer::GetClip() const
 	{
 		return Clip;
 	}
@@ -61,12 +59,12 @@ namespace PigeonEngine
 		bPlaying = FALSE;
 	}
 
-	BOOL32 EAnimationClipPlayer::IsPlaying()const
+	BOOL32 EAnimationClipPlayer::IsPlaying() const
 	{
 		return bPlaying;
 	}
 
-	BOOL32 EAnimationClipPlayer::HasFinished()const
+	BOOL32 EAnimationClipPlayer::HasFinished() const
 	{
 		return bFinished;
 	}
@@ -76,7 +74,7 @@ namespace PigeonEngine
 		PlayRate = InPlayRate;
 	}
 
-	FLOAT EAnimationClipPlayer::GetPlayRate()const
+	FLOAT EAnimationClipPlayer::GetPlayRate() const
 	{
 		return PlayRate;
 	}
@@ -87,7 +85,7 @@ namespace PigeonEngine
 		PlayDirection = 1;
 	}
 
-	EAnimationLoopMode EAnimationClipPlayer::GetLoopMode()const
+	EAnimationLoopMode EAnimationClipPlayer::GetLoopMode() const
 	{
 		return LoopMode;
 	}
@@ -110,17 +108,17 @@ namespace PigeonEngine
 		bFirstAdvance = FALSE;
 	}
 
-	FLOAT EAnimationClipPlayer::GetPositionSeconds()const
+	FLOAT EAnimationClipPlayer::GetPositionSeconds() const
 	{
 		return PositionSeconds;
 	}
 
-	FLOAT EAnimationClipPlayer::GetPreviousPositionSeconds()const
+	FLOAT EAnimationClipPlayer::GetPreviousPositionSeconds() const
 	{
 		return PreviousPositionSeconds;
 	}
 
-	BOOL32 EAnimationClipPlayer::HasLoopedLastAdvance()const
+	BOOL32 EAnimationClipPlayer::HasLoopedLastAdvance() const
 	{
 		return bLoopedLastAdvance;
 	}
@@ -161,7 +159,7 @@ namespace PigeonEngine
 		{
 			const FLOAT UnwrappedPosition = PositionSeconds + Travel;
 			bLoopedLastAdvance = ((UnwrappedPosition < 0.0f) || (UnwrappedPosition >= DurationSeconds)) ? TRUE : FALSE;
-			PositionSeconds = std::fmod(UnwrappedPosition, DurationSeconds);
+			PositionSeconds = EMath::FMod(UnwrappedPosition, DurationSeconds);
 			if (PositionSeconds < 0.0f)
 			{
 				PositionSeconds += DurationSeconds;
@@ -210,7 +208,7 @@ namespace PigeonEngine
 		}
 	}
 
-	BOOL32 EAnimationClipPlayer::Evaluate(const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose)const
+	BOOL32 EAnimationClipPlayer::Evaluate(const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose) const
 	{
 		if ((!Clip) || (!InBinding.IsValid()) || (InOutPose.Num() <= 0))
 		{
@@ -255,7 +253,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	FLOAT EAnimationClipPlayer::GetClipDurationSeconds()const
+	FLOAT EAnimationClipPlayer::GetClipDurationSeconds() const
 	{
 		if ((!Clip) || (Clip->Duration <= 0.0f))
 		{
@@ -264,7 +262,7 @@ namespace PigeonEngine
 		return (Clip->Duration / GetTicksPerSecond());
 	}
 
-	FLOAT EAnimationClipPlayer::GetTicksPerSecond()const
+	FLOAT EAnimationClipPlayer::GetTicksPerSecond() const
 	{
 		// A source that did not declare a tick rate is treated as 30 fps, which is the
 		// convention the old animation component used and what the editor preview already

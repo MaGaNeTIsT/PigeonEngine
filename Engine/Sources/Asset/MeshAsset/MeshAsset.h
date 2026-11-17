@@ -66,7 +66,7 @@ namespace PigeonEngine
 		EIndexData(UINT32 InStride, UINT32 InElementNum = 0u) noexcept
 			: EVertexDescriptor(), Indices(nullptr)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if ((InStride != 2u) && (InStride != 4u))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Check index data error(stride is not 4 bytes or 2 bytes)."));
@@ -132,14 +132,14 @@ namespace PigeonEngine
 	{
 		EVertexData() noexcept : EVertexDescriptor(), Datas(nullptr) {}
 		EVertexData(EVertexLayoutType InType, UINT32 InStride = 0u, UINT32 InElementNum = 0u) noexcept
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			: EVertexDescriptor()
 #else
 			: EVertexDescriptor(InType, InStride, InElementNum)
 #endif
 			, Datas(nullptr)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if (((InType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
 				((InType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) ||
 				((InType & (EVertexLayoutType::MESH_SKIN << 0)) != 0u) ||
@@ -222,14 +222,14 @@ namespace PigeonEngine
 	{
 		ESkinData() noexcept : EVertexDescriptor(), Indices(nullptr), Weights(nullptr) {}
 		ESkinData(UINT32 InStride, UINT32 InElementNum = 0u) noexcept
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			: EVertexDescriptor(EVertexLayoutType::MESH_SKIN)
 #else
 			: EVertexDescriptor(EVertexLayoutType::MESH_SKIN, InStride, InElementNum)
 #endif
 			, Indices(nullptr), Weights(nullptr)
 		{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			if ((InStride % 4u) != 0u)
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Check skin data error(stride is not time of 4 bytes)."));
@@ -343,8 +343,8 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC UINT32 MeshVertexLayoutPartMaxNum = 4u;
 	public:
 		virtual BOOL32	IsResourceValid() const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	public:
 		EMesh& operator=(const EMesh& Other);
 	public:
@@ -418,8 +418,8 @@ namespace PigeonEngine
 	{
 	public:
 		virtual BOOL32	IsResourceValid() const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	public:
 		EStaticMesh& operator=(const EStaticMesh& Other);
 	public:
@@ -439,8 +439,8 @@ namespace PigeonEngine
 		using ESkinPart			= TArray<ESkinData>;
 	public:
 		virtual BOOL32	IsResourceValid() const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	public:
 		ESkinnedMesh& operator=(const ESkinnedMesh& Other);
 	public:
@@ -478,7 +478,7 @@ namespace PigeonEngine
 		using TVertexResourceType = TMap<UINT8, TArray<RVertexBufferResource*>>;
 	public:
 		virtual BOOL32	IsRenderResourceValid() const noexcept override;
-		virtual void	ReleaseRenderResource()noexcept override;
+		virtual void	ReleaseRenderResource() noexcept override;
 		const RIndexBufferResource*				GetIndexRenderResource() const;
 		const TArray<RVertexBufferResource*>*	GetVertexRenderResource(const UINT8 InType) const;
 	public:
@@ -498,8 +498,8 @@ namespace PigeonEngine
 	{
 	public:
 		virtual BOOL32	IsRenderResourceValid() const noexcept override;
-		virtual BOOL32	InitRenderResource()noexcept override;
-		virtual void	ReleaseRenderResource()noexcept override;
+		virtual BOOL32	InitRenderResource() noexcept override;
+		virtual void	ReleaseRenderResource() noexcept override;
 	public:
 		EStaticMeshRenderResource& operator=(const EStaticMeshRenderResource& Other);
 	public:
@@ -515,8 +515,8 @@ namespace PigeonEngine
 	{
 	public:
 		virtual BOOL32	IsRenderResourceValid() const noexcept override;
-		virtual BOOL32	InitRenderResource()noexcept override;
-		virtual void	ReleaseRenderResource()noexcept override;
+		virtual BOOL32	InitRenderResource() noexcept override;
+		virtual void	ReleaseRenderResource() noexcept override;
 		const TArray<RVertexBufferResource>&	GetSkinRenderResource() const;
 	public:
 		ESkinnedMeshRenderResource& operator=(const ESkinnedMeshRenderResource& Other);
@@ -538,11 +538,11 @@ namespace PigeonEngine
 	{
 	public:
 		TMeshBaseAsset(const EString& InMeshPath, const EString& InMeshName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		) : TBaseAsset<TMeshResourceType>(InMeshPath, InMeshName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InDebugName
 #endif
 		), MeshType(_MeshType)
@@ -580,7 +580,7 @@ namespace PigeonEngine
 			const TMeshRenderResourceType* Resource = GetRenderResource();
 			return ((!!Resource) && (Resource->IsRenderResourceValid()));
 		}
-		virtual void	UninitResource()override
+		virtual void	UninitResource() override
 		{
 			TBaseAsset<TMeshResourceType>::UninitResource();
 			RenderBinding.Release();
@@ -600,13 +600,13 @@ namespace PigeonEngine
 	{
 	public:
 		EStaticMeshAsset(const EString& InMeshPath, const EString& InMeshName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~EStaticMeshAsset();
 	public:
-		virtual BOOL32	InitResource()override;
+		virtual BOOL32	InitResource() override;
 	protected:
 		EStaticMeshRenderResource*	CreateMeshResource(EStaticMesh* InResource);
 	public:
@@ -620,13 +620,13 @@ namespace PigeonEngine
 	{
 	public:
 		ESkinnedMeshAsset(const EString& InMeshPath, const EString& InMeshName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~ESkinnedMeshAsset();
 	public:
-		virtual BOOL32	InitResource()override;
+		virtual BOOL32	InitResource() override;
 	public:
 		void	SetSkeleton(const class ESkeleton* InSkeleton) const;
 		const class ESkeleton*	GetSkeleton() const;
@@ -647,11 +647,11 @@ namespace PigeonEngine
 		typedef TAssetManager<EString, EStaticMeshAsset>	EStaticMeshAssetManager;
 		typedef TAssetManager<EString, ESkinnedMeshAsset>	ESkinnedMeshAssetManager;
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		/*
 		* InIsOptimizeMeshes is passed through to the importer: it decides whether meshes that share
 		* a material are merged, which is a property of what the caller wants from the import rather

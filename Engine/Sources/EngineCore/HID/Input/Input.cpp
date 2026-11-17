@@ -33,16 +33,16 @@ namespace PigeonEngine
 	OnMyMouseEvent EInput::MouseEvent;
 	OnMyKeyEvent   EInput::KeyEvent;
 	IController    EInput::Controller;
-	//BYTE EInput::m_OldKeyState[256];
-	//BYTE EInput::m_KeyState[256];
+	//BYTE EInput::OldKeyState[256];
+	//BYTE EInput::KeyState[256];
 
 	void EInput::Initialize(HWND InhWnd)
 	{
 		// Controller Initialization
 		Controller.Initialize(InhWnd, static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_HEIGHT));
 
-		//memset(m_OldKeyState, 0, 256);
-		//memset(m_KeyState, 0, 256);
+		//memset(OldKeyState, 0, 256);
+		//memset(KeyState, 0, 256);
 	}
 	void EInput::ShutDown()
 	{
@@ -385,11 +385,11 @@ namespace PigeonEngine
 				break;
 			}
 			// process the raw input data
-			auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.GetData());
-			if (ri.header.dwType == RIM_TYPEMOUSE &&
-				(ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
+			const RAWINPUT& RawInput = reinterpret_cast<const RAWINPUT&>(*rawBuffer.GetData());
+			if (RawInput.header.dwType == RIM_TYPEMOUSE &&
+				(RawInput.data.mouse.lLastX != 0 || RawInput.data.mouse.lLastY != 0))
 			{
-				Mouse.OnRawDelta(ri.data.mouse.lLastX, ri.data.mouse.lLastY);
+				Mouse.OnRawDelta(RawInput.data.mouse.lLastX, RawInput.data.mouse.lLastY);
 			}
 			break;
 		}

@@ -292,7 +292,7 @@ namespace PigeonEngine
 						const FSkeletonPaletteEntry& Entry = PaletteEntries[EntryIndex];
 						if ((Entry.BoneIndex < InBoneToRootMatrices.Num<USHORT>()) && (Entry.UploadSlot < BoneValues.Num<USHORT>()))
 						{
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+#if (SKELETON_USE_MATRIX_FOR_BONE_TO_ROOT)
 							BoneValues[Entry.UploadSlot] = (InBoneToRootMatrices[Entry.BoneIndex]) * (*Entry.BindPose);
 #else
 							BoneValues[Entry.UploadSlot] = (InBoneToRootMatrices[Entry.BoneIndex].Transpose()) * (*Entry.BindPose);
@@ -314,7 +314,7 @@ namespace PigeonEngine
 					}
 					SkeletonRenderResource.UpdateRenderResource(BoneValues);
 				}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 				else
 				{
 					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Updating skeleton render resource failed."));

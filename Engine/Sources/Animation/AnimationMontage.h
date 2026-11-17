@@ -55,9 +55,9 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(EAnimMontage)
 
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 
 	public:
 		EString								Name;
@@ -70,8 +70,8 @@ namespace PigeonEngine
 	public:
 		void	Reset();
 		BOOL32	RebuildMappings();
-		BOOL32	IsValid()const;
-		PE_NODISCARD INT32 FindSection(const EString& InName)const;
+		BOOL32	IsValid() const;
+		PE_NODISCARD INT32 FindSection(const EString& InName) const;
 	};
 
 	/*
@@ -109,23 +109,23 @@ namespace PigeonEngine
 		// Multiplies the section's authored rate. A later section switch keeps this value.
 		void SetPlayRate(FLOAT InPlayRate);
 		void SetLoopMode(EAnimationLoopMode InLoopMode);
-		PE_NODISCARD BOOL32 IsPlaying()const;
-		PE_NODISCARD BOOL32 IsStopping()const;
-		PE_NODISCARD INT32 GetSectionIndex()const;
-		PE_NODISCARD FLOAT GetLayerWeight()const;
-		PE_NODISCARD const EAnimationClipPlayer& GetClipPlayer()const;
-		PE_NODISCARD const EAnimMontageSection* GetCurrentSection()const;
+		PE_NODISCARD BOOL32 IsPlaying() const;
+		PE_NODISCARD BOOL32 IsStopping() const;
+		PE_NODISCARD INT32 GetSectionIndex() const;
+		PE_NODISCARD FLOAT GetLayerWeight() const;
+		PE_NODISCARD const EAnimationClipPlayer& GetClipPlayer() const;
+		PE_NODISCARD const EAnimMontageSection* GetCurrentSection() const;
 		// Index of the current section's slot group in the skeleton. Higher values blend
 		// later and therefore override lower layers.
-		PE_NODISCARD INT32 GetLayerPriority()const;
+		PE_NODISCARD INT32 GetLayerPriority() const;
 		// Per-layer state-window list. EAnimInstance owns dispatch; the instance only
 		// stores which events are open for its current timeline.
 		PE_NODISCARD TArray<FActiveAnimNotifyState>& GetActiveNotifyStates();
-		PE_NODISCARD const TArray<FActiveAnimNotifyState>& GetActiveNotifyStates()const;
+		PE_NODISCARD const TArray<FActiveAnimNotifyState>& GetActiveNotifyStates() const;
 
 		// Section chaining: a finished one-shot section leaves a pending target. The caller
 		// dispatches notifies first, then applies the transition for the next advance.
-		PE_NODISCARD BOOL32 HasPendingSectionTransition()const;
+		PE_NODISCARD BOOL32 HasPendingSectionTransition() const;
 		BOOL32 ApplyPendingSectionTransition();
 
 	private:

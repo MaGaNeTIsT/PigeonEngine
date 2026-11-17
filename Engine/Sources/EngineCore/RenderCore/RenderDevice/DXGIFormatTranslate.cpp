@@ -15,7 +15,7 @@ namespace PigeonEngine
 
 	static const RFormatTranslateEntry GFormatTranslateTable[] =
 	{
-#define PE_RFORMAT_TRANSLATE_ENTRY(_NAME) { RFormatType::FORMAT_##_NAME, DXGI_FORMAT_##_NAME },
+#define PE_RFORMAT_TRANSLATE_ENTRY(__Name) { RFormatType::FORMAT_##__Name, DXGI_FORMAT_##__Name },
 		PE_RFORMAT_TYPE_LIST(PE_RFORMAT_TRANSLATE_ENTRY)
 #undef PE_RFORMAT_TRANSLATE_ENTRY
 	};

@@ -2,7 +2,7 @@
 #include "MainManager.h"
 #include <Base/Timer/Timer.h>
 #include <Config/EngineConfig.h>
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #endif
 
@@ -10,7 +10,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam);
 
 INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT32 nCmdShow)
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	// The editor is expected to span monitors with different DPI settings. Without per-monitor
 	// awareness Windows virtualizes coordinates per monitor and the desktop is a discontinuous
 	// space for this process - a panel dragged between displays can land on a position that
@@ -41,7 +41,7 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 			return TRUE;
 		}
 		RECT clientRect = { 0, 0, static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT) };
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		constexpr DWORD WindowStyle = WS_OVERLAPPEDWINDOW;
 #else
 		constexpr DWORD WindowStyle = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
@@ -81,7 +81,7 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 	rid.hwndTarget	= nullptr;
 	::RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	::ShowWindow(windowHandle, SW_SHOWMAXIMIZED);
 	::UpdateWindow(windowHandle);
 	{
@@ -148,13 +148,13 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 	return (INT32)msg.wParam;
 }
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 static PigeonEngine::CImGUIManager* GImGUIManager = PigeonEngine::CImGUIManager::GetManagerSingleton();
 #endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam)
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	if (GImGUIManager)
 	{
 		if (GImGUIManager->WndProcHandler(hWnd, uMsg, wParam, lParam))
@@ -169,7 +169,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		::PostQuitMessage(0);
 		break;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	case WM_EXITSIZEMOVE:
 	{
 		RECT ClientRect = {};

@@ -48,7 +48,7 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(PController)
 	};
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 
 	class PEditorController : public PController

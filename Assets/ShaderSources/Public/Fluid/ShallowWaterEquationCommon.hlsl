@@ -64,16 +64,19 @@ void FluxSimulationUV(
 	out float2	OutLocation,
 	out float2	OutScale,
 	out float2	OutInvScale,
-	out float	OutHeight,
+	out float	OutReferenceY,
 	out float2	OutTexelSize,
 	out float2	OutResolution)
 {
-	OutLocation = float2( AreaLocX, AreaLocY );
-	OutScale = float2( AreaSizeX, AreaSizeY );
-	OutInvScale = float2( 1.0f / AreaSizeX, 1.0f / AreaSizeY );
-	OutHeight = CaptureHeight;
-	OutTexelSize = float2( InvResX, InvResY );
-	OutResolution = float2( ResX, ResY );
+	// The simulation plane is world XZ: Location is its origin, Scale its extent.
+	// ReferenceY is the reference plane's world Y; every height this library reports
+	// is a world Y value.
+	OutLocation = float2( AreaLocationX, AreaLocationZ );
+	OutScale = float2( AreaSizeX, AreaSizeZ );
+	OutInvScale = float2( 1.0f / AreaSizeX, 1.0f / AreaSizeZ );
+	OutReferenceY = CaptureY;
+	OutTexelSize = float2( InverseResolutionX, InverseResolutionZ );
+	OutResolution = float2( ResolutionX, ResolutionZ );
 }
 
 // One state tap. bCleanVelocity became InIsCleanVelocity: the legacy bool had no
@@ -89,8 +92,8 @@ void FluxSample(
 	out float	OutGroundHeightLocal,
 	out float	OutSurfaceHeight)
 {
-	float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize; float2 Resolution;
-	FluxSimulationUV( Location, Scale, InvScale, Height, TexelSize, Resolution );
+	float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize; float2 Resolution;
+	FluxSimulationUV( Location, Scale, InvScale, ReferenceY, TexelSize, Resolution );
 
 	float2 UV = TexelSize.xy * InOffset.xy + InTexcoord.xy;
 	float4 VelocityHeightFoamValue = PE_SAMPLE_TEX2D_LEVEL( VelocityHeightFoamTex, SamplerLinearClamp, UV, 0 ).rgba;
@@ -99,8 +102,10 @@ void FluxSample(
 	OutVelocity = InIsCleanVelocity ? (VelocityHeightFoamValue.xy * step( 0, UV.xy )) : (VelocityHeightFoamValue.xy);
 	OutVolume = VelocityHeightFoamValue.z;
 	OutFoam = VelocityHeightFoamValue.w;
-	OutGroundHeight = Height - GroundValue.x;
-	OutGroundHeightLocal = -(GroundValue.x);
+	// GroundTex stores referenceY - groundWorldY, so subtracting it from the
+	// reference height recovers the ground's world Y.
+	OutGroundHeight = ReferenceY - GroundValue;
+	OutGroundHeightLocal = -(GroundValue);
 	OutSurfaceHeight = max( 0, VelocityHeightFoamValue.z ) + OutGroundHeight;
 }
 
@@ -191,8 +196,8 @@ void FluxAdvectSimulation(
 	float2 Velocity; float Volume; float Foam; float GroundHeight; float GroundHeightLocal; float SurfaceHeight;
 	FluxSample( InTexcoord.xy, InOffset.xy, true, Velocity, Volume, Foam, GroundHeight, GroundHeightLocal, SurfaceHeight );
 
-	float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize; float2 Resolution;
-	FluxSimulationUV( Location, Scale, InvScale, Height, TexelSize, Resolution );
+	float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize; float2 Resolution;
+	FluxSimulationUV( Location, Scale, InvScale, ReferenceY, TexelSize, Resolution );
 
 	float2 UV = ((InOffset.xy - (Velocity.xy * (SimulationDeltaTime))) * TexelSize.xy) + InTexcoord.xy;
 	float4 VelocityHeightFoamValue = PE_SAMPLE_TEX2D_LEVEL( VelocityHeightFoamTex, SamplerLinearClamp, UV, 0 ).rgba;
@@ -218,8 +223,8 @@ void FluxAdvectFoam(
 	FluxSample( InTexcoord.xy, InOffset.xy + float2( 0.0f, -0.5f ), true, Velocity, Volume, Foam, GroundHeight, GroundHeightLocal, SurfaceHeight );
 	VelocityY = Velocity.y;
 
-	float2 Location; float2 Scale; float2 InvScale; float Height; float2 TexelSize; float2 Resolution;
-	FluxSimulationUV( Location, Scale, InvScale, Height, TexelSize, Resolution );
+	float2 Location; float2 Scale; float2 InvScale; float ReferenceY; float2 TexelSize; float2 Resolution;
+	FluxSimulationUV( Location, Scale, InvScale, ReferenceY, TexelSize, Resolution );
 
 	float2 UV = ((InOffset.xy - (float2( VelocityX, VelocityY ) * (SimulationDeltaTime))) * TexelSize.xy) + InTexcoord.xy;
 	float4 VelocityHeightFoamValue = PE_SAMPLE_TEX2D_LEVEL( VelocityHeightFoamTex, SamplerLinearClamp, UV, 0 ).rgba;
@@ -267,7 +272,7 @@ void FluxFoam(
 	float InputFoam = saturate( InFoam );
 	float Dv = dot( InVelocity.xyzw, float4( 0.5f, 0.5f, 0.5f, 0.5f ) );
 	float Foam = max( 0, Dv * (FoamShallowGenerate) ) * saturate( 1 - (InVolume - (FoamShallowDepth)) );
-	Foam = (Dv * (AdvectFoam) * InputFoam + Foam - (FoamFadeSpeed)) * (SimulationDeltaTime) + InputFoam;
+	Foam = (Dv * (FoamAdvection) * InputFoam + Foam - (FoamFadeSpeed)) * (SimulationDeltaTime) + InputFoam;
 
 	OutFoam = saturate( max( Dv * (-(FoamWaveGenerate)), Foam ) );
 }

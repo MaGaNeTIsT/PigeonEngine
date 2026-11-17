@@ -3,7 +3,7 @@
 #include "Component/SceneComponent.h"
 #include "World/World.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #endif
 
@@ -51,13 +51,13 @@ namespace PigeonEngine
 
 	void PActor::Init()
 	{
-		for(const auto& Component : Components)
+		for (PActorComponent* Component : Components)
 		{
 			Component->Init();
 		}
-		for(const auto& child : ChildrenActors)
+		for (PActor* Child : ChildrenActors)
 		{
-			child->Init();
+			Child->Init();
 		}
 		SetInitialized(TRUE);
 	}
@@ -74,7 +74,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (const auto& Component : Components)
+		for (PActorComponent* Component : Components)
 		{
 			if (Component && Component->IsTickable())
 			{
@@ -102,7 +102,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for(const auto& Component : Components)
+		for (PActorComponent* Component : Components)
 		{
 			if (Component && Component->IsTickable())
 			{
@@ -120,7 +120,7 @@ namespace PigeonEngine
 		}
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PActor::EditorTick(FLOAT deltaTime)
 	{
 		this->RootComponent->TickRender();
@@ -128,7 +128,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for(const auto& Component : Components)
+		for (PActorComponent* Component : Components)
 		{
 			if (Component && Component->IsTickable())
 			{
@@ -203,9 +203,9 @@ namespace PigeonEngine
 			return this->ChildrenActors;
 		}
 		TArray<PActor*> Out = this->ChildrenActors;
-		for(const auto& elem : this->ChildrenActors)
+		for (PActor* Element : this->ChildrenActors)
 		{
-			Out.Append(elem->GetAllActorsAttached(TRUE));
+			Out.Append(Element->GetAllActorsAttached(TRUE));
 		}
 		return Out;
 	}
@@ -221,9 +221,9 @@ namespace PigeonEngine
 			return nullptr;
 		}
 
-		for(auto& elem : ChildrenActors)
+		for (PActor* Element : ChildrenActors)
 		{
-			const PActor* Ret = elem->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
+			const PActor* Ret = Element->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
 			if(Ret)
 			{
 				return Ret;
@@ -236,9 +236,9 @@ namespace PigeonEngine
 	void PActor::DetachActorsAttached()
 	{
 		TArray<PActor*> ActorsAttached(this->ChildrenActors);
-		for(auto& elem : ActorsAttached)
+		for (PActor* Actor : ActorsAttached)
 		{
-			elem->DetachFromParentActor();
+			Actor->DetachFromParentActor();
 		}
 	}
 
@@ -246,17 +246,17 @@ namespace PigeonEngine
 	{
 		TArray<PActor*> ActorsAttached(this->ChildrenActors);
 		this->ChildrenActors.Empty();
-		for(auto& elem : ActorsAttached)
+		for (PActor* Actor : ActorsAttached)
 		{
-			if(!elem)
+			if(!Actor)
 			{
 				continue;
 			}
-			if(elem->AttachedParentActor == this)
+			if(Actor->AttachedParentActor == this)
 			{
-				elem->AttachedParentActor = nullptr;
+				Actor->AttachedParentActor = nullptr;
 			}
-			elem->Destroy();
+			Actor->Destroy();
 		}
 	}
 
@@ -274,9 +274,9 @@ namespace PigeonEngine
 		{
 			trans = RootComponent->Transform;
 			TSet<PSceneComponent*> TempComponents = RootComponent->ChildrenComponents;
-			for (auto& elem : TempComponents)
+			for (PSceneComponent* Component : TempComponents)
 			{
-				elem->AttachToComponent(NewRoot);
+				Component->AttachToComponent(NewRoot);
 			}
 			this->RootComponent->AttachToComponent(NewRoot);
 			POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)).Replace("(Root)", ""));
@@ -413,11 +413,11 @@ namespace PigeonEngine
 			return Ret;
 		}
 
-		for(auto& elem : Components)
+		for (PActorComponent* Component : Components)
 		{
-			if(elem->GetUniqueID() == InUniqueID)
+			if(Component->GetUniqueID() == InUniqueID)
 			{
-				return elem;
+				return Component;
 			}
 		}
 		return nullptr;
@@ -431,7 +431,7 @@ namespace PigeonEngine
 
 	void PActor::ClearComponents()
 	{
-		for (const auto& Component : Components)
+		for (PActorComponent* Component : Components)
 		{
 			if (Component && Component != RootComponent)
 			{
@@ -446,7 +446,7 @@ namespace PigeonEngine
 		Components.Empty();
 	}
 
-	EBoundAABB PActor::GetBounds()const
+	EBoundAABB PActor::GetBounds() const
 	{
 		//TODO
 		return this->RootComponent->GetComponentBound();
@@ -473,11 +473,11 @@ namespace PigeonEngine
 	{
 		const BOOL32 bWasAddedToScene = IsAddedToScene();
 		PObject::BeginAddedToScene(World);
-		for (const auto& Component : Components)
+		for (PActorComponent* Component : Components)
 		{
 			Component->OnAddedToScene(this->GetWorld());
 		}
-		for (const auto& Child : ChildrenActors)
+		for (PActor* Child : ChildrenActors)
 		{
 			Child->BeginAddedToScene(this->GetWorld());
 		}
@@ -493,11 +493,11 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (const auto& Component : Components)
+		for (PActorComponent* Component : Components)
 		{
 			Component->OnRemovedFromScene();
 		}
-		for (const auto& Child : ChildrenActors)
+		for (PActor* Child : ChildrenActors)
 		{
 			Child->RemovedFromScene();
 		}
@@ -526,7 +526,7 @@ namespace PigeonEngine
 		return this->RootComponent;
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	void PActor::GenerateWorldOutline(const PActor* WorldCurrentSelectedActor)
 	{
@@ -542,9 +542,9 @@ namespace PigeonEngine
 		if (bTreeNodeExpand)
 		{
 			// child actors
-			for (const auto& elem : ChildrenActors)
+			for (PActor* Element : ChildrenActors)
 			{
-				elem->GenerateWorldOutline(WorldCurrentSelectedActor);
+				Element->GenerateWorldOutline(WorldCurrentSelectedActor);
 			}
 			ImGui::TreePop();
 		}

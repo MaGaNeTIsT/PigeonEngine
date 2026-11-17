@@ -13,15 +13,15 @@ namespace PigeonEngine
 		virtual void	Init() = 0;
 		virtual void	Uninit();
 		virtual void	Tick(FLOAT deltaTime) = 0;
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		virtual void	EditorTick(FLOAT deltaTime) = 0;
 #endif
 	public:
-		virtual BOOL32	IsActive()const;
+		virtual BOOL32	IsActive() const;
 		virtual void	Active();
 		virtual void	Inactive();
 	protected:
-		BOOL32			m_Active;
+		BOOL32			bActive;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PObject)
 

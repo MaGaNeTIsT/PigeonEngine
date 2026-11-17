@@ -33,17 +33,17 @@ namespace PigeonEngine
 		BOOL32 Bind(const ESkeleton* InSkeleton, const ESkeletonAnimation* InAnimation);
 		void Unbind();
 
-		PE_NODISCARD BOOL32 IsValid()const;
-		PE_NODISCARD const ESkeleton* GetSkeleton()const;
-		PE_NODISCARD const ESkeletonAnimation* GetAnimation()const;
-		PE_NODISCARD INT32 GetMissingBoneNum()const;
+		PE_NODISCARD BOOL32 IsValid() const;
+		PE_NODISCARD const ESkeleton* GetSkeleton() const;
+		PE_NODISCARD const ESkeletonAnimation* GetAnimation() const;
+		PE_NODISCARD INT32 GetMissingBoneNum() const;
 
 		/*
 		* The skeleton bone index driven by InCurveIndex of the clip at InClipIndex, or -1
 		* when that curve has no matching bone. Both indices are the same indices the
 		* animation asset itself uses, so a player can keep a clip index and a curve loop.
 		*/
-		PE_NODISCARD INT32 GetBoneIndex(INT32 InClipIndex, INT32 InCurveIndex)const;
+		PE_NODISCARD INT32 GetBoneIndex(INT32 InClipIndex, INT32 InCurveIndex) const;
 
 	private:
 		const ESkeleton*			Skeleton = nullptr;

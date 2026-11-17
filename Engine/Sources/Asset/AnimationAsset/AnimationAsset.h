@@ -27,9 +27,9 @@ namespace PigeonEngine
 
 	struct EBoneAnimationCurve : public ETransformTimeCurve<FLOAT>
 	{
-		EBoneAnimationCurve()noexcept : BoneName(EEngineSettings::ENGINE_DEFAULT_NAME), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
-		EBoneAnimationCurve(const EBoneAnimationCurve& Other)noexcept : ETransformTimeCurve<FLOAT>(Other), BoneName(Other.BoneName), PreState(Other.PreState), PostState(Other.PostState) {}
-		EBoneAnimationCurve(const EString& InBoneName)noexcept : BoneName(InBoneName), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
+		EBoneAnimationCurve() noexcept : BoneName(EEngineSettings::ENGINE_DEFAULT_NAME), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
+		EBoneAnimationCurve(const EBoneAnimationCurve& Other) noexcept : ETransformTimeCurve<FLOAT>(Other), BoneName(Other.BoneName), PreState(Other.PreState), PostState(Other.PostState) {}
+		EBoneAnimationCurve(const EString& InBoneName) noexcept : BoneName(InBoneName), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
 		EBoneAnimationCurve& operator=(const EBoneAnimationCurve& Other)
 		{
 			if (PositionKeys.Num() > 0)
@@ -50,7 +50,7 @@ namespace PigeonEngine
 			PostState = Other.PostState;
 			return (*this);
 		}
-		BOOL32 IsValid()const
+		BOOL32 IsValid() const
 		{
 			return ((PositionKeys.Num() > 0) || (RotationKeys.Num() > 0) || (ScalingKeys.Num() > 0));
 		}
@@ -62,8 +62,8 @@ namespace PigeonEngine
 
 	struct ESkeletonAnimationClip
 	{
-		ESkeletonAnimationClip()noexcept : ClipName(EEngineSettings::ENGINE_DEFAULT_NAME), Duration(0.f), TicksPerSecond(0.f) {}
-		ESkeletonAnimationClip(const ESkeletonAnimationClip& Other)noexcept
+		ESkeletonAnimationClip() noexcept : ClipName(EEngineSettings::ENGINE_DEFAULT_NAME), Duration(0.f), TicksPerSecond(0.f) {}
+		ESkeletonAnimationClip(const ESkeletonAnimationClip& Other) noexcept
 			: ClipName(Other.ClipName), Duration(Other.Duration), TicksPerSecond(Other.TicksPerSecond)
 		{
 			if (const UINT32 AnimationCurveNum = Other.AnimationCurves.Num<UINT32>(); AnimationCurveNum > 0u)
@@ -81,8 +81,8 @@ namespace PigeonEngine
 				}
 			}
 		}
-		ESkeletonAnimationClip(const EString& InClipName)noexcept : ClipName(InClipName), Duration(0.f), TicksPerSecond(0.f) {}
-		ESkeletonAnimationClip& operator=(const ESkeletonAnimationClip& Other)noexcept
+		ESkeletonAnimationClip(const EString& InClipName) noexcept : ClipName(InClipName), Duration(0.f), TicksPerSecond(0.f) {}
+		ESkeletonAnimationClip& operator=(const ESkeletonAnimationClip& Other) noexcept
 		{
 			if (AnimationCurves.Num() > 0)
 			{
@@ -111,7 +111,7 @@ namespace PigeonEngine
 			}
 			return (*this);
 		}
-		BOOL32 IsValid()const
+		BOOL32 IsValid() const
 		{
 			const UINT32 AnimationCurveNum = AnimationCurves.Num();
 			// A tick rate of 0 is accepted here because some FBX files report it; the player
@@ -138,23 +138,23 @@ namespace PigeonEngine
 	class ESkeletonAnimation : public EObjectBase, public EResourceInterface
 	{
 	public:
-		virtual BOOL32	IsResourceValid()const override;
-		virtual BOOL32	InitResource()override;
-		virtual void	ReleaseResource()override;
+		virtual BOOL32	IsResourceValid() const override;
+		virtual BOOL32	InitResource() override;
+		virtual void	ReleaseResource() override;
 	public:
-		const EString&							GetAnimationName()const;
-		INT32									GetAnimationClipNum()const;
-		const ESkeletonAnimationClip*			GetAnimationClip(INT32 InIndex)const;
-		const ESkeletonAnimationClip*			GetAnimationClip(const EString& InClipName)const;
-		const TArray<ESkeletonAnimationClip>&	GetAnimationClips()const;
-		const TMap<EString, INT32>&				GetAnimationClipMapping()const;
+		const EString&							GetAnimationName() const;
+		INT32									GetAnimationClipNum() const;
+		const ESkeletonAnimationClip*			GetAnimationClip(INT32 InIndex) const;
+		const ESkeletonAnimationClip*			GetAnimationClip(const EString& InClipName) const;
+		const TArray<ESkeletonAnimationClip>&	GetAnimationClips() const;
+		const TMap<EString, INT32>&				GetAnimationClipMapping() const;
 		// Mutable access is for the editor, which edits the notify list in place before
 		// saving the asset. Runtime playback only reads the clips.
 		TArray<ESkeletonAnimationClip>&			GetAnimationClips();
 		ESkeletonAnimationClip*					GetAnimationClip(INT32 InIndex);
 		ESkeletonAnimationClip*					GetAnimationClip(const EString& InClipName);
-		PE_NODISCARD const EString&				GetSkeletonName()const;
-		PE_NODISCARD const EString&				GetRootBoneName()const;
+		PE_NODISCARD const EString&				GetSkeletonName() const;
+		PE_NODISCARD const EString&				GetRootBoneName() const;
 	public:
 		void	RebuildWholeMapping();
 		BOOL32	AddAnimationClip(const ESkeletonAnimationClip& InClip);
@@ -190,13 +190,13 @@ namespace PigeonEngine
 	{
 	public:
 		ESkeletonAnimationAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~ESkeletonAnimationAsset();
 	public:
-		virtual BOOL32	InitResource()override;
+		virtual BOOL32	InitResource() override;
 	private:
 		friend class EAnimationManager;
 	public:
@@ -210,11 +210,11 @@ namespace PigeonEngine
 	public:
 		typedef TAssetManager<EString, ESkeletonAnimationAsset>	ESkeletonAnimationAssetManager;
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
-		virtual void	Uninit()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
+		virtual void	Uninit() override;
 	public:
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		/*
 		* Imports an animation asset from a raw source file. InSkeletonName and InRootBoneName
 		* are the skeleton the clips were authored against and the bone that carries root

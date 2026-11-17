@@ -74,7 +74,7 @@ namespace PigeonEngine
 		// inside the same device frame; see IEngineFrameRenderer.
 		void SetPreSceneRenderCallback(const FAfterRenderCallback& InCallback);
 
-		BOOL8 IsRunning()const;
+		BOOL8 IsRunning() const;
 
 	private:
 		void WorkerEntry();

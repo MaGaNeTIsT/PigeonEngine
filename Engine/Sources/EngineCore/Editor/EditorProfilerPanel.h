@@ -5,7 +5,7 @@
 
 namespace PigeonEngine
 {
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 	// One row of either profiler table. A plain value on purpose: a snapshot can
 	// be cached while the panel is paused, so the tables never reach back into

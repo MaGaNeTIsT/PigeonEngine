@@ -21,11 +21,11 @@ namespace PigeonEngine
 	// The environment cube is claimed by two modules on purpose: the sky dome publishes it for
 	// its own draw, and the environment SH bake publishes the same cube as its input. Each draw
 	// provides its own value, so neither is the other's fallback.
-	static const FShaderBindingClaim g_SkyBindingClaims[] =
+	static const FShaderBindingClaim GSkyBindingClaims[] =
 	{
 		{ EName(PE_TEXT("EnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
 	};
-	PE_REGISTER_SHADER_BINDING_CLAIMS(g_SkyBindingClaims, EName(SHADER_BINDING_SCOPE_SKY));
+	PE_REGISTER_SHADER_BINDING_CLAIMS(GSkyBindingClaims, EName(SHADER_BINDING_SCOPE_SKY));
 
 	static void RegisterClassTypes()
 	{
@@ -215,7 +215,7 @@ namespace PigeonEngine
 		WriteShaderScalar(Parameters, BlockName, EName(SHADER_FIELD_CUBE_MEAN_LUMINANCE), MeanLuminanceDivisor);
 		SkyLightParameterBlock.Upload(RenderDevice);
 	}
-	BOOL32 RSkyLightSceneProxy::IsRenderValid()const
+	BOOL32 RSkyLightSceneProxy::IsRenderValid() const
 	{
 		// No mesh in this test any more: the geometry is the engine's fullscreen triangle.
 		//
@@ -224,7 +224,7 @@ namespace PigeonEngine
 		// stages, the cube asset or the cube's device object is what is missing - and on a back-end
 		// whose shaders have not been built yet it is the first of them. The report is deduplicated
 		// per reason, so a sky that stays broken costs one line rather than one per frame.
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		if (!RSkyLightSceneProxy::SkyProgram)
 		{
 			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("its sky program is not resolved")));
@@ -258,7 +258,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	void RSkyLightSceneProxy::BindRenderResource()const
+	void RSkyLightSceneProxy::BindRenderResource() const
 	{
 		// Everything the sky binds is bound inside Draw, right after the pipeline state that
 		// would otherwise void it. The hook stays because the renderer calls it first.
@@ -362,7 +362,7 @@ namespace PigeonEngine
 		FullScreenTriangle.BindPrimitiveBuffers(CmdList, *SkyProgram);
 		CmdList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
 	}
-	void RSkyLightSceneProxy::BindEnvironmentCube(IRCommandList* InCommandList)const
+	void RSkyLightSceneProxy::BindEnvironmentCube(IRCommandList* InCommandList) const
 	{
 		if ((!InCommandList) || (!SkyProgram))
 		{

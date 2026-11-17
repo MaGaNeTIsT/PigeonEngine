@@ -65,10 +65,10 @@ public:
 	const FCharacterContactListener* GetListener() const;
 
 private:
-	const FCharacterVirtualSettings m_CharacterCreateSettings;
-	CharacterVirtual* m_Character = nullptr;
-	CharacterVirtualSettings* m_CharacterSettings = nullptr;
-	FCharacterContactListener m_CharacterContactListener;
+	const FCharacterVirtualSettings CharacterCreateSettings;
+	CharacterVirtual* CharacterInstance = nullptr;
+	CharacterVirtualSettings* CharacterSettingsInstance = nullptr;
+	FCharacterContactListener ContactListenerInstance;
 };
 
 using FCharacterSettings = FCharacterVirtualSettings;

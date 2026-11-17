@@ -55,11 +55,11 @@ namespace PigeonEngine
 	}
 
 	EAnimMontageAsset::EAnimMontageAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TBaseAsset<EAnimMontage>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -82,7 +82,7 @@ namespace PigeonEngine
 
 	EAnimMontageManager::EAnimMontageManager()
 	{
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		DebugName = "AnimationMontageManager";
 #endif
 	}
@@ -115,7 +115,7 @@ namespace PigeonEngine
 		MontageAssetManager.Clear();
 	}
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	BOOL32 EAnimMontageManager::ImportMontage(const EString& InAssetName, const EString& InJsonFullPathName, const EString& InSavePath)
 	{
 		EString JsonText;
@@ -205,7 +205,7 @@ namespace PigeonEngine
 		}
 
 		EAnimMontageAsset* NewAsset = new EAnimMontageAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -249,7 +249,7 @@ namespace PigeonEngine
 		}
 
 		EAnimMontageAsset* FreshAsset = new EAnimMontageAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InLoadName
 #endif
 		);
@@ -369,7 +369,7 @@ namespace PigeonEngine
 
 		EAnimMontageAsset* FreshAsset = new EAnimMontageAsset(InAsset->GetAssetPath()
 			, InAsset->GetAssetName()
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 			, InAsset->GetAssetName()
 #endif
 		);

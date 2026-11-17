@@ -1,7 +1,7 @@
 #include "PrimitiveComponent.h"
 #include <Shader/ShaderEngineParameters.h>
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <imgui.h>
 #endif
@@ -179,7 +179,7 @@ namespace PigeonEngine
 	}
 	// Render proxy functions END
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 	void PPrimitiveComponent::GenerateComponentDetail()
 	{
 		PSceneComponent::GenerateComponentDetail();
@@ -188,6 +188,6 @@ namespace PigeonEngine
 		// replacement of this UI lands in a later phase. So today an editor build shows
 		// the primitive component without any material slot editing section.
 	}
-#endif // _EDITOR_ONLY
+#endif // ENGINE_EDITOR_ONLY
 
 };

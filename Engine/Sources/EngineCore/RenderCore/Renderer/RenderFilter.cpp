@@ -47,7 +47,7 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 		return ((FPhysicsCommonSettings::GetSingleton()->bDrawCollision != FALSE) ? TRUE : FALSE);
 #else
 		return TRUE;

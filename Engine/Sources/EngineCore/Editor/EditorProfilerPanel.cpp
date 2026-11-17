@@ -1,6 +1,6 @@
 #include "EditorProfilerPanel.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 #include <Base/RTTI/RTTIManager.h>
 #include <imgui.h>
@@ -50,7 +50,7 @@ namespace PigeonEngine
 	// order stable for equal values.
 	// -----------------------------------------------------------------------
 
-#if _ENABLE_PROFILER
+#if ENGINE_ENABLE_PROFILER
 
 	static INT32 CompareProfilerText(const CHAR* InLeft, const CHAR* InRight)
 	{
@@ -525,7 +525,7 @@ namespace PigeonEngine
 		}
 	}
 
-#endif	// _ENABLE_PROFILER
+#endif	// ENGINE_ENABLE_PROFILER
 
 	// -----------------------------------------------------------------------
 	// Snapshots
@@ -537,7 +537,7 @@ namespace PigeonEngine
 		GpuRows.Empty();
 		CounterRows.Empty();
 
-#if _CPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_CPU_PROFILER
 		// The GameThread bracket runs exactly once per frame, so its sample count is the frame
 		// count every other CPU scope is divided by.
 		EProfileScopeStat GameThreadScopeStat;
@@ -597,7 +597,7 @@ namespace PigeonEngine
 		}
 #endif
 
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 		EProfiler* Profiler = EProfiler::GetManagerSingleton();
 		EProfileScopeStat FrameStat;
 		const BOOL32 bHasFrameStat = Profiler->GetGPUStat(EName(PROFILER_SCOPE_GPU_FRAME), FrameStat);
@@ -719,8 +719,8 @@ namespace PigeonEngine
 		}
 		bWindowOpen = bOpen ? TRUE : FALSE;
 
-#if !_ENABLE_PROFILER
-		ImGui::TextDisabled("Profiler disabled (_ENABLE_PROFILER=0).");
+#if !ENGINE_ENABLE_PROFILER
+		ImGui::TextDisabled("Profiler disabled (ENGINE_ENABLE_PROFILER=0).");
 		ImGui::TextDisabled("Rebuild with PIGEON_ENABLE_PROFILER=ON to capture samples.");
 		ImGui::End();
 		return;
@@ -786,7 +786,7 @@ namespace PigeonEngine
 		// time, so their per-frame cell is left empty rather than summing concurrent samples.
 		ImGui::TextDisabled("Per-Frame = Avg x calls/frame; approx, workers excluded");
 
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 		// A GPU sample that never arrived: the D3D11 delay ring ran out of
 		// retries, or a D3D12 readback failed. Named here because a missing row
 		// and a row that never had data look the same in the table.
@@ -798,7 +798,7 @@ namespace PigeonEngine
 		{
 			if (ImGui::BeginTabItem("CPU Threads"))
 			{
-#if _CPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_CPU_PROFILER
 				DrawProfilerTreeTable("##cpu_threads", CpuTree, CpuRootNodes, FALSE);
 #else
 				ImGui::TextDisabled("CPU profiler disabled.");
@@ -807,7 +807,7 @@ namespace PigeonEngine
 			}
 			if (ImGui::BeginTabItem("GPU"))
 			{
-#if _GPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_GPU_PROFILER
 				DrawProfilerTable("##gpu_passes", GpuRows, TRUE);
 #else
 				ImGui::TextDisabled("GPU profiler disabled.");
@@ -816,7 +816,7 @@ namespace PigeonEngine
 			}
 			if (ImGui::BeginTabItem("Counters"))
 			{
-#if _CPU_ENABLE_PROFILER
+#if ENGINE_ENABLE_CPU_PROFILER
 				DrawCounterTable("##cpu_counters", CounterRows);
 #else
 				ImGui::TextDisabled("CPU profiler disabled.");

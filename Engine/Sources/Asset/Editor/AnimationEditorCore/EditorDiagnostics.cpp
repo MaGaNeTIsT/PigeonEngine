@@ -1,6 +1,6 @@
 #include "EditorDiagnostics.h"
 
-#if _EDITOR_ONLY
+#if ENGINE_EDITOR_ONLY
 
 namespace PigeonEngine
 {
