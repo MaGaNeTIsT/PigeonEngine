@@ -197,6 +197,12 @@ namespace PigeonEngine
 
 	void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
 	{
+		// Historic overload: the attach keeps whatever transform the caller already set.
+		AddActor(NewActor, EAttachmentRuleType::KEEP_CURRENT, Trans);
+	}
+
+	void PWorld::AddActor(PActor* NewActor, EAttachmentRuleType InRule, const ETransform& RelativeTransform)
+	{
 		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor != nullptr);
 		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding world root to world.", NewActor != RootActor);
 
@@ -212,18 +218,10 @@ namespace PigeonEngine
 			}
 		}
 
-		NewActor->AttachToActor(RootActor);
-		// NOTE: previously this unconditionally called
-		//     NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
-		// with the default-arg identity ETransform - which silently
-		// overwrote any location/rotation the caller set via
-		// SetActorLocation *before* AddActor. The result was that the
-		// first CreateRenderState (called inside BeginAddedToScene below)
-		// always saw identity world transform, and the camera's ViewMatrix
-		// stayed identity for the entire first frame. Removing the call;
-		// callers that need an attach-time transform should set it via
-		// SetActorLocation/SetActorRotation before or after AddActor.
-		(void)Trans;
+		NewActor->AttachToActor(RootActor, InRule, RelativeTransform);
+		// The attach rule decides the transform: KEEP_CURRENT (what the historic overload
+		// uses) keeps whatever the caller set before the add, KEEP_WORLD preserves the
+		// world transform, KEEP_RELATIVE applies RelativeTransform.
 		if (!NewActor->IsInitialized())
 		{
 			NewActor->Init();

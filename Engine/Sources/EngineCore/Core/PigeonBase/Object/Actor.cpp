@@ -161,7 +161,7 @@ namespace PigeonEngine
 	void PActor::DetachFromParentActor()
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "This actor belong to no world", this->GetWorld() != nullptr);
-		ETransform WolrdTrans = this->GetActorWorldTransform();
+		const ETransform WorldTrans = this->GetActorWorldTransform();
 		if(this->AttachedParentActor)
 		{
 			this->AttachedParentActor->ChildrenActors.Remove(this);
@@ -169,9 +169,11 @@ namespace PigeonEngine
 		}
 		this->RootComponent->DetachFromParentComponent();
 		this->GetWorld()->AddActor(this);
-		this->SetActorLocation(WolrdTrans.GetLocation_Local());
-		this->SetActorRotation(WolrdTrans.GetRotation_Local());
-		this->SetActorScale(WolrdTrans.GetScaling_Local());
+		// Re-home under the world root and keep the world transform: the root actor's
+		// transform is part of the parent chain now, so the local one has to be recomputed
+		// against it (setting the world values as local ones was only correct when the
+		// root actor happened to be at identity).
+		this->RootComponent->SetComponentWorldTransform(WorldTrans);
 	}
 
 	void PActor::AttachToActor(PActor* Parent, const ETransform& RelativeTransform)
@@ -179,12 +181,28 @@ namespace PigeonEngine
 		PActor::AttachActorToActor(this, Parent, RelativeTransform);
 	}
 
+	void PActor::AttachToActor(PActor* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform)
+	{
+		PActor::AttachActorToActor(this, Parent, InRule, RelativeTransform);
+	}
+
 	void PActor::AttachActorTo(PActor* Child, const ETransform& RelativeTransform)
 	{
 		PActor::AttachActorToActor(Child, this, RelativeTransform);
 	}
 
+	void PActor::AttachActorTo(PActor* Child, EAttachmentRuleType InRule, const ETransform& RelativeTransform)
+	{
+		PActor::AttachActorToActor(Child, this, InRule, RelativeTransform);
+	}
+
 	void PActor::AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform)
+	{
+		// Historic overload: keep whatever transform the child already has.
+		PActor::AttachActorToActor(Child, Parent, EAttachmentRuleType::KEEP_CURRENT, RelativeTransform);
+	}
+
+	void PActor::AttachActorToActor(PActor* Child, PActor* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform)
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "You are attaching an actor to itself", Child != Parent);
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching actor to actor", Child && Parent && Child->GetRootComponent() && Parent->GetRootComponent());
@@ -207,7 +225,7 @@ namespace PigeonEngine
 		{
 			Child->AttachedParentActor->ChildrenActors.Remove(Child);
 		}
-		PSceneComponent::AttachComponentToComponent(Child->GetRootComponent(), Parent->GetRootComponent(), RelativeTransform);
+		PSceneComponent::AttachComponentToComponent(Child->GetRootComponent(), Parent->GetRootComponent(), InRule, RelativeTransform);
 		if(!Parent->ChildrenActors.Contains(Child))
 		{
 			Parent->ChildrenActors.Add(Child);

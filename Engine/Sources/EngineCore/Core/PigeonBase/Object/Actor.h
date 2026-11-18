@@ -98,9 +98,12 @@ protected:
 		virtual void DetachFromParentActor();
 		// Attach this actor to another;
 		virtual void AttachToActor(PActor* Parent, const ETransform& RelativeTransform = ETransform());
+		virtual void AttachToActor(PActor* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
 		// Attach another actor to this;
 		virtual void AttachActorTo(PActor* Child, const ETransform& RelativeTransform = ETransform());
+		virtual void AttachActorTo(PActor* Child, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
+		static void AttachActorToActor(PActor* Child, PActor* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
 
 		PE_NODISCARD TArray<PActor*> GetAllActorsAttached(BOOL8 bRecursive = FALSE) const;
 

@@ -66,6 +66,10 @@ namespace PigeonEngine
 		PE_NODISCARD const PActor*          GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
 	void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
+	// Attach-rule version: KEEP_WORLD adds an actor whose transform the caller already
+	// set in world space without the world root re-basing it; KEEP_RELATIVE applies the
+	// provided transform relative to the world root.
+	void AddActor(PActor* NewActor, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
 	// Takes the actor out of the world and every lookup without destroying it; the
 	// caller keeps ownership.
 	void RemoveActor(PActor* Actor);
