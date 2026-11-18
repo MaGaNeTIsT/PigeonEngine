@@ -131,6 +131,8 @@ namespace PigeonEngine
 
 	void PWorld::OnDestroy()
 	{
+		// Anything still queued dies with the world, through the same orchestrated path.
+		FlushPendingDestroy();
 #if ENGINE_EDITOR_ONLY
 		EditorController = nullptr;
 		// The whole world is going away; nothing can stay selected in it.
@@ -234,7 +236,14 @@ namespace PigeonEngine
 	void PWorld::RemoveActor(PActor* Actor)
 	{
 		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::RemoveActor : Removing nullptr from world.", Actor != nullptr);
-		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::RemoveActor : Actor does not belong to this world.", Actor->GetWorld() == this);
+		if (Actor->GetWorld() != this)
+		{
+			// Not this world's actor: its parent lives in another tree, and the checks
+			// below would reach across worlds. PE_CHECK only reports in some builds, so
+			// the return matters as much as the check.
+			PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::RemoveActor : Actor does not belong to this world.", FALSE);
+			return;
+		}
 
 		// Leave the parent's child list without DetachFromParentActor, which re-homes
 		// the actor under this world's root; removal wants it out of the tree entirely.
@@ -263,6 +272,100 @@ namespace PigeonEngine
 		{
 			ActorById.Remove(Actor->GetUniqueID());
 		}
+	}
+
+	void PWorld::DestroyActor(PActor* Actor)
+	{
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::DestroyActor : Destroying nullptr actor.", Actor != nullptr);
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::DestroyActor : Destroying the world root.", Actor != RootActor);
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::DestroyActor : Destroying the active controller.", Actor != GetController());
+		if (Actor->IsPendingDestroy())
+		{
+			return;
+		}
+		if (Actor->GetWorld() != this)
+		{
+			// Not this world's actor, so not this world's destroy either; queueing it
+			// would delete memory another world still walks.
+			PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::DestroyActor : Actor does not belong to this world.", FALSE);
+			return;
+		}
+		// Mark-time exit from everything that can reach a dying actor this frame: the
+		// tree (no tick walk gets here), the registry (no lookup, editor pick or
+		// post-physics handler gets here) and physics. RemovedFromScene also runs now,
+		// so UserEndPlay and the component scene cleanup see a whole object.
+		RemoveActor(Actor);
+		Actor->MarkPendingDestroy();
+		// Bodies are keyed by the actor's ID and the removal is idempotent, so the
+		// component teardown at flush time finds nothing left and is a no-op.
+		FPhysicsManager::GetManagerSingleton()->RemoveBody(Actor->GetUniqueID(), TRUE);
+		PendingDestroyActors.Add(Actor);
+	}
+
+	void PWorld::DestroyComponent(PActorComponent* Component)
+	{
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::DestroyComponent : Destroying nullptr component.", Component != nullptr);
+		if (Component->IsPendingDestroy())
+		{
+			return;
+		}
+		if (const PActor* Owner = Component->GetOwnerActor())
+		{
+			if (Owner->GetWorld() && (Owner->GetWorld() != this))
+			{
+				// The component hangs under another world's actor; queueing it here would
+				// delete memory that world still walks.
+				PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::DestroyComponent : Component's owner belongs to another world.", FALSE);
+				return;
+			}
+		}
+		Component->MarkPendingDestroy();
+		// Scene exit at mark time ends sensor bodies and post-physics handlers
+		// immediately; the memory stays until the flush.
+		Component->OnRemovedFromScene();
+		if (PActor* Owner = Component->GetOwnerActor())
+		{
+			Owner->RemoveComponentReference(Component);
+		}
+		if (PSceneComponent* SceneComponent = dynamic_cast<PSceneComponent*>(Component))
+		{
+			SceneComponent->DetachFromParentComponent();
+		}
+		PendingDestroyComponents.Add(Component);
+	}
+
+	void PWorld::FlushPendingDestroy()
+	{
+		if (bFlushingPendingDestroy)
+		{
+			return;
+		}
+		if ((PendingDestroyActors.Num<UINT32>() == 0u) && (PendingDestroyComponents.Num<UINT32>() == 0u))
+		{
+			return;
+		}
+		bFlushingPendingDestroy = TRUE;
+		TArray<PActor*> ActorsToDestroy;
+		ActorsToDestroy.Append(PendingDestroyActors);
+		PendingDestroyActors.Empty();
+		TArray<PActorComponent*> ComponentsToDestroy;
+		ComponentsToDestroy.Append(PendingDestroyComponents);
+		PendingDestroyComponents.Empty();
+		for (UINT32 Index = 0u, Num = ComponentsToDestroy.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (ComponentsToDestroy[Index])
+			{
+				ComponentsToDestroy[Index]->Destroy();
+			}
+		}
+		for (UINT32 Index = 0u, Num = ActorsToDestroy.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (ActorsToDestroy[Index])
+			{
+				ActorsToDestroy[Index]->Destroy();
+			}
+		}
+		bFlushingPendingDestroy = FALSE;
 	}
 
 

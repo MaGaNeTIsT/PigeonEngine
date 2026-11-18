@@ -461,6 +461,15 @@ namespace PigeonEngine
 		// hand-off to the render thread rather than the game work alone.
 		PE_PROFILE_SCOPE(PROFILER_SCOPE_GAME_THREAD);
 
+		// Deferred destruction lands here: every tick, physics callback and editor
+		// update of the previous pass has unwound by now, so the queued objects can be
+		// deleted without any loop still holding them. Update runs at least as often as
+		// the fixed step, so requests made inside FixedUpdate are covered too.
+		if (PWorld* World = WorldManager->GetWorld())
+		{
+			World->FlushPendingDestroy();
+		}
+
 		// Async with render thread
 		GameTimer->Update();
 		// Navigation runs before the world: a bake that finished while the previous frame rendered is

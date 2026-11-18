@@ -38,12 +38,18 @@ namespace PigeonEngine
 		BOOL32 IsTickable() const;
 		BOOL32 IsInitialized() const;
 		BOOL32 IsAddedToScene() const;
+		// Deferred-destruction mark, set by PWorld::DestroyActor/DestroyComponent when
+		// the object enters the pending-destroy queue. The object stays alive until the
+		// queue flushes, but tick and lookup paths treat it as already gone.
+		void MarkPendingDestroy();
+		BOOL32 IsPendingDestroy() const;
 	private:
 		BOOL32 bCanTick = FALSE;
 		// Scene membership is orthogonal to the destroy phase, so it stays a plain flag:
 		// an object can be DESTROYING while still "in scene" until RemovedFromScene ran.
 		BOOL32 bAddedToScene = FALSE;
 		EObjectLifecycleStateType LifecycleState = EObjectLifecycleStateType::CREATED;
+		BOOL32 bPendingDestroy = FALSE;
 	public:
 		// Non-virtual teardown orchestrator (see EObjectLifecycleStateType above).
 		// Idempotent: entering Destroy on an object already DESTROYING or DESTROYED is a

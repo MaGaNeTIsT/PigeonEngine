@@ -69,6 +69,16 @@ namespace PigeonEngine
 	// Takes the actor out of the world and every lookup without destroying it; the
 	// caller keeps ownership.
 	void RemoveActor(PActor* Actor);
+	// Queues the actor for destruction at the next flush. The actor stops ticking,
+	// simulating and being looked up immediately - it leaves the tree, the registry and
+	// the physics at mark time - but its memory stays valid until the flush, so loops
+	// and callbacks that still hold it are safe.
+	void DestroyActor(PActor* Actor);
+	// Queues a component the same way; its scene registration ends at mark time.
+	void DestroyComponent(PActorComponent* Component);
+	// Runs the queued destructions. Called at the top of every Update, once the ticks,
+	// physics callbacks and editor updates of the previous pass have all unwound.
+	void FlushPendingDestroy();
 	// Registry maintenance: drops an actor from the flat index. Called from the actor's
 	// own RemovedFromScene - every destroy path funnels through it while the world
 	// pointer is still set - and from RemoveActor; a no-op for an unregistered actor.
@@ -81,6 +91,12 @@ private:
 	// longer walk (and copy) the tree.
 	TSet<PActor*> AllActors;
 	TMap<ObjectIdentityType, PActor*> ActorById;
+	// Objects queued by DestroyActor/DestroyComponent. The queues are copied out at
+	// flush time, so a destroy requested during the flush itself (from a UserEndPlay or
+	// an OnDestroy) lands in the live queues and waits for the next one.
+	TArray<PActor*> PendingDestroyActors;
+	TArray<PActorComponent*> PendingDestroyComponents;
+	BOOL32 bFlushingPendingDestroy = FALSE;
 #if ENGINE_EDITOR_ONLY
 	public:
 		void AddSceneToWorld(PScene* NewScene);

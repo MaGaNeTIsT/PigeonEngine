@@ -32,6 +32,16 @@ namespace PigeonEngine
 		return this->bCanTick;
 	}
 
+	void PObject::MarkPendingDestroy()
+	{
+		bPendingDestroy = TRUE;
+	}
+
+	BOOL32 PObject::IsPendingDestroy() const
+	{
+		return bPendingDestroy;
+	}
+
 	void PObject::Destroy()
 	{
 		// The flags are captured before the state flips so that no hook below can change

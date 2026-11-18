@@ -469,6 +469,14 @@ namespace PigeonEngine
 			PE_LOG_WARN(EString(PE_TEXT("DestroyComponent: component is not in this actor's list, skipped.")));
 			return;
 		}
+		// With a world, destruction defers to its pending-destroy queue: a caller inside
+		// a tick, a physics callback or UserEndPlay cannot know whether some loop still
+		// holds this component. Without one (teardown, detached actor), destroy now.
+		if (PWorld* World = GetWorld())
+		{
+			World->DestroyComponent(Component);
+			return;
+		}
 		Component->Destroy();
 	}
 
