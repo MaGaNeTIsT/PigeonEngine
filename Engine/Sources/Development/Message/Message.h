@@ -2,6 +2,8 @@
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Text/Name.h>
+#include <Base/Delegate/Delegate.h>
+#include <MultiThread/Atomic.h>
 
 namespace PigeonEngine
 {
@@ -221,6 +223,12 @@ namespace PigeonEngine
 
 		TMap<EName, TArray<FMessageListener>> MessageListeners;
 		UINT32 NextListenerID = 1u;
+		// Engine-lifetime hook that purges a dying object's subscriptions. Set in
+		// Initialize, removed in ShutDown.
+		FDelegateHandle ObjectPreDeleteHandle = 0u;
+		// TRUE outside the engine lifetime: Subscribe and Broadcast are refused rather
+		// than accepted into a bus that is closing.
+		TAtomic<BOOL32> bIsShutDown;
 
 		CLASS_MANAGER_SINGLETON_BODY(EMessageManager)
 	};

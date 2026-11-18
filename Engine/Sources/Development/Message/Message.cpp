@@ -1,5 +1,22 @@
 #include "Message.h"
+#include <PigeonBase/Object/Object.h>
 
+/*
+* Message bus contract:
+*   - Game thread only. Subscribe/Unsubscribe/Send/Broadcast are not synchronized and
+*     are expected to be called from the game thread, the owner of every PObject.
+*   - Object-bound subscriptions die with their owner. When a PObject is destroyed,
+*     PObject::OnObjectPreDelete fires and the bus unsubscribes that object, so a
+*     component only has to keep the returned FMessageListenerHandle - no manual
+*     unsubscription is required for safety. Unsubscribe(handle) remains available for
+*     "stop receiving earlier" in Uninit.
+*   - A plain lambda subscription without an owner is NOT covered by that cleanup.
+*     Long-lived component code must subscribe through the object-bound overloads
+*     (passing `this`), or unsubscribe itself.
+*   - Dispatch is synchronous and walks a copy of the listener list, so listeners may
+*     subscribe/unsubscribe from inside a callback. The copy is also why messages are
+*     meant for occasional broadcasts, not per-frame hot paths.
+*/
 namespace PigeonEngine
 {
 	EMessageBase::EMessageBase(const EName& InMessageName)
@@ -80,17 +97,35 @@ namespace PigeonEngine
 	{
 		Clear();
 		NextListenerID = 1u;
+		bIsShutDown.Store(FALSE);
+		// The bus is the first global observer of the object lifecycle: a destroyed
+		// object's subscriptions must go with it, and OnObjectPreDelete is the one point
+		// every PObject destroy path passes while the object is still valid.
+		ObjectPreDeleteHandle = PObject::OnObjectPreDelete.Add(
+			TFunction<void(PObject*)>([this](PObject* Object) -> void
+			{
+				this->Unsubscribe(Object);
+			}));
 	}
 
 	void EMessageManager::ShutDown()
 	{
+		// Off the lifecycle hook first: an object destroyed after this point must not
+		// call back into a bus that is closing.
+		if (ObjectPreDeleteHandle != 0u)
+		{
+			PObject::OnObjectPreDelete.Remove(ObjectPreDeleteHandle);
+			ObjectPreDeleteHandle = 0u;
+		}
+		bIsShutDown.Store(TRUE);
 		Clear();
+		NextListenerID = 1u;
 	}
 
 	FMessageListenerHandle EMessageManager::SubscribeMessage(const EName& InMessageName, const FMessageCallback& InCallback)
 	{
 		FMessageListenerHandle Result;
-		if (!InMessageName.IsValid())
+		if ((bIsShutDown.Load() != FALSE) || (!InMessageName.IsValid()))
 		{
 			return Result;
 		}
@@ -118,7 +153,7 @@ namespace PigeonEngine
 	FMessageListenerHandle EMessageManager::SubscribeObjectMessage(const EName& InMessageName, const EObjectBase* InObject, const FMessageCallback& InCallback)
 	{
 		FMessageListenerHandle Result;
-		if (!InMessageName.IsValid() || (InObject == nullptr))
+		if ((bIsShutDown.Load() != FALSE) || (!InMessageName.IsValid()) || (InObject == nullptr))
 		{
 			return Result;
 		}
@@ -169,7 +204,9 @@ namespace PigeonEngine
 
 	BOOL32 EMessageManager::Unsubscribe(const EObjectBase* InObject)
 	{
-		if (!InObject)
+		// Called from PObject::OnObjectPreDelete for every destroyed object, so the empty
+		// case is a hot path and must cost one branch.
+		if ((!InObject) || (MessageListeners.Num<UINT32>() == 0u))
 		{
 			return FALSE;
 		}
@@ -211,6 +248,11 @@ namespace PigeonEngine
 
 	UINT32 EMessageManager::Broadcast(const EMessageBase& InMessage)
 	{
+		if (bIsShutDown.Load() != FALSE)
+		{
+			return 0u;
+		}
+
 		const TArray<FMessageListener>* ListenerList = MessageListeners.FindValueAsPtr(InMessage.GetMessageName());
 		if (!ListenerList || ListenerList->IsEmpty())
 		{

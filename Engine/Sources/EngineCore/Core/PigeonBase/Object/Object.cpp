@@ -14,6 +14,8 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	TDelegateBroadcast<void (PObject*)> PObject::OnObjectPreDelete;
+
 	PObject::PObject() : EObjectBase()
 	{
 	}
@@ -63,6 +65,9 @@ namespace PigeonEngine
 			Uninit();
 		}
 		OnPreDelete();
+		// Global observers (the message bus purging this object's subscriptions) drop
+		// their references while the object is still complete and its ID still readable.
+		OnObjectPreDelete.Broadcast(this);
 		LifecycleState = EObjectLifecycleStateType::DESTROYED;
 		delete this;
 	}

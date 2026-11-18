@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Base/Delegate/Delegate.h>
 
 
 namespace PigeonEngine
@@ -65,6 +66,14 @@ namespace PigeonEngine
 		// Detach from the owner's lists as the final step before the memory goes away.
 		// Runs after Uninit, so a component uninitializing can still use its owner.
 		virtual void OnPreDelete();
+
+	public:
+		// Engine-wide notification raised by the destroy orchestrator after OnPreDelete
+		// and before the memory goes away: the object is still complete, so global
+		// observers (the message bus purging that object's subscriptions, debug
+		// trackers) can drop their references safely. Fires for every destroyed PObject,
+		// so listeners must be cheap.
+		static TDelegateBroadcast<void (PObject*)> OnObjectPreDelete;
 
 	public:
 		virtual TSharedPtr<CJsonObject> Serialize();
