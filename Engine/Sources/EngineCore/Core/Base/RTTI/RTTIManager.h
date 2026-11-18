@@ -52,6 +52,63 @@ namespace PigeonEngine
 		}
 
 		/// <summary>
+		/// Register [_TType] with a stable name. The stable name is the on-disk class
+		/// identity for level/asset files; unlike typeid hashes it must not change across
+		/// engine versions. It also becomes the readable name used by debug output.
+		/// </summary>
+		template<typename _TType, typename... _TParentTypes>
+		void SaveClassInfoWithStableName(const CHAR* InStableName)
+		{
+			ProcessClassInfoInternal<_TType, _TParentTypes...>();
+			const size_t TypeHashCode = GetClassHashCode<_TType>();
+			const std::string StableName(InStableName);
+			ClassTypeInfos[TypeHashCode].StableName = StableName;
+			StableNameToHash.insert_or_assign(StableName, TypeHashCode);
+			ClassHashToName.insert_or_assign(TypeHashCode, StableName);
+		}
+
+		/// <summary>
+		/// Stable (on-disk) name of a registered class; "" when none was registered.
+		/// </summary>
+		const CHAR* GetClassStableName(const size_t& InClassHashCode) const
+		{
+			std::map<size_t, EClassTypeInfo>::const_iterator It = ClassTypeInfos.find(InClassHashCode);
+			if ((It != ClassTypeInfos.end()) && (!It->second.StableName.empty()))
+			{
+				return (It->second.StableName.c_str());
+			}
+			return "";
+		}
+
+		/// <summary>
+		/// Hash of a class by its stable name; size_t(-1) when unknown.
+		/// </summary>
+		size_t GetClassHashCodeByStableName(const CHAR* InStableName) const
+		{
+			std::map<std::string, size_t>::const_iterator It = StableNameToHash.find(InStableName);
+			if (It != StableNameToHash.end())
+			{
+				return (It->second);
+			}
+			return (static_cast<size_t>(-1));
+		}
+
+		/// <summary>
+		/// First registered parent class hash; size_t(-1) when the class has none. The OCA
+		/// hierarchy is single inheritance, so this is the class chain property
+		/// serialization follows (root first, then derived).
+		/// </summary>
+		size_t GetClassParentHash(const size_t& InClassHashCode) const
+		{
+			std::map<size_t, EClassTypeInfo>::const_iterator It = ClassTypeInfos.find(InClassHashCode);
+			if ((It != ClassTypeInfos.end()) && (!It->second.ParentHashCodes.empty()))
+			{
+				return (*(It->second.ParentHashCodes.begin()));
+			}
+			return (static_cast<size_t>(-1));
+		}
+
+		/// <summary>
 		/// Get name [typeid.name] of class by hash code [typeid.hash_code]
 		/// </summary>
 		/// <param name="InClassHashCode"></param>
@@ -303,7 +360,7 @@ namespace PigeonEngine
 		{
 			EClassTypeInfo() : TypeName(EEngineSettings::ENGINE_DEFAULT_NAME), TypeHashCode(static_cast<size_t>(-1)) {}
 			EClassTypeInfo(const std::string& InTypeName, const size_t& InTypeHashCode) : TypeName(InTypeName), TypeHashCode(InTypeHashCode) {}
-			EClassTypeInfo(const EClassTypeInfo& Other) : TypeName(Other.TypeName), TypeHashCode(Other.TypeHashCode)
+			EClassTypeInfo(const EClassTypeInfo& Other) : TypeName(Other.TypeName), TypeHashCode(Other.TypeHashCode), StableName(Other.StableName)
 			{
 				for (std::set<size_t>::const_iterator It = Other.ParentHashCodes.begin(); It != Other.ParentHashCodes.end(); It++)
 				{
@@ -318,6 +375,7 @@ namespace PigeonEngine
 			{
 				TypeName = Other.TypeName;
 				TypeHashCode = Other.TypeHashCode;
+				StableName = Other.StableName;
 				if (ParentHashCodes.size() > 0u)
 				{
 					ParentHashCodes.clear();
@@ -338,6 +396,8 @@ namespace PigeonEngine
 			}
 
 			std::string         TypeName;
+			// On-disk class identity for level/asset files. Empty until registered.
+			std::string         StableName;
 			size_t              TypeHashCode;
 			std::set<size_t>    ParentHashCodes;
 			std::set<size_t>    ChildHashCodes;
@@ -432,6 +492,7 @@ namespace PigeonEngine
 		std::map<size_t, EClassTypeInfo>        ClassTypeInfos;
 		std::map<size_t, std::string>           ClassHashToName;
 		std::map<std::string, size_t>           ClassNameToHash;
+		std::map<std::string, size_t>           StableNameToHash;
 		std::map<size_t, ERawPtrFunctionType>   ClassFactories;
 	private:
 		ERTTIManager() {}
@@ -574,6 +635,42 @@ namespace PigeonEngine
 	PE_INLINE void RegisterClassType()
 	{
 		ERTTIManager::GetManagerSingleton()->SaveClassInfo<_TType, _TParentTypes...>();
+	}
+
+	template<typename _TType, typename... _TParentTypes>
+	PE_INLINE void RegisterSerializableClassType(const CHAR* InStableName)
+	{
+		ERTTIManager::GetManagerSingleton()->SaveClassInfoWithStableName<_TType, _TParentTypes...>(InStableName);
+	}
+
+	// Registers a default-construction factory for a concrete class, so a saved level or
+	// asset can instantiate it from its stable name.
+	template<typename _TType>
+	PE_INLINE void SaveDefaultClassFactory()
+	{
+		SaveClassFactoryFunction<_TType>([]() -> void* { return static_cast<void*>(new _TType()); });
+	}
+
+	// Stable-name lookup: the on-disk class identity.
+	PE_INLINE size_t GetClassHashCodeByStableName(const CHAR* InStableName)
+	{
+		return (ERTTIManager::GetManagerSingleton()->GetClassHashCodeByStableName(InStableName));
+	}
+
+	PE_INLINE const CHAR* GetClassStableName(const size_t& InClassHashCode)
+	{
+		return (ERTTIManager::GetManagerSingleton()->GetClassStableName(InClassHashCode));
+	}
+
+	PE_INLINE size_t GetClassParentHash(const size_t& InClassHashCode)
+	{
+		return (ERTTIManager::GetManagerSingleton()->GetClassParentHash(InClassHashCode));
+	}
+
+	template<typename _TType>
+	PE_INLINE _TType* CreateClassObjectByStableName(const CHAR* InStableName)
+	{
+		return (CreateClassObject<_TType>(GetClassHashCodeByStableName(InStableName)));
 	}
 
 	template<typename _TType>
