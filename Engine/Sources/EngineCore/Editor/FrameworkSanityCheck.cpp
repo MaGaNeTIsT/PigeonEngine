@@ -9,6 +9,7 @@
 #include "PigeonBase/Object/Component/Primitive/StaticMeshComponent.h"
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "HID/Input/Input.h"
+#include "Development/Message/Message.h"
 #include <Editor/EditorLogManager.h>
 
 namespace PigeonEngine
@@ -58,6 +59,37 @@ namespace PigeonEngine
 	private:
 		EDestroyTargetType DestroyTarget = EDestroyTargetType::NONE;
 		PActor* OtherActor = nullptr;
+	};
+
+	// Actor that subscribes through the object-bound overload in Init and keeps only the
+	// returned listener ID. Nothing unsubscribes on purpose: the bus is expected to purge
+	// the subscription when the object dies, via PObject::OnObjectPreDelete.
+	class PSanityMessageSubscriber : public PActor
+	{
+	public:
+		PSanityMessageSubscriber(const EName& InMessageName)
+			: SubscriptionMessageName(InMessageName)
+		{
+		}
+
+		void Init() override
+		{
+			PActor::Init();
+			MessageListener = EMessageManager::GetManagerSingleton()->Subscribe(
+				SubscriptionMessageName,
+				this,
+				TFunction<void(const EMessageBase&)>([this](const EMessageBase&) -> void
+				{
+					ReceivedCount += 1u;
+				}));
+		}
+
+	public:
+		UINT32 ReceivedCount = 0u;
+		FMessageListenerHandle MessageListener;
+
+	private:
+		EName SubscriptionMessageName;
 	};
 
 	static void ReportSanityResult(const EString& InCheckName, const BOOL32& InIsPassed)
@@ -312,6 +344,53 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	static BOOL32 CheckMessageSubscriptionLifetime(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		EMessageManager* MessageManager = EMessageManager::GetManagerSingleton();
+		const EName TestMessageName(PE_TEXT("FrameworkSanityCheck.TestMessage"));
+
+		PSanityMessageSubscriber* Subscriber = new PSanityMessageSubscriber(TestMessageName);
+		POBJ_DEBUGNAME_SET(Subscriber, "SanityMessageSubscriber");
+		InWorld->AddActor(Subscriber);
+		if (MessageManager->GetListenerNum(TestMessageName) != 1u)
+		{
+			InWorld->DestroyActor(Subscriber);
+			InWorld->FlushPendingDestroy();
+			return FALSE;
+		}
+
+		// One delivery proves the subscription is live before the lifetime check.
+		MessageManager->Send(TestMessageName);
+		if (Subscriber->ReceivedCount != 1u)
+		{
+			InWorld->DestroyActor(Subscriber);
+			InWorld->FlushPendingDestroy();
+			return FALSE;
+		}
+
+		// The subscriber never unsubscribes: PObject::OnObjectPreDelete must purge its
+		// listener, and a later broadcast must be a safe no-op. The pointer is not
+		// touched after the flush.
+		InWorld->DestroyActor(Subscriber);
+		InWorld->FlushPendingDestroy();
+		if (MessageManager->GetListenerNum(TestMessageName) != 0u)
+		{
+			return FALSE;
+		}
+		MessageManager->Send(TestMessageName);
+
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return TRUE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -360,6 +439,12 @@ namespace PigeonEngine
 		const BOOL32 bUnaddedObjectDestroy = CheckUnaddedObjectDestroy(InWorld);
 		ReportSanityResult(EString(PE_TEXT("destroy of never-added objects")), bUnaddedObjectDestroy);
 		if (!bUnaddedObjectDestroy)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bMessageSubscriptionLifetime = CheckMessageSubscriptionLifetime(InWorld);
+		ReportSanityResult(EString(PE_TEXT("message subscription lifetime")), bMessageSubscriptionLifetime);
+		if (!bMessageSubscriptionLifetime)
 		{
 			FailedCount += 1u;
 		}
