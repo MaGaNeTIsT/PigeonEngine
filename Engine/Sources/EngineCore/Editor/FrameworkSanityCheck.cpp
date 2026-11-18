@@ -106,6 +106,21 @@ namespace PigeonEngine
 		}
 	}
 
+	static BOOL32 AreMatricesNearlyEqual(const Matrix4x4& InA, const Matrix4x4& InB, const FLOAT& InTolerance)
+	{
+		for (UINT32 Row = 0u; Row < 4u; Row++)
+		{
+			for (UINT32 Column = 0u; Column < 4u; Column++)
+			{
+				if (EMath::Abs(InA(Row, Column) - InB(Row, Column)) > InTolerance)
+				{
+					return FALSE;
+				}
+			}
+		}
+		return TRUE;
+	}
+
 	// Spawns an actor holding a nested component chain (root -> child -> grandchild,
 	// all in the actor's component list) plus one non-scene component. Components are
 	// added and scene-registered the way real content is, so the destroy scenarios run
@@ -391,6 +406,136 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	static BOOL32 CheckWorldTransformComposition(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		// A three-level chain with rotation and scale at every level. The cached world
+		// matrix must equal the manual product Local3 * Local2 * Local1 * ActorRootWorld
+		// (row-vector convention, child on the left) - this is the check that pins the
+		// multiplication order the engine's math expects.
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityTransformActor");
+		Actor->SetActorLocation(Vector3(100.f, 20.f, -30.f));
+		Actor->SetActorRotation(MakeQuaternion(Euler(10.f, 25.f, -5.f)));
+		Actor->SetActorScale(Vector3(1.5f, 1.5f, 1.5f));
+		InWorld->AddActor(Actor);
+
+		PSceneComponent* Level1 = new PSceneComponent();
+		Actor->AddComponent(Level1);
+		Level1->SetComponentLocation(Vector3(10.f, 0.f, 5.f));
+		Level1->SetComponentRotation(MakeQuaternion(Euler(0.f, 45.f, 0.f)));
+		Level1->SetComponentScale(Vector3(2.f, 2.f, 2.f));
+
+		PSceneComponent* Level2 = new PSceneComponent();
+		Actor->AddComponent(Level2);
+		Level2->AttachToComponent(Level1);
+		Level2->SetComponentLocation(Vector3(0.f, 7.f, 0.f));
+		Level2->SetComponentRotation(MakeQuaternion(Euler(30.f, 0.f, 15.f)));
+		Level2->SetComponentScale(Vector3(0.5f, 0.5f, 0.5f));
+
+		PSceneComponent* Level3 = new PSceneComponent();
+		Actor->AddComponent(Level3);
+		Level3->AttachToComponent(Level2);
+		Level3->SetComponentLocation(Vector3(0.f, 0.f, 12.f));
+		Level3->SetComponentRotation(MakeQuaternion(Euler(0.f, 0.f, 90.f)));
+
+		const Matrix4x4 ExpectedMatrix =
+			Level3->GetTransform().ToMatrix()
+			* Level2->GetTransform().ToMatrix()
+			* Level1->GetTransform().ToMatrix()
+			* Actor->GetRootComponent()->GetCachedLocalToWorldMatrix();
+		const BOOL32 bMatrixMatches = AreMatricesNearlyEqual(Level3->GetCachedLocalToWorldMatrix(), ExpectedMatrix, 1.0e-3f);
+
+		const Vector3 CachedLocation = Level3->GetComponentWorldLocation();
+		const Vector3 MatrixLocation(ExpectedMatrix._41, ExpectedMatrix._42, ExpectedMatrix._43);
+		const BOOL32 bLocationMatches = (Vector3::Length(CachedLocation - MatrixLocation) <= 1.0e-3f);
+
+		// Nested actor: the child actor's root is parented to the parent actor's root, and
+		// the parent must enter the chain exactly once. The old transform code added the
+		// parent actor's root through both the component chain and the actor chain.
+		PActor* ParentActor = new PActor();
+		POBJ_DEBUGNAME_SET(ParentActor, "SanityTransformParentActor");
+		ParentActor->SetActorLocation(Vector3(-80.f, 40.f, 15.f));
+		ParentActor->SetActorRotation(MakeQuaternion(Euler(-15.f, 40.f, 5.f)));
+		ParentActor->SetActorScale(Vector3(1.2f, 1.2f, 1.2f));
+		InWorld->AddActor(ParentActor);
+
+		PActor* ChildActor = new PActor();
+		POBJ_DEBUGNAME_SET(ChildActor, "SanityTransformChildActor");
+		ChildActor->SetActorLocation(Vector3(0.f, 12.f, 0.f));
+		InWorld->AddActor(ChildActor);
+		ChildActor->AttachToActor(ParentActor);
+
+		PSceneComponent* NestedComponent = new PSceneComponent();
+		ChildActor->AddComponent(NestedComponent);
+		NestedComponent->SetComponentLocation(Vector3(0.f, 0.f, 20.f));
+
+		const Matrix4x4 ExpectedNested =
+			NestedComponent->GetTransform().ToMatrix()
+			* ChildActor->GetRootComponent()->GetTransform().ToMatrix()
+			* ParentActor->GetRootComponent()->GetCachedLocalToWorldMatrix();
+		const BOOL32 bNestedMatches = AreMatricesNearlyEqual(NestedComponent->GetCachedLocalToWorldMatrix(), ExpectedNested, 1.0e-3f);
+
+		InWorld->DestroyActor(ParentActor);
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return (bMatrixMatches && bLocationMatches && bNestedMatches) ? TRUE : FALSE;
+	}
+
+	static BOOL32 CheckAttachmentRules(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		PActor* HostActor = new PActor();
+		POBJ_DEBUGNAME_SET(HostActor, "SanityAttachHostActor");
+		HostActor->SetActorLocation(Vector3(-40.f, 10.f, 25.f));
+		HostActor->SetActorRotation(MakeQuaternion(Euler(20.f, 35.f, -10.f)));
+		InWorld->AddActor(HostActor);
+
+		PSceneComponent* HostComponent = new PSceneComponent();
+		HostActor->AddComponent(HostComponent);
+		HostComponent->SetComponentRotation(MakeQuaternion(Euler(0.f, 60.f, 0.f)));
+		HostComponent->SetComponentScale(Vector3(1.5f, 1.5f, 1.5f));
+
+		PSceneComponent* FloatingComponent = new PSceneComponent();
+		HostActor->AddComponent(FloatingComponent);
+		FloatingComponent->SetComponentLocation(Vector3(5.f, 0.f, 8.f));
+		FloatingComponent->SetComponentRotation(MakeQuaternion(Euler(0.f, 0.f, 30.f)));
+
+		// KEEP_WORLD: reparenting under a rotated, scaled parent must not move the child
+		// in world space.
+		const Matrix4x4 WorldBefore = FloatingComponent->GetCachedLocalToWorldMatrix();
+		FloatingComponent->AttachToComponent(HostComponent, EAttachmentRuleType::KEEP_WORLD);
+		const BOOL32 bWorldKept = AreMatricesNearlyEqual(FloatingComponent->GetCachedLocalToWorldMatrix(), WorldBefore, 1.0e-3f);
+
+		// KEEP_RELATIVE: the provided transform becomes the child's local transform.
+		const ETransform RelativeTransform(
+			Vector3(1.f, 2.f, 3.f),
+			MakeQuaternion(Euler(0.f, 15.f, 0.f)),
+			Vector3(2.f, 2.f, 2.f));
+		FloatingComponent->AttachToComponent(HostComponent, EAttachmentRuleType::KEEP_RELATIVE, RelativeTransform);
+		const BOOL32 bRelativeApplied = AreMatricesNearlyEqual(FloatingComponent->GetTransform().ToMatrix(), RelativeTransform.ToMatrix(), 1.0e-4f);
+
+		InWorld->DestroyActor(HostActor);
+		InWorld->FlushPendingDestroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return (bWorldKept && bRelativeApplied) ? TRUE : FALSE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -445,6 +590,18 @@ namespace PigeonEngine
 		const BOOL32 bMessageSubscriptionLifetime = CheckMessageSubscriptionLifetime(InWorld);
 		ReportSanityResult(EString(PE_TEXT("message subscription lifetime")), bMessageSubscriptionLifetime);
 		if (!bMessageSubscriptionLifetime)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bWorldTransformComposition = CheckWorldTransformComposition(InWorld);
+		ReportSanityResult(EString(PE_TEXT("world transform composition")), bWorldTransformComposition);
+		if (!bWorldTransformComposition)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bAttachmentRules = CheckAttachmentRules(InWorld);
+		ReportSanityResult(EString(PE_TEXT("attachment rules")), bAttachmentRules);
+		if (!bAttachmentRules)
 		{
 			FailedCount += 1u;
 		}

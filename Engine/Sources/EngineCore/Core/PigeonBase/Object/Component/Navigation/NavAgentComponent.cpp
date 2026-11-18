@@ -4,6 +4,7 @@
 #include <Navigation/NavigationManager.h>
 #include <Navigation/NavigationProviderInterface.h>
 #include <PigeonBase/Object/Actor.h>
+#include <PigeonBase/Object/Component/SceneComponent.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
@@ -300,11 +301,11 @@ namespace PigeonEngine
 			}
 		}
 
-		// The actor level write, matching how the physics component publishes a simulated body:
-		// actor coordinates are world coordinates for an actor parented to the world root, which
-		// is how the engine spawns actors. PSceneComponent::SetComponentWorldLocation is not used
-		// here because its parent frame differs from the getter's for a nested actor.
-		OwnerActor->SetActorLocation(CurrentLocation);
+		// World-space write on the owner's root component. The component-chain world
+		// transform makes this correct for an actor at any depth, not only one parented
+		// directly to the world root: the old getter and setter disagreed about the parent
+		// frame for a nested actor, which is why the actor-level local write was used.
+		OwnerActor->GetRootComponent()->SetComponentWorldLocation(CurrentLocation);
 
 		FaceDirection(*OwnerActor, MoveDirection, Settings.TurnSpeedDegreesPerSecond, InDeltaTime);
 
