@@ -182,6 +182,34 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
+	PActor* PWorld::ResolveActor(const FObjectHandle& InHandle) const
+	{
+		if (!InHandle.IsValid())
+		{
+			return nullptr;
+		}
+		PActor* const* Found = ActorById.FindValueAsPtr(InHandle.UniqueID);
+		if (Found && ((*Found)->GetGeneration() == InHandle.Generation))
+		{
+			return (*Found);
+		}
+		return nullptr;
+	}
+
+	PActorComponent* PWorld::ResolveComponent(const FObjectHandle& InHandle) const
+	{
+		if (!InHandle.IsValid())
+		{
+			return nullptr;
+		}
+		PActorComponent* const* Found = ComponentById.FindValueAsPtr(InHandle.UniqueID);
+		if (Found && ((*Found)->GetGeneration() == InHandle.Generation))
+		{
+			return (*Found);
+		}
+		return nullptr;
+	}
+
 	void PWorld::RegisterComponent(PActorComponent* Component)
 	{
 		if (!Component)

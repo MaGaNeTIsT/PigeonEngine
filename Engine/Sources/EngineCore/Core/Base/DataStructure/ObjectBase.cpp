@@ -45,6 +45,13 @@ namespace PigeonEngine
 	{
 		return UniqueID;
 	}
+	UINT32 EObjectBase::GetGeneration() const
+	{
+		// IDs are never reused in this engine, so a fresh object always starts at
+		// generation 1; the field exists so handle checks stay meaningful if recycling is
+		// ever introduced.
+		return Generation;
+	}
 	BOOL32 EObjectBase::operator==(const EObjectBase& obj)
 	{
 		return (GetUniqueID() == obj.GetUniqueID());

@@ -27,7 +27,8 @@ namespace PigeonEngine
 
 	public:
 		void	SetSimulation(PWaterSimulationComponent* InSimulation);
-		PE_NODISCARD PWaterSimulationComponent*	GetSimulation() const noexcept { return Simulation; }
+		// Resolved through the world on use; returns nullptr once the simulation is gone.
+		PE_NODISCARD PWaterSimulationComponent*	GetSimulation() const;
 		void	SetWaterHeightScale(const FLOAT InHeightScale);
 		void	SetWaterMaxHeight(const FLOAT InMaxHeight);
 		PE_NODISCARD FLOAT	GetWaterHeightScale() const noexcept { return WaterHeightScale; }
@@ -45,7 +46,10 @@ namespace PigeonEngine
 		virtual void			TickRenderImpl() override;
 
 	private:
-		PWaterSimulationComponent*	Simulation			= nullptr;
+		// A handle, not a pointer: the simulation may be destroyed while the surface
+		// lives, and every consumer resolves through the world (which fails cleanly then).
+		// The render side already passes the identity through the snapshot.
+		FObjectHandle				SimulationHandle;
 		FLOAT						WaterHeightScale	= 1.f;
 		FLOAT						WaterMaxHeight		= 1000.f;
 

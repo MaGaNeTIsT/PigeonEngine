@@ -1,6 +1,7 @@
 #include "WaterSurfaceComponent.h"
 
 #include <PigeonBase/Object/Component/Water/WaterSimulationComponent.h>
+#include <PigeonBase/Object/World/World.h>
 #include <Renderer/ScenePass.h>
 #include <ShaderAsset/ShaderInstance.h>
 
@@ -35,8 +36,17 @@ namespace PigeonEngine
 
 	void PWaterSurfaceComponent::SetSimulation(PWaterSimulationComponent* InSimulation)
 	{
-		Simulation = InSimulation;
+		SimulationHandle = MakeObjectHandle(InSimulation);
 		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS | PRIMITIVE_UPDATE_VALUES);
+	}
+
+	PWaterSimulationComponent* PWaterSurfaceComponent::GetSimulation() const
+	{
+		if ((!SimulationHandle.IsValid()) || (!GetWorld()))
+		{
+			return nullptr;
+		}
+		return GetWorld()->ResolveComponent<PWaterSimulationComponent>(SimulationHandle);
 	}
 
 	void PWaterSurfaceComponent::SetWaterHeightScale(const FLOAT InHeightScale)
@@ -78,7 +88,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-		if (Simulation)
+		if (PWaterSimulationComponent* Simulation = GetSimulation())
 		{
 			InOutReport.SetNamedIdentity(EName(PE_TEXT("WaterSimulation")), Simulation->GetUniqueID());
 		}
@@ -91,7 +101,7 @@ namespace PigeonEngine
 		const EName BlockName(PE_TEXT("WaterSurfaceParams"));
 		InOutValues.SetScalar(BlockName, EName(PE_TEXT("WaterHeightScale")), WaterHeightScale);
 		InOutValues.SetScalar(BlockName, EName(PE_TEXT("WaterMaxHeight")), WaterMaxHeight);
-		InOutValues.SetScalar(BlockName, EName(PE_TEXT("WaterEnable")), ((Simulation != nullptr) ? 1.f : 0.f));
+		InOutValues.SetScalar(BlockName, EName(PE_TEXT("WaterEnable")), ((GetSimulation() != nullptr) ? 1.f : 0.f));
 	}
 
 }	// namespace PigeonEngine

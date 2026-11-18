@@ -70,6 +70,16 @@ namespace PigeonEngine
 		PE_NODISCARD TArray<PActor*>        GetAllActors() const;
 		PE_NODISCARD const PActor*          GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
+	// Handle resolution: looks the object up in the registries and validates its
+	// generation, so a reference to a destroyed object resolves to nullptr instead of a
+	// dangling pointer. Cross-object references are meant to be stored as handles.
+	PE_NODISCARD PActor* ResolveActor(const FObjectHandle& InHandle) const;
+	PE_NODISCARD PActorComponent* ResolveComponent(const FObjectHandle& InHandle) const;
+	template <typename TComponent>
+	PE_NODISCARD TComponent* ResolveComponent(const FObjectHandle& InHandle) const
+	{
+		return dynamic_cast<TComponent*>(ResolveComponent(InHandle));
+	}
 	void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
 	// Attach-rule version: KEEP_WORLD adds an actor whose transform the caller already
 	// set in world space without the world root re-basing it; KEEP_RELATIVE applies the

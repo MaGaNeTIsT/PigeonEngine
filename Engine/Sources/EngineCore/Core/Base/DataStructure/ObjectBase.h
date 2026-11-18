@@ -12,10 +12,38 @@ namespace PigeonEngine
 
 	typedef ULONGLONG	ObjectIdentityType;
 
+	/*
+	* Stable, generational reference to an engine object. A handle stores identity only:
+	* resolving it goes through the world's registries and fails once the object is gone,
+	* which is what makes cross-object references (a component reading another component
+	* across actors) safe under deferred destruction. The generation guards against
+	* future ID reuse; IDs are currently never reused, so it is currently 1 for every
+	* live object.
+	*/
+	struct FObjectHandle
+	{
+	public:
+		ObjectIdentityType	UniqueID = 0u;
+		UINT32				Generation = 0u;
+
+		PE_NODISCARD BOOL32 IsValid() const { return (UniqueID != 0u) ? TRUE : FALSE; }
+		BOOL32 operator==(const FObjectHandle& Other) const
+		{
+			return ((UniqueID == Other.UniqueID) && (Generation == Other.Generation)) ? TRUE : FALSE;
+		}
+		BOOL32 operator!=(const FObjectHandle& Other) const
+		{
+			return (!((*this) == Other)) ? TRUE : FALSE;
+		}
+	};
+
 	class EObjectBase : public ERTTIObject
 	{
 	public:
 		const ObjectIdentityType& GetUniqueID() const;
+		// Generation of this object's identity. Paired with the ID in FObjectHandle so a
+		// reference stays invalid if IDs are ever recycled.
+		PE_NODISCARD UINT32 GetGeneration() const;
 	public:
 		BOOL32 operator==(const EObjectBase& obj);
 		BOOL32 operator!=(const EObjectBase& obj);
@@ -27,6 +55,7 @@ namespace PigeonEngine
 #endif
 	private:
 		ObjectIdentityType UniqueID;
+		UINT32 Generation = 1u;
 #if ENGINE_EDITOR_ONLY
 	public:
 		const EString&	GetDebugName() const;
@@ -38,6 +67,17 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(EObjectBase)
 
 	};
+
+	PE_NODISCARD inline FObjectHandle MakeObjectHandle(const EObjectBase* InObject)
+	{
+		FObjectHandle Result;
+		if (InObject)
+		{
+			Result.UniqueID = InObject->GetUniqueID();
+			Result.Generation = InObject->GetGeneration();
+		}
+		return Result;
+	}
 
 #if ENGINE_EDITOR_ONLY
 
