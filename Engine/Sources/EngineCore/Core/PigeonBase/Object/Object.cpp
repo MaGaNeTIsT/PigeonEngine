@@ -44,6 +44,26 @@ namespace PigeonEngine
 		return bPendingDestroy;
 	}
 
+	void PObject::SetTickGroup(const ETickGroupType& InGroup)
+	{
+		TickGroup = InGroup;
+	}
+
+	ETickGroupType PObject::GetTickGroup() const
+	{
+		return TickGroup;
+	}
+
+	void PObject::SetTickPriority(const INT32& InPriority)
+	{
+		TickPriority = InPriority;
+	}
+
+	INT32 PObject::GetTickPriority() const
+	{
+		return TickPriority;
+	}
+
 	void PObject::Destroy()
 	{
 		// The flags are captured before the state flips so that no hook below can change

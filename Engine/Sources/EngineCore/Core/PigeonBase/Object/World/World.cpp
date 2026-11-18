@@ -80,6 +80,9 @@ namespace PigeonEngine
 	{
 		if (RootActor)
 		{
+			// Render updates first and independently of tickability: deferred asset applies
+			// and render-state sends must resolve even on a non-tickable actor's subtree.
+			RootActor->TickRenderTree();
 			RootActor->Tick(deltaTime);
 		}
 
@@ -185,7 +188,14 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// Re-adding an actor walks its components again; only a first registration is an
+		// event.
+		const BOOL32 bWasRegistered = ComponentById.ContainsKey(Component->GetUniqueID());
 		ComponentById.Add(Component->GetUniqueID(), Component);
+		if (!bWasRegistered)
+		{
+			OnComponentAdded.Broadcast(Component);
+		}
 	}
 
 	void PWorld::UnregisterComponent(PActorComponent* Component)
@@ -198,6 +208,7 @@ namespace PigeonEngine
 		if (ComponentById.ContainsKey(Component->GetUniqueID()))
 		{
 			ComponentById.Remove(Component->GetUniqueID());
+			OnComponentRemoved.Broadcast(Component);
 		}
 	}
 
@@ -233,8 +244,14 @@ namespace PigeonEngine
 			NewActor->Init();
 		}
 		NewActor->BeginAddedToScene(this);
-		AllActors.Add(NewActor);
+		// The component hooks registered everything while the scene-add ran; index the
+		// actor last so listeners see a fully registered object.
+		if (!AllActors.Contains(NewActor))
+		{
+			AllActors.Add(NewActor);
+		}
 		ActorById.Add(NewActor->GetUniqueID(), NewActor);
+		OnActorAdded.Broadcast(NewActor);
 	}
 
 	void PWorld::RemoveActor(PActor* Actor)
@@ -270,11 +287,14 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// Every removal path can reach this twice (RemoveActor, then the actor's own
+		// RemovedFromScene); only a real unregistration raises the event.
+		const BOOL32 bWasRegistered = ActorById.ContainsKey(Actor->GetUniqueID());
 		AllActors.Remove(Actor);
-		// TMap::Remove goes through find-then-erase, which must not see a missing key.
-		if (ActorById.ContainsKey(Actor->GetUniqueID()))
+		if (bWasRegistered)
 		{
 			ActorById.Remove(Actor->GetUniqueID());
+			OnActorRemoved.Broadcast(Actor);
 		}
 	}
 
@@ -366,6 +386,9 @@ namespace PigeonEngine
 		{
 			if (ActorsToDestroy[Index])
 			{
+				// Last point where the actor is still a valid object: listeners get to
+				// drop their references before the destroy orchestration runs.
+				OnActorDestroyed.Broadcast(ActorsToDestroy[Index]);
 				ActorsToDestroy[Index]->Destroy();
 			}
 		}

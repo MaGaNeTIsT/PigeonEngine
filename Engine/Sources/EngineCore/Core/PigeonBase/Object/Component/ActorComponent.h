@@ -38,6 +38,18 @@ namespace PigeonEngine
 		void BeginAddedToScene(PWorld* World) override;
 		void RemovedFromScene() override;
 
+		// Post-physics tick. The base registers one handler on EWorldTickManager that
+		// re-resolves this component by ID every fixed tick - the pattern the physics,
+		// movement and trigger components each used to copy - and dispatches to the
+		// virtual hook. Subclasses register from BeginAddedToScene, unregister from
+		// RemovedFromScene, and override HandlePostPhysicsTick.
+		void RegisterPostPhysicsTick();
+		void UnregisterPostPhysicsTick();
+		virtual void HandlePostPhysicsTick(FLOAT deltaTime);
+	private:
+		TFunction<void(FLOAT)> PostPhysicsTickHandler;
+		BOOL32 bPostPhysicsTickRegistered = FALSE;
+
 		// Render proxy functions START
 	public:
 		virtual BOOL32	IsVisible() const;

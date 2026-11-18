@@ -72,20 +72,38 @@ namespace PigeonEngine
 		PObject::Uninit();
 	}
 
+	void PActor::RebuildTickOrder()
+	{
+		TickOrder = Components;
+		// Stable: equal (group, priority) keys keep registration order, which is the
+		// tie-breaker that makes the tick order identical across runs.
+		TickOrder.StableSort([](const PActorComponent* InA, const PActorComponent* InB) -> BOOL32
+		{
+			if (InA->GetTickGroup() != InB->GetTickGroup())
+			{
+				return (InA->GetTickGroup() < InB->GetTickGroup()) ? TRUE : FALSE;
+			}
+			return (InA->GetTickPriority() < InB->GetTickPriority()) ? TRUE : FALSE;
+		});
+	}
+
 	void PActor::Tick(FLOAT deltaTime)
 	{
-		this->RootComponent->TickRender();
-		if (!IsTickable())// if actor is not tickable will skip tick and fixed tick of components and child actors.
+		if (IsTickable())
 		{
-			return;
-		}
-		for (PActorComponent* Component : Components)
-		{
-			if (Component && Component->IsTickable())
+			// (group, priority, registration) order, fixed when the component list changed.
+			for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
 			{
-				Component->Tick(deltaTime);
+				PActorComponent* Component = TickOrder[Index];
+				if (Component && Component->IsTickable())
+				{
+					Component->Tick(deltaTime);
+				}
 			}
+			UserTick(deltaTime);
 		}
+		// Children tick on their own tickable flag: a non-tickable parent no longer freezes
+		// its subtree, and render updates run in TickRenderTree regardless.
 		// By index rather than by reference: a tick may spawn actors - a scene builder does exactly
 		// that - and appending to ChildrenActors reallocates the array, so a range over it would keep
 		// a reference into the buffer the reallocation freed. An index into the live array cannot
@@ -93,32 +111,47 @@ namespace PigeonEngine
 		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
 		{
 			PActor* Child = ChildrenActors[ChildIndex];
-			if (Child && Child->IsTickable())
+			if (Child)
 			{
 				Child->Tick(deltaTime);
 			}
 		}
-		UserTick(deltaTime);
+	}
+
+	void PActor::TickRenderTree()
+	{
+		if (RootComponent)
+		{
+			RootComponent->TickRender();
+		}
+		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
+		{
+			PActor* Child = ChildrenActors[ChildIndex];
+			if (Child)
+			{
+				Child->TickRenderTree();
+			}
+		}
 	}
 
 	void PActor::FixedTick(FLOAT deltaTime)
 	{
-		if (!IsTickable())// if actor is not tickable will skip tick and fixed tick of components and child actors.
+		if (IsTickable())
 		{
-			return;
-		}
-		for (PActorComponent* Component : Components)
-		{
-			if (Component && Component->IsTickable())
+			for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
 			{
-				Component->FixedTick(deltaTime);
+				PActorComponent* Component = TickOrder[Index];
+				if (Component && Component->IsTickable())
+				{
+					Component->FixedTick(deltaTime);
+				}
 			}
 		}
 		// Same reason as Tick: a fixed tick may spawn actors too, so the list is walked by index.
 		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
 		{
 			PActor* Child = ChildrenActors[ChildIndex];
-			if (Child && Child->IsTickable())
+			if (Child)
 			{
 				Child->FixedTick(deltaTime);
 			}
@@ -128,16 +161,15 @@ namespace PigeonEngine
 #if ENGINE_EDITOR_ONLY
 	void PActor::EditorTick(FLOAT deltaTime)
 	{
-		this->RootComponent->TickRender();
-		if(!IsTickable())
+		if(IsTickable())
 		{
-			return;
-		}
-		for (PActorComponent* Component : Components)
-		{
-			if (Component && Component->IsTickable())
+			for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
 			{
-				Component->EditorTick(deltaTime);
+				PActorComponent* Component = TickOrder[Index];
+				if (Component && Component->IsTickable())
+				{
+					Component->EditorTick(deltaTime);
+				}
 			}
 		}
 		// Same reason as Tick: the editor tick is the one a scene builder runs inside, so this is
@@ -145,7 +177,7 @@ namespace PigeonEngine
 		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
 		{
 			PActor* Child = ChildrenActors[ChildIndex];
-			if (Child && Child->IsTickable())
+			if (Child)
 			{
 				Child->EditorTick(deltaTime);
 			}
@@ -335,6 +367,8 @@ namespace PigeonEngine
 			this->RootComponent->OnAddedToScene(this->GetWorld());
 		}
 
+		// The component list changed (possibly from the constructor, before any world).
+		RebuildTickOrder();
 	}
 
 	Vector3 PActor::GetActorLocation() const
@@ -447,6 +481,7 @@ namespace PigeonEngine
 			AttachComponentToActor(SceneComp, this, RelativeTransform);
 		}
 		this->Components.Add(NewComponent);
+		RebuildTickOrder();
 		if (this->GetWorld())
 		{
 			if (!NewComponent->IsInitialized())
@@ -505,6 +540,7 @@ namespace PigeonEngine
 		// The component's OnPreDelete calls this as its final destroy step, so the list
 		// never keeps a pointer to memory that is about to go away.
 		Components.Remove(Component);
+		RebuildTickOrder();
 	}
 
 	void PActor::ClearComponents()
@@ -535,6 +571,7 @@ namespace PigeonEngine
 			RootComponent = nullptr;
 		}
 		Components.Empty();
+		TickOrder.Empty();
 	}
 
 	EBoundAABB PActor::GetBounds() const

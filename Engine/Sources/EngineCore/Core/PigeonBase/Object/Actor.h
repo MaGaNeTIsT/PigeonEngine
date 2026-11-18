@@ -22,6 +22,10 @@ namespace PigeonEngine
 		void    Uninit() override;
 		void	Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime);
+		// Render update pass, independent of tickability: every scene component's deferred
+		// applies, dirty sends and transform walks run here once per frame, including the
+		// subtrees of non-tickable actors.
+		void	TickRenderTree();
 #if ENGINE_EDITOR_ONLY
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
@@ -94,6 +98,10 @@ protected:
 		// tick and iteration order is deterministic (the old TSet iterated in pointer
 		// order, which changed with the allocator).
 		TArray<PActorComponent*> Components;
+		// Components sorted by (tick group, priority), rebuilt whenever the list changes.
+		// Registration order is the tie-breaker, so the order is stable across runs.
+		TArray<PActorComponent*> TickOrder;
+		void RebuildTickOrder();
 
 	public:
 

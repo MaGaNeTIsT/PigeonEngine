@@ -35,47 +35,13 @@ namespace PigeonEngine
 	void PPhysicsComponent::BeginAddedToScene(PWorld* World)
 	{
 		PActorComponent::BeginAddedToScene(World);
-		TryRegisterPostPhysicsTick();
+		RegisterPostPhysicsTick();
 	}
 
 	void PPhysicsComponent::RemovedFromScene()
 	{
-		TryUnregisterPostPhysicsTick();
+		UnregisterPostPhysicsTick();
 		PActorComponent::RemovedFromScene();
-	}
-
-	void PPhysicsComponent::TryRegisterPostPhysicsTick()
-	{
-		if (GetWorld() && !bPostPhysicsTickRegistered)
-		{
-			PWorld* World = GetWorld();
-			const ObjectIdentityType ComponentID = GetUniqueID();
-			PostPhysicsTickHandler = TFunction<void(FLOAT)>([World, ComponentID](FLOAT deltaTime)
-			{
-				if (!World)
-				{
-					return;
-				}
-
-				const PActorComponent* FoundComponent = World->GetComponentByUniqueID(ComponentID, TRUE);
-				PPhysicsComponent* PhysicsComponent = dynamic_cast<PPhysicsComponent*>(const_cast<PActorComponent*>(FoundComponent));
-				if (PhysicsComponent)
-				{
-					PhysicsComponent->HandlePostPhysicsTick(deltaTime);
-				}
-			});
-			EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
-			bPostPhysicsTickRegistered = TRUE;
-		}
-	}
-
-	void PPhysicsComponent::TryUnregisterPostPhysicsTick()
-	{
-		if (bPostPhysicsTickRegistered)
-		{
-			EWorldTickManager::GetManagerSingleton()->UnregisterPostPhysicsTick(PostPhysicsTickHandler);
-			bPostPhysicsTickRegistered = FALSE;
-		}
 	}
 
 	void PPhysicsComponent::Uninit()

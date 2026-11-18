@@ -40,50 +40,16 @@ namespace PigeonEngine
 			LastSyncedRotation = CharacterActor->GetActorRotation();
 			bHasSyncedTransform = TRUE;
 		}
-		TryRegisterPostPhysicsTick();
+		RegisterPostPhysicsTick();
 	}
 
 	void PMovementComponent::RemovedFromScene()
 	{
-		TryUnregisterPostPhysicsTick();
+		UnregisterPostPhysicsTick();
 		bHasSyncedTransform = FALSE;
 		LastSyncedPosition = Vector3::Zero();
 		LastSyncedRotation = Quaternion::Identity();
 		PActorComponent::RemovedFromScene();
-	}
-
-	void PMovementComponent::TryRegisterPostPhysicsTick()
-	{
-		if (CharacterActor && CharacterActor->GetWorld() && !bPostPhysicsTickRegistered)
-		{
-			PWorld* World = CharacterActor->GetWorld();
-			const ObjectIdentityType ComponentID = GetUniqueID();
-			PostPhysicsTickHandler = TFunction<void(FLOAT)>([World, ComponentID](FLOAT deltaTime)
-			{
-				if (!World)
-				{
-					return;
-				}
-
-				const PActorComponent* FoundComponent = World->GetComponentByUniqueID(ComponentID, TRUE);
-				PMovementComponent* MovementComponent = dynamic_cast<PMovementComponent*>(const_cast<PActorComponent*>(FoundComponent));
-				if (MovementComponent)
-				{
-					MovementComponent->HandlePostPhysicsTick(deltaTime);
-				}
-			});
-			EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
-			bPostPhysicsTickRegistered = TRUE;
-		}
-	}
-
-	void PMovementComponent::TryUnregisterPostPhysicsTick()
-	{
-		if (bPostPhysicsTickRegistered)
-		{
-			EWorldTickManager::GetManagerSingleton()->UnregisterPostPhysicsTick(PostPhysicsTickHandler);
-			bPostPhysicsTickRegistered = FALSE;
-		}
 	}
 
 	void PMovementComponent::Uninit()

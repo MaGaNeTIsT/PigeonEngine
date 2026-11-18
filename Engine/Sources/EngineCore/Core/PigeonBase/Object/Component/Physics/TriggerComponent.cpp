@@ -159,7 +159,7 @@ namespace PigeonEngine
 	void PTriggerComponent::BeginAddedToScene(PWorld* World)
 	{
 		PSceneComponent::BeginAddedToScene(World);
-		TryRegisterPostPhysicsTick();
+		RegisterPostPhysicsTick();
 
 		if (Backend == ETriggerBackendType::SENSOR)
 		{
@@ -178,42 +178,8 @@ namespace PigeonEngine
 			DestroySensorBody();
 		}
 
-		TryUnregisterPostPhysicsTick();
+		UnregisterPostPhysicsTick();
 		PSceneComponent::RemovedFromScene();
-	}
-
-	void PTriggerComponent::TryRegisterPostPhysicsTick()
-	{
-		if (GetWorld() && !bPostPhysicsTickRegistered)
-		{
-			PWorld* World = GetWorld();
-			const ObjectIdentityType ComponentID = GetUniqueID();
-			PostPhysicsTickHandler = TFunction<void(FLOAT)>([World, ComponentID](FLOAT DeltaTime)
-			{
-				if (!World)
-				{
-					return;
-				}
-
-				const PActorComponent* FoundComponent = World->GetComponentByUniqueID(ComponentID, TRUE);
-				PTriggerComponent* Trigger = dynamic_cast<PTriggerComponent*>(const_cast<PActorComponent*>(FoundComponent));
-				if (Trigger)
-				{
-					Trigger->HandlePostPhysicsTick(DeltaTime);
-				}
-			});
-			EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
-			bPostPhysicsTickRegistered = TRUE;
-		}
-	}
-
-	void PTriggerComponent::TryUnregisterPostPhysicsTick()
-	{
-		if (bPostPhysicsTickRegistered)
-		{
-			EWorldTickManager::GetManagerSingleton()->UnregisterPostPhysicsTick(PostPhysicsTickHandler);
-			bPostPhysicsTickRegistered = FALSE;
-		}
 	}
 
 	void PTriggerComponent::HandlePostPhysicsTick(FLOAT DeltaTime)

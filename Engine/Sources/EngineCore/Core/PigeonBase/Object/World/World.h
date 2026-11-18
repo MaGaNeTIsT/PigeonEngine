@@ -38,6 +38,11 @@ namespace PigeonEngine
 
 	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldUpVectorChanged, const Vector3&)
 	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldGravityChanged, const Vector3&)
+	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldActorAdded, PActor*)
+	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldActorRemoved, PActor*)
+	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldActorDestroyed, PActor*)
+	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldComponentAdded, PActorComponent*)
+	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldComponentRemoved, PActorComponent*)
 
 	/*
 	 * actual world in runtime
@@ -92,6 +97,16 @@ namespace PigeonEngine
 	// instead of walking every actor), and leaving the scene removes it.
 	void RegisterComponent(PActorComponent* Component);
 	void UnregisterComponent(PActorComponent* Component);
+
+	// Lifecycle events. Subscribe with Add (returns a FDelegateHandle) and Remove(handle)
+	// before the listener dies; components conventionally do that in Uninit. Added fires
+	// after the object is fully registered, Removed when it leaves the scene, Destroyed
+	// just before a queued actor's memory is released.
+	FOnWorldActorAdded			OnActorAdded;
+	FOnWorldActorRemoved		OnActorRemoved;
+	FOnWorldActorDestroyed		OnActorDestroyed;
+	FOnWorldComponentAdded		OnComponentAdded;
+	FOnWorldComponentRemoved	OnComponentRemoved;
 private:
 	PActor* RootActor = nullptr;
 	// Flat registry of every actor added to this world (root excluded), maintained by

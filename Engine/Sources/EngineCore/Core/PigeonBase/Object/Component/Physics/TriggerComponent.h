@@ -103,9 +103,7 @@ private:
 		TSet<UINT64> SubShapePairs;
 	};
 
-	void TryRegisterPostPhysicsTick();
-	void TryUnregisterPostPhysicsTick();
-	void HandlePostPhysicsTick(FLOAT DeltaTime);
+	virtual void HandlePostPhysicsTick(FLOAT DeltaTime) override;
 	void UpdateOverlaps(FLOAT DeltaTime);
 	void CollectCurrentOverlaps();
 	void DispatchOverlapEvents();
@@ -132,9 +130,6 @@ private:
 	TMap<ObjectIdentityType, FOverlapResult> PreviousCharacters;
 	TMap<ObjectIdentityType, FOverlapResult> CurrentCharacters;
 	TArray<FOverlapResult> CurrentOverlaps;
-
-	TFunction<void(FLOAT)> PostPhysicsTickHandler;
-	BOOL32 bPostPhysicsTickRegistered = FALSE;
 };
 
 PIGEONENGINE_NAMESPACE_END

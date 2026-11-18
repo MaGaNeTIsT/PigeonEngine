@@ -1,6 +1,7 @@
 #include "./ActorComponent.h"
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/World/World.h>
+#include <PigeonBase/Object/World/WorldTickManager.h>
 
 namespace PigeonEngine
 {
@@ -74,6 +75,48 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "You are setting this component's owner actor to a nullptr. ", NewOwner != nullptr);
 		this->Owner = NewOwner;
 		// NewOwner->AddComponent(this);
+	}
+
+	void PActorComponent::RegisterPostPhysicsTick()
+	{
+		if (bPostPhysicsTickRegistered || (!GetWorld()))
+		{
+			return;
+		}
+		PWorld* World = GetWorld();
+		const ObjectIdentityType ComponentID = GetUniqueID();
+		// The handler only holds the world and the ID: if this component is destroyed
+		// (or pending destruction), the lookup fails and the tick is a no-op, so no raw
+		// pointer outlives the component.
+		PostPhysicsTickHandler = TFunction<void(FLOAT)>([World, ComponentID](FLOAT deltaTime) -> void
+		{
+			if (!World)
+			{
+				return;
+			}
+			const PActorComponent* FoundComponent = World->GetComponentByUniqueID(ComponentID, TRUE);
+			PActorComponent* MutableComponent = const_cast<PActorComponent*>(FoundComponent);
+			if (MutableComponent && (!MutableComponent->IsPendingDestroy()))
+			{
+				MutableComponent->HandlePostPhysicsTick(deltaTime);
+			}
+		});
+		EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
+		bPostPhysicsTickRegistered = TRUE;
+	}
+
+	void PActorComponent::UnregisterPostPhysicsTick()
+	{
+		if (bPostPhysicsTickRegistered)
+		{
+			EWorldTickManager::GetManagerSingleton()->UnregisterPostPhysicsTick(PostPhysicsTickHandler);
+			bPostPhysicsTickRegistered = FALSE;
+		}
+	}
+
+	void PActorComponent::HandlePostPhysicsTick(FLOAT deltaTime)
+	{
+		(void)deltaTime;
 	}
 
 	void PActorComponent::OnPreDelete()

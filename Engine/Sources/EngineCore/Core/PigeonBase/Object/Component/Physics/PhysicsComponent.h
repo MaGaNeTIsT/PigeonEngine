@@ -91,14 +91,11 @@ namespace PigeonEngine
 	private:
 		BOOL32 ContainsBody(const FPhysicsBodyId& InBodyID) const;
 		BOOL32 ContainsAnyBody(const FPhysicsBodyId& InBodyID1, const FPhysicsBodyId& InBodyID2) const;
-		void TryRegisterPostPhysicsTick();
-		void TryUnregisterPostPhysicsTick();
-		void HandlePostPhysicsTick(FLOAT deltaTime);
+	protected:
+		virtual void HandlePostPhysicsTick(FLOAT deltaTime) override;
+	private:
 		FShape* Shape = nullptr;
 		FPhysicsBodyId BodyId;
-		TFunction<void(FLOAT)> PostPhysicsTickHandler;
-	private:
-		BOOL32 bPostPhysicsTickRegistered = FALSE;
 		BOOL32 bBodyActive = FALSE;
 		BOOL32 bHasSyncedTransform = FALSE;
 		Vector3 LastSyncedPosition = Vector3::Zero();

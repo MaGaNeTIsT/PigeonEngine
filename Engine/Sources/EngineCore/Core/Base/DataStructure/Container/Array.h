@@ -6,6 +6,7 @@
 #include "../../../../../Development/Alert/DevelopmentDefines.h"
 #include "Base/Math/Math.h"
 #include "Base/Memory/Memory.h"
+#include <algorithm>
 
 namespace PigeonEngine
 {
@@ -433,31 +434,55 @@ namespace PigeonEngine
 		}
 		void DefaultSort()
 		{
-			//TODO
+			if (ElementNum <= (_TSizeType)1)
+			{
+				return;
+			}
+			std::sort(GetData(), GetData() + ElementNum);
 		}
 		template<typename _TConditionFunc>
 		void Sort(_TConditionFunc&& InConditionFunc)
 		{
-			//TODO
+			if (ElementNum <= (_TSizeType)1)
+			{
+				return;
+			}
+			std::sort(GetData(), GetData() + ElementNum, static_cast<_TConditionFunc&&>(InConditionFunc));
 		}
 		template<typename _TConditionFunc>
 		void Sort(const _TConditionFunc& InConditionFunc)
 		{
-			//TODO
+			if (ElementNum <= (_TSizeType)1)
+			{
+				return;
+			}
+			std::sort(GetData(), GetData() + ElementNum, InConditionFunc);
 		}
 		void DefaultStableSort()
 		{
-			//TODO
+			if (ElementNum <= (_TSizeType)1)
+			{
+				return;
+			}
+			std::stable_sort(GetData(), GetData() + ElementNum);
 		}
 		template<typename _TConditionFunc>
 		void StableSort(_TConditionFunc&& InConditionFunc)
 		{
-			//TODO
+			if (ElementNum <= (_TSizeType)1)
+			{
+				return;
+			}
+			std::stable_sort(GetData(), GetData() + ElementNum, static_cast<_TConditionFunc&&>(InConditionFunc));
 		}
 		template<typename _TConditionFunc>
 		void StableSort(const _TConditionFunc& InConditionFunc)
 		{
-			//TODO
+			if (ElementNum <= (_TSizeType)1)
+			{
+				return;
+			}
+			std::stable_sort(GetData(), GetData() + ElementNum, InConditionFunc);
 		}
 	public:
 		~TArray()
