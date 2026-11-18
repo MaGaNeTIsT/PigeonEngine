@@ -28,6 +28,7 @@
 #include "../Editor/EditorManager.h"
 #include "../Editor/EditorGlobalPanel.h"
 #include "../Editor/EditorProfilerPanel.h"
+#include "../Editor/FrameworkSanityCheck.h"
 #endif
 
 #if ENGINE_EDITOR_ONLY
@@ -590,6 +591,10 @@ namespace PigeonEngine
 	{
 
 		EditorManager->EditorInit();
+		// Runs once after the world (and its demo content) is initialized: the framework
+		// sanity checks spawn and destroy a few throwaway objects and report per-scenario
+		// PASS/FAIL lines to the editor log.
+		EFrameworkSanityCheck::RunAllChecks(WorldManager->GetWorld());
 	}
 
 	void EMainManager::EditorUpdate()

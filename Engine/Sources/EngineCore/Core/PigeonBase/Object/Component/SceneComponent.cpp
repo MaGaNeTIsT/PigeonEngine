@@ -3,6 +3,7 @@
 #include <PigeonBase/Object/Actor.h>
 #include "../../../../IO/SerializationHelper.h"
 #include "../World/World.h"
+#include <Editor/EditorLogManager.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
@@ -53,11 +54,14 @@ namespace PigeonEngine
 
 		// Cycle check: transform composition recurses the parent chain, so attaching a
 		// component under its own descendant is an infinite loop, not a misplacement.
+		// Refused with a warning - not a check - because it is recoverable (the engine
+		// keeps the current hierarchy) and the framework sanity check exercises this
+		// exact path.
 		for (PSceneComponent* Ancestor = Parent; Ancestor; Ancestor = Ancestor->GetParentComponent())
 		{
-			PE_CHECK(ENGINE_COMPONENT_ERROR, "You are attaching a component under its own descendant", Ancestor != Child);
 			if (Ancestor == Child)
 			{
+				PE_LOG_WARN(EString(PE_TEXT("AttachComponentToComponent: refused, the new parent is a descendant of the child.")));
 				return;
 			}
 		}

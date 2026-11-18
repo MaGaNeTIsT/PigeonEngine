@@ -17,6 +17,13 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+#if ENGINE_DEBUG_MODE
+	// File-local instance counter backing EObjectBase::GetAliveObjectCount. Plain and
+	// non-atomic on purpose: engine objects are constructed and destroyed on the game
+	// thread (render-side proxies are not EObjectBase).
+	static UINT64 AliveObjectCount = 0u;
+#endif
+
 	EObjectBase::EObjectBase()
 		: ERTTIObject()
 		, UniqueID(_AllocUniqueID())
@@ -24,9 +31,15 @@ namespace PigeonEngine
 		, DebugName(EEngineSettings::ENGINE_DEFAULT_NAME)
 #endif
 	{
+#if ENGINE_DEBUG_MODE
+		AliveObjectCount += 1u;
+#endif
 	}
 	EObjectBase::~EObjectBase()
 	{
+#if ENGINE_DEBUG_MODE
+		AliveObjectCount -= 1u;
+#endif
 	}
 	const ObjectIdentityType& EObjectBase::GetUniqueID() const
 	{
@@ -40,6 +53,12 @@ namespace PigeonEngine
 	{
 		return (GetUniqueID() != obj.GetUniqueID());
 	}
+#if ENGINE_DEBUG_MODE
+	UINT64 EObjectBase::GetAliveObjectCount()
+	{
+		return AliveObjectCount;
+	}
+#endif
 #if ENGINE_EDITOR_ONLY
 	const EString& EObjectBase::GetDebugName() const
 	{

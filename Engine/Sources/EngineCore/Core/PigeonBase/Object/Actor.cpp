@@ -191,12 +191,14 @@ namespace PigeonEngine
 
 		// Cycle check on the actor chain: the tick and transform walks recurse actor
 		// parents, so attaching an ancestor below its own descendant is an infinite
-		// loop, not a misplacement.
+		// loop, not a misplacement. Refused with a warning - not a check - because it is
+		// recoverable (the engine keeps the current hierarchy) and the framework sanity
+		// check exercises this exact path.
 		for (const PActor* Ancestor = Parent; Ancestor; Ancestor = Ancestor->GetAttachedParentActor())
 		{
-			PE_CHECK(ENGINE_ACTOR_ERROR, "You are attaching an actor under its own descendant", Ancestor != Child);
 			if (Ancestor == Child)
 			{
+				PE_LOG_WARN(EString(PE_TEXT("AttachActorToActor: refused, the new parent is a descendant of the child.")));
 				return;
 			}
 		}

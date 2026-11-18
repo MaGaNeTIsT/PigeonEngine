@@ -19,6 +19,12 @@ namespace PigeonEngine
 	public:
 		BOOL32 operator==(const EObjectBase& obj);
 		BOOL32 operator!=(const EObjectBase& obj);
+#if ENGINE_DEBUG_MODE
+	public:
+		// Live EObjectBase instance count, for leak checks in the framework sanity
+		// module. Debug builds only: a plain counter, not atomic.
+		static UINT64 GetAliveObjectCount();
+#endif
 	private:
 		ObjectIdentityType UniqueID;
 #if ENGINE_EDITOR_ONLY
