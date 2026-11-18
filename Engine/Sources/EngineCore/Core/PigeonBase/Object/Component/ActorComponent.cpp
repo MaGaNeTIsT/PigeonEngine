@@ -137,6 +137,24 @@ namespace PigeonEngine
 		PComponent::Init();
 	}
 
+	void PActorComponent::SetTickGroup(const ETickGroupType& InGroup)
+	{
+		PObject::SetTickGroup(InGroup);
+		if (PActor* OwnerActor = GetOwnerActor())
+		{
+			OwnerActor->RefreshTickOrder();
+		}
+	}
+
+	void PActorComponent::SetTickPriority(const INT32& InPriority)
+	{
+		PObject::SetTickPriority(InPriority);
+		if (PActor* OwnerActor = GetOwnerActor())
+		{
+			OwnerActor->RefreshTickOrder();
+		}
+	}
+
 	void PActorComponent::Uninit()
 	{
 		PComponent::Uninit();

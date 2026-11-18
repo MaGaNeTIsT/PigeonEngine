@@ -536,6 +536,160 @@ namespace PigeonEngine
 		return (bWorldKept && bRelativeApplied) ? TRUE : FALSE;
 	}
 
+	// Component that records its tick into a shared log, so the sanity check can assert
+	// the (group, priority, registration) order the actor ticks in.
+	class PSanityTickOrderComponent : public PActorComponent
+	{
+	public:
+		PSanityTickOrderComponent(TArray<UINT32>* InTickLog, const UINT32 InTag)
+			: TickLog(InTickLog), Tag(InTag)
+		{
+			SetIsTickable(TRUE);
+			POBJ_DEBUGNAME_SET(this, "SanityTickOrderComponent");
+		}
+
+		void Tick(FLOAT deltaTime) override
+		{
+			(void)deltaTime;
+			if (TickLog)
+			{
+				TickLog->Add(Tag);
+			}
+		}
+
+	private:
+		TArray<UINT32>* TickLog = nullptr;
+		UINT32 Tag = 0u;
+	};
+
+	static BOOL32 CheckComponentLookupAndTickOrder(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		TArray<UINT32> TickLog;
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityLookupActor");
+		// A component only ticks when its own actor is tickable; the tick order this
+		// scenario asserts lives inside PActor::Tick.
+		Actor->SetIsTickable(TRUE);
+		InWorld->AddActor(Actor);
+
+		// Registration order 1, 2, 3 with different bands and priorities. Expected tick
+		// order: PRE_PHYSICS (2), gameplay priority -1 (3), gameplay priority 5 (1).
+		PSanityTickOrderComponent* GamePlayLate = new PSanityTickOrderComponent(&TickLog, 1u);
+		GamePlayLate->SetTickPriority(5);
+		Actor->AddComponent(GamePlayLate);
+		PSanityTickOrderComponent* PrePhysics = new PSanityTickOrderComponent(&TickLog, 2u);
+		PrePhysics->SetTickGroup(ETickGroupType::PRE_PHYSICS);
+		Actor->AddComponent(PrePhysics);
+		PSanityTickOrderComponent* GamePlayEarly = new PSanityTickOrderComponent(&TickLog, 3u);
+		GamePlayEarly->SetTickPriority(-1);
+		Actor->AddComponent(GamePlayEarly);
+
+		// Template lookups: first exact match, all exact matches in registration order,
+		// and a base-class match through the same list.
+		const BOOL32 bFindWorks = (Actor->FindComponent<PSanityTickOrderComponent>() == GamePlayLate) ? TRUE : FALSE;
+		const BOOL32 bListWorks = (Actor->GetComponents<PSanityTickOrderComponent>().Num<UINT32>() == 3u) ? TRUE : FALSE;
+		const BOOL32 bBaseLookupWorks = (Actor->FindComponent<PSceneComponent>() == Actor->GetRootComponent()) ? TRUE : FALSE;
+
+		InWorld->Tick(1.f / 60.f);
+		const BOOL32 bOrderMatches =
+			((TickLog.Num<UINT32>() == 3u) && (TickLog[0] == 2u) && (TickLog[1] == 3u) && (TickLog[2] == 1u)) ? TRUE : FALSE;
+
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return (bFindWorks && bListWorks && bBaseLookupWorks && bOrderMatches) ? TRUE : FALSE;
+	}
+
+	static BOOL32 CheckWorldLifecycleEvents(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		UINT32 AddedCount = 0u;
+		UINT32 RemovedCount = 0u;
+		UINT32 DestroyedCount = 0u;
+		UINT32 ComponentAddedCount = 0u;
+		UINT32 ComponentRemovedCount = 0u;
+
+		const FDelegateHandle AddedHandle = InWorld->OnActorAdded.Add(
+			TFunction<void(PActor*)>([&AddedCount](PActor*) -> void { AddedCount += 1u; }));
+		const FDelegateHandle RemovedHandle = InWorld->OnActorRemoved.Add(
+			TFunction<void(PActor*)>([&RemovedCount](PActor*) -> void { RemovedCount += 1u; }));
+		const FDelegateHandle DestroyedHandle = InWorld->OnActorDestroyed.Add(
+			TFunction<void(PActor*)>([&DestroyedCount](PActor*) -> void { DestroyedCount += 1u; }));
+		const FDelegateHandle ComponentAddedHandle = InWorld->OnComponentAdded.Add(
+			TFunction<void(PActorComponent*)>([&ComponentAddedCount](PActorComponent*) -> void { ComponentAddedCount += 1u; }));
+		const FDelegateHandle ComponentRemovedHandle = InWorld->OnComponentRemoved.Add(
+			TFunction<void(PActorComponent*)>([&ComponentRemovedCount](PActorComponent*) -> void { ComponentRemovedCount += 1u; }));
+
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityEventActor");
+		InWorld->AddActor(Actor);
+		// One extra component after the add, so both registration paths are covered (the
+		// root registers during the scene add, this one through AddComponent).
+		PActorComponent* ExtraComponent = new PActorComponent();
+		Actor->AddComponent(ExtraComponent);
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+
+		InWorld->OnActorAdded.Remove(AddedHandle);
+		InWorld->OnActorRemoved.Remove(RemovedHandle);
+		InWorld->OnActorDestroyed.Remove(DestroyedHandle);
+		InWorld->OnComponentAdded.Remove(ComponentAddedHandle);
+		InWorld->OnComponentRemoved.Remove(ComponentRemovedHandle);
+
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		// Two components (root + extra) join and leave the scene; the actor is added once,
+		// removed once and destroyed once.
+		return ((AddedCount == 1u) && (RemovedCount == 1u) && (DestroyedCount == 1u) &&
+			(ComponentAddedCount == 2u) && (ComponentRemovedCount == 2u)) ? TRUE : FALSE;
+	}
+
+	static BOOL32 CheckObjectHandleResolution(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityHandleActor");
+		PSceneComponent* Component = new PSceneComponent();
+		Actor->AddComponent(Component);
+		InWorld->AddActor(Actor);
+
+		const FObjectHandle ActorHandle = MakeObjectHandle(Actor);
+		const FObjectHandle ComponentHandle = MakeObjectHandle(Component);
+		const BOOL32 bResolvesBefore =
+			((InWorld->ResolveActor(ActorHandle) == Actor) &&
+				(InWorld->ResolveComponent<PSceneComponent>(ComponentHandle) == Component)) ? TRUE : FALSE;
+
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+		const BOOL32 bFailsAfter =
+			((InWorld->ResolveActor(ActorHandle) == nullptr) &&
+				(InWorld->ResolveComponent<PSceneComponent>(ComponentHandle) == nullptr)) ? TRUE : FALSE;
+
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return (bResolvesBefore && bFailsAfter) ? TRUE : FALSE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -602,6 +756,24 @@ namespace PigeonEngine
 		const BOOL32 bAttachmentRules = CheckAttachmentRules(InWorld);
 		ReportSanityResult(EString(PE_TEXT("attachment rules")), bAttachmentRules);
 		if (!bAttachmentRules)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bComponentLookupAndTickOrder = CheckComponentLookupAndTickOrder(InWorld);
+		ReportSanityResult(EString(PE_TEXT("component lookup and tick order")), bComponentLookupAndTickOrder);
+		if (!bComponentLookupAndTickOrder)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bWorldLifecycleEvents = CheckWorldLifecycleEvents(InWorld);
+		ReportSanityResult(EString(PE_TEXT("world lifecycle events")), bWorldLifecycleEvents);
+		if (!bWorldLifecycleEvents)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bObjectHandleResolution = CheckObjectHandleResolution(InWorld);
+		ReportSanityResult(EString(PE_TEXT("object handle resolution")), bObjectHandleResolution);
+		if (!bObjectHandleResolution)
 		{
 			FailedCount += 1u;
 		}

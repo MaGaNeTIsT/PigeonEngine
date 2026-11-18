@@ -57,9 +57,9 @@ namespace PigeonEngine
 		BOOL32 IsPendingDestroy() const;
 		// Tick band and priority. Within an actor, components tick in (group, priority,
 		// registration) order; both default to the gameplay band at priority 0.
-		void SetTickGroup(const ETickGroupType& InGroup);
+		virtual void SetTickGroup(const ETickGroupType& InGroup);
 		PE_NODISCARD ETickGroupType GetTickGroup() const;
-		void SetTickPriority(const INT32& InPriority);
+		virtual void SetTickPriority(const INT32& InPriority);
 		PE_NODISCARD INT32 GetTickPriority() const;
 	private:
 		BOOL32 bCanTick = FALSE;

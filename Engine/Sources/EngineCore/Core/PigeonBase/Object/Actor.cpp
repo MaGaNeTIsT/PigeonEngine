@@ -72,6 +72,11 @@ namespace PigeonEngine
 		PObject::Uninit();
 	}
 
+	void PActor::RefreshTickOrder()
+	{
+		RebuildTickOrder();
+	}
+
 	void PActor::RebuildTickOrder()
 	{
 		TickOrder = Components;

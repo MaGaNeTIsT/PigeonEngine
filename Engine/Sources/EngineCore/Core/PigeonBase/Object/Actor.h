@@ -101,6 +101,11 @@ protected:
 		// Components sorted by (tick group, priority), rebuilt whenever the list changes.
 		// Registration order is the tie-breaker, so the order is stable across runs.
 		TArray<PActorComponent*> TickOrder;
+	public:
+		// Re-sorts the cached tick order after a component changed its tick group or
+		// priority. Called by PActorComponent::SetTickGroup/SetTickPriority.
+		void RefreshTickOrder();
+	private:
 		void RebuildTickOrder();
 
 	public:
