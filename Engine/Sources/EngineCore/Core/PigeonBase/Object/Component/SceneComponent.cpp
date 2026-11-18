@@ -174,12 +174,13 @@ namespace PigeonEngine
 
 	void PSceneComponent::OnDestroy()
 	{
-		// Only a state that was created has anything to release; without the flag a
-		// component destroyed before ever joining a world called straight into its
-		// subclass's DestroyRenderState and dereferenced a null world.
+		// Backstop only: scene exit (RemovedFromScene) already released the state while
+		// the world pointer was still valid. This covers a component destroyed while
+		// still flagged as scene-registered.
 		if (bRenderStateCreated)
 		{
 			DestroyRenderState();
+			bRenderStateCreated = FALSE;
 		}
 		DetachFromParentComponent();
 		ClearChildren();
@@ -257,6 +258,24 @@ namespace PigeonEngine
 		{
 			Child->BeginAddedToScene(World);
 		}
+	}
+
+	void PSceneComponent::RemovedFromScene()
+	{
+		// Scene exit releases the render state HERE, while this component's world pointer
+		// is still set (PObject::RemovedFromScene clears it only after this override
+		// returns). The typed render paths - camera, lights - hand their proxies back
+		// through the world's render scene, so releasing the state any later, at OnDestroy
+		// after a deferred-destroy mark already cleared the world, skipped the removal
+		// entirely and left the proxy alive past its component (the camera's destructor
+		// check caught exactly that). Ending the state at exit is also the semantic a
+		// remove-without-destroy needs: an actor that leaves the world stops rendering.
+		if (bRenderStateCreated)
+		{
+			DestroyRenderState();
+			bRenderStateCreated = FALSE;
+		}
+		PActorComponent::RemovedFromScene();
 	}
 
 	EMobilityType PSceneComponent::GetMobility() const

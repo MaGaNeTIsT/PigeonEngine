@@ -85,10 +85,12 @@ namespace PigeonEngine
 		void	RunDeferredApplies();
 	protected:
 		void BeginAddedToScene(PWorld* World) override;
+		void RemovedFromScene() override;
 
 	protected:
-		// Scene-component teardown: release the render state, leave the parent component,
-		// destroy the children. Runs as this component's destroy hook.
+		// Scene-component teardown: leave the parent component, destroy the children.
+		// Runs as this component's destroy hook; the render state is released earlier,
+		// at scene exit, while the world pointer is still set.
 		virtual void OnDestroy() override;
 
 	public:
