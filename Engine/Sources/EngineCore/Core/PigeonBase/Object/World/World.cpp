@@ -133,6 +133,8 @@ namespace PigeonEngine
 	{
 #if ENGINE_EDITOR_ONLY
 		EditorController = nullptr;
+		// The whole world is going away; nothing can stay selected in it.
+		SetSelectedActor(nullptr);
 #endif
 		Controller = nullptr;
 		if(RootActor)
@@ -145,31 +147,45 @@ namespace PigeonEngine
 
 	TArray<PActor*> PWorld::GetAllActors() const
 	{
-		return this->RootActor->GetAllActorsAttached(TRUE);
+		// The registry is flat, so this no longer recurses (and copies) the attachment
+		// tree on every call - the editor picking and the navigation bake both used to
+		// pay that per frame / per bake.
+		TArray<PActor*> Result;
+		for (TSet<PActor*>::TConstIterator It = AllActors.Begin(); It != AllActors.End(); It++)
+		{
+			Result.Add(*It);
+		}
+		return Result;
 	}
 
 	const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const
 	{
-		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::GetActorByUniqueId : RootActor is nullptr.", RootActor != nullptr);
-		for (PActor* Actor : RootActor->ChildrenActors)
+		// The flat registry indexes every actor in the world, so the recursive child
+		// flag no longer changes what is found - it is kept for signature compatibility.
+		(void)bIncludeChildActor;
+		if (const PActor* const* Found = ActorById.FindValueAsPtr(InUniqueID))
 		{
-			const PActor* Ret = Actor->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
-			if(Ret)
-			{
-				return Ret;
-			}
+			return (*Found);
 		}
 		return nullptr;
-
 	}
 
 	const PActorComponent* PWorld::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID,
 		const BOOL8& bIncludeChildComponent) const
 	{
-		for (PActor* Actor : RootActor->ChildrenActors)
+		// Every actor is in the flat registry, so scanning each actor's own components
+		// covers the whole world. The old loop only scanned the root-level actor list,
+		// which made components on nested actors invisible to every post-physics
+		// handler that looks its component up by unique ID.
+		for (TSet<PActor*>::TConstIterator It = AllActors.Begin(); It != AllActors.End(); It++)
 		{
+			const PActor* Actor = (*It);
+			if (!Actor)
+			{
+				continue;
+			}
 			const PActorComponent* Ret = Actor->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
-			if(Ret)
+			if (Ret)
 			{
 				return Ret;
 			}
@@ -182,6 +198,17 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor != nullptr);
 		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding world root to world.", NewActor != RootActor);
 
+		// An actor belongs to one world. One that already lives in another world is
+		// rejected; one already in this world falls through - the attach re-parents and
+		// the scene-add is idempotent - and the registry add below deduplicates.
+		if (PWorld* CurrentWorld = NewActor->GetWorld())
+		{
+			if (CurrentWorld != this)
+			{
+				PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::AddActor : Actor already belongs to another world.", FALSE);
+				return;
+			}
+		}
 
 		NewActor->AttachToActor(RootActor);
 		// NOTE: previously this unconditionally called
@@ -200,7 +227,42 @@ namespace PigeonEngine
 			NewActor->Init();
 		}
 		NewActor->BeginAddedToScene(this);
-		// AllActors.Add(NewActor);
+		AllActors.Add(NewActor);
+		ActorById.Add(NewActor->GetUniqueID(), NewActor);
+	}
+
+	void PWorld::RemoveActor(PActor* Actor)
+	{
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::RemoveActor : Removing nullptr from world.", Actor != nullptr);
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::RemoveActor : Actor does not belong to this world.", Actor->GetWorld() == this);
+
+		// Leave the parent's child list without DetachFromParentActor, which re-homes
+		// the actor under this world's root; removal wants it out of the tree entirely.
+		if (PActor* Parent = Actor->GetAttachedParentActor())
+		{
+			Parent->ChildrenActors.Remove(Actor);
+			Actor->AttachedParentActor = nullptr;
+		}
+		Actor->GetRootComponent()->DetachFromParentComponent();
+		if (Actor->IsAddedToScene())
+		{
+			Actor->RemovedFromScene();
+		}
+		UnregisterActor(Actor);
+	}
+
+	void PWorld::UnregisterActor(PActor* Actor)
+	{
+		if (!Actor)
+		{
+			return;
+		}
+		AllActors.Remove(Actor);
+		// TMap::Remove goes through find-then-erase, which must not see a missing key.
+		if (ActorById.ContainsKey(Actor->GetUniqueID()))
+		{
+			ActorById.Remove(Actor->GetUniqueID());
+		}
 	}
 
 
@@ -380,8 +442,33 @@ namespace PigeonEngine
 		}
 	}
 
+	void PWorld::ValidateSelection()
+	{
+		// A destroyed actor or component leaves the selection pointers dangling.
+		// RemovedFromScene clears a dying object's world pointer, so a mismatch here is
+		// the cheap per-frame validity check - and a valid selection can only ever point
+		// at an object of this world.
+		if (ImguiSelectedActor && (ImguiSelectedActor->GetWorld() != this))
+		{
+			SetSelectedActor(nullptr);
+		}
+		if (ImguiSelectedComponent)
+		{
+			const PActor* SelectedOwner = ImguiSelectedComponent->GetOwnerActor();
+			if (!SelectedOwner || (SelectedOwner->GetWorld() != this))
+			{
+				SetSelectedComponent(nullptr);
+			}
+		}
+	}
+
 	void PWorld::GenerateWorldOutline()
 	{
+		if (!RootActor)
+		{
+			return;
+		}
+		ValidateSelection();
 		for (PActor* Actor : RootActor->GetAllActorsAttached())
 		{
 			Actor->GenerateWorldOutline(ImguiSelectedActor);
@@ -390,6 +477,7 @@ namespace PigeonEngine
 
 	void PWorld::GenerateDetail()
 	{
+		ValidateSelection();
 		if (!ImguiSelectedActor)
 		{
 			return;

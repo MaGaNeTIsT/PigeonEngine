@@ -189,6 +189,18 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_ACTOR_ERROR, "You are attaching an actor to itself", Child != Parent);
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching actor to actor", Child && Parent && Child->GetRootComponent() && Parent->GetRootComponent());
 
+		// Cycle check on the actor chain: the tick and transform walks recurse actor
+		// parents, so attaching an ancestor below its own descendant is an infinite
+		// loop, not a misplacement.
+		for (const PActor* Ancestor = Parent; Ancestor; Ancestor = Ancestor->GetAttachedParentActor())
+		{
+			PE_CHECK(ENGINE_ACTOR_ERROR, "You are attaching an actor under its own descendant", Ancestor != Child);
+			if (Ancestor == Child)
+			{
+				return;
+			}
+		}
+
 		if(Child->AttachedParentActor)
 		{
 			Child->AttachedParentActor->ChildrenActors.Remove(Child);
@@ -542,6 +554,14 @@ namespace PigeonEngine
 
 	void PActor::RemovedFromScene()
 	{
+		// The world pointer is still set at entry (PObject::RemovedFromScene clears it at
+		// the end of this chain), so this is the one spot every destroy path funnels
+		// through where the world's actor registry can be cleaned - including direct
+		// Destroy() calls that never went through PWorld::RemoveActor.
+		if (PWorld* World = GetWorld())
+		{
+			World->UnregisterActor(this);
+		}
 		if (!IsAddedToScene())
 		{
 			return;

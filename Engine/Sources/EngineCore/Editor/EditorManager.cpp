@@ -233,6 +233,20 @@ namespace PigeonEngine
 		// controller our mouse subscription points at.
 		AttachToCurrentController();
 
+		// A destroyed selection leaves this pointer dangling; the world validates its own
+		// selection inside the panels, this covers the gizmo target.
+		if (SelectedComponent)
+		{
+			PWorld* CurrentWorld = WorldManager->GetWorld();
+			const PActor* SelectedOwner = SelectedComponent->GetOwnerActor();
+			if (!CurrentWorld || !SelectedOwner || (SelectedOwner->GetWorld() != CurrentWorld))
+			{
+				SelectedComponent = nullptr;
+				bDragging = FALSE;
+				DragAxis = EGizmoAxis::NONE;
+			}
+		}
+
 		WorldManager->EditorUpdate();
 		AssetManager->EditorUpdate();
 		LogsManager->EditorUpdate();

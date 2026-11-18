@@ -51,6 +51,17 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "Parent is nullptr when attaching", Parent);
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "Parent->GetOwnerActor() is nullptr when attaching", Parent->GetOwnerActor());
 
+		// Cycle check: transform composition recurses the parent chain, so attaching a
+		// component under its own descendant is an infinite loop, not a misplacement.
+		for (PSceneComponent* Ancestor = Parent; Ancestor; Ancestor = Ancestor->GetParentComponent())
+		{
+			PE_CHECK(ENGINE_COMPONENT_ERROR, "You are attaching a component under its own descendant", Ancestor != Child);
+			if (Ancestor == Child)
+			{
+				return;
+			}
+		}
+
 		// Remove from current parent
 		Child->DetachFromParentComponent();
 		Child->ParentComponent = Parent;

@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <Base/Delegate/Delegate.h>
 #include <Base/DataStructure/Pointer/SharedPtr.h>
+#include <Base/DataStructure/Container/Map.h>
 #include <EngineCommon.h>
 #include <PigeonBase/Object/Object.h>
 #include <PigeonBase/Object/Actor.h>
@@ -64,11 +65,22 @@ namespace PigeonEngine
 		PE_NODISCARD TArray<PActor*>        GetAllActors() const;
 		PE_NODISCARD const PActor*          GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
-		void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
-		//void DestroyActor();
-	private:
-		PActor* RootActor = nullptr;
-		TSet<PActor*> AllActors;
+	void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
+	// Takes the actor out of the world and every lookup without destroying it; the
+	// caller keeps ownership.
+	void RemoveActor(PActor* Actor);
+	// Registry maintenance: drops an actor from the flat index. Called from the actor's
+	// own RemovedFromScene - every destroy path funnels through it while the world
+	// pointer is still set - and from RemoveActor; a no-op for an unregistered actor.
+	void UnregisterActor(PActor* Actor);
+private:
+	PActor* RootActor = nullptr;
+	// Flat registry of every actor added to this world (root excluded), maintained by
+	// AddActor/RemoveActor/UnregisterActor. The attachment tree remains the structural
+	// truth; this is the iteration and lookup index built on top of it, so queries no
+	// longer walk (and copy) the tree.
+	TSet<PActor*> AllActors;
+	TMap<ObjectIdentityType, PActor*> ActorById;
 #if ENGINE_EDITOR_ONLY
 	public:
 		void AddSceneToWorld(PScene* NewScene);
@@ -126,6 +138,11 @@ namespace PigeonEngine
 	public:
 		void GenerateWorldOutline();
 		void GenerateDetail();
+	private:
+		// Drops the ImGui selection when the selected actor or component no longer
+		// belongs to this world (a destroyed object has its world pointer cleared by
+		// RemovedFromScene), so the panels never dereference freed objects.
+		void ValidateSelection();
 	private:
 		PActor* ImguiSelectedActor = nullptr;
 		PActorComponent* ImguiSelectedComponent = nullptr;
