@@ -55,6 +55,12 @@ namespace PigeonEngine
 		// Appends world space line segments, two entries per segment. The backend writes
 		// positions only; the editor decides colors and how to draw them.
 		virtual void CollectDebugLines(ENavigationDebugModeType InMode, TArray<Vector3>& OutLineSegments) const = 0;
+		/*
+		* Appends the walkable surface's triangulation, two entries per segment: three edges for
+		* every triangle the backend draws it with. A backend without a triangulated
+		* representation leaves the list empty, which simply draws no triangles.
+		*/
+		virtual void CollectDebugTriangles(TArray<Vector3>& OutLineSegments) const { (void)OutLineSegments; }
 
 		/*
 		* Per frame work, driven by ENavigationManager::Tick before the world ticks. Local avoidance

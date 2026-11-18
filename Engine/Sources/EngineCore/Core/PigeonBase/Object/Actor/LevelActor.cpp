@@ -615,17 +615,31 @@ namespace PigeonEngine
 				AssetBasePath + EString(PE_TEXT("EngineModels/BaseShapes/"))
 				, EString(PE_TEXT("Cube")), EString(PE_TEXT("obj")));
 			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Cube")), &ImportSource);
+			// Runtime actor: its volume belongs to the tile cache at run time, not to the baked
+			// level. Baking it would carve a permanent hole (plus agent radius erosion) wherever
+			// it happened to stand when the bake ran.
+			NewStaticMeshComp->SetAffectsNavigation(FALSE);
 
 			const ETransform ObstacleMeshTransform(Vector3(0.0f, 0.5f, 0.0f), Quaternion::Identity(), Vector3::One());
 			New->AddComponent(NewStaticMeshComp, ObstacleMeshTransform);
+			// AddComponent keeps the component's current transform on attach, so the relative
+			// transform above only takes effect when it is set explicitly. 0.5 is in actor local
+			// space, so the actor's 150 height scales it to the 75 the cube needs.
+			NewStaticMeshComp->SetComponentTransform(ObstacleMeshTransform);
 			New->SetActorScale(Vector3(80.0f, 150.0f, 80.0f));
 
 			PNavObstacleComponent* NewObstacleComp = new PNavObstacleComponent();
 			NewObstacleComp->SetShapeType(ENavigationObstacleShapeType::NAVIGATION_OBSTACLE_BOX);
 			NewObstacleComp->SetBoxHalfExtents(Vector3(40.0f, 75.0f, 40.0f));
 			New->AddComponent(NewObstacleComp);
+			// Centered on the cube, so the carved volume is the box the player sees (0..150 above
+			// the actor origin) instead of one half buried below the floor.
+			NewObstacleComp->SetComponentTransform(ObstacleMeshTransform);
 
-			New->SetActorLocation(Vector3(-40.0f, 0.0f, -26.0f));
+			// On the agents' corridor, not over the water: the tile cache can only carve cells that
+			// the bake produced, so an obstacle over the empty part of the layer never changes the
+			// mesh. The swing in UserTick stays inside this walkable strip.
+			New->SetActorLocation(Vector3(-40.0f, 0.0f, -300.0f));
 			DemoObstacleActor = New;
 		}
 
@@ -669,9 +683,16 @@ namespace PigeonEngine
 					AssetBasePath + EString(PE_TEXT("EngineModels/BaseShapes/"))
 					, EString(PE_TEXT("Cube")), EString(PE_TEXT("obj")));
 				NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Cube")), &ImportSource);
+				// Runtime actor, same rule as the obstacle: the agent's own cube must not become
+				// level geometry in the bake.
+				NewStaticMeshComp->SetAffectsNavigation(FALSE);
 
 				const ETransform AgentMeshTransform(Vector3(0.0f, 0.5f, 0.0f), Quaternion::Identity(), Vector3::One());
 				New->AddComponent(NewStaticMeshComp, AgentMeshTransform);
+				// Same reason as the obstacle: attachment keeps the component transform, so the half
+				// height lift has to be applied explicitly or the 150 tall cube sinks 75 into the
+				// navmesh surface. The actor origin stays at the feet: the navmesh places it there.
+				NewStaticMeshComp->SetComponentTransform(AgentMeshTransform);
 				New->SetActorScale(Vector3(60.0f, 150.0f, 60.0f));
 
 				PNavAgentComponent* NavAgentComponent = new PNavAgentComponent();
@@ -764,7 +785,7 @@ namespace PigeonEngine
 		// around it. The build waits on assets, so it continues across frames on its own.
 		//BuildDemoSponzaScene(*GetWorld());
 		// The water sample is independent of the Sponza build and waits on its own assets.
-		BuildDemoWaterScene(*GetWorld());
+		//BuildDemoWaterScene(*GetWorld());
 	}
 
 	void PLevelActor::UserEndPlay()
@@ -782,7 +803,7 @@ namespace PigeonEngine
 		{
 			DemoObstacleTimer += deltaTime;
 			const FLOAT Offset = EMath::Sin(DemoObstacleTimer * 0.7f) * 90.0f;
-			DemoObstacleActor->SetActorLocation(Vector3(-40.0f, 0.0f, -26.0f + Offset));
+			DemoObstacleActor->SetActorLocation(Vector3(-40.0f, 0.0f, -300.0f + Offset));
 		}
 	}
 

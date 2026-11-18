@@ -101,12 +101,22 @@ namespace PigeonEngine
 		PE_NODISCARD BOOL32			IsDebugDrawEnabled() const;
 		void						SetDebugDrawMode(ENavigationDebugModeType InMode);
 		PE_NODISCARD ENavigationDebugModeType	GetDebugDrawMode() const;
+		// Draws the walkable surface's triangulation on top of the polygon edges. The editor
+		// owns the colors, so the manager only decides whether the list is collected.
+		void						SetDebugTrianglesEnabled(const BOOL32& InEnabled);
+		PE_NODISCARD BOOL32			IsDebugTrianglesEnabled() const;
 		/*
-		* Cached line segments, two entries per segment. The list is rebuilt on the first
+		* Cached line segments, two entries per segment. The lists are rebuilt on the first
 		* request after a provider changed or the mode changed: walking every polygon each
 		* frame would cost more than drawing them.
 		*/
 		const TArray<Vector3>&		GetDebugLineSegments();
+		const TArray<Vector3>&		GetDebugTriangleSegments();
+		/*
+		* Bumped whenever the cached lists were rebuilt. The editor uploads the whole list to
+		* the debug primitive only when this changed, instead of every frame.
+		*/
+		PE_NODISCARD UINT32			GetDebugSegmentsRevision() const;
 
 	private:
 		struct FNavigationProviderEntry
@@ -171,6 +181,8 @@ namespace PigeonEngine
 	private:
 		PE_NODISCARD INT32	FindProviderIndex(const ObjectIdentityType& InOwnerId) const;
 		void				InvalidateDebugLines();
+		// Refills both cached debug lists from every ready provider when anything changed.
+		void				RebuildDebugSegments();
 		void				ReleaseAllProviders();
 		void				PublishFinishedBakes();
 		ENavigationObstacleHandle	PublishObstacle(FNavigationObstacleDesc& InOutDesc);
@@ -198,8 +210,11 @@ namespace PigeonEngine
 
 		BOOL32								bDebugDrawEnabled = TRUE;
 		ENavigationDebugModeType			DebugDrawMode = ENavigationDebugModeType::NAVIGATION_DEBUG_BOUNDARY;
-		TArray<Vector3>						DebugLineSegments;
+		BOOL32								bDebugTrianglesEnabled = TRUE;
+		TArray<Vector3>						DebugPolygonSegments;
+		TArray<Vector3>						DebugTriangleSegments;
 		BOOL32								bDebugLinesDirty = TRUE;
+		UINT32								DebugSegmentsRevision = 1u;
 	};
 
 }  // namespace PigeonEngine

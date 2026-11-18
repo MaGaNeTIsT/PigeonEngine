@@ -40,9 +40,18 @@ namespace PigeonEngine
 		PE_NODISCARD BOOL32                 IsCastShadow() const;
 		PE_NODISCARD BOOL32                 IsReceiveShadow() const;
 		PE_NODISCARD BOOL32                 IsMaterialDirty() const;
+		/*
+		* Game thread: whether the navigation bake treats this primitive as level geometry.
+		* Runtime actors - agents, a moving obstacle, anything spawned after the level was built -
+		* turn it off, because baking them carves their own footprint into the navmesh as a
+		* permanent hole (plus the agent radius erosion around it) instead of leaving it to the
+		* tile cache.
+		*/
+		PE_NODISCARD BOOL32                 IsAffectsNavigation() const;
 	public:
 		void            SetCastShadow(BOOL32 InIsCastShadow);
 		void            SetReceiveShadow(BOOL32 InIsReceiveShadow);
+		void            SetAffectsNavigation(BOOL32 InAffects);
 
 		// Materials are deliberately NOT stored here: how a subclass holds its shader
 		// instances, and under which pass it reports them, is the subclass's decision. What
@@ -105,6 +114,8 @@ namespace PigeonEngine
 		BOOL32                              bMaterialDirty;
 		BOOL32                              bCastShadow;
 		BOOL32                              bReceiveShadow;
+		// Level geometry by default; runtime spawned primitives switch it off.
+		BOOL32                              bAffectsNavigation = TRUE;
 #if ENGINE_EDITOR_ONLY
 		BOOL8                               bEmitShaderDebug = FALSE;
 #endif

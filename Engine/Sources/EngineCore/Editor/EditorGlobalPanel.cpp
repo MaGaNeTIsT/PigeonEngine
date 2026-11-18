@@ -129,6 +129,12 @@ namespace PigeonEngine
 					? ENavigationDebugModeType::NAVIGATION_DEBUG_FULL
 					: ENavigationDebugModeType::NAVIGATION_DEBUG_BOUNDARY);
 			}
+
+			bool bShowTriangles = (NavigationManager->IsDebugTrianglesEnabled() != FALSE);
+			if (ImGui::Checkbox("  NavMesh Triangulation", &bShowTriangles))
+			{
+				NavigationManager->SetDebugTrianglesEnabled(bShowTriangles ? TRUE : FALSE);
+			}
 		}
 
 		if (ImGui::Button("Apply") && ResolutionCount > 0)

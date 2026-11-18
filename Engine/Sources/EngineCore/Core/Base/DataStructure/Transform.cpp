@@ -67,10 +67,20 @@ namespace PigeonEngine
 	}
 	Vector3 ETransform::GetLocalToWorldLocationInternal(const PSceneComponent* InParentComponent, const PActor* InParentActor) const
 	{
-		Vector3 LocalToActor(GetLocalToActorLocationInternal(InParentComponent));
+		// The parent chain's own locations already live in actor/world units and are not scaled
+		// again; only this component's offset is expressed in the parent's local space, so the
+		// parent chain's scaling applies to it. Without this the render transform and the bound
+		// composition (which does scale the offset) disagreed, and a component lifted by half the
+		// actor's height ended up thousands of units above the mesh in the bounds overlay.
+		Vector3 ParentChainLocation(Vector3::Zero());
+		GetLocalToActorLocationInternal(ParentChainLocation, InParentComponent);
+		Vector3 ParentChainScaling(Vector3::One());
+		GetLocalToActorScalingInternal(ParentChainScaling, InParentComponent);
 		Vector3 RootToWorld(Vector3::Zero());
 		GetRootToWorldLocationInternal(RootToWorld, InParentActor);
-		return (RootToWorld + LocalToActor);
+		Vector3 RootToWorldScaling(Vector3::One());
+		GetRootToWorldScalingInternal(RootToWorldScaling, InParentActor);
+		return (RootToWorld + ParentChainLocation + LocalLocation * ParentChainScaling * RootToWorldScaling);
 	}
 	Quaternion ETransform::GetLocalToWorldRotationInternal(const PSceneComponent* InParentComponent, const PActor* InParentActor) const
 	{
@@ -194,11 +204,23 @@ namespace PigeonEngine
 	}
 	void ETransform::SetLocalToWorldLocationInternal(const Vector3& NewLocation, const PSceneComponent* InParentComponent, const PActor* InParentActor)
 	{
-		Vector3 LocalToActor(Vector3::Zero());
-		GetLocalToActorLocationInternal(LocalToActor, InParentComponent);
+		// The inverse of GetLocalToWorldLocationInternal: the difference is expressed in the same
+		// parent local space the getter scales, so it has to be divided by that scaling to get the
+		// local offset back.
+		Vector3 ParentChainLocation(Vector3::Zero());
+		GetLocalToActorLocationInternal(ParentChainLocation, InParentComponent);
+		Vector3 ParentChainScaling(Vector3::One());
+		GetLocalToActorScalingInternal(ParentChainScaling, InParentComponent);
 		Vector3 RootToWorld(Vector3::Zero());
 		GetRootToWorldLocationInternal(RootToWorld, InParentActor);
-		LocalLocation = (NewLocation - RootToWorld) - LocalToActor;
+		Vector3 RootToWorldScaling(Vector3::One());
+		GetRootToWorldScalingInternal(RootToWorldScaling, InParentActor);
+		const Vector3 Scaling = ParentChainScaling * RootToWorldScaling;
+		Vector3 InvScaling(Vector3::One());
+		InvScaling.x = (EMath::Abs(Scaling.x) > PE_SMALL_NUMBER) ? (1.0f / Scaling.x) : 1.0f;
+		InvScaling.y = (EMath::Abs(Scaling.y) > PE_SMALL_NUMBER) ? (1.0f / Scaling.y) : 1.0f;
+		InvScaling.z = (EMath::Abs(Scaling.z) > PE_SMALL_NUMBER) ? (1.0f / Scaling.z) : 1.0f;
+		LocalLocation = ((NewLocation - RootToWorld) - ParentChainLocation) * InvScaling;
 	}
 	void ETransform::SetLocalToWorldRotationInternal(const Quaternion& NewRotation, const PSceneComponent* InParentComponent, const PActor* InParentActor)
 	{

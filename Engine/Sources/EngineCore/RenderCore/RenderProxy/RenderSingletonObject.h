@@ -37,8 +37,18 @@ namespace PigeonEngine
 	public:
 		BOOL32					InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum);
 		BOOL32					InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum, const UINT32* InIndexDatas, const UINT32 InIndexNum);
+		// A line list whose buffers are allocated once for InVertexCapacity vertices and then
+		// updated in place. Each vertex pair is an independent segment, so the whole list is a
+		// single primitive, a single instance and a single draw however often it changes.
+		BOOL32					InitLineListPrimitive(const UINT32 InVertexCapacity);
+		BOOL32					UpdateLineListPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum);
 		BOOL32					IsUseShortIndex() const;
 		UINT32					GetIndexCount() const;
+		UINT32					GetVertexCapacity() const;
+		// Set by the manager when it reported a clamped update, so the warning stays one per
+		// primitive instead of one per revision.
+		BOOL32					IsLineListOverflowWarned() const;
+		void					MarkLineListOverflowWarned();
 		const EBoundAABB&		GetBound() const;
 		const RBufferResource&	GetPrimitiveVertexBuffer() const;
 		const RBufferResource&	GetPrimitiveIndexBuffer() const;
@@ -48,6 +58,10 @@ namespace PigeonEngine
 		EBoundAABB			Bound;
 		RBufferResource		VertexBuffer;
 		RBufferResource		IndexBuffer;
+		// Reserved vertex slots of a line list; zero for the fixed shapes.
+		UINT32				VertexCapacity;
+		BOOL32				bLineListPrimitive;
+		BOOL32				bLineListOverflowWarned;
 	public:
 		RDebugWireframePrimitive();
 		RDebugWireframePrimitive(const RDebugWireframePrimitive& Other);
@@ -100,6 +114,15 @@ namespace PigeonEngine
 	public:
 		void			CreatePrimitive(RDebugWireframeType InType);
 		void			CreateCustomPrimitive(const EString& InCustomName, const Vector3* InPointDatas, const UINT32 InPointNum);
+		/*
+		* Creates the named line-list primitive on first use and uploads InPointNum points into
+		* it afterwards. Two consecutive points are one segment, so the caller passes every
+		* segment's endpoints without any connecting geometry. The upload is asynchronous like
+		* CreateCustomPrimitive: it is applied by the render thread before the frame's instances
+		* are drawn. InVertexCapacity is only used when the primitive is created; a later call
+		* with more points than the reserved capacity is clamped.
+		*/
+		void			UpdateCustomLineListPrimitive(const EString& InCustomName, const UINT32 InVertexCapacity, const Vector3* InPointDatas, const UINT32 InPointNum);
 	private:
 		class RCommand final
 		{

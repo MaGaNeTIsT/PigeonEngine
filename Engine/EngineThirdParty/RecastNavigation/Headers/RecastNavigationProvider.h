@@ -113,6 +113,7 @@ namespace PigeonEngine
 		virtual BOOL32	MoveAlongSurface(const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, Vector3& OutLocation) const override;
 
 		virtual void	CollectDebugLines(ENavigationDebugModeType InMode, TArray<Vector3>& OutLineSegments) const override;
+		virtual void	CollectDebugTriangles(TArray<Vector3>& OutLineSegments) const override;
 
 		virtual void	Tick(FLOAT InDeltaTime) override;
 		virtual UINT32	GetContentRevision() const override;

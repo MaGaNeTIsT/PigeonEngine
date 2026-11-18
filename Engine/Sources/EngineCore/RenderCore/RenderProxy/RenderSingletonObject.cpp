@@ -194,12 +194,13 @@ namespace PigeonEngine
 	}
 
 	RDebugWireframePrimitive::RDebugWireframePrimitive()
-		: UseShortIndex(FALSE), IndexCount(0u)
+		: UseShortIndex(FALSE), IndexCount(0u), VertexCapacity(0u), bLineListPrimitive(FALSE), bLineListOverflowWarned(FALSE)
 	{
 		Bound.IsValid = TRUE;
 	}
 	RDebugWireframePrimitive::RDebugWireframePrimitive(const RDebugWireframePrimitive& Other)
 		: UseShortIndex(Other.UseShortIndex), IndexCount(Other.IndexCount), Bound(Other.Bound), VertexBuffer(Other.VertexBuffer), IndexBuffer(Other.IndexBuffer)
+		, VertexCapacity(Other.VertexCapacity), bLineListPrimitive(Other.bLineListPrimitive), bLineListOverflowWarned(Other.bLineListOverflowWarned)
 	{
 		Bound.IsValid = TRUE;
 	}
@@ -208,11 +209,14 @@ namespace PigeonEngine
 	}
 	RDebugWireframePrimitive& RDebugWireframePrimitive::operator=(const RDebugWireframePrimitive& Other)
 	{
-		UseShortIndex	= Other.UseShortIndex;
-		IndexCount		= Other.IndexCount;
-		Bound			= Other.Bound;
-		VertexBuffer	= Other.VertexBuffer;
-		IndexBuffer		= Other.IndexBuffer;
+		UseShortIndex			= Other.UseShortIndex;
+		IndexCount				= Other.IndexCount;
+		Bound					= Other.Bound;
+		VertexBuffer			= Other.VertexBuffer;
+		IndexBuffer				= Other.IndexBuffer;
+		VertexCapacity			= Other.VertexCapacity;
+		bLineListPrimitive		= Other.bLineListPrimitive;
+		bLineListOverflowWarned	= Other.bLineListOverflowWarned;
 		return (*this);
 	}
 	BOOL32 RDebugWireframePrimitive::InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum)
@@ -359,6 +363,107 @@ namespace PigeonEngine
 		}
 
 		return Result;
+	}
+	BOOL32 RDebugWireframePrimitive::InitLineListPrimitive(const UINT32 InVertexCapacity)
+	{
+		if (InVertexCapacity < 2u)
+		{
+			return FALSE;
+		}
+
+		// A trailing odd vertex could never form a segment, so the reserved count is a whole
+		// number of segments.
+		const UINT32 Capacity = InVertexCapacity - (InVertexCapacity & 0x1u);
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return FALSE;
+		}
+
+		// The index list is the identity: drawing the first N indices is drawing the first N
+		// vertices as N/2 independent segments. Keeping it fixed is what lets an update upload
+		// nothing but the vertices.
+		UINT32* Indices = new UINT32[Capacity];
+		for (UINT32 Index = 0u; Index < Capacity; Index++)
+		{
+			Indices[Index] = Index;
+		}
+		RRHISubresourceData IndexSubData(reinterpret_cast<const UINT8*>(Indices), sizeof(UINT32) * Capacity, 0u, 0u);
+		BOOL32 Result = IndexBuffer.InitFromRHI(RenderDevice,
+			RBufferDesc((sizeof(UINT32) * Capacity), RBindFlagType::BIND_INDEX_BUFFER, sizeof(UINT32)),
+			&IndexSubData);
+		delete[]Indices;
+
+		if (Result)
+		{
+			Result = VertexBuffer.InitFromRHI(RenderDevice,
+				RBufferDesc((sizeof(Vector3) * Capacity), RBindFlagType::BIND_VERTEX_BUFFER, sizeof(Vector3)),
+				nullptr);
+		}
+
+		UseShortIndex			= FALSE;
+		IndexCount				= 0u;
+		VertexCapacity			= Result ? Capacity : 0u;
+		bLineListPrimitive		= Result;
+		bLineListOverflowWarned	= FALSE;
+		Bound.IsValid			= TRUE;
+		Bound.AABBMin			= Vector3::Zero();
+		Bound.AABBMax			= Vector3::Zero();
+		return Result;
+	}
+	BOOL32 RDebugWireframePrimitive::UpdateLineListPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum)
+	{
+		if ((!bLineListPrimitive) || (!InVertexDatas) || (VertexCapacity < 2u))
+		{
+			return FALSE;
+		}
+
+		UINT32 VertexNum = InVertexNum;
+		if (VertexNum > VertexCapacity)
+		{
+			VertexNum = VertexCapacity;
+		}
+		if ((VertexNum & 0x1u) != 0u)
+		{
+			VertexNum--;
+		}
+		if (VertexNum == 0u)
+		{
+			return FALSE;
+		}
+
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return FALSE;
+		}
+
+		VertexBuffer.UploadDataViaRHI(RenderDevice, InVertexDatas, sizeof(Vector3) * VertexNum, 0u);
+		IndexCount = VertexNum;
+
+		{
+			Bound.AABBMin = Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX);
+			Bound.AABBMax = Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
+			for (UINT32 Index = 0u; Index < VertexNum; Index++)
+			{
+				Bound.AABBMin = MinVector3(InVertexDatas[Index], Bound.AABBMin);
+				Bound.AABBMax = MaxVector3(InVertexDatas[Index], Bound.AABBMax);
+			}
+		}
+
+		return TRUE;
+	}
+	UINT32 RDebugWireframePrimitive::GetVertexCapacity() const
+	{
+		return VertexCapacity;
+	}
+	BOOL32 RDebugWireframePrimitive::IsLineListOverflowWarned() const
+	{
+		return bLineListOverflowWarned;
+	}
+	void RDebugWireframePrimitive::MarkLineListOverflowWarned()
+	{
+		bLineListOverflowWarned = TRUE;
 	}
 	BOOL32 RDebugWireframePrimitive::IsUseShortIndex() const
 	{
@@ -947,6 +1052,49 @@ namespace PigeonEngine
 				{
 					delete[]PointDatas;
 				}
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::UpdateCustomLineListPrimitive(const EString& InCustomName, const UINT32 InVertexCapacity, const Vector3* InPointDatas, const UINT32 InPointNum)
+	{
+		if ((!InPointDatas) || (InPointNum < 2u))
+		{
+			return;
+		}
+
+		RDebugWireframePrimitiveManager* Manager = this;
+		Vector3* PointDatas = new Vector3[InPointNum];
+		const UINT32 MemSize = sizeof(Vector3) * InPointNum;
+		::memset(PointDatas, 0, MemSize);
+		::memcpy_s(PointDatas, MemSize, InPointDatas, MemSize);
+
+		RequireCreateCustomCommands.EnqueueCommand(
+			[Manager, PointDatas,
+			CustomName = InCustomName,
+			VertexCapacity = InVertexCapacity,
+			PointNum = InPointNum
+			]()->void
+			{
+				RDebugWireframePrimitive* Primitive = Manager->DebugWireframeCustomPrimitives.FindValueAsPtr(CustomName);
+				if (!Primitive)
+				{
+					Manager->DebugWireframeCustomPrimitives.Add(CustomName, RDebugWireframePrimitive());
+					Primitive = Manager->DebugWireframeCustomPrimitives.FindValueAsPtr(CustomName);
+					if (Primitive)
+					{
+						Primitive->InitLineListPrimitive(VertexCapacity);
+					}
+				}
+				if (Primitive)
+				{
+					if ((PointNum > Primitive->GetVertexCapacity()) && (!Primitive->IsLineListOverflowWarned()))
+					{
+						PE_LOG_WARN(EString("Debug line list primitive capacity exceeded, extra points are dropped. Custom name : ") + CustomName);
+						Primitive->MarkLineListOverflowWarned();
+					}
+					Primitive->UpdateLineListPrimitive(PointDatas, PointNum);
+				}
+				delete[]PointDatas;
 			}
 		);
 	}

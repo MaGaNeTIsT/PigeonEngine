@@ -1419,7 +1419,11 @@ namespace PigeonEngine
 		}
 
 		// Every length below is in centimeters, except the fields Recast defines in voxels:
-		// walkableHeight, walkableClimb, walkableRadius and maxEdgeLen.
+		// walkableHeight, walkableClimb, walkableRadius, maxEdgeLen and maxSimplificationError.
+		// Passing a centimeter value where voxels are expected makes the contour simplification
+		// devour whole cell ranges: corners vanish and interior holes (a pool, a courtyard) are
+		// bridged over, which is exactly what a navmesh looks like when its polygons no longer
+		// follow the walkable cells.
 		Config.borderSize = 0;
 		Config.tileSize = 0;
 		Config.walkableSlopeAngle = Settings.AgentMaxSlopeAngle;
@@ -1427,7 +1431,7 @@ namespace PigeonEngine
 		Config.walkableClimb = static_cast<int>(floorf(Settings.AgentMaxClimb / Config.ch));
 		Config.walkableRadius = static_cast<int>(ceilf(Settings.AgentRadius / Config.cs));
 		Config.maxEdgeLen = static_cast<int>((Settings.MaxEdgeLength > 0.0f) ? (Settings.MaxEdgeLength / Config.cs) : 12.0f);
-		Config.maxSimplificationError = (Settings.MaxSimplificationError > 0.0f) ? Settings.MaxSimplificationError : (1.3f * Config.cs);
+		Config.maxSimplificationError = (Settings.MaxSimplificationError > 0.0f) ? (Settings.MaxSimplificationError / Config.cs) : 1.3f;
 		Config.minRegionArea = static_cast<int>(rcSqr(Settings.MinRegionArea));
 		Config.mergeRegionArea = static_cast<int>(rcSqr(Settings.MergeRegionArea));
 		Config.maxVertsPerPoly = static_cast<int>(EMath::Clamp<UINT32>(Settings.MaxVertsPerPoly, 3u, static_cast<UINT32>(DT_VERTS_PER_POLYGON)));
@@ -1977,6 +1981,66 @@ namespace PigeonEngine
 					const float* EdgeEnd = &Tile->verts[Polygon->verts[NextIndex] * 3u];
 					OutLineSegments.Add(Vector3(EdgeStart[0], EdgeStart[1], EdgeStart[2]));
 					OutLineSegments.Add(Vector3(EdgeEnd[0], EdgeEnd[1], EdgeEnd[2]));
+				}
+			}
+		}
+	}
+	void ERecastNavigationProvider::CollectDebugTriangles(TArray<Vector3>& OutLineSegments) const
+	{
+		if ((!bReady) || (!NavMesh))
+		{
+			return;
+		}
+
+		// Same read only access as CollectDebugLines: the mutating getTile overload is private.
+		const dtNavMesh* ReadOnlyNavMesh = NavMesh;
+		const int MaxTiles = NavMesh->getMaxTiles();
+		for (int TileIndex = 0; TileIndex < MaxTiles; TileIndex++)
+		{
+			const dtMeshTile* Tile = ReadOnlyNavMesh->getTile(TileIndex);
+			if ((!Tile) || (!Tile->header) || (!Tile->polys) || (!Tile->verts)
+				|| (!Tile->detailMeshes) || (!Tile->detailTris) || (!Tile->detailVerts))
+			{
+				continue;
+			}
+
+			for (int PolygonIndex = 0; PolygonIndex < Tile->header->polyCount; PolygonIndex++)
+			{
+				const dtPoly* Polygon = &Tile->polys[PolygonIndex];
+				if (Polygon->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)
+				{
+					// A link has no surface to triangulate.
+					continue;
+				}
+
+				const dtPolyDetail* Detail = &Tile->detailMeshes[PolygonIndex];
+				for (int TriangleIndex = 0; TriangleIndex < Detail->triCount; TriangleIndex++)
+				{
+					const unsigned char* Triangle = &Tile->detailTris[(Detail->triBase + TriangleIndex) * 4];
+					Vector3 Corners[3];
+					for (UINT32 CornerIndex = 0u; CornerIndex < 3u; CornerIndex++)
+					{
+						// A corner is either one of the polygon's own vertices or one of the
+						// extra detail vertices stored after them in the same tile.
+						const UINT32 Corner = Triangle[CornerIndex];
+						if (Corner < Polygon->vertCount)
+						{
+							const float* Position = &Tile->verts[Polygon->verts[Corner] * 3u];
+							Corners[CornerIndex] = Vector3(Position[0], Position[1], Position[2]);
+						}
+						else
+						{
+							const float* Position = &Tile->detailVerts[(Detail->vertBase + Corner - Polygon->vertCount) * 3u];
+							Corners[CornerIndex] = Vector3(Position[0], Position[1], Position[2]);
+						}
+					}
+
+					OutLineSegments.Add(Corners[0]);
+					OutLineSegments.Add(Corners[1]);
+					OutLineSegments.Add(Corners[1]);
+					OutLineSegments.Add(Corners[2]);
+					OutLineSegments.Add(Corners[2]);
+					OutLineSegments.Add(Corners[0]);
 				}
 			}
 		}

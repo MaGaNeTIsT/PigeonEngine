@@ -524,7 +524,39 @@ namespace PigeonEngine
 		return DebugDrawMode;
 	}
 
+	void ENavigationManager::SetDebugTrianglesEnabled(const BOOL32& InEnabled)
+	{
+		if (bDebugTrianglesEnabled == InEnabled)
+		{
+			return;
+		}
+		bDebugTrianglesEnabled = InEnabled;
+		InvalidateDebugLines();
+	}
+
+	BOOL32 ENavigationManager::IsDebugTrianglesEnabled() const
+	{
+		return bDebugTrianglesEnabled;
+	}
+
+	UINT32 ENavigationManager::GetDebugSegmentsRevision() const
+	{
+		return DebugSegmentsRevision;
+	}
+
 	const TArray<Vector3>& ENavigationManager::GetDebugLineSegments()
+	{
+		RebuildDebugSegments();
+		return DebugPolygonSegments;
+	}
+
+	const TArray<Vector3>& ENavigationManager::GetDebugTriangleSegments()
+	{
+		RebuildDebugSegments();
+		return DebugTriangleSegments;
+	}
+
+	void ENavigationManager::RebuildDebugSegments()
 	{
 		// A rebuilt tile changes the polygons without a new build, so the cache follows the
 		// provider's own content revision as well.
@@ -541,24 +573,33 @@ namespace PigeonEngine
 			}
 		}
 
-		if (bDebugLinesDirty)
+		if (!bDebugLinesDirty)
 		{
-			DebugLineSegments.Empty();
-			for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
-			{
-				ENavigationProviderInterface* Provider = Providers[Index].Provider;
-				if ((!!Provider) && (Provider->IsReady()))
-				{
-					if (Providers[Index].bDebugDrawEnabled)
-					{
-						Provider->CollectDebugLines(DebugDrawMode, DebugLineSegments);
-					}
-					Providers[Index].DebugRevision = Provider->GetContentRevision();
-				}
-			}
-			bDebugLinesDirty = FALSE;
+			return;
 		}
-		return DebugLineSegments;
+
+		DebugPolygonSegments.Empty();
+		DebugTriangleSegments.Empty();
+		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
+		{
+			ENavigationProviderInterface* Provider = Providers[Index].Provider;
+			if ((!!Provider) && (Provider->IsReady()))
+			{
+				if (Providers[Index].bDebugDrawEnabled)
+				{
+					Provider->CollectDebugLines(DebugDrawMode, DebugPolygonSegments);
+					if (bDebugTrianglesEnabled)
+					{
+						Provider->CollectDebugTriangles(DebugTriangleSegments);
+					}
+				}
+				Providers[Index].DebugRevision = Provider->GetContentRevision();
+			}
+		}
+		bDebugLinesDirty = FALSE;
+		// The editor compares this against the revision it last uploaded, so every rebuild
+		// has to produce a value the previous one did not.
+		DebugSegmentsRevision++;
 	}
 
 	INT32 ENavigationManager::FindProviderIndex(const ObjectIdentityType& InOwnerId) const
@@ -576,7 +617,9 @@ namespace PigeonEngine
 	void ENavigationManager::InvalidateDebugLines()
 	{
 		bDebugLinesDirty = TRUE;
-		DebugLineSegments.Empty();
+		DebugPolygonSegments.Empty();
+		DebugTriangleSegments.Empty();
+		DebugSegmentsRevision++;
 	}
 
 	void ENavigationManager::ReleaseAllProviders()

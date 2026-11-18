@@ -42,6 +42,10 @@ namespace PigeonEngine
 	{
 		return bMaterialDirty;
 	}
+	BOOL32 PPrimitiveComponent::IsAffectsNavigation() const
+	{
+		return bAffectsNavigation;
+	}
 	void PPrimitiveComponent::SetCastShadow(BOOL32 InIsCastShadow)
 	{
 		bCastShadow = InIsCastShadow;
@@ -49,6 +53,10 @@ namespace PigeonEngine
 	void PPrimitiveComponent::SetReceiveShadow(BOOL32 InIsReceiveShadow)
 	{
 		bReceiveShadow = InIsReceiveShadow;
+	}
+	void PPrimitiveComponent::SetAffectsNavigation(BOOL32 InAffects)
+	{
+		bAffectsNavigation = (InAffects ? TRUE : FALSE);
 	}
 
 	// What this primitive reports to the render tier START

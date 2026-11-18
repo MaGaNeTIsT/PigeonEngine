@@ -18,9 +18,10 @@
 namespace PigeonEngine
 {
 #if ENGINE_EDITOR_ONLY
-	// The navmesh overlay. The manager caches the segment list and only rebuilds it when a
-	// provider is published or the draw mode changes, so this is a loop over memory that
-	// already exists rather than a walk of every polygon each frame.
+	// The navmesh overlay. The manager caches both segment lists and only rebuilds them when a
+	// provider is published, the draw mode changes or a tile was rebuilt. On a rebuild the
+	// points go into a fixed size line list primitive once, and every frame is one DrawCustom
+	// per list: a single draw call each, independent of the segment count.
 	static void DrawNavigationDebug()
 	{
 		ENavigationManager* NavigationManager = ENavigationManager::GetManagerSingleton();
@@ -29,16 +30,48 @@ namespace PigeonEngine
 			return;
 		}
 
-		const TArray<Vector3>& Segments = NavigationManager->GetDebugLineSegments();
-		if (Segments.Num<UINT32>() < 2u)
+		static const EString PolygonLineListName(PE_TEXT("NavigationDebug.PolygonLines"));
+		static const EString TriangleLineListName(PE_TEXT("NavigationDebug.TriangleLines"));
+		// Two vertices per segment, so this reserves 65536 segments per list: a 1.5 MB vertex
+		// buffer and a 512 KB index buffer. It covers the demo scenes several times over; a
+		// larger list is clamped by the primitive, which reports it once.
+		PE_CONSTEXPR_STATIC UINT32 LineVertexCapacity = 131072u;
+		static UINT32 AppliedSegmentsRevision = 0u;
+
+		const TArray<Vector3>& PolygonSegments = NavigationManager->GetDebugLineSegments();
+		const TArray<Vector3>& TriangleSegments = NavigationManager->GetDebugTriangleSegments();
+		const UINT32 SegmentsRevision = NavigationManager->GetDebugSegmentsRevision();
+		RDebugWireframePrimitiveManager* WireframeManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+
+		// The geometry only changes with the revision, so the upload is skipped on the frames in
+		// between instead of pushing the whole mesh every frame.
+		if (SegmentsRevision != AppliedSegmentsRevision)
 		{
-			return;
+			if (PolygonSegments.Num<UINT32>() >= 2u)
+			{
+				WireframeManager->UpdateCustomLineListPrimitive(PolygonLineListName, LineVertexCapacity
+					, PolygonSegments.GetData(), PolygonSegments.Num<UINT32>());
+			}
+			if (TriangleSegments.Num<UINT32>() >= 2u)
+			{
+				WireframeManager->UpdateCustomLineListPrimitive(TriangleLineListName, LineVertexCapacity
+					, TriangleSegments.GetData(), TriangleSegments.Num<UINT32>());
+			}
+			AppliedSegmentsRevision = SegmentsRevision;
 		}
 
-		RDebugWireframePrimitiveManager* WireframeManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
-		for (UINT32 Index = 0u, SegmentNum = Segments.Num<UINT32>() / 2u; Index < SegmentNum; Index++)
+		// The custom primitives are drawn in name order, not call order, so the two lists are
+		// kept apart by height instead: the border sits two units above the triangulation and
+		// wins the depth test on every edge they share.
+		if ((NavigationManager->IsDebugTrianglesEnabled()) && (TriangleSegments.Num<UINT32>() >= 2u))
 		{
-			WireframeManager->DrawSingleLine(Segments[Index * 2u], Segments[Index * 2u + 1u], Color4::Red());
+			WireframeManager->DrawCustom(TriangleLineListName, Matrix4x4::Identity(), Color4::Blue());
+		}
+		if (PolygonSegments.Num<UINT32>() >= 2u)
+		{
+			WireframeManager->DrawCustom(PolygonLineListName
+				, MakeMatrix4x4(Vector3(0.f, 2.f, 0.f), Quaternion::Identity(), Vector3(1.f, 1.f, 1.f))
+				, Color4::Red());
 		}
 	}
 

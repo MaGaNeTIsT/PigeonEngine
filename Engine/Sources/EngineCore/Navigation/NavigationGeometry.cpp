@@ -171,7 +171,7 @@ namespace PigeonEngine
 		}
 
 		const PStaticMeshComponent* MeshComponent = dynamic_cast<const PStaticMeshComponent*>(&InComponent);
-		if ((!!MeshComponent) && (MeshComponent->ShouldRender()))
+		if ((!!MeshComponent) && (MeshComponent->ShouldRender()) && (MeshComponent->IsAffectsNavigation()))
 		{
 			CollectComponentTriangles(*MeshComponent, InBakeBounds, InFlipTriangleWinding, InOutGeometry);
 		}

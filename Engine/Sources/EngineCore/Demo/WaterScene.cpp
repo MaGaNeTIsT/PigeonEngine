@@ -29,7 +29,7 @@ namespace PigeonEngine
 	// X = 3000 starts at X = 2000. The demo level puts its visible ground plane under this
 	// location too. The simulation body and the surface actor share it - the body's world XZ
 	// is the domain centre, and the surface mesh must cover it.
-	const Vector3 GWaterSceneLocation = Vector3(3000.f, 0.f, 0.f);
+	const Vector3 GWaterSceneLocation = Vector3(0.f, 0.f, 0.f);
 
 	struct FWaterSceneBuild
 	{
