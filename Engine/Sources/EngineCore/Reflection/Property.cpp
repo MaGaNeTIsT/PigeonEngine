@@ -9,6 +9,40 @@ namespace PigeonEngine
 			static TMap<size_t, TArray<FProperty>> Properties;
 			return Properties;
 		}
+
+		TMap<size_t, UINT32>& GetClassVersions()
+		{
+			static TMap<size_t, UINT32> Versions;
+			return Versions;
+		}
+
+		TMap<size_t, TFunction<void(void*, UINT32)>>& GetClassMigrators()
+		{
+			static TMap<size_t, TFunction<void(void*, UINT32)>> Migrators;
+			return Migrators;
+		}
+	}
+
+	void EClassPropertyRegistry::SetClassVersion(const size_t& InClassHash, const UINT32& InVersion)
+	{
+		GetClassVersions().Add(InClassHash, InVersion);
+	}
+
+	UINT32 EClassPropertyRegistry::GetClassVersion(const size_t& InClassHash)
+	{
+		UINT32 Version = 1u;
+		GetClassVersions().FindValue(InClassHash, Version);
+		return Version;
+	}
+
+	void EClassPropertyRegistry::SetClassMigrator(const size_t& InClassHash, const TFunction<void(void*, UINT32)>& InMigrator)
+	{
+		GetClassMigrators().Add(InClassHash, InMigrator);
+	}
+
+	const TFunction<void(void*, UINT32)>* EClassPropertyRegistry::FindClassMigrator(const size_t& InClassHash)
+	{
+		return GetClassMigrators().FindValueAsPtr(InClassHash);
 	}
 
 	void EClassPropertyRegistry::AddProperty(const size_t& InClassHash, const FProperty& InProperty)

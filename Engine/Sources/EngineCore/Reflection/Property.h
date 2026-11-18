@@ -44,7 +44,26 @@ namespace PigeonEngine
 		static void AddProperty(const size_t& InClassHash, const FProperty& InProperty);
 		PE_NODISCARD static const TArray<FProperty>* FindProperties(const size_t& InClassHash);
 		static void SerializeObject(EArchive& InArchive, const size_t& InClassHash, void* InContainer);
+
+		// Class version: bumped when a class's serialized layout changes. Files written by
+		// an older version are read with the current property code (unknown fields are
+		// skipped) and then the registered migrator patches the loaded values.
+		static void SetClassVersion(const size_t& InClassHash, const UINT32& InVersion);
+		PE_NODISCARD static UINT32 GetClassVersion(const size_t& InClassHash);
+		static void SetClassMigrator(const size_t& InClassHash, const TFunction<void(void*, UINT32)>& InMigrator);
+		PE_NODISCARD static const TFunction<void(void*, UINT32)>* FindClassMigrator(const size_t& InClassHash);
 	};
+
+	template <typename TClass>
+	void SetClassMigration(const UINT32& InCurrentVersion, const TFunction<void(TClass&, UINT32)>& InMigrate)
+	{
+		const size_t ClassHash = GetClassHashCode<TClass>();
+		EClassPropertyRegistry::SetClassVersion(ClassHash, InCurrentVersion);
+		EClassPropertyRegistry::SetClassMigrator(ClassHash, [InMigrate](void* InContainer, UINT32 InFromVersion) -> void
+		{
+			InMigrate(*static_cast<TClass*>(InContainer), InFromVersion);
+		});
+	}
 
 	// Value serialization. These are the one place that knows how a math type is stored,
 	// so both the JSON and a future binary backend stay in sync through EArchive.
