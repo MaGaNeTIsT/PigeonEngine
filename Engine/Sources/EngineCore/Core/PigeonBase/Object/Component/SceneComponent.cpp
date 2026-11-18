@@ -143,13 +143,9 @@ namespace PigeonEngine
 
 	void PSceneComponent::ClearChildren()
 	{
-		// Snapshot first: destroying a child detaches it from this live set, and walking
-		// the set while its rows disappear would skip entries.
-		TArray<PSceneComponent*> ChildrenSnapshot;
-		for (TSet<PSceneComponent*>::TIterator It = ChildrenComponents.Begin(); It != ChildrenComponents.End(); It++)
-		{
-			ChildrenSnapshot.Add(*It);
-		}
+		// Snapshot first: destroying a child detaches it from this live list, and walking
+		// the list while its rows disappear would skip entries.
+		TArray<PSceneComponent*> ChildrenSnapshot = ChildrenComponents;
 		for (UINT32 Index = 0u, Num = ChildrenSnapshot.Num<UINT32>(); Index < Num; Index++)
 		{
 			PSceneComponent* Child = ChildrenSnapshot[Index];
@@ -203,7 +199,7 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
-	TSet<PSceneComponent*> PSceneComponent::GetChildrenComponents() const
+	TArray<PSceneComponent*> PSceneComponent::GetChildrenComponents() const
 	{
 		return this->ChildrenComponents;
 	}

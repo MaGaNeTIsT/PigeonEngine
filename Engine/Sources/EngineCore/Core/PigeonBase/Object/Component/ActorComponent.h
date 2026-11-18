@@ -33,6 +33,11 @@ namespace PigeonEngine
 		// that needed the owner actor, so the back-pointer can go.
 		virtual void OnPreDelete() override;
 
+		// Scene hooks that also maintain the world's component registry: joining the
+		// scene indexes this component by its unique ID, leaving removes it.
+		void BeginAddedToScene(PWorld* World) override;
+		void RemovedFromScene() override;
+
 		// Render proxy functions START
 	public:
 		virtual BOOL32	IsVisible() const;

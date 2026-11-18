@@ -149,15 +149,9 @@ namespace PigeonEngine
 
 	TArray<PActor*> PWorld::GetAllActors() const
 	{
-		// The registry is flat, so this no longer recurses (and copies) the attachment
-		// tree on every call - the editor picking and the navigation bake both used to
-		// pay that per frame / per bake.
-		TArray<PActor*> Result;
-		for (TSet<PActor*>::TConstIterator It = AllActors.Begin(); It != AllActors.End(); It++)
-		{
-			Result.Add(*It);
-		}
-		return Result;
+		// The registry is flat and insertion ordered, so this is one array copy - the
+		// editor picking and the navigation bake both used to walk and copy the tree.
+		return AllActors;
 	}
 
 	const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const
@@ -175,24 +169,36 @@ namespace PigeonEngine
 	const PActorComponent* PWorld::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID,
 		const BOOL8& bIncludeChildComponent) const
 	{
-		// Every actor is in the flat registry, so scanning each actor's own components
-		// covers the whole world. The old loop only scanned the root-level actor list,
-		// which made components on nested actors invisible to every post-physics
-		// handler that looks its component up by unique ID.
-		for (TSet<PActor*>::TConstIterator It = AllActors.Begin(); It != AllActors.End(); It++)
+		// Direct map lookup: every component that is in the scene is indexed here by its
+		// own unique ID, so the per-fixed-tick handler lookups no longer scan actors.
+		(void)bIncludeChildComponent;
+		if (const PActorComponent* const* Found = ComponentById.FindValueAsPtr(InUniqueID))
 		{
-			const PActor* Actor = (*It);
-			if (!Actor)
-			{
-				continue;
-			}
-			const PActorComponent* Ret = Actor->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
-			if (Ret)
-			{
-				return Ret;
-			}
+			return (*Found);
 		}
 		return nullptr;
+	}
+
+	void PWorld::RegisterComponent(PActorComponent* Component)
+	{
+		if (!Component)
+		{
+			return;
+		}
+		ComponentById.Add(Component->GetUniqueID(), Component);
+	}
+
+	void PWorld::UnregisterComponent(PActorComponent* Component)
+	{
+		if (!Component)
+		{
+			return;
+		}
+		// TMap::Remove goes through find-then-erase, which must not see a missing key.
+		if (ComponentById.ContainsKey(Component->GetUniqueID()))
+		{
+			ComponentById.Remove(Component->GetUniqueID());
+		}
 	}
 
 	void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
@@ -525,10 +531,10 @@ namespace PigeonEngine
 		// like Materials are immediately visible without an extra click.
 		if (Root)
 		{
-			TSet<PSceneComponent*> Children = Root->GetChildrenComponents();
+			TArray<PSceneComponent*> Children = Root->GetChildrenComponents();
 			if (Children.Num() == 1)
 			{
-				DefaultComp = *Children.begin();
+				DefaultComp = Children[0];
 			}
 		}
 

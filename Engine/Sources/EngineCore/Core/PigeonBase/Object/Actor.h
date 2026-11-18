@@ -79,13 +79,21 @@ namespace PigeonEngine
 		// reference so its list never keeps a pointer to freed memory. Public because the
 		// component side of the teardown lives in PActorComponent, which is not a friend.
 		void         RemoveComponentReference(PActorComponent* Component);
+		// Components of this actor in insertion order. FindComponent returns the first
+		// component that is a TComponent, subclasses included; GetComponents returns all.
+		template <typename TComponent>
+		PE_NODISCARD TArray<TComponent*> GetComponents() const;
+		template <typename TComponent>
+		PE_NODISCARD TComponent* FindComponent() const;
 protected:
 	virtual void ClearComponents  ();
 protected:
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 	private:
-		// contains all actor components, including RootComponent
-		TSet<PActorComponent*> Components;
+		// contains all actor components, including RootComponent. Insertion order, so
+		// tick and iteration order is deterministic (the old TSet iterated in pointer
+		// order, which changed with the allocator).
+		TArray<PActorComponent*> Components;
 
 	public:
 
@@ -123,5 +131,32 @@ protected:
 #endif
 
 	};
+
+	template <typename TComponent>
+	TArray<TComponent*> PActor::GetComponents() const
+	{
+		TArray<TComponent*> Result;
+		for (UINT32 Index = 0u, Num = Components.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (TComponent* CastComponent = dynamic_cast<TComponent*>(Components[Index]))
+			{
+				Result.Add(CastComponent);
+			}
+		}
+		return Result;
+	}
+
+	template <typename TComponent>
+	TComponent* PActor::FindComponent() const
+	{
+		for (UINT32 Index = 0u, Num = Components.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (TComponent* CastComponent = dynamic_cast<TComponent*>(Components[Index]))
+			{
+				return CastComponent;
+			}
+		}
+		return nullptr;
+	}
 
 };

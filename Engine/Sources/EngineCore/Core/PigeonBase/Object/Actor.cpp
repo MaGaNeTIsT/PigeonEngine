@@ -310,7 +310,7 @@ namespace PigeonEngine
 		if (RootComponent)
 		{
 			trans = RootComponent->Transform;
-			TSet<PSceneComponent*> TempComponents = RootComponent->ChildrenComponents;
+			TArray<PSceneComponent*> TempComponents = RootComponent->ChildrenComponents;
 			for (PSceneComponent* Component : TempComponents)
 			{
 				Component->AttachToComponent(NewRoot);
@@ -514,11 +514,7 @@ namespace PigeonEngine
 		// Destroy on it here as well would destroy it twice. Whether a parent happens to
 		// sort before its child in the pointer-ordered set is heap luck, which is exactly
 		// why the old loop double-freed only sometimes.
-		TArray<PActorComponent*> ComponentsSnapshot;
-		for (TSet<PActorComponent*>::TIterator It = Components.Begin(); It != Components.End(); It++)
-		{
-			ComponentsSnapshot.Add(*It);
-		}
+		TArray<PActorComponent*> ComponentsSnapshot = Components;
 		for (UINT32 Index = 0u, Num = ComponentsSnapshot.Num<UINT32>(); Index < Num; Index++)
 		{
 			PActorComponent* Component = ComponentsSnapshot[Index];

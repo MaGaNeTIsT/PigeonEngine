@@ -176,10 +176,10 @@ namespace PigeonEngine
 			CollectComponentTriangles(*MeshComponent, InBakeBounds, InFlipTriangleWinding, InOutGeometry);
 		}
 
-		const TSet<PSceneComponent*> Children = InComponent.GetChildrenComponents();
-		for (TSet<PSceneComponent*>::TConstIterator Iterator = Children.Begin(); Iterator != Children.End(); Iterator++)
+		const TArray<PSceneComponent*> Children = InComponent.GetChildrenComponents();
+		for (UINT32 ChildIndex = 0u, ChildNum = Children.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
 		{
-			PSceneComponent* ChildComponent = (*Iterator);
+			PSceneComponent* ChildComponent = Children[ChildIndex];
 			if (!!ChildComponent)
 			{
 				CollectActorTriangles(InActor, *ChildComponent, InBakeBounds, InFlipTriangleWinding, InOutGeometry);

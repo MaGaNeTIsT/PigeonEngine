@@ -87,14 +87,21 @@ namespace PigeonEngine
 	// own RemovedFromScene - every destroy path funnels through it while the world
 	// pointer is still set - and from RemoveActor; a no-op for an unregistered actor.
 	void UnregisterActor(PActor* Actor);
+	// Component registry maintenance, driven by the component scene hooks: a component
+	// that joins the scene is indexed by its unique ID here (so the by-ID lookup is O(1)
+	// instead of walking every actor), and leaving the scene removes it.
+	void RegisterComponent(PActorComponent* Component);
+	void UnregisterComponent(PActorComponent* Component);
 private:
 	PActor* RootActor = nullptr;
 	// Flat registry of every actor added to this world (root excluded), maintained by
-	// AddActor/RemoveActor/UnregisterActor. The attachment tree remains the structural
-	// truth; this is the iteration and lookup index built on top of it, so queries no
-	// longer walk (and copy) the tree.
-	TSet<PActor*> AllActors;
+	// AddActor/RemoveActor/UnregisterActor. Insertion order, so iteration is
+	// deterministic. The attachment tree remains the structural truth; this is the
+	// iteration and lookup index built on top of it.
+	TArray<PActor*> AllActors;
 	TMap<ObjectIdentityType, PActor*> ActorById;
+	// Every component currently in the scene, keyed by its own unique ID.
+	TMap<ObjectIdentityType, PActorComponent*> ComponentById;
 	// Objects queued by DestroyActor/DestroyComponent. The queues are copied out at
 	// flush time, so a destroy requested during the flush itself (from a UserEndPlay or
 	// an OnDestroy) lands in the live queues and waits for the next one.

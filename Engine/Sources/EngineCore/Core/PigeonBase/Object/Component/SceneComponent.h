@@ -175,11 +175,12 @@ namespace PigeonEngine
 	public:
 		void RemoveChildComponent(PSceneComponent* NewChild);
 		PE_NODISCARD const PSceneComponent* GetComponentByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildComponent) const;
-		PE_NODISCARD TSet<PSceneComponent*> GetChildrenComponents() const;
+		PE_NODISCARD TArray<PSceneComponent*> GetChildrenComponents() const;
 	protected:
 		void ClearChildren();
 	protected:
-		TSet<PSceneComponent*> ChildrenComponents;
+		// Insertion order, so transform and render walks are deterministic.
+		TArray<PSceneComponent*> ChildrenComponents;
 
 	public:
 		virtual TSharedPtr<CJsonObject> Serialize() override;

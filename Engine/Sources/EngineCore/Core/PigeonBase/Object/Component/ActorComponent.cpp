@@ -1,5 +1,6 @@
 #include "./ActorComponent.h"
 #include <PigeonBase/Object/Actor.h>
+#include <PigeonBase/Object/World/World.h>
 
 namespace PigeonEngine
 {
@@ -45,6 +46,27 @@ namespace PigeonEngine
 		{
 			RemovedFromScene();
 		}
+	}
+
+	void PActorComponent::BeginAddedToScene(PWorld* World)
+	{
+		PObject::BeginAddedToScene(World);
+		if (World)
+		{
+			World->RegisterComponent(this);
+		}
+	}
+
+	void PActorComponent::RemovedFromScene()
+	{
+		// The world pointer is still set here (PObject::RemovedFromScene clears it at the
+		// end of the chain), so the registry entry can be dropped while the component is
+		// still addressable. Subclass overrides chain to this one.
+		if (PWorld* World = GetWorld())
+		{
+			World->UnregisterComponent(this);
+		}
+		PObject::RemovedFromScene();
 	}
 
 	void PActorComponent::SetOwnerActor(PActor* NewOwner)
