@@ -29,8 +29,12 @@ namespace PigeonEngine
 		OnMouseEvent OnMouseEvent;
 		OnKeyEvent   OnKeyEvent;
 	private:
-		TFunction<void(IMouse::Event::EType Type)> OnMouseDown;
-		TFunction<void(IKeyboard::Event::EType Type, BYTE KeyCode)> OnKeyDown;
+		// Handles of the global input subscriptions taken in Init and released in Uninit.
+		// Input events are dispatched straight from the Win32 message pump, which can
+		// fire at any point between frames, so these must come off before the object is
+		// deleted; the handle form works without keeping the TFunction copies alive.
+		FDelegateHandle OnMouseDownHandle = 0u;
+		FDelegateHandle OnKeyDownHandle = 0u;
 	public:
 
 		PE_NODISCARD PCameraComponent* GetCamera() const;

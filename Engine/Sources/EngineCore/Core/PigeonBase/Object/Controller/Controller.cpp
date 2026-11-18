@@ -26,24 +26,31 @@ namespace PigeonEngine
 		PActor::Init();
 		this->SetIsTickable(TRUE);
 		SetCamera(MyCamera, FALSE);
-		auto func = [this](IMouse::Event::EType Type)
+		OnMouseDownHandle = EInput::MouseEvent.Add(TFunction<void(IMouse::Event::EType)>([this](IMouse::Event::EType Type)
 		{
 			this->OnMouse(Type);
-		}; 
-		OnMouseDown = func;
-
-		auto func1 =  [this](IKeyboard::Event::EType Type, BYTE KeyCode)
+		}));
+		OnKeyDownHandle = EInput::KeyEvent.Add(TFunction<void(IKeyboard::Event::EType, BYTE)>([this](IKeyboard::Event::EType Type, BYTE KeyCode)
 		{
 			this->OnKey(Type, KeyCode);
-		}; 
-		OnKeyDown = func1;
-
-		EInput::MouseEvent.Add(OnMouseDown);
-		EInput::KeyEvent.Add(OnKeyDown);
+		}));
 	}
 
 	void PController::Uninit()
 	{
+		// Detach from the global input delegates while the object is still alive. An
+		// unreleased subscription outlives this object as a dangling callback that the
+		// message pump can invoke between any two frames.
+		if (OnMouseDownHandle != 0u)
+		{
+			EInput::MouseEvent.Remove(OnMouseDownHandle);
+			OnMouseDownHandle = 0u;
+		}
+		if (OnKeyDownHandle != 0u)
+		{
+			EInput::KeyEvent.Remove(OnKeyDownHandle);
+			OnKeyDownHandle = 0u;
+		}
 		PActor::Uninit();
 	}
 
@@ -129,7 +136,10 @@ namespace PigeonEngine
 #if ENGINE_EDITOR_ONLY
 	PEditorController::PEditorController()
 	{
-		PController();
+		// The base constructor has already run by the time this body executes. The removed
+		// "PController();" statement constructed (and immediately destroyed) an unnamed
+		// PController, allocating a PCameraComponent on that temporary and leaking it; it
+		// never initialized this object.
 	}
 	PEditorController::~PEditorController()
 	{

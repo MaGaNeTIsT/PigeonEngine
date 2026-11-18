@@ -8,6 +8,10 @@
 namespace PigeonEngine
 {
 	/*------------------ Declaration ------------------*/
+	// Stable subscription identity handed out by TDelegateBroadcast::Add and consumed by
+	// Remove(FDelegateHandle). 0 is never issued, so it doubles as "no subscription".
+	typedef ULONGLONG FDelegateHandle;
+
 	template <typename FuncType>
 	class TDelegate;
 
@@ -24,15 +28,34 @@ namespace PigeonEngine
 	template <typename... Args>
 	class TDelegateBroadcast<void (Args...)> : public TDelegate<void(Args...)>
 	{
-	public:
-		~TDelegateBroadcast<void(Args...)>() { RemoveAll(); }
-	public:
-		void Add(const TFunction<void (Args...)>& New);
-		void Remove(const TFunction<void (Args...)>& Old);
-		void RemoveAll();
-		void Broadcast(Args... Arguments);
 	private:
-		TArray<TFunction<void(Args...)>> ToCall{};
+		// One row per live subscription. The handle is the stable identity Remove(handle)
+		// consumes; the TFunction copy keeps the by-value Remove path (FunctionID
+		// equality) that existing subscribers use.
+		struct FDelegateEntry
+		{
+			FDelegateHandle					Handle = 0u;
+			TFunction<void (Args...)>		Callback;
+		};
+	public:
+		~TDelegateBroadcast<void (Args...)>() { RemoveAll(); }
+	public:
+		// The handle may be ignored by subscribers that never detach; keeping the return
+		// value non-void breaks no existing call site.
+		FDelegateHandle			Add(const TFunction<void (Args...)>& New);
+		void					Remove(const TFunction<void (Args...)>& Old);
+		BOOL32					Remove(const FDelegateHandle& InHandle);
+		void					RemoveAll();
+		void					Broadcast(Args... Arguments);
+	private:
+		static FDelegateHandle	AllocHandle()
+		{
+			static FDelegateHandle HandleGenerator = 0u;
+			HandleGenerator += 1u;
+			return HandleGenerator;
+		}
+	private:
+		TArray<FDelegateEntry> ToCall{};
 	};
 
 	// Delegate with return, single execution
@@ -78,15 +101,44 @@ namespace PigeonEngine
 
 	/*------------------ Implementation ------------------*/
 	template <typename ... Args>
-	void TDelegateBroadcast<void(Args...)>::Add(const TFunction<void(Args...)>& New)
+	FDelegateHandle TDelegateBroadcast<void(Args...)>::Add(const TFunction<void(Args...)>& New)
 	{
-		ToCall.Add(New);
+		FDelegateEntry NewEntry;
+		NewEntry.Handle = AllocHandle();
+		NewEntry.Callback = New;
+		ToCall.Add(NewEntry);
+		return NewEntry.Handle;
 	}
 
 	template <typename ... Args>
 	void TDelegateBroadcast<void(Args...)>::Remove(const TFunction<void(Args...)>& Old)
 	{
-		ToCall.Remove(Old);
+		for (UINT32 Index = 0u, Num = ToCall.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (ToCall[Index].Callback == Old)
+			{
+				ToCall.RemoveAt(Index);
+				return;
+			}
+		}
+	}
+
+	template <typename ... Args>
+	BOOL32 TDelegateBroadcast<void(Args...)>::Remove(const FDelegateHandle& InHandle)
+	{
+		if (InHandle == 0u)
+		{
+			return FALSE;
+		}
+		for (UINT32 Index = 0u, Num = ToCall.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (ToCall[Index].Handle == InHandle)
+			{
+				ToCall.RemoveAt(Index);
+				return TRUE;
+			}
+		}
+		return FALSE;
 	}
 
 	template <typename ... Args>
@@ -98,9 +150,16 @@ namespace PigeonEngine
 	template <typename ... Args>
 	void TDelegateBroadcast<void(Args...)>::Broadcast(Args... Arguments)
 	{
-		for (TFunction<void(Args...)>& elem : ToCall)
+		// The set of listeners this walk covers is fixed at entry - a listener a callback
+		// adds fires from the next broadcast on, which also keeps a self-subscribing
+		// callback from looping forever - while the upper bound is re-checked against the
+		// live count every step, so a removal (even RemoveAll) during the walk cannot read
+		// past the end. A removed row may be skipped or fired once more this pass; both
+		// are the standard multicast semantics.
+		const UINT32 Num = ToCall.Num<UINT32>();
+		for (UINT32 Index = 0u; (Index < Num) && (Index < ToCall.Num<UINT32>()); Index++)
 		{
-			elem(Arguments...);
+			ToCall[Index].Callback(Arguments...);
 		}
 	}
 

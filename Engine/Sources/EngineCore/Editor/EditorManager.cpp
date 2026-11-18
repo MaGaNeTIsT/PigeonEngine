@@ -122,16 +122,27 @@ namespace PigeonEngine
 		WorldManager->EditorInit();
 		ImportManager->EditorInit();
 
-		PEditorController* EditorController = static_cast<PEditorController*>(WorldManager->GetWorld()->GetController());
-		if (EditorController)
+		AttachToCurrentController();
+	}
+
+	void EEditorManager::AttachToCurrentController()
+	{
+		// (Re)subscribe HandleMouseEvent to the world controller's OnMouseEvent. Called
+		// from EditorInit and from EditorUpdate: a changed controller pointer means the
+		// previous subscription died with the previous controller's delegate, so only the
+		// new controller needs a row here.
+		PWorld* World = WorldManager ? WorldManager->GetWorld() : nullptr;
+		PController* CurrentController = World ? World->GetController() : nullptr;
+		if (!CurrentController || (CurrentController == AttachedController))
 		{
-			auto func = [this](IMouse::Event::EType Type, const Vector2& MousePos)
-			{
-				this->HandleMouseEvent(Type, MousePos);
-			};
-			TFunction<void(IMouse::Event::EType, const Vector2&)> OnMouseBroadcast = func;
-			EditorController->OnMouseEvent.Add(OnMouseBroadcast);
+			return;
 		}
+		AttachedController = CurrentController;
+		auto func = [this](IMouse::Event::EType Type, const Vector2& MousePos)
+		{
+			this->HandleMouseEvent(Type, MousePos);
+		};
+		AttachedController->OnMouseEvent.Add(TFunction<void(IMouse::Event::EType, const Vector2&)>(func));
 	}
 
 	void EEditorManager::HandleMouseEvent(IMouse::Event::EType Type, const Vector2& MousePos)
@@ -217,6 +228,10 @@ namespace PigeonEngine
 	void EEditorManager::EditorUpdate()
 	{
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
+		// The world may have been re-initialized since the last frame, replacing the
+		// controller our mouse subscription points at.
+		AttachToCurrentController();
 
 		WorldManager->EditorUpdate();
 		AssetManager->EditorUpdate();

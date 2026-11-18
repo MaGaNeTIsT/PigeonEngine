@@ -22,17 +22,22 @@ namespace PigeonEngine
 		PActorComponent::Init();
 		if (Controller && !bInputRegistered)
 		{
-			KeyInputHandler = TFunction<void(IKeyboard::Event::EType, BYTE)>([this](IKeyboard::Event::EType Type, const BYTE& KeyCode)
+			KeyInputHandle = EInput::KeyEvent.Add(TFunction<void(IKeyboard::Event::EType, BYTE)>([this](IKeyboard::Event::EType Type, const BYTE& KeyCode)
 			{
 				HandleInput(Type, EKeysBuiltIn::GetKeyByKeyCode(KeyCode));
-			});
-			EInput::KeyEvent.Add(KeyInputHandler);
+			}));
 			bInputRegistered = TRUE;
 		}
 	}
 
 	void PCharacterInputComponent::Uninit()
 	{
+		if (bInputRegistered)
+		{
+			EInput::KeyEvent.Remove(KeyInputHandle);
+			KeyInputHandle = 0u;
+			bInputRegistered = FALSE;
+		}
 		PActorComponent::Uninit();
 	}
 

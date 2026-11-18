@@ -33,7 +33,10 @@ namespace PigeonEngine
 		PCharacterController* Controller = nullptr;
 		FCharacterInputBindings InputBindings{};
 		ECharacterMoveInput CharacterMoveInput{};
-		TFunction<void(IKeyboard::Event::EType, BYTE)> KeyInputHandler;
+		// Handle of the global key-event subscription taken in Init and released in
+		// Uninit. Key events are dispatched from the Win32 message pump, outside any
+		// tick, so the subscription must come off before this component is deleted.
+		FDelegateHandle KeyInputHandle = 0u;
 		BOOL32 bInputRegistered = FALSE;
 	};
 }

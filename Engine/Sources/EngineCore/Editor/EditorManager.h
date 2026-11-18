@@ -22,6 +22,7 @@ namespace PigeonEngine
 
 	private:
 		void HandleMouseEvent(IMouse::Event::EType Type, const Vector2& MousePos);
+		void AttachToCurrentController();
 
 	private:
 		BOOL32 bEditorOpen = FALSE;
@@ -35,6 +36,12 @@ namespace PigeonEngine
 
 		// Currently selected component (gizmo target)
 		class PSceneComponent* SelectedComponent = nullptr;
+
+		// The controller whose OnMouseEvent currently carries the HandleMouseEvent
+		// subscription. The world can be re-initialized at runtime, which replaces the
+		// controller and its delegates; AttachToCurrentController re-subscribes whenever
+		// the pointer changes, so editor mouse handling survives a world reset.
+		class PController* AttachedController = nullptr;
 
 		// Gizmo drag state
 		EGizmoAxis	DragAxis          = EGizmoAxis::NONE;

@@ -46,6 +46,11 @@ namespace PigeonEngine
 	}
 	void EInput::ShutDown()
 	{
+		// Subscribers are expected to remove themselves, but these delegates are process
+		// globals: dropping every remaining row here turns a late message-pump dispatch
+		// during teardown into a no-op instead of a dangling call.
+		MouseEvent.RemoveAll();
+		KeyEvent.RemoveAll();
 	}
 	void EInput::Update()
 	{
