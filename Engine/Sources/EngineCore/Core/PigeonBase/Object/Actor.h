@@ -21,9 +21,9 @@ namespace PigeonEngine
 		void    Init() override;
 		void    Uninit() override;
 		void	Tick(FLOAT deltaTime) override;
-	void	FixedTick(FLOAT deltaTime);
+		void	FixedTick(FLOAT deltaTime);
 #if ENGINE_EDITOR_ONLY
-	void	EditorTick(FLOAT deltaTime) override;
+		void	EditorTick(FLOAT deltaTime) override;
 #endif
 
 	protected:
@@ -72,13 +72,13 @@ namespace PigeonEngine
 	public:
 		virtual void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
-	void         DestroyComponent (PActorComponent* Component);
-	// Deprecated misspelling of DestroyComponent, kept for existing callers.
-	void         DestoyComponent  (PActorComponent* Component) { DestroyComponent(Component); }
-	// Called from a component's final destroy step (OnPreDelete): the actor drops the
-	// reference so its list never keeps a pointer to freed memory. Public because the
-	// component side of the teardown lives in PActorComponent, which is not a friend.
-	void         RemoveComponentReference(PActorComponent* Component);
+		void         DestroyComponent (PActorComponent* Component);
+		// Deprecated misspelling of DestroyComponent, kept for existing callers.
+		void         DestoyComponent  (PActorComponent* Component) { DestroyComponent(Component); }
+		// Called from a component's final destroy step (OnPreDelete): the actor drops the
+		// reference so its list never keeps a pointer to freed memory. Public because the
+		// component side of the teardown lives in PActorComponent, which is not a friend.
+		void         RemoveComponentReference(PActorComponent* Component);
 protected:
 	virtual void ClearComponents  ();
 protected:
