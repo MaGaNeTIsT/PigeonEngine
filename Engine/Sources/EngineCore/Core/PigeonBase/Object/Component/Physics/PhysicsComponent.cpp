@@ -176,7 +176,13 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::RemoveShape()
 	{
-		FPhysicsManager::GetManagerSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
+		// The owner is cleared only in the final destroy step, so it is valid on every
+		// orchestrated path; the guard covers a component destroyed before it ever got an
+		// owner (constructed for an actor but never added).
+		if (GetOwnerActor())
+		{
+			FPhysicsManager::GetManagerSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
+		}
 		BodyId = FPhysicsBodyId();
 		Shape = nullptr;
 		bBodyActive = FALSE;

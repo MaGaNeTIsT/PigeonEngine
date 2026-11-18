@@ -27,5 +27,13 @@ void PigeonEngine::PPhysicsTestCharacter::UserTick(FLOAT deltaTime)
 void PigeonEngine::PPhysicsTestCharacter::UninitCharacter()
 {
 	PCharacter::UninitCharacter();
-	DestoyComponent(StaticMeshComponent);
+	// UninitCharacter runs from ~PCharacter, i.e. after the actor's own destroy pass has
+	// already destroyed every component - the member then points at freed memory. The
+	// not-contained guard in DestroyComponent turns that into a logged skip instead of a
+	// second destroy; nulling the member keeps a repeated call from even warning.
+	if (StaticMeshComponent)
+	{
+		DestroyComponent(StaticMeshComponent);
+		StaticMeshComponent = nullptr;
+	}
 }

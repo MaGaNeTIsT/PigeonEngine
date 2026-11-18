@@ -72,10 +72,16 @@ namespace PigeonEngine
 	public:
 		virtual void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
-		virtual void DestoyComponent  (PActorComponent* Component);
-	protected:
-		virtual void ClearComponents  ();
-	protected:
+	void         DestroyComponent (PActorComponent* Component);
+	// Deprecated misspelling of DestroyComponent, kept for existing callers.
+	void         DestoyComponent  (PActorComponent* Component) { DestroyComponent(Component); }
+	// Called from a component's final destroy step (OnPreDelete): the actor drops the
+	// reference so its list never keeps a pointer to freed memory. Public because the
+	// component side of the teardown lives in PActorComponent, which is not a friend.
+	void         RemoveComponentReference(PActorComponent* Component);
+protected:
+	virtual void ClearComponents  ();
+protected:
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 	private:
 		// contains all actor components, including RootComponent

@@ -57,8 +57,14 @@ namespace PigeonEngine
 	void PActorComponent::OnPreDelete()
 	{
 		// Clearing the owner here - after Uninit - is the fix for the old order, which
-		// cleared it first and then let the virtual Uninit run with a null owner.
-		Owner = nullptr;
+		// cleared it first and then let the virtual Uninit run with a null owner. The
+		// owner drops the reference at the same time, so its list never keeps a pointer
+		// to memory that is about to go away.
+		if (Owner)
+		{
+			Owner->RemoveComponentReference(this);
+			Owner = nullptr;
+		}
 	}
 
 	void PActorComponent::Init()

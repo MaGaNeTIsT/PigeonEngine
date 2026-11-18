@@ -2,6 +2,7 @@
 
 #include "Component/SceneComponent.h"
 #include "World/World.h"
+#include <Editor/EditorLogManager.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
@@ -391,6 +392,23 @@ namespace PigeonEngine
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Adding null component", NewComponent != nullptr );
 
+		// Ownership is exclusive: a component that already belongs to another actor would
+		// be destroyed twice, once per owner. Assigning the owner here for every
+		// component - not just scene components - also removes the trap where
+		// PPhysicsComponent::Init dereferenced a null owner because only the scene path
+		// set one.
+		if (PActor* CurrentOwner = NewComponent->GetOwnerActor())
+		{
+			if (CurrentOwner != this)
+			{
+				PE_CHECK(ENGINE_ACTOR_ERROR, "Component already belongs to another actor", FALSE);
+				return;
+			}
+		}
+		else
+		{
+			NewComponent->SetOwnerActor(this);
+		}
 
 		if(PSceneComponent* SceneComp = dynamic_cast<PSceneComponent*>(NewComponent))
 		{
@@ -427,20 +445,53 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
-	void PActor::DestoyComponent(PActorComponent* Component)
+	void PActor::DestroyComponent(PActorComponent* Component)
 	{
-		PE_CHECK(ENGINE_ACTOR_ERROR, "You are destroy a component doesn't belonged to this", !Components.Contains(Component));
+		PE_CHECK(ENGINE_ACTOR_ERROR, "Destroying a null component", Component != nullptr);
+		// Not contained means one of two things, and neither may run Destroy: the
+		// component belongs to another actor, or it was already destroyed and removed
+		// from this list. The old assertion here was inverted - it fired on the normal
+		// case and stayed silent on the dangerous one.
+		if (!Components.Contains(Component))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("DestroyComponent: component is not in this actor's list, skipped.")));
+			return;
+		}
 		Component->Destroy();
+	}
+
+	void PActor::RemoveComponentReference(PActorComponent* Component)
+	{
+		// The component's OnPreDelete calls this as its final destroy step, so the list
+		// never keeps a pointer to memory that is about to go away.
+		Components.Remove(Component);
 	}
 
 	void PActor::ClearComponents()
 	{
-		for (PActorComponent* Component : Components)
+		// Snapshot + destroy-roots-only: a scene component whose ParentComponent is set
+		// dies with that parent (its ClearChildren destroys it recursively), so calling
+		// Destroy on it here as well would destroy it twice. Whether a parent happens to
+		// sort before its child in the pointer-ordered set is heap luck, which is exactly
+		// why the old loop double-freed only sometimes.
+		TArray<PActorComponent*> ComponentsSnapshot;
+		for (TSet<PActorComponent*>::TIterator It = Components.Begin(); It != Components.End(); It++)
 		{
-			if (Component && Component != RootComponent)
+			ComponentsSnapshot.Add(*It);
+		}
+		for (UINT32 Index = 0u, Num = ComponentsSnapshot.Num<UINT32>(); Index < Num; Index++)
+		{
+			PActorComponent* Component = ComponentsSnapshot[Index];
+			if (!Component || (Component == RootComponent))
 			{
-				Component->Destroy();
+				continue;
 			}
+			PSceneComponent* SceneComponent = dynamic_cast<PSceneComponent*>(Component);
+			if (SceneComponent && SceneComponent->GetParentComponent())
+			{
+				continue;
+			}
+			Component->Destroy();
 		}
 		if (RootComponent)
 		{
