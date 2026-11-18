@@ -14,7 +14,7 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	PObject::PObject() : EObjectBase(), bActive(FALSE)
+	PObject::PObject() : EObjectBase()
 	{
 	}
 	PObject::~PObject()
@@ -34,11 +34,35 @@ namespace PigeonEngine
 
 	void PObject::Destroy()
 	{
-		if (IsInitialized())
+		// The flags are captured before the state flips so that no hook below can change
+		// whether THIS orchestration runs a step.
+		if ((LifecycleState == EObjectLifecycleStateType::DESTROYING) || (LifecycleState == EObjectLifecycleStateType::DESTROYED))
+		{
+			return;
+		}
+		const BOOL32 bWasAddedToScene = IsAddedToScene();
+		const BOOL32 bWasInitialized = IsInitialized();
+		LifecycleState = EObjectLifecycleStateType::DESTROYING;
+		if (bWasAddedToScene)
+		{
+			RemovedFromScene();
+		}
+		OnDestroy();
+		if (bWasInitialized)
 		{
 			Uninit();
 		}
+		OnPreDelete();
+		LifecycleState = EObjectLifecycleStateType::DESTROYED;
 		delete this;
+	}
+
+	void PObject::OnDestroy()
+	{
+	}
+
+	void PObject::OnPreDelete()
+	{
 	}
 
 	TSharedPtr<CJsonObject> PObject::Serialize()
@@ -63,7 +87,20 @@ namespace PigeonEngine
 
 	void PObject::SetInitialized(const BOOL32& bInInitialized)
 	{
-		bInitialized = bInInitialized;
+		if (bInInitialized)
+		{
+			if (LifecycleState == EObjectLifecycleStateType::CREATED)
+			{
+				LifecycleState = EObjectLifecycleStateType::INITIALIZED;
+			}
+		}
+		else
+		{
+			if (LifecycleState == EObjectLifecycleStateType::INITIALIZED)
+			{
+				LifecycleState = EObjectLifecycleStateType::CREATED;
+			}
+		}
 	}
 
 	void PObject::SetAddedToScene(const BOOL32& bInAddedToScene)
@@ -85,31 +122,24 @@ namespace PigeonEngine
 
 	void PObject::Uninit()
 	{
-		bInitialized = FALSE;
-		// Destroy();
+		// Only an INITIALIZED object flips back; a DESTROYING one keeps its state so the
+		// orchestrator's final DESTROYED assignment stays ordered.
+		if (LifecycleState == EObjectLifecycleStateType::INITIALIZED)
+		{
+			LifecycleState = EObjectLifecycleStateType::CREATED;
+		}
 	}
 
 	BOOL32 PObject::IsInitialized() const
 	{
-		return bInitialized;
+		// DESTROYING counts as initialized: Uninit has not run yet, so the object is
+		// still obligated to uninitialize during destroy.
+		return ((LifecycleState == EObjectLifecycleStateType::INITIALIZED) || (LifecycleState == EObjectLifecycleStateType::DESTROYING)) ? TRUE : FALSE;
 	}
 
 	BOOL32 PObject::IsAddedToScene() const
 	{
 		return bAddedToScene;
-	}
-
-	BOOL32 PObject::IsActive() const
-	{
-		return bActive;
-	}
-	void PObject::Active()
-	{
-		bActive = TRUE;
-	}
-	void PObject::Inactive()
-	{
-		bActive = FALSE;
 	}
 
 };

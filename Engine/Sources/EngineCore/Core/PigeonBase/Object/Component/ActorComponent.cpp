@@ -54,14 +54,11 @@ namespace PigeonEngine
 		// NewOwner->AddComponent(this);
 	}
 
-	void PActorComponent::Destroy()
+	void PActorComponent::OnPreDelete()
 	{
-		if (GetWorld())
-		{
-			OnRemovedFromScene();
-		}
-		RemoveFromOwnerActor();
-		PComponent::Destroy();
+		// Clearing the owner here - after Uninit - is the fix for the old order, which
+		// cleared it first and then let the virtual Uninit run with a null owner.
+		Owner = nullptr;
 	}
 
 	void PActorComponent::Init()

@@ -21,16 +21,19 @@ namespace PigeonEngine
 		void    Init() override;
 		void    Uninit() override;
 		void	Tick(FLOAT deltaTime) override;
-		void	FixedTick(FLOAT deltaTime);
+	void	FixedTick(FLOAT deltaTime);
 #if ENGINE_EDITOR_ONLY
-		void	EditorTick(FLOAT deltaTime) override;
+	void	EditorTick(FLOAT deltaTime) override;
 #endif
-		void    Destroy() override;
 
 	protected:
 		// for frame, 
 		void BeginAddedToScene(PWorld* World) override;
 		void RemovedFromScene() override;
+
+		// Structural teardown, after RemovedFromScene (so UserEndPlay has seen the whole
+		// object): leave the parent actor, destroy attached actors, destroy components.
+		virtual void OnDestroy() override;
 
 		// for users
 		virtual void UserBeginPlay();
@@ -108,8 +111,6 @@ namespace PigeonEngine
 	public:
 		virtual void GenerateWorldOutline(const PActor* WorldCurrentSelectedActor);
 		virtual void GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent);
-	private:
-		PActorComponent* ImguiSelectedComponent = nullptr;
 #endif
 
 	};

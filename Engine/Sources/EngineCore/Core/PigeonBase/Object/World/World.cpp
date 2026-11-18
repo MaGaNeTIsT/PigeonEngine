@@ -129,7 +129,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void PWorld::Destroy()
+	void PWorld::OnDestroy()
 	{
 #if ENGINE_EDITOR_ONLY
 		EditorController = nullptr;
@@ -141,7 +141,6 @@ namespace PigeonEngine
 			RootActor = nullptr;
 		}
 		// AllActors.Clear();
-		PObject::Destroy();
 	}
 
 	TArray<PActor*> PWorld::GetAllActors() const

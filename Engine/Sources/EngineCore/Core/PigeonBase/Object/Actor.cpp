@@ -47,6 +47,10 @@ namespace PigeonEngine
 
 	PActor::~PActor()
 	{
+		// Destroy() empties the component list before the memory goes away; a raw delete
+		// bypasses that and leaks every component. Catch it here rather than leaking
+		// silently.
+		PE_CHECK(ENGINE_ACTOR_ERROR, "PActor was deleted without Destroy()", (RootComponent == nullptr) && (Components.Num() == 0));
 	}
 
 	void PActor::Init()
@@ -452,8 +456,11 @@ namespace PigeonEngine
 		return this->RootComponent->GetComponentBound();
 	}
 
-	void PActor::Destroy()
+	void PActor::OnDestroy()
 	{
+		// RemovedFromScene already ran (the orchestrator calls it first), so UserEndPlay
+		// and every component's scene cleanup happened while the object was still whole.
+		// What is left is structural teardown.
 		if(AttachedParentActor)
 		{
 			AttachedParentActor->ChildrenActors.Remove(this);
@@ -462,11 +469,6 @@ namespace PigeonEngine
 
 		DestroyActorsAttached();
 		ClearComponents();
-		if (GetWorld())
-		{
-			RemovedFromScene();
-		}
-		PObject::Destroy();
 	}
 
 	void PActor::BeginAddedToScene(PWorld* World)

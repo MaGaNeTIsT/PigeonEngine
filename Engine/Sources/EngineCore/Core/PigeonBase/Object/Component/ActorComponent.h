@@ -28,8 +28,10 @@ namespace PigeonEngine
 	private:
 		PActor* Owner = nullptr;
 
-	public:
-		virtual void Destroy() override;
+	protected:
+		// Final destroy step, after Uninit: by now a subclass has finished every teardown
+		// that needed the owner actor, so the back-pointer can go.
+		virtual void OnPreDelete() override;
 
 		// Render proxy functions START
 	public:

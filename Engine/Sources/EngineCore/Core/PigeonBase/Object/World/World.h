@@ -53,8 +53,10 @@ namespace PigeonEngine
 		void	Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime);
 
-	public:
-		void Destroy() override; 
+	protected:
+		// Destroys the root actor (which cascades through the whole actor tree) and drops
+		// the controller references, as the world's destroy hook.
+		virtual void OnDestroy() override;
 	// End PObject Interface
 
 	// Actors in world management

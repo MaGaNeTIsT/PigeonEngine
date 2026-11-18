@@ -22,8 +22,10 @@ namespace PigeonEngine
 
 		virtual void Init() override;
 		virtual void Uninit() override;
-	public:
-		virtual void Destroy() override;
+	protected:
+		// Removes the physics body while the owner actor is still set; the old Destroy()
+		// cleared the owner before Uninit, making this same removal dereference null.
+		virtual void OnDestroy() override;
 
 #if ENGINE_EDITOR_ONLY
 		virtual void EditorTick(FLOAT deltaTime) override;

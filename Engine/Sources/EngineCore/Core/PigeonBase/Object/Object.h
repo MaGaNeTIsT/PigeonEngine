@@ -7,6 +7,21 @@ namespace PigeonEngine
 {
 	class CJsonObject;
 	class PWorld;
+
+	// Destruction is a fixed, engine-wide sequence. Subclasses customize the two
+	// protected hooks, never the orchestrator:
+	//   Destroy() -> (was in scene?) RemovedFromScene() -> OnDestroy() ->
+	//   (was initialized?) Uninit() -> OnPreDelete() -> delete this
+	// RemovedFromScene runs first so UserEndPlay sees the whole object; Uninit runs
+	// before OnPreDelete so a component can still reach its owner while uninitializing.
+	enum class EObjectLifecycleStateType : UINT8
+	{
+		CREATED = 0,
+		INITIALIZED,
+		DESTROYING,
+		DESTROYED,
+	};
+
 	class PObject : public EObjectBase
 	{
 	public:
@@ -16,13 +31,6 @@ namespace PigeonEngine
 #if ENGINE_EDITOR_ONLY
 		virtual void	EditorTick(FLOAT deltaTime) = 0;
 #endif
-	public:
-		virtual BOOL32	IsActive() const;
-		virtual void	Active();
-		virtual void	Inactive();
-	protected:
-		BOOL32			bActive;
-
 		CLASS_VIRTUAL_NOCOPY_BODY(PObject)
 
 	public:
@@ -32,10 +40,25 @@ namespace PigeonEngine
 		BOOL32 IsAddedToScene() const;
 	private:
 		BOOL32 bCanTick = FALSE;
-		BOOL32 bInitialized = FALSE;
+		// Scene membership is orthogonal to the destroy phase, so it stays a plain flag:
+		// an object can be DESTROYING while still "in scene" until RemovedFromScene ran.
 		BOOL32 bAddedToScene = FALSE;
+		EObjectLifecycleStateType LifecycleState = EObjectLifecycleStateType::CREATED;
 	public:
-		virtual void Destroy();
+		// Non-virtual teardown orchestrator (see EObjectLifecycleStateType above).
+		// Idempotent: entering Destroy on an object already DESTROYING or DESTROYED is a
+		// no-op, which is what makes a component reached through two owners, or a child
+		// hit again by a snapshot loop, safe. Call sites are unchanged; subclasses
+		// override OnDestroy/OnPreDelete instead of Destroy.
+		void Destroy();
+
+	protected:
+		// Tear down objects this one owns (child actors, child components). Runs after
+		// RemovedFromScene and before Uninit.
+		virtual void OnDestroy();
+		// Detach from the owner's lists as the final step before the memory goes away.
+		// Runs after Uninit, so a component uninitializing can still use its owner.
+		virtual void OnPreDelete();
 
 	public:
 		virtual TSharedPtr<CJsonObject> Serialize();

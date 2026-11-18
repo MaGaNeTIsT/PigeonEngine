@@ -19,12 +19,6 @@ namespace PigeonEngine
 	{
 	}
 
-	void PComponent::Destroy()
-	{
-		PObject::Destroy();
-	}
-
-
 	void PComponent::Init()
 	{
 		SetInitialized(TRUE);

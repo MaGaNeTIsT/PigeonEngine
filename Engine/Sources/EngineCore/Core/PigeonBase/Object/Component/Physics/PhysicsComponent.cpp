@@ -87,12 +87,12 @@ namespace PigeonEngine
 		UninitPhysicsComponent();
 	}
 
-	void PPhysicsComponent::Destroy()
+	void PPhysicsComponent::OnDestroy()
 	{
-		if (Shape)
-			RemoveShape();
+		// Single removal, while the owner actor is still valid (OnPreDelete has not
+		// cleared it yet). RemoveShape unregisters the body by the owner's unique ID and
+		// is a no-op on a second call, so the later Uninit path is harmless.
 		RemoveShape();
-		PActorComponent::Destroy();
 	}
 
 	void PPhysicsComponent::HandlePostPhysicsTick(FLOAT deltaTime)

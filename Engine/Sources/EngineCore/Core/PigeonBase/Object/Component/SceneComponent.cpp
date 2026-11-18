@@ -81,11 +81,24 @@ namespace PigeonEngine
 
 	void PSceneComponent::ClearChildren()
 	{
+		// Snapshot first: destroying a child detaches it from this live set, and walking
+		// the set while its rows disappear would skip entries.
+		TArray<PSceneComponent*> ChildrenSnapshot;
 		for (TSet<PSceneComponent*>::TIterator It = ChildrenComponents.Begin(); It != ChildrenComponents.End(); It++)
 		{
-
-			(*It)->ParentComponent = nullptr;
-			(*It)->Destroy();
+			ChildrenSnapshot.Add(*It);
+		}
+		for (UINT32 Index = 0u, Num = ChildrenSnapshot.Num<UINT32>(); Index < Num; Index++)
+		{
+			PSceneComponent* Child = ChildrenSnapshot[Index];
+			if (!Child)
+			{
+				continue;
+			}
+			// Nulled before the call so the dying child does not reach back into this
+			// mid-destroy parent through its own DetachFromParentComponent.
+			Child->ParentComponent = nullptr;
+			Child->Destroy();
 		}
 		ChildrenComponents.Empty();
 	}
@@ -144,12 +157,11 @@ namespace PigeonEngine
 		PActorComponent::Uninit();
 	}
 
-	void PSceneComponent::Destroy()
+	void PSceneComponent::OnDestroy()
 	{
 		DestroyRenderState();
 		DetachFromParentComponent();
 		ClearChildren();
-		PActorComponent::Destroy();
 	}
 
 	void PSceneComponent::Tick(FLOAT deltaTime)
@@ -219,7 +231,6 @@ namespace PigeonEngine
 	void PSceneComponent::BeginAddedToScene(PWorld* World)
 	{
 		PActorComponent::BeginAddedToScene(World);
-		MyWolrd = World;
 		this->CreateRenderState();
 		for (PSceneComponent* Child : this->ChildrenComponents)
 		{

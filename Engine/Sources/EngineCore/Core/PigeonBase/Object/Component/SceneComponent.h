@@ -48,7 +48,6 @@ namespace PigeonEngine
 	public:
 		virtual void Init() override;
 		virtual void Uninit() override;
-		virtual void Destroy() override;
 		void    Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime) override;
 #if ENGINE_EDITOR_ONLY
@@ -87,8 +86,11 @@ namespace PigeonEngine
 	protected:
 		void BeginAddedToScene(PWorld* World) override;
 
-	private:
-		PWorld* MyWolrd = nullptr;
+	protected:
+		// Scene-component teardown: release the render state, leave the parent component,
+		// destroy the children. Runs as this component's destroy hook.
+		virtual void OnDestroy() override;
+
 	public:
 		PE_NODISCARD  EMobilityType GetMobility() const;
 		void                        SetMobility(const EMobilityType& NewMobility);
