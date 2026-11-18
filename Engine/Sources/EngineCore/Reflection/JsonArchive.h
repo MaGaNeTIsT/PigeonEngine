@@ -27,6 +27,8 @@ namespace PigeonEngine
 		PE_NODISCARD virtual BOOL32 IsSaving() const override { return TRUE; }
 		virtual void BeginObject(const CHAR* InName) override;
 		virtual void EndObject() override;
+		virtual void BeginArray(const CHAR* InName, UINT32& InOutCount) override;
+		virtual void EndArray() override;
 		virtual void SerializeBool(const CHAR* InName, BOOL32& InOutValue) override;
 		virtual void SerializeInt32(const CHAR* InName, INT32& InOutValue) override;
 		virtual void SerializeUInt32(const CHAR* InName, UINT32& InOutValue) override;
@@ -56,6 +58,8 @@ namespace PigeonEngine
 		PE_NODISCARD virtual BOOL32 IsSaving() const override { return FALSE; }
 		virtual void BeginObject(const CHAR* InName) override;
 		virtual void EndObject() override;
+		virtual void BeginArray(const CHAR* InName, UINT32& InOutCount) override;
+		virtual void EndArray() override;
 		virtual void SerializeBool(const CHAR* InName, BOOL32& InOutValue) override;
 		virtual void SerializeInt32(const CHAR* InName, INT32& InOutValue) override;
 		virtual void SerializeUInt32(const CHAR* InName, UINT32& InOutValue) override;

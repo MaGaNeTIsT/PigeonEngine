@@ -49,6 +49,20 @@ namespace PigeonEngine
 		CurrentScope()->SetObjectField(Name, &Child);
 	}
 
+	void EJsonArchiveWriter::BeginArray(const CHAR* InName, UINT32& InOutCount)
+	{
+		// The JSON wrapper has no incremental array append, so an array is an object with
+		// a Count field plus index keys. The interface stays array-shaped for a binary
+		// backend that stores real arrays.
+		BeginObject(InName);
+		CurrentScope()->SetUIntField(EString(PE_TEXT("Count")), InOutCount);
+	}
+
+	void EJsonArchiveWriter::EndArray()
+	{
+		EndObject();
+	}
+
 	void EJsonArchiveWriter::SerializeBool(const CHAR* InName, BOOL32& InOutValue)
 	{
 		CurrentScope()->SetBoolField(EString(InName), InOutValue != 0);
@@ -128,6 +142,22 @@ namespace PigeonEngine
 		{
 			ObjectStack.RemoveAt(ObjectStack.Num<UINT32>() - 1u);
 		}
+	}
+
+	void EJsonArchiveReader::BeginArray(const CHAR* InName, UINT32& InOutCount)
+	{
+		InOutCount = 0u;
+		BeginObject(InName);
+		CJsonObject* Scope = CurrentScope();
+		if (Scope)
+		{
+			Scope->GetUIntField(EString(PE_TEXT("Count")), InOutCount);
+		}
+	}
+
+	void EJsonArchiveReader::EndArray()
+	{
+		EndObject();
 	}
 
 	void EJsonArchiveReader::SerializeBool(const CHAR* InName, BOOL32& InOutValue)

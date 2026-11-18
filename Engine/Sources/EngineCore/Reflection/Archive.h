@@ -15,9 +15,7 @@ namespace PigeonEngine
 	* any property or class code, because every serializer only talks to this interface.
 	*
 	* Naming: values live under a field name inside the current object scope. Object
-	* scopes nest through BeginObject/EndObject. Arrays are deliberately absent for now;
-	* they arrive with the level format that needs them (Phase 3C), and adding them here
-	* then only touches the two backends.
+	* scopes nest through BeginObject/EndObject, arrays through BeginArray/EndArray.
 	*/
 	class EArchive
 	{
@@ -28,6 +26,14 @@ namespace PigeonEngine
 
 		virtual void BeginObject(const CHAR* InName) = 0;
 		virtual void EndObject() = 0;
+
+		// Indexed array scope. InOutCount is the element count: written on save, read on
+		// load (0 when the array is absent). While the scope is open, element values are
+		// serialized under their index as a string key ("0", "1", ...), so the same
+		// interface works for the object-based JSON backend and a real array in a binary
+		// backend.
+		virtual void BeginArray(const CHAR* InName, UINT32& InOutCount) = 0;
+		virtual void EndArray() = 0;
 
 		virtual void SerializeBool(const CHAR* InName, BOOL32& InOutValue) = 0;
 		virtual void SerializeInt32(const CHAR* InName, INT32& InOutValue) = 0;
