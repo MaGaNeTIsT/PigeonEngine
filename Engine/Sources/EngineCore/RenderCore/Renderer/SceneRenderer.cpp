@@ -2337,7 +2337,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			}
 			if (!(SkyLight->IsRenderValid()))
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a render invalid sky light proxy.")));
+				// A sky proxy is legitimately invalid while its environment cube or its
+				// program is still loading - the demo draws without it until the asset
+				// arrives - and IsRenderValid already reported the concrete reason,
+				// deduplicated. This is a skipped draw, not an engine error: breaking here
+				// made the first frames of a cold start fatal in debug builds.
 				continue;
 			}
 #endif
