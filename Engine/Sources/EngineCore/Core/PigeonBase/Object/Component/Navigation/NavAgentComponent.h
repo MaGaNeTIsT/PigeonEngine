@@ -8,6 +8,8 @@
 namespace PigeonEngine
 {
 
+	class PSceneComponent;
+
 	/*
 	* Moves the owner actor along a path found by the navigation manager.
 	*

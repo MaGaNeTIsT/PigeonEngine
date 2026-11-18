@@ -32,7 +32,12 @@ namespace PigeonEngine
 
 	void PSceneComponent::AttachToComponent(PSceneComponent* Parent, const ETransform& RelativeTransform)
 	{
-		AttachComponentToComponent(this, Parent, RelativeTransform);
+		AttachComponentToComponent(this, Parent, EAttachmentRuleType::KEEP_CURRENT, RelativeTransform);
+	}
+
+	void PSceneComponent::AttachToComponent(PSceneComponent* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform)
+	{
+		AttachComponentToComponent(this, Parent, InRule, RelativeTransform);
 	}
 
 	void PSceneComponent::DetachFromParentComponent()
@@ -42,10 +47,18 @@ namespace PigeonEngine
 			this->ParentComponent->ChildrenComponents.Remove(this);
 		}
 		this->ParentComponent = nullptr;
+		// The local transform is kept, so the world one just changed for this subtree.
+		MarkTransformDirtyRecursive();
 	}
 
 
 	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform)
+	{
+		// Historic overload: keep whatever local transform the child already has.
+		AttachComponentToComponent(Child, Parent, EAttachmentRuleType::KEEP_CURRENT, RelativeTransform);
+	}
+
+	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "You are attaching an component to itself", Child != Parent);
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "Child is nullptr when attaching", Child );
@@ -66,6 +79,13 @@ namespace PigeonEngine
 			}
 		}
 
+		// KEEP_WORLD needs the child's world matrix before the parent chain changes.
+		Matrix4x4 ChildWorldMatrix = Matrix4x4::Identity();
+		if (InRule == EAttachmentRuleType::KEEP_WORLD)
+		{
+			ChildWorldMatrix = Child->GetCachedLocalToWorldMatrix();
+		}
+
 		// Remove from current parent
 		Child->DetachFromParentComponent();
 		Child->ParentComponent = Parent;
@@ -77,16 +97,43 @@ namespace PigeonEngine
 			Child->SetOwnerActor(Parent->GetOwnerActor());
 		}
 
-		// NOTE: previously this unconditionally called
-		//     Child->SetComponentTransform(RelativeTransform);
-		// with the default-arg identity ETransform, so every attach (e.g.
-		// PWorld::AddActor -> AttachToActor) silently snapped the child's
-		// local transform back to (0,0,0)+identity, wiping out anything
-		// the caller had set via SetActorLocation right before AddActor.
-		// "Keep-current-transform-on-attach" is the safer default; callers
-		// that genuinely want to override the child's relative transform
-		// should call SetComponentTransform themselves after the attach.
-		(void)RelativeTransform;
+		switch (InRule)
+		{
+		case EAttachmentRuleType::KEEP_CURRENT:
+			// The local transform stays exactly as it was; the world one follows the
+			// new parent. This is what every existing attach call site expects.
+			break;
+		case EAttachmentRuleType::KEEP_WORLD:
+		{
+			// Row-vector convention: World = Local * ParentWorld, so Local = World * ParentWorld⁻¹.
+			const Matrix4x4 ParentWorld = Parent->GetCachedLocalToWorldMatrix();
+			Child->Transform = ETransform::FromMatrix(ChildWorldMatrix * ParentWorld.Inverse());
+			break;
+		}
+		case EAttachmentRuleType::KEEP_RELATIVE:
+			Child->Transform = RelativeTransform;
+			break;
+		case EAttachmentRuleType::SNAP_TO_TARGET:
+			Child->Transform = ETransform();
+			break;
+		}
+
+		// Any rule except KEEP_CURRENT changed either the local transform or the parent
+		// chain; in all cases the subtree has to re-compose and re-submit.
+		Child->MarkTransformDirtyRecursive();
+
+		// A live attach into an in-scene actor must bring the subtree into the scene too.
+		// During AddActor the owner actor is not in scene yet, so this stays out of that
+		// path and the normal Init/BeginAddedToScene sequence still owns it.
+		PActor* OwnerActor = Parent->GetOwnerActor();
+		if (OwnerActor && OwnerActor->IsAddedToScene() && (!Child->IsAddedToScene()))
+		{
+			if (!Child->IsInitialized())
+			{
+				Child->Init();
+			}
+			Child->OnAddedToScene(OwnerActor->GetWorld());
+		}
 	}
 
 	PSceneComponent* PSceneComponent::GetParentComponent() const
@@ -299,92 +346,123 @@ namespace PigeonEngine
 
 	ETransform PSceneComponent::GetWorldTransform() const
 	{
-		return ETransform(GetComponentWorldLocation(), GetComponentWorldRotation(), GetComponentWorldScale());
+		return GetCachedWorldTransform();
+	}
+
+	const Matrix4x4& PSceneComponent::GetCachedLocalToWorldMatrix() const
+	{
+		UpdateWorldTransformCache();
+		return CachedLocalToWorld;
+	}
+
+	const ETransform& PSceneComponent::GetCachedWorldTransform() const
+	{
+		UpdateWorldTransformCache();
+		return CachedWorldTransform;
+	}
+
+	void PSceneComponent::UpdateWorldTransformCache() const
+	{
+		if (!bWorldTransformDirty)
+		{
+			return;
+		}
+		const Matrix4x4 LocalMatrix = Transform.ToMatrix();
+		if (ParentComponent)
+		{
+			// Row-vector convention: the child's transform is applied before the parent's,
+			// so the local matrix sits on the LEFT of the parent world matrix.
+			CachedLocalToWorld = LocalMatrix * ParentComponent->GetCachedLocalToWorldMatrix();
+		}
+		else
+		{
+			CachedLocalToWorld = LocalMatrix;
+		}
+		CachedWorldTransform = ETransform::FromMatrix(CachedLocalToWorld);
+		bWorldTransformDirty = FALSE;
+	}
+
+	void PSceneComponent::MarkWorldTransformDirty()
+	{
+		bWorldTransformDirty = TRUE;
+		for (PSceneComponent* Component : ChildrenComponents)
+		{
+			Component->MarkWorldTransformDirty();
+		}
+	}
+
+	void PSceneComponent::MarkTransformDirtyRecursive()
+	{
+		MarkRenderTransformAsDirty();
+		bWorldTransformDirty = TRUE;
+		for (PSceneComponent* Component : ChildrenComponents)
+		{
+			Component->MarkTransformDirtyRecursive();
+		}
+	}
+
+	void PSceneComponent::SetWorldTransformPreservingParent(const ETransform& InWorldTransform)
+	{
+		// Row-vector convention: World = Local * ParentWorld, so Local = World * ParentWorld⁻¹.
+		const Matrix4x4 WorldMatrix = InWorldTransform.ToMatrix();
+		const Matrix4x4 ParentWorld = ParentComponent ? ParentComponent->GetCachedLocalToWorldMatrix() : Matrix4x4::Identity();
+		Transform = ETransform::FromMatrix(WorldMatrix * ParentWorld.Inverse());
+		MarkTransformDirtyRecursive();
 	}
 
 	void PSceneComponent::SetComponentLocation(const Vector3& Location)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetLocation_Local(Location);
-
-		MarkRenderTransformAsDirty();
-		for (PSceneComponent* Component : ChildrenComponents)
-		{
-			Component->MarkRenderTransformAsDirty();
-		}
+		MarkTransformDirtyRecursive();
 	}
 
 	void PSceneComponent::SetComponentRotation(const Quaternion& Rotation)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_Local(Rotation);
-		MarkRenderTransformAsDirty();
-		for (PSceneComponent* Component : ChildrenComponents)
-		{
-			Component->MarkRenderTransformAsDirty();
-		}
+		MarkTransformDirtyRecursive();
 	}
 
 	void PSceneComponent::SetComponentScale(const Vector3& Scale)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_Local(Scale);
-		MarkRenderTransformAsDirty();
-		for (PSceneComponent* Component : ChildrenComponents)
-		{
-			Component->MarkRenderTransformAsDirty();
-		}
+		MarkTransformDirtyRecursive();
 	}
 
 	void PSceneComponent::SetComponentTransform(const ETransform& Trans)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentTransform : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
-		SetComponentLocation(Trans.GetLocation_Local());
-		SetComponentRotation(Trans.GetRotation_Local());
-		SetComponentScale(Trans.GetScaling_Local());
+		Transform = Trans;
+		MarkTransformDirtyRecursive();
 	}
 
 	void PSceneComponent::SetComponentWorldLocation(const Vector3& Location)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
-
-		Transform.SetLocation_World(Location, this->ParentComponent, this->GetOwnerActor());
-		MarkRenderTransformAsDirty();
-		for (PSceneComponent* Component : ChildrenComponents)
-		{
-			Component->MarkRenderTransformAsDirty();
-		}
+		const ETransform CurrentWorld = GetCachedWorldTransform();
+		SetWorldTransformPreservingParent(ETransform(Location, CurrentWorld.GetRotation_Local(), CurrentWorld.GetScaling_Local()));
 	}
 
 	void PSceneComponent::SetComponentWorldRotation(const Quaternion& Rotation)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
-		Transform.SetRotation_World(Rotation, this->ParentComponent, this->GetOwnerActor());
-		MarkRenderTransformAsDirty();
-		for (PSceneComponent* Component : ChildrenComponents)
-		{
-			Component->MarkRenderTransformAsDirty();
-		}
+		const ETransform CurrentWorld = GetCachedWorldTransform();
+		SetWorldTransformPreservingParent(ETransform(CurrentWorld.GetLocation_Local(), Rotation, CurrentWorld.GetScaling_Local()));
 	}
 
 	void PSceneComponent::SetComponentWorldScale(const Vector3& Scale)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
-		Transform.SetScaling_World(Scale, this->ParentComponent, this->GetOwnerActor());
-		MarkRenderTransformAsDirty();
-		for (PSceneComponent* Component : ChildrenComponents)
-		{
-			Component->MarkRenderTransformAsDirty();
-		}
+		const ETransform CurrentWorld = GetCachedWorldTransform();
+		SetWorldTransformPreservingParent(ETransform(CurrentWorld.GetLocation_Local(), CurrentWorld.GetRotation_Local(), Scale));
 	}
 
 	void PSceneComponent::SetComponentWorldTransform(const ETransform& Trans)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldTransform : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
-		SetComponentWorldLocation(Trans.GetLocation_Local());
-		SetComponentWorldRotation(Trans.GetRotation_Local());
-		SetComponentWorldScale(Trans.GetScaling_Local());
-
+		SetWorldTransformPreservingParent(Trans);
 	}
 
 	Vector3 PSceneComponent::GetComponentLocalLocation() const
@@ -404,32 +482,32 @@ namespace PigeonEngine
 
 	Vector3 PSceneComponent::GetComponentWorldLocation() const
 	{
-		return this->Transform.GetLocation_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
+		return GetCachedWorldTransform().GetLocation_Local();
 	}
 
 	Quaternion PSceneComponent::GetComponentWorldRotation() const
 	{
-		return this->Transform.GetRotation_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
+		return GetCachedWorldTransform().GetRotation_Local();
 	}
 
 	Vector3 PSceneComponent::GetComponentWorldScale() const
 	{
-		return this->Transform.GetScaling_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
+		return GetCachedWorldTransform().GetScaling_Local();
 	}
 
 	Vector3 PSceneComponent::GetComponentForwardVector() const
 	{
-		return this->Transform.GetForwardVector_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
+		return GetCachedWorldTransform().GetForwardVector_Local();
 	}
 
 	Vector3 PSceneComponent::GetComponentRightVector() const
 	{
-		return this->Transform.GetRightVector_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
+		return GetCachedWorldTransform().GetRightVector_Local();
 	}
 
 	Vector3 PSceneComponent::GetComponentUpVector() const
 	{
-		return this->Transform.GetUpVector_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
+		return GetCachedWorldTransform().GetUpVector_Local();
 	}
 
 	PE_NODISCARD const EBoundAABB& PSceneComponent::GetLocalBound() const

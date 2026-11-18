@@ -116,6 +116,16 @@ namespace PigeonEngine
 		PE_NODISCARD const ETransform& GetTransform() const;
 		PE_NODISCARD ETransform        GetWorldTransform() const;
 
+		// World-space cache, composed from the component parent chain only. The actor
+		// hierarchy no longer participates: a child actor's root component is already
+		// parented to its parent actor's root, so the component chain covers it exactly
+		// once. World = Local * ParentWorld under the row-vector convention; recomputed
+		// lazily after this component or any ancestor changed its local transform.
+		PE_NODISCARD const Matrix4x4&   GetCachedLocalToWorldMatrix() const;
+		PE_NODISCARD const ETransform&  GetCachedWorldTransform() const;
+		// Invalidates this component's cached world transform and every descendant's.
+		void MarkWorldTransformDirty();
+
 
 		void SetComponentLocation(const Vector3& Location);
 		void SetComponentRotation(const Quaternion& Rotation);
@@ -131,12 +141,27 @@ namespace PigeonEngine
 
 		ETransform	Transform;
 
+	private:
+		// Lazy world cache; mutable because the const getters compute it on demand.
+		mutable Matrix4x4	CachedLocalToWorld = Matrix4x4::Identity();
+		mutable ETransform	CachedWorldTransform;
+		mutable BOOL32		bWorldTransformDirty = TRUE;
+		void UpdateWorldTransformCache() const;
+		// Rewrites the local transform so this component keeps InWorldTransform.
+		void SetWorldTransformPreservingParent(const ETransform& InWorldTransform);
+	protected:
+		// Marks this component and every descendant render-transform-dirty. A transform
+		// change at any level affects every descendant's world matrix and render state.
+		void MarkTransformDirtyRecursive();
+
 	public:
 
 		// Attach this component to another component
 		void AttachToComponent(PSceneComponent* Parent, const ETransform& RelativeTransform = ETransform());
+		void AttachToComponent(PSceneComponent* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
 		// static function to attach
 		static void AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform = ETransform());
+		static void AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
 		// Get this component's attached parent component.
 		PE_NODISCARD PSceneComponent* GetParentComponent() const;
 
