@@ -47,6 +47,13 @@ namespace PigeonEngine
 	public:
 		PE_NODISCARD PSceneComponent* GetRootComponent() const;
 		void                          SetRootComponent(PSceneComponent* NewRoot);
+		// Loader path: install a root component that already carries its serialized local
+		// transform. Same as SetRootComponent except the old root's transform is not
+		// carried over onto the new root. Only valid before the actor joins a world.
+		void                          ReplaceRootComponentForLoad(PSceneComponent* NewRoot);
+		// Every component in insertion order, including the root (serializer/editor
+		// enumeration; the returned array is a copy).
+		PE_NODISCARD TArray<PActorComponent*> GetAllComponents() const;
 
 		PE_NODISCARD virtual Vector3    GetActorLocation() const;
 		PE_NODISCARD virtual Quaternion GetActorRotation() const;

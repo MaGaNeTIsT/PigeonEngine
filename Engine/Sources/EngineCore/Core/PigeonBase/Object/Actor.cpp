@@ -334,6 +334,41 @@ namespace PigeonEngine
 		}
 	}
 
+	void PActor::ReplaceRootComponentForLoad(PSceneComponent* NewRoot)
+	{
+		PE_CHECK(ENGINE_ACTOR_ERROR, "Replacing root component with a nullptr", NewRoot != nullptr);
+		if ((!NewRoot) || (NewRoot == RootComponent))
+		{
+			return;
+		}
+		NewRoot->SetOwnerActor(this);
+		if (!Components.Contains(NewRoot))
+		{
+			Components.Add(NewRoot);
+		}
+		if (RootComponent)
+		{
+			TArray<PSceneComponent*> TempComponents = RootComponent->ChildrenComponents;
+			for (PSceneComponent* Component : TempComponents)
+			{
+				Component->AttachToComponent(NewRoot);
+			}
+			this->RootComponent->AttachToComponent(NewRoot);
+			POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)).Replace("(Root)", ""));
+			this->RootComponent->SetComponentTransform(ETransform());
+			this->RootComponent = nullptr;
+		}
+		this->RootComponent = NewRoot;
+		this->RootComponent->SetOwnerActor(this);
+		POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)) + "(Root)");
+		RebuildTickOrder();
+	}
+
+	TArray<PActorComponent*> PActor::GetAllComponents() const
+	{
+		return Components;
+	}
+
 	void PActor::SetRootComponent(PSceneComponent* NewRoot)
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "You are setting root component with a nullptr", NewRoot != nullptr);
