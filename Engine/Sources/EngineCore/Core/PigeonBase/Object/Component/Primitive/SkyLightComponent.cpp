@@ -135,19 +135,40 @@ namespace PigeonEngine
 		PSceneComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			this->GetWorld()->GetRenderScene()->AddSkyLight(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->AddSkyLight(this);
+				}
+			}
 		}
 	}
 	void PSkyLightComponent::DestroyRenderState()
 	{
-		this->GetWorld()->GetRenderScene()->RemoveSkyLight(this);
+		// A component that never joined a world - or whose world already released its
+		// render scene - has nothing registered; the guard turns that teardown into a
+		// no-op instead of a null dereference.
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemoveSkyLight(this);
+			}
+		}
 		PSceneComponent::DestroyRenderState();
 	}
 	void PSkyLightComponent::SendUpdateRenderState()
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			this->GetWorld()->GetRenderScene()->UpdateSkyLight(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->UpdateSkyLight(this);
+				}
+			}
 		}
 		PSceneComponent::SendUpdateRenderState();
 	}

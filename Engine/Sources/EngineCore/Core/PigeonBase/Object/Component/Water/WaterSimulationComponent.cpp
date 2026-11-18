@@ -171,15 +171,26 @@ namespace PigeonEngine
 		PPrimitiveComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			GetWorld()->GetRenderScene()->AddPrimitive(this);
+			if (PWorld* World = GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->AddPrimitive(this);
+				}
+			}
 		}
 	}
 
 	void PWaterSimulationComponent::DestroyRenderState()
 	{
-		if (GetWorld())
+		// Both levels are guarded: a component that never joined a world, or whose world
+		// already released its render scene, has nothing registered to remove.
+		if (PWorld* World = GetWorld())
 		{
-			GetWorld()->GetRenderScene()->RemovePrimitive(this);
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemovePrimitive(this);
+			}
 		}
 		PPrimitiveComponent::DestroyRenderState();
 	}
@@ -188,7 +199,13 @@ namespace PigeonEngine
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			GetWorld()->GetRenderScene()->UpdatePrimitive(this);
+			if (PWorld* World = GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->UpdatePrimitive(this);
+				}
+			}
 		}
 		PPrimitiveComponent::SendUpdateRenderState();
 	}

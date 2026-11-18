@@ -179,6 +179,9 @@ namespace PigeonEngine
 		virtual void	CleanMarkRenderStateDirty() override;
 	protected:
 		BOOL32          RenderTransformDirty = FALSE;
+		// Set when CreateRenderState ran through the scene-component base, so teardown
+		// only calls DestroyRenderState for a state that was actually created.
+		BOOL32          bRenderStateCreated = FALSE;
 		// Render proxy functions END
 
 		// ImGui

@@ -159,7 +159,13 @@ namespace PigeonEngine
 
 	void PSceneComponent::OnDestroy()
 	{
-		DestroyRenderState();
+		// Only a state that was created has anything to release; without the flag a
+		// component destroyed before ever joining a world called straight into its
+		// subclass's DestroyRenderState and dereferenced a null world.
+		if (bRenderStateCreated)
+		{
+			DestroyRenderState();
+		}
 		DetachFromParentComponent();
 		ClearChildren();
 	}
@@ -438,6 +444,9 @@ namespace PigeonEngine
 	void PSceneComponent::CreateRenderState()
 	{
 		PActorComponent::CreateRenderState();
+		// Every subclass chain routes through here on the way in (each override calls its
+		// base first), so this is the one place that knows a render state exists.
+		bRenderStateCreated = TRUE;
 		if (ShouldRender())
 		{
 			//TODO

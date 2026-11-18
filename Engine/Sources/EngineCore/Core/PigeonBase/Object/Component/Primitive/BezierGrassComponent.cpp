@@ -390,19 +390,40 @@ namespace PigeonEngine
 		PPrimitiveComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			this->GetWorld()->GetRenderScene()->AddBezierGrass(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->AddBezierGrass(this);
+				}
+			}
 		}
 	}
 	void PBezierGrassComponent::DestroyRenderState()
 	{
-		this->GetWorld()->GetRenderScene()->RemoveBezierGrass(this);
+		// A component that never joined a world - or whose world already released its
+		// render scene - has nothing registered; the guard turns that teardown into a
+		// no-op instead of a null dereference.
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemoveBezierGrass(this);
+			}
+		}
 		PPrimitiveComponent::DestroyRenderState();
 	}
 	void PBezierGrassComponent::SendUpdateRenderState()
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			this->GetWorld()->GetRenderScene()->UpdateBezierGrass(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->UpdateBezierGrass(this);
+				}
+			}
 		}
 		PPrimitiveComponent::SendUpdateRenderState();
 	}

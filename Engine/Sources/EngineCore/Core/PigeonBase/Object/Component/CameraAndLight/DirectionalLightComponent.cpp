@@ -82,15 +82,36 @@ namespace PigeonEngine
 	}
 	void PDirectionalLightComponent::AddToRenderScene()
 	{
-		this->GetWorld()->GetRenderScene()->AddDirectionalLight(this);
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->AddDirectionalLight(this);
+			}
+		}
 	}
 	void PDirectionalLightComponent::RemoveFromRenderScene()
 	{
-		this->GetWorld()->GetRenderScene()->RemoveDirectionalLight(this);
+		// The guards mirror PLightComponent::DestroyRenderState's call site: a light that
+		// never joined a world is destroyed through the same path as one that did, and the
+		// unguarded dereference was the teardown crash for the first case.
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemoveDirectionalLight(this);
+			}
+		}
 	}
 	void PDirectionalLightComponent::UpdateInRenderScene()
 	{
-		this->GetWorld()->GetRenderScene()->UpdateDirectionalLight(this);
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->UpdateDirectionalLight(this);
+			}
+		}
 	}
 	// Render proxy functions END
 

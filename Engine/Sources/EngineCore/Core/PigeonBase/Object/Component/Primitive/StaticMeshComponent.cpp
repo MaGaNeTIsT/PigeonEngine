@@ -89,19 +89,40 @@ namespace PigeonEngine
 		PMeshComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			this->GetWorld()->GetRenderScene()->AddStaticMesh(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->AddStaticMesh(this);
+				}
+			}
 		}
 	}
 	void PStaticMeshComponent::DestroyRenderState()
 	{
-		this->GetWorld()->GetRenderScene()->RemoveStaticMesh(this);
+		// A component that never joined a world - or whose world already released its
+		// render scene - has nothing registered; the guard turns that teardown into a
+		// no-op instead of a null dereference.
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemoveStaticMesh(this);
+			}
+		}
 		PMeshComponent::DestroyRenderState();
 	}
 	void PStaticMeshComponent::SendUpdateRenderState()
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			this->GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->UpdateStaticMesh(this);
+				}
+			}
 		}
 		PMeshComponent::SendUpdateRenderState();
 	}

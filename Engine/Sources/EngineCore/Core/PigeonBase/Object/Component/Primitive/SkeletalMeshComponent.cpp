@@ -512,19 +512,40 @@ namespace PigeonEngine
 		PMeshComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			this->GetWorld()->GetRenderScene()->AddSkeletalMesh(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->AddSkeletalMesh(this);
+				}
+			}
 		}
 	}
 	void PSkeletalMeshComponent::DestroyRenderState()
 	{
-		this->GetWorld()->GetRenderScene()->RemoveSkeletalMesh(this);
+		// A component that never joined a world - or whose world already released its
+		// render scene - has nothing registered; the guard turns that teardown into a
+		// no-op instead of a null dereference.
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemoveSkeletalMesh(this);
+			}
+		}
 		PMeshComponent::DestroyRenderState();
 	}
 	void PSkeletalMeshComponent::SendUpdateRenderState()
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			this->GetWorld()->GetRenderScene()->UpdateSkeletalMesh(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->UpdateSkeletalMesh(this);
+				}
+			}
 		}
 		PMeshComponent::SendUpdateRenderState();
 	}

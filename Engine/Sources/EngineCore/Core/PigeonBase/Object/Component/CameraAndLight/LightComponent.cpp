@@ -166,15 +166,36 @@ namespace PigeonEngine
 	}
 	void PLocalLightComponent::AddToRenderScene()
 	{
-		this->GetWorld()->GetRenderScene()->AddLocalLight(this);
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->AddLocalLight(this);
+			}
+		}
 	}
 	void PLocalLightComponent::RemoveFromRenderScene()
 	{
-		this->GetWorld()->GetRenderScene()->RemoveLocalLight(this);
+		// The guards mirror PLightComponent::DestroyRenderState's call site: a light that
+		// never joined a world is destroyed through the same path as one that did, and the
+		// unguarded dereference was the teardown crash for the first case.
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemoveLocalLight(this);
+			}
+		}
 	}
 	void PLocalLightComponent::UpdateInRenderScene()
 	{
-		this->GetWorld()->GetRenderScene()->UpdateLocalLight(this);
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->UpdateLocalLight(this);
+			}
+		}
 	}
 	// Render proxy functions END
 
