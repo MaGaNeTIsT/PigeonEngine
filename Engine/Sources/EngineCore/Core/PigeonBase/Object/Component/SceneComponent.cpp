@@ -4,6 +4,7 @@
 #include "../../../../IO/SerializationHelper.h"
 #include "../World/World.h"
 #include <Editor/EditorLogManager.h>
+#include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
@@ -12,9 +13,27 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		// Transform is protected, so the property goes through the public getter/setter;
+		// the same accessor form covers every component that keeps its fields private.
+		const size_t ClassHash = GetClassHashCode<PSceneComponent>();
+		AddClassPropertyAccessors<PSceneComponent, ETransform>(ClassHash, PE_TEXT("Transform"),
+			[](const PSceneComponent* Component) -> ETransform { return Component->GetTransform(); },
+			[](PSceneComponent* Component, const ETransform& Value) -> void { Component->SetComponentTransform(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		// Stored as its integer value for now; named enum serialization arrives with the
+		// enum registry in the editor phase.
+		AddClassPropertyAccessors<PSceneComponent, INT32>(ClassHash, PE_TEXT("Mobility"),
+			[](const PSceneComponent* Component) -> INT32 { return static_cast<INT32>(Component->GetMobility()); },
+			[](PSceneComponent* Component, const INT32& Value) -> void { Component->SetMobility(static_cast<EMobilityType>(Value)); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PSceneComponent, PActorComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

@@ -1,5 +1,6 @@
 #include "PrimitiveComponent.h"
 #include <Shader/ShaderEngineParameters.h>
+#include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <RenderProxy/StaticMeshSceneProxy.h>
@@ -9,9 +10,27 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PPrimitiveComponent>();
+		AddClassPropertyAccessors<PPrimitiveComponent, BOOL32>(ClassHash, PE_TEXT("CastShadow"),
+			[](const PPrimitiveComponent* Component) -> BOOL32 { return Component->IsCastShadow(); },
+			[](PPrimitiveComponent* Component, const BOOL32& Value) -> void { Component->SetCastShadow(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PPrimitiveComponent, BOOL32>(ClassHash, PE_TEXT("ReceiveShadow"),
+			[](const PPrimitiveComponent* Component) -> BOOL32 { return Component->IsReceiveShadow(); },
+			[](PPrimitiveComponent* Component, const BOOL32& Value) -> void { Component->SetReceiveShadow(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PPrimitiveComponent, BOOL32>(ClassHash, PE_TEXT("AffectsNavigation"),
+			[](const PPrimitiveComponent* Component) -> BOOL32 { return Component->IsAffectsNavigation(); },
+			[](PPrimitiveComponent* Component, const BOOL32& Value) -> void { Component->SetAffectsNavigation(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PPrimitiveComponent, PSceneComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
