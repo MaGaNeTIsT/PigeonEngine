@@ -46,129 +46,63 @@ public:
 		return FPhysicsQuery::RaycastMulti(InOrigin, InDirection, InLength, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
 
-	// ---- Sphere Cast ----
+	// ---- Shape Cast ----
 
-	static BOOL32 SphereCastSingle(
+	static BOOL32 CastShapeSingle(
+		FShape* InShape,
 		const Vector3& InOrigin,
+		const Quaternion& InRotation,
 		const Vector3& InDirection,
 		FLOAT InLength,
-		FLOAT InRadius,
 		FRayCastHit& OutHit,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
-		return FPhysicsQuery::SphereCastSingle(InOrigin, InDirection, InLength, InRadius, OutHit, InBPLayerFilter, InObjLayerFilter);
+		return FPhysicsQuery::CastShapeSingle(InShape, InOrigin, InRotation, InDirection, InLength, OutHit, InBPLayerFilter, InObjLayerFilter);
 	}
 
-	static BOOL32 SphereCastMulti(
+	static BOOL32 CastShapeMulti(
+		FShape* InShape,
 		const Vector3& InOrigin,
+		const Quaternion& InRotation,
 		const Vector3& InDirection,
 		FLOAT InLength,
-		FLOAT InRadius,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
-		return FPhysicsQuery::SphereCastMulti(InOrigin, InDirection, InLength, InRadius, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
+		return FPhysicsQuery::CastShapeMulti(InShape, InOrigin, InRotation, InDirection, InLength, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
 
-	// ---- Box Cast ----
+	// ---- Shape Overlap (bodies + characters) ----
 
-	static BOOL32 BoxCastSingle(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		const Vector3& InHalfExtents,
+	static BOOL32 OverlapShape(
+		FShape* InShape,
+		const Vector3& InPosition,
 		const Quaternion& InRotation,
-		FRayCastHit& OutHit,
+		TArray<FOverlapResult>& OutOverlaps,
+		UINT32 InMaxHits = 64u,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get(),
+		const FPhysicsBodyId& InIgnoreBody = FPhysicsBodyId(),
+		ObjectIdentityType InIgnoreObjectId = 0ull,
+		BOOL32 InIsIncludeStaticBodies = TRUE,
+		BOOL32 InIsIncludeSensorBodies = FALSE,
+		BOOL32 InIsIncludeCharacters = TRUE)
 	{
-		return FPhysicsQuery::BoxCastSingle(InOrigin, InDirection, InLength, InHalfExtents, InRotation, OutHit, InBPLayerFilter, InObjLayerFilter);
+		return FPhysicsQuery::OverlapShape(InShape, InPosition, InRotation, OutOverlaps, InMaxHits, InBPLayerFilter, InObjLayerFilter, InIgnoreBody, InIgnoreObjectId, InIsIncludeStaticBodies, InIsIncludeSensorBodies, InIsIncludeCharacters);
 	}
 
-	static BOOL32 BoxCastMulti(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		const Vector3& InHalfExtents,
+	static BOOL32 OverlapCharacters(
+		FShape* InShape,
+		const Vector3& InPosition,
 		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
+		TArray<FOverlapResult>& OutOverlaps,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
+		ObjectIdentityType InIgnoreObjectId = 0ull)
 	{
-		return FPhysicsQuery::BoxCastMulti(InOrigin, InDirection, InLength, InHalfExtents, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
-	}
-
-	// ---- Capsule Cast ----
-
-	static BOOL32 CapsuleCastSingle(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		FLOAT InRadius,
-		FLOAT InHalfHeight,
-		const Quaternion& InRotation,
-		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
-	{
-		return FPhysicsQuery::CapsuleCastSingle(InOrigin, InDirection, InLength, InRadius, InHalfHeight, InRotation, OutHit, InBPLayerFilter, InObjLayerFilter);
-	}
-
-	static BOOL32 CapsuleCastMulti(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		FLOAT InRadius,
-		FLOAT InHalfHeight,
-		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
-	{
-		return FPhysicsQuery::CapsuleCastMulti(InOrigin, InDirection, InLength, InRadius, InHalfHeight, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
-	}
-
-	// ---- Overlap ----
-
-	static BOOL32 OverlapSphere(
-		const Vector3& InCenter,
-		FLOAT InRadius,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
-	{
-		return FPhysicsQuery::OverlapSphere(InCenter, InRadius, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
-	}
-
-	static BOOL32 OverlapBox(
-		const Vector3& InCenter,
-		const Vector3& InHalfExtents,
-		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
-	{
-		return FPhysicsQuery::OverlapBox(InCenter, InHalfExtents, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
-	}
-
-	static BOOL32 OverlapCapsule(
-		const Vector3& InCenter,
-		FLOAT InRadius,
-		FLOAT InHalfHeight,
-		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
-	{
-		return FPhysicsQuery::OverlapCapsule(InCenter, InRadius, InHalfHeight, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
+		return FPhysicsQuery::OverlapCharacters(InShape, InPosition, InRotation, OutOverlaps, InMaxHits, InIgnoreObjectId);
 	}
 
 	// ---- Point Overlap ----

@@ -6,7 +6,7 @@
 
 namespace PigeonEngine 
 {
-	class PPhysicsComponent : public PActorComponent, public FBodyActivationEventListenerInterface, public FContactEventListenerInterface
+	class PPhysicsComponent : public PActorComponent, public FBodyActivationEventListenerInterface, public FContactEventListenerInterface, public FPhysicsContactModifierInterface
 	{
 	public:
 		PPhysicsComponent() : Shape(nullptr)
@@ -49,25 +49,40 @@ namespace PigeonEngine
 		const FPhysicsBodyId& GetBodyId() const;
 
 	private://Listener interface functions
+		// Game thread, after PhysicsSystem::Update.
 		virtual void OnBodyActivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) override;
 		virtual void OnBodyDeactivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) override;
+		virtual void OnContactAdded(const FPhysicsContactEvent& InEvent) override;
+		virtual void OnContactPersisted(const FPhysicsContactEvent& InEvent) override;
+		virtual void OnContactRemoved(const FPhysicsContactEvent& InEvent) override;
+
+		// Physics worker thread, inside PhysicsSystem::Update. All bodies are locked:
+		// read only, never touch game objects.
 		virtual EPhysicsContactValidateResult OnContactValidate(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const Vector3& inBaseOffset, const FPhysicsContactValidateResult& inCollisionResult) override;
-		virtual void OnContactAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) override;
-		virtual void OnContactPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) override;
-		virtual void OnContactRemoved(const FPhysicsSubShapePair& inSubShapePair) override;
+		virtual void OnContactSettingsAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) override;
+		virtual void OnContactSettingsPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) override;
 
 	protected:
 		virtual void BeginAddedToScene(PWorld* World) override;
 		virtual void RemovedFromScene() override;
+
+		// Game thread. Safe to create or destroy actors, play sounds and call the
+		// physics interfaces.
 		virtual void OnPhysicsBodyActivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) {}
 		virtual void OnPhysicsBodyDeactivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) {}
+		virtual void OnPhysicsContactAdded(const FPhysicsContactEvent& InEvent) {}
+		virtual void OnPhysicsContactPersisted(const FPhysicsContactEvent& InEvent) {}
+		virtual void OnPhysicsContactRemoved(const FPhysicsContactEvent& InEvent) {}
+
+		// Physics worker thread. All bodies are locked, only reads are allowed and
+		// changes to the game state are not safe here. Use the deferred hooks above
+		// for anything that is not required to alter the simulation.
 		virtual EPhysicsContactValidateResult OnPhysicsContactValidate(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const Vector3& inBaseOffset, const FPhysicsContactValidateResult& inCollisionResult)
 		{
 			return EPhysicsContactValidateResult::AcceptAllContactsForThisBodyPair;
 		}
-		virtual void OnPhysicsContactAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
-		virtual void OnPhysicsContactPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
-		virtual void OnPhysicsContactRemoved(const FPhysicsSubShapePair& inSubShapePair) {}
+		virtual void OnPhysicsContactSettingsAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
+		virtual void OnPhysicsContactSettingsPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
 	public:
 		PhysicsUtility::EMotionType MotionType = PhysicsUtility::EMotionType::Static;
 		FPhysicsObjectLayer Layer = Layers::NON_MOVING;

@@ -56,7 +56,14 @@ namespace PigeonEngine
 	void FPhysics_Jolt::PhysicsUpdate(FLOAT InDeltaTime)
 	{
 		FPhysicsCommonSettings* CommonSettings = FPhysicsCommonSettings::GetSingleton();
+		// Jolt invokes the contact and activation wrappers from its worker threads.
+		// Registration from inside that window would race with the callback dispatch,
+		// so the wrappers reject it.
+		PhysicsData->ContactListener->SetSimulating(TRUE);
+		PhysicsData->BodyActivationListener->SetSimulating(TRUE);
 		PhysicsData->PhysicsSystem->Update(InDeltaTime, CommonSettings->PHYSICS_COLLISION_STEPS, PhysicsData->TempAllocator, PhysicsData->JobSystem);
+		PhysicsData->BodyActivationListener->SetSimulating(FALSE);
+		PhysicsData->ContactListener->SetSimulating(FALSE);
 		for (const auto& Character : Characters)
 		{
 			PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Has a Character been destory but not removed!"), !!Character);
@@ -116,6 +123,16 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::PostPhysicsUpdate(FLOAT InDeltaTime)
 	{
+		if (!PhysicsData)
+		{
+			return;
+		}
+
+		// Game thread, PhysicsSystem::Update has returned. This runs before the
+		// components' OnPostPhysicsTick handlers, so the activation flags used by
+		// the transform sync are already up to date for this fixed tick.
+		PhysicsData->BodyActivationListener->DispatchDeferredEvents();
+		PhysicsData->ContactListener->DispatchDeferredEvents();
 	}
 
 	void FPhysics_Jolt::AddCharacter(FCharacterVirtual* Character)
@@ -160,6 +177,22 @@ namespace PigeonEngine
 		}
 	}
 
+	void FPhysics_Jolt::AddPhysicsListener(FPhysicsContactModifierInterface* InListener)
+	{
+		if (PhysicsData && PhysicsData->ContactListener)
+		{
+			PhysicsData->ContactListener->AddListener(InListener);
+		}
+	}
+
+	void FPhysics_Jolt::RemovePhysicsListener(FPhysicsContactModifierInterface* InListener)
+	{
+		if (PhysicsData && PhysicsData->ContactListener)
+		{
+			PhysicsData->ContactListener->RemoveListener(InListener);
+		}
+	}
+
 	void FPhysics_Jolt::AddPhysicsListener(FSoftBodyContactEventListenerInterface* InListener)
 	{
 		if (PhysicsData && PhysicsData->SoftBodyContactListener)
@@ -176,10 +209,11 @@ namespace PigeonEngine
 		}
 	}
 
-	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, const ObjectIdentityType& InObjectID, FPhysicsBodyId& outBodyID)
+	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, const ObjectIdentityType& InObjectID, FPhysicsBodyId& outBodyID, BOOL32 InIsSensor)
 	{
 		BodyCreationSettings Settings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer.ToJolt());
 		Settings.mUserData = static_cast<uint64>(InObjectID);
+		Settings.mIsSensor = (InIsSensor != FALSE);
 		Body* body = PhysicsData->BodyInterface->CreateBody(Settings);
 		if (body)
 		{

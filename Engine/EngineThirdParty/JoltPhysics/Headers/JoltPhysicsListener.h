@@ -1,6 +1,7 @@
 #pragma once
 #include <CoreMinimal.h>
 #include "../../../Sources/EngineCore/Core/Base/DataStructure/Container/Array.h"
+#include "../../../Sources/EngineCore/MultiThread/MpscQueue.h"
 #include "PhysicsBodyId.h"
 #include "PhysicsUtility.h"
 #include "JoltIncludes.h"
@@ -180,6 +181,55 @@ struct FPhysicsSubShapePair
 	}
 };
 
+enum class EPhysicsBodyEventType : UINT8
+{
+	BODY_ACTIVATED = 0,
+	BODY_DEACTIVATED = 1,
+};
+
+/*
+* Body activation notification. Produced on a physics worker thread, consumed on the game
+* thread by FBodyActivationListener::DispatchDeferredEvents.
+*/
+struct FPhysicsBodyEvent
+{
+	EPhysicsBodyEventType Type = EPhysicsBodyEventType::BODY_ACTIVATED;
+	FPhysicsBodyId BodyId;
+	ObjectIdentityType ObjectId = 0ull;
+};
+
+enum class EPhysicsContactEventType : UINT8
+{
+	CONTACT_ADDED = 0,
+	CONTACT_PERSISTED = 1,
+	CONTACT_REMOVED = 2,
+};
+
+/*
+* Game-side contact notification. Produced by a Jolt worker thread inside PhysicsSystem::Update,
+* consumed on the game thread after the simulation (FPhysicsJolt::PostPhysicsUpdate).
+*
+* ObjectId1/2 come from Body::GetUserData. Jolt does not allow body access during
+* OnContactRemoved, so a removed event carries body/sub shape ids only and leaves the
+* object ids at 0.
+*
+* Manifold and FinalSettings are only populated for ContactAdded / ContactPersisted.
+* FinalSettings is the settings snapshot after the synchronous modifiers ran; it is
+* informational on this layer, changing it has no effect on the simulation.
+*/
+struct FPhysicsContactEvent
+{
+	EPhysicsContactEventType Type = EPhysicsContactEventType::CONTACT_ADDED;
+	FPhysicsBodyId BodyId1;
+	FPhysicsBodyId BodyId2;
+	ObjectIdentityType ObjectId1 = 0ull;
+	ObjectIdentityType ObjectId2 = 0ull;
+	UINT32 SubShapeID1 = UINT32_MAX;
+	UINT32 SubShapeID2 = UINT32_MAX;
+	FPhysicsContactManifold Manifold;
+	FPhysicsContactSettings FinalSettings;
+};
+
 struct FPhysicsCharacterContactSettings
 {
 	BOOL32 CanPushCharacter = TRUE;
@@ -318,6 +368,14 @@ inline EPhysicsSoftBodyContactValidateResult FromJoltSoftBodyValidateResult(Soft
 	return InResult == SoftBodyValidateResult::RejectContact ? EPhysicsSoftBodyContactValidateResult::RejectContact : EPhysicsSoftBodyContactValidateResult::AcceptContact;
 }
 
+/*
+* Body activation / deactivation events.
+*
+* Thread: game thread. Jolt produces these on arbitrary physics worker threads,
+* FBodyActivationListener queues them and delivers them from
+* DispatchDeferredEvents after PhysicsSystem::Update. Game state may be touched
+* freely in these callbacks.
+*/
 class FBodyActivationEventListenerInterface
 {
 public:
@@ -327,19 +385,56 @@ public:
 	virtual void OnBodyDeactivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) {}
 };
 
+/*
+* Contact notifications.
+*
+* Thread: game thread. Produced by Jolt worker threads, queued by FContactListener
+* and delivered from DispatchDeferredEvents after PhysicsSystem::Update has returned.
+* Game objects and the physics interfaces may be used freely here.
+*
+* Ordering: events are delivered in production order. Callbacks for one body pair
+* are not batched; a pair can be added, persisted and removed across different frames.
+*
+* A listener must stay alive until it is removed. It is safe to remove a listener
+* from inside a callback (the dispatcher walks a snapshot), but destroying it while
+* the dispatch is in flight leaves dangling entries for the remaining events.
+*/
 class FContactEventListenerInterface
 {
 public:
 	virtual ~FContactEventListenerInterface() = default;
+
+	virtual void OnContactAdded(const FPhysicsContactEvent& InEvent) {}
+	virtual void OnContactPersisted(const FPhysicsContactEvent& InEvent) {}
+	virtual void OnContactRemoved(const FPhysicsContactEvent& InEvent) {}
+};
+
+/*
+* Contact modifiers: the only contact callbacks that may influence the simulation.
+*
+* Thread: physics worker thread, inside PhysicsSystem::Update. Jolt calls this while
+* all bodies are locked and from multiple threads at the same time (callbacks for one
+* body pair are serialized, different pairs may run concurrently). Only read bodies
+* (NoLock interfaces), never change physics state, never touch game objects. Anything
+* that is not required to change the simulation belongs in FContactEventListenerInterface.
+*
+* Settings ordering: modifiers are called in registration order and each one observes
+* the changes made by the previous modifier, so the last writer wins. OnContactValidate
+* stops at the first result other than AcceptAllContactsForThisBodyPair, so registration
+* order is the priority order.
+*/
+class FPhysicsContactModifierInterface
+{
+public:
+	virtual ~FPhysicsContactModifierInterface() = default;
 
 	virtual EPhysicsContactValidateResult OnContactValidate(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const Vector3& inBaseOffset, const FPhysicsContactValidateResult& inCollisionResult)
 	{
 		return EPhysicsContactValidateResult::AcceptAllContactsForThisBodyPair;
 	}
 
-	virtual void OnContactAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
-	virtual void OnContactPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
-	virtual void OnContactRemoved(const FPhysicsSubShapePair& inSubShapePair) {}
+	virtual void OnContactSettingsAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
+	virtual void OnContactSettingsPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
 };
 
 class FCharacterContactEventListenerInterface
@@ -369,87 +464,195 @@ public:
 class FBodyActivationListener : public BodyActivationListener
 {
 public:
+	// Game thread only, and never while PhysicsSystem::Update is running.
 	void AddListener(FBodyActivationEventListenerInterface* InListener)
 	{
+		PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Physics body activation listener cannot be added during PhysicsSystem::Update!"), !bSimulating);
 		if (InListener && !Listeners.Contains(InListener))
 		{
 			Listeners.Add(InListener);
 		}
 	}
 
+	// Game thread only, and never while PhysicsSystem::Update is running.
 	void RemoveListener(FBodyActivationEventListenerInterface* InListener)
 	{
+		PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Physics body activation listener cannot be removed during PhysicsSystem::Update!"), !bSimulating);
 		if (InListener)
 		{
 			Listeners.Remove(InListener);
 		}
 	}
 
+	// Set by the physics step around PhysicsSystem::Update.
+	void SetSimulating(BOOL32 InbSimulating)
+	{
+		bSimulating = InbSimulating;
+	}
+
+	// Game thread. Jolt can call OnBodyActivated/OnBodyDeactivated from any worker
+	// thread, so the callbacks only record the event and this drain delivers it
+	// after the simulation has finished.
+	void DispatchDeferredEvents()
+	{
+		if (PendingEvents.IsEmpty())
+		{
+			return;
+		}
+
+		// Snapshot so a listener may remove itself (or another listener) from inside
+		// a callback without invalidating the iteration.
+		const TArray<FBodyActivationEventListenerInterface*> Snapshot = Listeners;
+		PendingEvents.DequeueAll([&Snapshot](FPhysicsBodyEvent&& InEvent)
+		{
+			for (auto* Listener : Snapshot)
+			{
+				if (!Listener)
+				{
+					continue;
+				}
+				if (InEvent.Type == EPhysicsBodyEventType::BODY_ACTIVATED)
+				{
+					Listener->OnBodyActivated(InEvent.BodyId, InEvent.ObjectId);
+				}
+				else
+				{
+					Listener->OnBodyDeactivated(InEvent.BodyId, InEvent.ObjectId);
+				}
+			}
+		});
+	}
+
 	virtual void OnBodyActivated(const BodyID& inBodyID, uint64 inBodyUserData) override
 	{
-		FPhysicsBodyId PhysicsBodyId;
-		PhysicsBodyId.ID = inBodyID;
-		const ObjectIdentityType ObjectID = static_cast<ObjectIdentityType>(inBodyUserData);
-		for (auto* Listener : Listeners)
-		{
-			if (Listener)
-			{
-				Listener->OnBodyActivated(PhysicsBodyId, ObjectID);
-			}
-		}
+		FPhysicsBodyEvent Event;
+		Event.Type = EPhysicsBodyEventType::BODY_ACTIVATED;
+		Event.BodyId.ID = inBodyID;
+		Event.ObjectId = static_cast<ObjectIdentityType>(inBodyUserData);
+		PendingEvents.Enqueue(static_cast<FPhysicsBodyEvent&&>(Event));
 	}
 
 	virtual void OnBodyDeactivated(const BodyID& inBodyID, uint64 inBodyUserData) override
 	{
-		FPhysicsBodyId PhysicsBodyId;
-		PhysicsBodyId.ID = inBodyID;
-		const ObjectIdentityType ObjectID = static_cast<ObjectIdentityType>(inBodyUserData);
-		for (auto* Listener : Listeners)
-		{
-			if (Listener)
-			{
-				Listener->OnBodyDeactivated(PhysicsBodyId, ObjectID);
-			}
-		}
+		FPhysicsBodyEvent Event;
+		Event.Type = EPhysicsBodyEventType::BODY_DEACTIVATED;
+		Event.BodyId.ID = inBodyID;
+		Event.ObjectId = static_cast<ObjectIdentityType>(inBodyUserData);
+		PendingEvents.Enqueue(static_cast<FPhysicsBodyEvent&&>(Event));
 	}
 
 private:
 	TArray<FBodyActivationEventListenerInterface*> Listeners;
+	TMpscQueue<FPhysicsBodyEvent> PendingEvents;
+	BOOL32 bSimulating = FALSE;
 };
 
 class FContactListener : public ContactListener
 {
 public:
+	// Game thread only, and never while PhysicsSystem::Update is running.
+	void AddListener(FPhysicsContactModifierInterface* InListener)
+	{
+		PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Physics contact modifier cannot be added during PhysicsSystem::Update!"), !bSimulating);
+		if (InListener && !Modifiers.Contains(InListener))
+		{
+			Modifiers.Add(InListener);
+		}
+	}
+
+	// Game thread only, and never while PhysicsSystem::Update is running.
+	void RemoveListener(FPhysicsContactModifierInterface* InListener)
+	{
+		PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Physics contact modifier cannot be removed during PhysicsSystem::Update!"), !bSimulating);
+		if (InListener)
+		{
+			Modifiers.Remove(InListener);
+		}
+	}
+
+	// Game thread only, and never while PhysicsSystem::Update is running.
 	void AddListener(FContactEventListenerInterface* InListener)
 	{
+		PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Physics contact listener cannot be added during PhysicsSystem::Update!"), !bSimulating);
 		if (InListener && !Listeners.Contains(InListener))
 		{
 			Listeners.Add(InListener);
 		}
 	}
 
+	// Game thread only, and never while PhysicsSystem::Update is running.
 	void RemoveListener(FContactEventListenerInterface* InListener)
 	{
+		PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Physics contact listener cannot be removed during PhysicsSystem::Update!"), !bSimulating);
 		if (InListener)
 		{
 			Listeners.Remove(InListener);
 		}
 	}
 
+	// Set by the physics step around PhysicsSystem::Update.
+	void SetSimulating(BOOL32 InbSimulating)
+	{
+		bSimulating = InbSimulating;
+	}
+
+	// Game thread. Drains the events recorded by the Jolt callbacks and delivers
+	// them to FContactEventListenerInterface.
+	void DispatchDeferredEvents()
+	{
+		if (PendingEvents.IsEmpty())
+		{
+			return;
+		}
+
+		// Snapshot so a listener may remove itself (or another listener) from inside
+		// a callback without invalidating the iteration.
+		const TArray<FContactEventListenerInterface*> Snapshot = Listeners;
+		PendingEvents.DequeueAll([&Snapshot](FPhysicsContactEvent&& InEvent)
+		{
+			for (auto* Listener : Snapshot)
+			{
+				if (!Listener)
+				{
+					continue;
+				}
+				switch (InEvent.Type)
+				{
+				case EPhysicsContactEventType::CONTACT_ADDED:
+					Listener->OnContactAdded(InEvent);
+					break;
+				case EPhysicsContactEventType::CONTACT_PERSISTED:
+					Listener->OnContactPersisted(InEvent);
+					break;
+				case EPhysicsContactEventType::CONTACT_REMOVED:
+					Listener->OnContactRemoved(InEvent);
+					break;
+				}
+			}
+		});
+	}
+
 	// See: ContactListener
+	// Physics worker thread: all bodies are locked, only the modifiers are called
+	// and they must not touch game state.
 	virtual ValidateResult OnContactValidate(const Body& inBody1, const Body& inBody2, RVec3Arg inBaseOffset, const CollideShapeResult& inCollisionResult) override
 	{
+		if (Modifiers.IsEmpty())
+		{
+			return ValidateResult::AcceptAllContactsForThisBodyPair;
+		}
+
 		FPhysicsBodyId BodyId1;
 		BodyId1.ID = inBody1.GetID();
 		FPhysicsBodyId BodyId2;
 		BodyId2.ID = inBody2.GetID();
 		const Vector3 BaseOffset = PhysicsUtility::Convert2Centimeter(Vec3(inBaseOffset.GetX(), inBaseOffset.GetY(), inBaseOffset.GetZ()));
 		const FPhysicsContactValidateResult CollisionResult = FPhysicsContactValidateResult::Create(inCollisionResult);
-		for (auto* Listener : Listeners)
+		for (auto* Modifier : Modifiers)
 		{
-			if (Listener)
+			if (Modifier)
 			{
-				const EPhysicsContactValidateResult Result = Listener->OnContactValidate(BodyId1, BodyId2, BaseOffset, CollisionResult);
+				const EPhysicsContactValidateResult Result = Modifier->OnContactValidate(BodyId1, BodyId2, BaseOffset, CollisionResult);
 				if (Result != EPhysicsContactValidateResult::AcceptAllContactsForThisBodyPair)
 				{
 					return ToJoltValidateResult(Result);
@@ -462,57 +665,97 @@ public:
 
 	virtual void OnContactAdded(const Body& inBody1, const Body& inBody2, const ContactManifold& inManifold, ContactSettings& ioSettings) override
 	{
-		FPhysicsBodyId BodyId1;
-		BodyId1.ID = inBody1.GetID();
-		FPhysicsBodyId BodyId2;
-		BodyId2.ID = inBody2.GetID();
-		const FPhysicsContactManifold Manifold = FPhysicsContactManifold::Create(inManifold);
-		FPhysicsContactSettings Settings = FPhysicsContactSettings::Create(ioSettings);
-		for (auto* Listener : Listeners)
-		{
-			if (Listener)
-			{
-				Listener->OnContactAdded(BodyId1, BodyId2, Manifold, Settings);
-			}
-		}
-		Settings.ToJolt(ioSettings);
+		ProcessContact(EPhysicsContactEventType::CONTACT_ADDED, inBody1, inBody2, inManifold, ioSettings);
 	}
 
 	virtual void OnContactPersisted(const Body& inBody1, const Body& inBody2, const ContactManifold& inManifold, ContactSettings& ioSettings) override
 	{
-		FPhysicsBodyId BodyId1;
-		BodyId1.ID = inBody1.GetID();
-		FPhysicsBodyId BodyId2;
-		BodyId2.ID = inBody2.GetID();
-		const FPhysicsContactManifold Manifold = FPhysicsContactManifold::Create(inManifold);
-		FPhysicsContactSettings Settings = FPhysicsContactSettings::Create(ioSettings);
-		for (auto* Listener : Listeners)
-		{
-			if (Listener)
-			{
-				Listener->OnContactPersisted(BodyId1, BodyId2, Manifold, Settings);
-			}
-		}
-		Settings.ToJolt(ioSettings);
+		ProcessContact(EPhysicsContactEventType::CONTACT_PERSISTED, inBody1, inBody2, inManifold, ioSettings);
 	}
 
 	virtual void OnContactRemoved(const SubShapeIDPair& inSubShapePair) override
 	{
-		const FPhysicsSubShapePair SubShapePair = FPhysicsSubShapePair::Create(inSubShapePair);
-		for (auto* Listener : Listeners)
+		if (Listeners.IsEmpty())
 		{
-			if (Listener)
+			return;
+		}
+
+		// Jolt does not allow body access here, so only the ids are recorded.
+		FPhysicsContactEvent Event;
+		Event.Type = EPhysicsContactEventType::CONTACT_REMOVED;
+		Event.BodyId1.ID = inSubShapePair.GetBody1ID();
+		Event.BodyId2.ID = inSubShapePair.GetBody2ID();
+		Event.SubShapeID1 = inSubShapePair.GetSubShapeID1().GetValue();
+		Event.SubShapeID2 = inSubShapePair.GetSubShapeID2().GetValue();
+		PendingEvents.Enqueue(static_cast<FPhysicsContactEvent&&>(Event));
+	}
+
+private:
+	// Physics worker thread. Applies the synchronous modifiers (the only contact
+	// callbacks allowed to change the simulation) and records a deferred event for
+	// the game thread. Both lists empty means no conversion or allocation happens.
+	void ProcessContact(EPhysicsContactEventType InType, const Body& inBody1, const Body& inBody2, const ContactManifold& inManifold, ContactSettings& ioSettings)
+	{
+		const BOOL32 bHasModifiers = !Modifiers.IsEmpty();
+		const BOOL32 bHasListeners = !Listeners.IsEmpty();
+		if (!bHasModifiers && !bHasListeners)
+		{
+			return;
+		}
+
+		FPhysicsBodyId BodyId1;
+		BodyId1.ID = inBody1.GetID();
+		FPhysicsBodyId BodyId2;
+		BodyId2.ID = inBody2.GetID();
+		FPhysicsContactManifold Manifold = FPhysicsContactManifold::Create(inManifold);
+		FPhysicsContactSettings Settings = FPhysicsContactSettings::Create(ioSettings);
+
+		if (bHasModifiers)
+		{
+			for (auto* Modifier : Modifiers)
 			{
-				Listener->OnContactRemoved(SubShapePair);
+				if (!Modifier)
+				{
+					continue;
+				}
+				if (InType == EPhysicsContactEventType::CONTACT_ADDED)
+				{
+					Modifier->OnContactSettingsAdded(BodyId1, BodyId2, Manifold, Settings);
+				}
+				else
+				{
+					Modifier->OnContactSettingsPersisted(BodyId1, BodyId2, Manifold, Settings);
+				}
 			}
+			Settings.ToJolt(ioSettings);
+		}
+
+		if (bHasListeners)
+		{
+			FPhysicsContactEvent Event;
+			Event.Type = InType;
+			Event.BodyId1 = BodyId1;
+			Event.BodyId2 = BodyId2;
+			Event.ObjectId1 = static_cast<ObjectIdentityType>(inBody1.GetUserData());
+			Event.ObjectId2 = static_cast<ObjectIdentityType>(inBody2.GetUserData());
+			Event.SubShapeID1 = inManifold.mSubShapeID1.GetValue();
+			Event.SubShapeID2 = inManifold.mSubShapeID2.GetValue();
+			Event.Manifold = static_cast<FPhysicsContactManifold&&>(Manifold);
+			Event.FinalSettings = Settings;
+			PendingEvents.Enqueue(static_cast<FPhysicsContactEvent&&>(Event));
 		}
 	}
 
 private:
+	TArray<FPhysicsContactModifierInterface*> Modifiers;
 	TArray<FContactEventListenerInterface*> Listeners;
+	TMpscQueue<FPhysicsContactEvent> PendingEvents;
+	BOOL32 bSimulating = FALSE;
 };
 
 /// This class receives callbacks when a virtual character hits something.
+/// These callbacks run on the game thread: FCharacterVirtual::PostSimulation calls
+/// CharacterVirtual::ExtendedUpdate after PhysicsSystem::Update has returned.
 class FCharacterContactListener :public CharacterContactListener
 {
 public:
@@ -627,6 +870,10 @@ private:
 	TArray<FCharacterContactEventListenerInterface*> Listeners;
 };
 
+/// Soft body contact callbacks are invoked by Jolt worker threads inside
+/// PhysicsSystem::Update (all bodies locked). No engine listener registers today;
+/// if one is added, use the same two-stage split as FContactListener: only the
+/// settings/validate part may stay synchronous.
 class FSoftBodyContactListener : public SoftBodyContactListener
 {
 public:

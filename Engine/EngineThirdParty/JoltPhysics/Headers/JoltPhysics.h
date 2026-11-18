@@ -40,15 +40,31 @@ public:
 
 	void AddCharacter(class FCharacterVirtual* Character);
 	void RemoveCharacter(class FCharacterVirtual* Character);
+	// Read-only visit of every registered character. Characters are not part of
+	// the physics broad phase, so spatial queries have to walk this list.
+	template <typename _TFuncType>
+	void ForEachCharacter(_TFuncType&& InFunc) const
+	{
+		for (TSet<FCharacterVirtual*>::TConstIterator It = Characters.Begin(); It != Characters.End(); It++)
+		{
+			FCharacterVirtual* Character = *It;
+			if (Character)
+			{
+				InFunc(Character);
+			}
+		}
+	}
 	void AddPhysicsListener(FBodyActivationEventListenerInterface* InListener);
 	void RemovePhysicsListener(FBodyActivationEventListenerInterface* InListener);
 	void AddPhysicsListener(FContactEventListenerInterface* InListener);
 	void RemovePhysicsListener(FContactEventListenerInterface* InListener);
+	void AddPhysicsListener(FPhysicsContactModifierInterface* InListener);
+	void RemovePhysicsListener(FPhysicsContactModifierInterface* InListener);
 	void AddPhysicsListener(FSoftBodyContactEventListenerInterface* InListener);
 	void RemovePhysicsListener(FSoftBodyContactEventListenerInterface* InListener);
 
 public:
-	BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, const ObjectIdentityType& InObjectID, FPhysicsBodyId& outBodyID);
+	BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, const ObjectIdentityType& InObjectID, FPhysicsBodyId& outBodyID, BOOL32 InIsSensor = FALSE);
 	void AddBody(const ObjectIdentityType& GameObjectId, const FPhysicsBodyId& inBodyID, EActivate inActivationMode = EActivate::DontActivate);
 	BOOL32 FindObjectIdentityByBodyId(const FPhysicsBodyId& inBodyID, ObjectIdentityType& outGameObjectId) const;
 	void RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape = TRUE);

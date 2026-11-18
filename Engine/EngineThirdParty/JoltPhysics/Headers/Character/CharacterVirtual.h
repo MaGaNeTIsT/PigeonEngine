@@ -64,6 +64,14 @@ public:
 	FCharacterContactListener* GetListener();
 	const FCharacterContactListener* GetListener() const;
 
+	// CharacterVirtual is not part of the broad phase. These accessors let the
+	// spatial query layer identify it (user data is the owner actor identity) and
+	// collide its shape against a query volume.
+	ObjectIdentityType GetObjectId() const;
+	const JPH::Shape* GetShapeInstance() const;
+	JPH::RMat44 GetCenterOfMassTransformInstance() const;
+	JPH::TransformedShape GetTransformedShapeInstance() const;
+
 private:
 	const FCharacterVirtualSettings CharacterCreateSettings;
 	CharacterVirtual* CharacterInstance = nullptr;

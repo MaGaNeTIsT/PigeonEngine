@@ -28,6 +28,7 @@ namespace PigeonEngine
 		PActorComponent::Init();
 		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
 		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FContactEventListenerInterface*>(this));
+		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FPhysicsContactModifierInterface*>(this));
 		InitPhysicsComponent();
 	}
 
@@ -81,6 +82,7 @@ namespace PigeonEngine
 	{
 		FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
 		FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FContactEventListenerInterface*>(this));
+		FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FPhysicsContactModifierInterface*>(this));
 		PActorComponent::Uninit();
 		UninitPhysicsComponent();
 	}
@@ -236,27 +238,43 @@ namespace PigeonEngine
 		return OnPhysicsContactValidate(inBodyID1, inBodyID2, inBaseOffset, inCollisionResult);
 	}
 
-	void PPhysicsComponent::OnContactAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings)
+	void PPhysicsComponent::OnContactAdded(const FPhysicsContactEvent& InEvent)
 	{
-		if (ContainsAnyBody(inBodyID1, inBodyID2))
+		if (ContainsAnyBody(InEvent.BodyId1, InEvent.BodyId2))
 		{
-			OnPhysicsContactAdded(inBodyID1, inBodyID2, inManifold, ioSettings);
+			OnPhysicsContactAdded(InEvent);
 		}
 	}
 
-	void PPhysicsComponent::OnContactPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings)
+	void PPhysicsComponent::OnContactPersisted(const FPhysicsContactEvent& InEvent)
 	{
-		if (ContainsAnyBody(inBodyID1, inBodyID2))
+		if (ContainsAnyBody(InEvent.BodyId1, InEvent.BodyId2))
 		{
-			OnPhysicsContactPersisted(inBodyID1, inBodyID2, inManifold, ioSettings);
+			OnPhysicsContactPersisted(InEvent);
 		}
 	}
 
-	void PPhysicsComponent::OnContactRemoved(const FPhysicsSubShapePair& inSubShapePair)
+	void PPhysicsComponent::OnContactRemoved(const FPhysicsContactEvent& InEvent)
 	{
-		if (ContainsAnyBody(inSubShapePair.BodyId1, inSubShapePair.BodyId2))
+		if (ContainsAnyBody(InEvent.BodyId1, InEvent.BodyId2))
 		{
-			OnPhysicsContactRemoved(inSubShapePair);
+			OnPhysicsContactRemoved(InEvent);
+		}
+	}
+
+	void PPhysicsComponent::OnContactSettingsAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings)
+	{
+		if (ContainsAnyBody(inBodyID1, inBodyID2))
+		{
+			OnPhysicsContactSettingsAdded(inBodyID1, inBodyID2, inManifold, ioSettings);
+		}
+	}
+
+	void PPhysicsComponent::OnContactSettingsPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings)
+	{
+		if (ContainsAnyBody(inBodyID1, inBodyID2))
+		{
+			OnPhysicsContactSettingsPersisted(inBodyID1, inBodyID2, inManifold, ioSettings);
 		}
 	}
 

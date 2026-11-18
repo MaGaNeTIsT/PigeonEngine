@@ -14,44 +14,40 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	FShape::FShape() :
-		ShapeInstance(nullptr),
-		ShapeSettingsInstance(nullptr)
+	FShape::FShape()
 	{
 	}
 
 	FShape::~FShape()
 	{
-		//if (ShapeInstance)
-		//{
-		//	delete ShapeInstance;
-		//	ShapeInstance = nullptr;
-		//}
-		//if (ShapeSettingsInstance)
-		//{
-		//	delete ShapeSettingsInstance;
-		//	ShapeSettingsInstance = nullptr;
-		//}
+		// ShapeInstance / ShapeSettingsInstance are JPH::Ref members: their
+		// destructors release the references this FShape owns. Bodies, characters
+		// and compound shapes hold their own references, so nothing is freed while
+		// they still use it.
 	}
 
 	Shape* FShape::CreateShape(BOOL32 bCreateNew)
 	{
-		if (ShapeInstance && !bCreateNew)
-			return ShapeInstance;
-		else if (ShapeInstance)
-			delete ShapeInstance;
+		if (ShapeInstance.GetPtr() != nullptr && !bCreateNew)
+		{
+			return ShapeInstance.GetPtr();
+		}
+		// Assigning nullptr releases the previous instance; assigning the new raw
+		// pointer lets Ref take its reference (CreateShapeInternal returns refcount 0).
+		ShapeInstance = nullptr;
 		ShapeInstance = CreateShapeInternal();
-		return ShapeInstance;
+		return ShapeInstance.GetPtr();
 	}
 
 	ShapeSettings* FShape::CreateShapeSettings(BOOL32 bCreateNew)
 	{
-		if (ShapeSettingsInstance && !bCreateNew)
-			return ShapeSettingsInstance;
-		else if (ShapeSettingsInstance)
-			delete ShapeSettingsInstance;
+		if (ShapeSettingsInstance.GetPtr() != nullptr && !bCreateNew)
+		{
+			return ShapeSettingsInstance.GetPtr();
+		}
+		ShapeSettingsInstance = nullptr;
 		ShapeSettingsInstance = CreateShapeSettingsInternal();
-		return ShapeSettingsInstance;
+		return ShapeSettingsInstance.GetPtr();
 	}
 
 	FCastRay::FCastRay()

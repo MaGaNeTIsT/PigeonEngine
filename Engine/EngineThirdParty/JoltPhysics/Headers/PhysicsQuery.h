@@ -12,10 +12,9 @@ PIGEONENGINE_NAMESPACE_BEGIN
 
 enum class EQueryType : UINT8
 {
-	Raycast     = 0,
-	ShapeCast   = 1,
-	Overlap     = 2,
-	PointOverlap = 3,
+	Raycast      = 0,
+	ShapeCast    = 1,
+	PointOverlap = 2,
 };
 
 // ============================================================
@@ -28,9 +27,7 @@ enum class EQueryType : UINT8
 ///  Raycast      - HitPosition, HitNormal, Fraction, Distance, BodyId
 ///  ShapeCast    - HitPosition, HitNormal, Fraction, Distance,
 ///                 PenetrationDepth, BodyId
-///  Overlap      - HitPosition, ContactOnHit, HitNormal,
-///                 PenetrationDepth, BodyId
-///  PointOverlap - BodyId only
+///  PointOverlap - BodyId, ObjectId
 struct FRayCastHit
 {
 	/// Type of query that produced this hit.
@@ -39,15 +36,11 @@ struct FRayCastHit
 	/// World-space primary hit / contact point on the query shape (cm).
 	/// Raycast   : world-space hit position.
 	/// ShapeCast : contact point on the cast shape.
-	/// Overlap   : contact point on the query shape (ContactOnQuery).
 	Vector3			HitPosition;
 
-	/// World-space surface normal (Raycast) or penetration axis
-	/// (ShapeCast / Overlap), pointing from the hit body toward the query shape.
+	/// World-space surface normal (Raycast) or penetration axis (ShapeCast),
+	/// pointing from the hit body toward the query shape.
 	Vector3			HitNormal;
-
-	/// World-space contact point on the overlapping body (Overlap only).
-	Vector3			ContactOnHit;
 
 	/// Fraction along the ray / cast direction [0, 1] at first contact
 	/// (Raycast and ShapeCast only).
@@ -58,17 +51,44 @@ struct FRayCastHit
 	FLOAT			Distance			= 0.f;
 
 	/// Penetration depth at the contact point (cm).
-	/// (ShapeCast and Overlap only).
+	/// (ShapeCast only).
 	FLOAT			PenetrationDepth	= 0.f;
 
-	/// Physics body ID of the hit / overlapping body.
+	/// Physics body ID of the hit body.
 	FPhysicsBodyId	BodyId;
 
-	/// Object identity of the hit / overlapping actor.
+	/// Object identity of the hit actor.
 	ObjectIdentityType ObjectId = 0u;
 
 	/// Returns TRUE when this result represents a valid hit.
 	inline BOOL32 IsValid() const { return !BodyId.IsInvalid(); }
+};
+
+class FCharacterVirtual;
+
+/// Result of a shape overlap test that can contain rigid bodies and virtual
+/// characters. Bodies carry a BodyId; characters have an invalid BodyId and set
+/// Character instead (CharacterVirtual is not part of the broad phase, so a
+/// regular physics query cannot see it).
+struct FOverlapResult
+{
+	/// Overlapping rigid body (invalid for a character overlap).
+	FPhysicsBodyId		BodyId;
+
+	/// Actor identity of the overlapping body or character.
+	ObjectIdentityType	ObjectId = 0ull;
+
+	/// Non-null when the overlap is a CharacterVirtual.
+	const FCharacterVirtual* Character = nullptr;
+
+	/// World-space contact information (cm). Zero for characters if the
+	/// collision collector produced no usable point.
+	Vector3				ContactPoint = Vector3::Zero();
+	Vector3				ContactNormal = Vector3::Zero();
+	FLOAT				PenetrationDepth = 0.f;
+
+	inline BOOL32 IsCharacter() const { return Character != nullptr; }
+	inline BOOL32 IsValid() const { return (Character != nullptr) || !BodyId.IsInvalid(); }
 };
 
 // ============================================================
@@ -121,184 +141,113 @@ public:
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
-	//  Sphere Cast (swept sphere)
+	//  Shape Cast (swept arbitrary shape)
 	// ------------------------------------------------------------
 
-	/// Sweep a sphere along a direction and return the closest hit.
-	/// @param InOrigin         Sphere center origin in centimeters.
+	/// Sweep an engine shape along a direction and return the closest hit.
+	///
+	/// This is the generic form of the former sphere/box/capsule casts: the
+	/// caller supplies an FShape (box, sphere, capsule, cylinder or compound).
+	/// CharacterVirtual is not part of the broad phase and is not returned.
+	///
+	/// The shape is owned by the caller and is cached by FShape::CreateShape();
+	/// the query never takes ownership of it. InOrigin is the shape origin; the
+	/// center-of-mass offset inside the shape is applied by the query.
+	///
+	/// @param InShape          Engine shape to sweep.
+	/// @param InOrigin         World-space origin of the shape in centimeters.
+	/// @param InRotation       World-space orientation at the start of the sweep.
 	/// @param InDirection      Sweep direction (does NOT need to be normalised).
 	/// @param InLength         Sweep length in centimeters.
-	/// @param InRadius         Sphere radius in centimeters.
 	/// @param OutHit           Filled when the function returns TRUE.
-	static BOOL32 SphereCastSingle(
+	/// @return TRUE if any geometry was hit.
+	static BOOL32 CastShapeSingle(
+		FShape* InShape,
 		const Vector3& InOrigin,
+		const Quaternion& InRotation,
 		const Vector3& InDirection,
 		FLOAT InLength,
-		FLOAT InRadius,
 		FRayCastHit& OutHit,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
-	/// Sweep a sphere along a direction and collect ALL hits up to MaxHits.
-	/// @param InOrigin         Sphere center origin in centimeters.
-	/// @param InDirection      Sweep direction (does NOT need to be normalised).
-	/// @param InLength         Sweep length in centimeters.
-	/// @param InRadius         Sphere radius in centimeters.
-	/// @param OutHits          Sorted nearest-first.
-	/// @param InMaxHits        Maximum number of hits to collect.
-	static BOOL32 SphereCastMulti(
+	/// Sweep an engine shape and collect ALL hits up to InMaxHits.
+	/// Hits are appended to OutHits and sorted nearest-first.
+	/// @param OutHits          Appended with every hit, sorted nearest-first.
+	/// @param InMaxHits        Maximum number of hits to append.
+	static BOOL32 CastShapeMulti(
+		FShape* InShape,
 		const Vector3& InOrigin,
+		const Quaternion& InRotation,
 		const Vector3& InDirection,
 		FLOAT InLength,
-		FLOAT InRadius,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
-	//  Box Cast (swept box)
+	//  Overlap (shape test, no sweep)
 	// ------------------------------------------------------------
 
-	/// Sweep a box along a direction and return the closest hit.
-	/// @param InOrigin         Box center origin in centimeters.
-	/// @param InDirection      Sweep direction (does NOT need to be normalised).
-	/// @param InLength         Sweep length in centimeters.
-	/// @param InHalfExtents    Box half-extents in centimeters (X, Y, Z).
-	/// @param InRotation       Box orientation at the start of the sweep.
-	/// @param OutHit           Filled when the function returns TRUE.
-	static BOOL32 BoxCastSingle(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		const Vector3& InHalfExtents,
-		const Quaternion& InRotation,
-		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
-
-	/// Sweep a box along a direction and collect ALL hits up to MaxHits.
-	/// @param InOrigin         Box center origin in centimeters.
-	/// @param InDirection      Sweep direction (does NOT need to be normalised).
-	/// @param InLength         Sweep length in centimeters.
-	/// @param InHalfExtents    Box half-extents in centimeters (X, Y, Z).
-	/// @param InRotation       Box orientation at the start of the sweep.
-	/// @param OutHits          Sorted nearest-first.
-	/// @param InMaxHits        Maximum number of hits to collect.
-	static BOOL32 BoxCastMulti(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		const Vector3& InHalfExtents,
-		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
-
-	// ------------------------------------------------------------
-	//  Capsule Cast (swept capsule)
-	// ------------------------------------------------------------
-
-	/// Sweep a capsule along a direction and return the closest hit.
-	/// @param InOrigin         Capsule center origin in centimeters.
-	/// @param InDirection      Sweep direction (does NOT need to be normalised).
-	/// @param InLength         Sweep length in centimeters.
-	/// @param InRadius         Capsule radius in centimeters.
-	/// @param InHalfHeight     Half-height of the cylindrical part in centimeters.
-	/// @param InRotation       Capsule orientation at the start of the sweep.
-	/// @param OutHit           Filled when the function returns TRUE.
-	static BOOL32 CapsuleCastSingle(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		FLOAT InRadius,
-		FLOAT InHalfHeight,
-		const Quaternion& InRotation,
-		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
-
-	/// Sweep a capsule along a direction and collect ALL hits up to MaxHits.
-	/// @param InOrigin         Capsule center origin in centimeters.
-	/// @param InDirection      Sweep direction (does NOT need to be normalised).
-	/// @param InLength         Sweep length in centimeters.
-	/// @param InRadius         Capsule radius in centimeters.
-	/// @param InHalfHeight     Half-height of the cylindrical part in centimeters.
-	/// @param InRotation       Capsule orientation at the start of the sweep.
-	/// @param OutHits          Sorted nearest-first.
-	/// @param InMaxHits        Maximum number of hits to collect.
-	static BOOL32 CapsuleCastMulti(
-		const Vector3& InOrigin,
-		const Vector3& InDirection,
-		FLOAT InLength,
-		FLOAT InRadius,
-		FLOAT InHalfHeight,
-		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
-
-	// ------------------------------------------------------------
-	//  Overlap (static shape test, no sweep)
-	// ------------------------------------------------------------
-
-	/// Test a sphere for overlapping bodies.
-	/// @param InCenter         Sphere center in centimeters.
-	/// @param InRadius         Sphere radius in centimeters.
-	/// @param OutHits          Every overlapping body (unordered).
-	/// @param InMaxHits        Maximum number of overlaps to collect.
+	/// Test an arbitrary engine shape for overlapping bodies and characters.
+	///
+	/// This is the general spatial detection entry point: AI perception, scene
+	/// queries and PTriggerComponent's query backend all use it. CharacterVirtual
+	/// is not in the broad phase and is not returned by the body pass; the
+	/// optional character pass walks FPhysics_Jolt's character registry and tests
+	/// each character's shape against InShape.
+	///
+	/// The shape is owned by the caller and is cached by FShape::CreateShape();
+	/// the query never takes ownership of it.
+	///
+	/// @param InShape              Engine shape to test (box/sphere/capsule/compound).
+	/// @param InPosition           World-space origin of the shape in centimeters.
+	/// @param InRotation           World-space orientation of the shape.
+	/// @param OutOverlaps          Every overlapping body / character (unordered).
+	/// @param InMaxHits            Maximum number of results to collect.
+	/// @param InBPLayerFilter      Optional broad-phase layer filter.
+	/// @param InObjLayerFilter     Optional object-layer filter.
+	/// @param InIgnoreBody         Body to ignore (e.g. the query owner).
+	/// @param InIgnoreObjectId     Actor identity to ignore (e.g. the query owner).
+	/// @param InIsIncludeStaticBodies Include static bodies in the result.
+	/// @param InIsIncludeSensorBodies Include sensor bodies (e.g. other trigger volumes).
+	/// @param InIsIncludeCharacters   Run the CharacterVirtual pass.
 	/// @return TRUE if at least one overlap was found.
-	static BOOL32 OverlapSphere(
-		const Vector3& InCenter,
-		FLOAT InRadius,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
-
-	/// Test a box for overlapping bodies.
-	/// @param InCenter         Box center in centimeters.
-	/// @param InHalfExtents    Box half-extents in centimeters (X, Y, Z).
-	/// @param InRotation       Box orientation.
-	/// @param OutHits          Every overlapping body (unordered).
-	/// @param InMaxHits        Maximum number of overlaps to collect.
-	/// @return TRUE if at least one overlap was found.
-	static BOOL32 OverlapBox(
-		const Vector3& InCenter,
-		const Vector3& InHalfExtents,
+	static BOOL32 OverlapShape(
+		FShape* InShape,
+		const Vector3& InPosition,
 		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
-		UINT32 InMaxHits = 16u,
+		TArray<FOverlapResult>& OutOverlaps,
+		UINT32 InMaxHits = 64u,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get(),
+		const FPhysicsBodyId& InIgnoreBody = FPhysicsBodyId(),
+		ObjectIdentityType InIgnoreObjectId = 0ull,
+		BOOL32 InIsIncludeStaticBodies = TRUE,
+		BOOL32 InIsIncludeSensorBodies = FALSE,
+		BOOL32 InIsIncludeCharacters = TRUE);
 
-	/// Test a capsule for overlapping bodies.
-	/// @param InCenter         Capsule center in centimeters.
-	/// @param InRadius         Capsule radius in centimeters.
-	/// @param InHalfHeight     Half-height of the cylindrical part in centimeters.
-	/// @param InRotation       Capsule orientation.
-	/// @param OutHits          Every overlapping body (unordered).
-	/// @param InMaxHits        Maximum number of overlaps to collect.
-	/// @return TRUE if at least one overlap was found.
-	static BOOL32 OverlapCapsule(
-		const Vector3& InCenter,
-		FLOAT InRadius,
-		FLOAT InHalfHeight,
+	/// Test an arbitrary engine shape against registered CharacterVirtual only.
+	/// Used by trigger backends that already receive rigid-body contacts through
+	/// the physics contact pipeline (sensor mode) and only need the character pass.
+	static BOOL32 OverlapCharacters(
+		FShape* InShape,
+		const Vector3& InPosition,
 		const Quaternion& InRotation,
-		TArray<FRayCastHit>& OutHits,
+		TArray<FOverlapResult>& OutOverlaps,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
+		ObjectIdentityType InIgnoreObjectId = 0ull);
 
 	// ------------------------------------------------------------
 	//  Point Overlap
 	// ------------------------------------------------------------
 
 	/// Test whether a world-space point lies inside any physics body.
+	/// This is a CollidePoint query, not a shape overlap; CharacterVirtual is
+	/// not part of the broad phase and is not returned.
 	/// @param InPoint          World-space point in centimeters.
-	/// @param OutBodyIds       Every body that contains the point.
+	/// @param OutHits          Every body that contains the point.
 	/// @param InMaxHits        Maximum number of results to collect.
 	/// @return TRUE if the point is inside at least one body.
 	static BOOL32 OverlapPoint(

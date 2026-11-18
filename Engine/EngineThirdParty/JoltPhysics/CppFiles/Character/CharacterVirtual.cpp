@@ -219,4 +219,24 @@ const FCharacterContactListener* FCharacterVirtual::GetListener() const
 	return &ContactListenerInstance;
 }
 
+ObjectIdentityType FCharacterVirtual::GetObjectId() const
+{
+	return (CharacterInstance ? static_cast<ObjectIdentityType>(CharacterInstance->GetUserData()) : 0ull);
+}
+
+const JPH::Shape* FCharacterVirtual::GetShapeInstance() const
+{
+	return (CharacterInstance ? CharacterInstance->GetShape() : nullptr);
+}
+
+JPH::RMat44 FCharacterVirtual::GetCenterOfMassTransformInstance() const
+{
+	return (CharacterInstance ? CharacterInstance->GetCenterOfMassTransform() : JPH::RMat44::sIdentity());
+}
+
+JPH::TransformedShape FCharacterVirtual::GetTransformedShapeInstance() const
+{
+	return (CharacterInstance ? CharacterInstance->GetTransformedShape() : JPH::TransformedShape());
+}
+
 PIGEONENGINE_NAMESPACE_END

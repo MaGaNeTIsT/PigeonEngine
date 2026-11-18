@@ -1,5 +1,6 @@
 #include "../Headers/PhysicsQuery.h"
 #include "../Headers/PhysicsManager.h"
+#include "../Headers/Character/CharacterVirtual.h"
 
 namespace PigeonEngine
 {
@@ -13,6 +14,15 @@ namespace PigeonEngine
 		{
 			Manager->FindObjectIdentityByBodyId(InOutHit.BodyId, InOutHit.ObjectId);
 		}
+	}
+
+	/// Build the world-space center-of-mass transform for an engine shape. The
+	/// engine position is the shape origin; Jolt collides in center-of-mass space.
+	static JPH::Mat44 BuildShapeTransform(const JPH::Shape* InShape, const Vector3& InPosition, const Quaternion& InRotation)
+	{
+		const JPH::Quat Rotation = PhysicsUtility::Convert(InRotation);
+		const JPH::Vec3 CenterOfMass = PhysicsUtility::Convert2Meter(InPosition) + Rotation * InShape->GetCenterOfMass();
+		return JPH::Mat44::sRotationTranslation(Rotation, CenterOfMass);
 	}
 
 	// -----------------------------------------------------------------------
@@ -68,12 +78,10 @@ namespace PigeonEngine
 		FLOAT				InLength,
 		const Quaternion&	InRotation)
 	{
-		const JPH::Mat44 StartTransform = JPH::Mat44::sRotationTranslation(
-			PhysicsUtility::Convert(InRotation),
-			PhysicsUtility::Convert2Meter(InOrigin));
+		const JPH::Mat44 StartTransform = BuildShapeTransform(InShape, InOrigin, InRotation);
 
-		const JPH::Vec3 DirNorm   = PhysicsUtility::Convert(InDirection).NormalizedOr(JPH::Vec3::sAxisZ());
-		const JPH::Vec3 Direction = DirNorm * PhysicsUtility::Convert2Meter(InLength);
+		const JPH::Vec3 DirectionNormalized = PhysicsUtility::Convert(InDirection).NormalizedOr(JPH::Vec3::sAxisZ());
+		const JPH::Vec3 Direction = DirectionNormalized * PhysicsUtility::Convert2Meter(InLength);
 
 		return RShapeCast::sFromWorldTransform(InShape, JPH::Vec3::sReplicate(1.0f), StartTransform, Direction);
 	}
@@ -97,40 +105,6 @@ namespace PigeonEngine
 		FillHitObjectIdentity(Hit);
 
 		return Hit;
-	}
-
-	// -----------------------------------------------------------------------
-	// Internal helpers - Overlap / CollideShape
-	// -----------------------------------------------------------------------
-
-	/// Build a Jolt CollideShape center-of-mass transform (in meters) from engine-unit inputs.
-	static JPH::Mat44 BuildJoltOverlapTransform(const Vector3& InCenter, const Quaternion& InRotation)
-	{
-		return JPH::Mat44::sRotationTranslation(
-			PhysicsUtility::Convert(InRotation),
-			PhysicsUtility::Convert2Meter(InCenter));
-	}
-
-	/// Populate an FRayCastHit from a Jolt CollideShapeResult.
-	static FRayCastHit BuildOverlapHit(const CollideShapeResult& InResult)
-	{
-		FRayCastHit Hit;
-		Hit.QueryType = EQueryType::Overlap;
-		// Contact points relative to base offset Vec3::sZero -> world space.
-		Hit.HitPosition      = PhysicsUtility::Convert(InResult.mContactPointOn1) * 100.f;
-		Hit.ContactOnHit     = PhysicsUtility::Convert(InResult.mContactPointOn2) * 100.f;
-		Hit.HitNormal        = PhysicsUtility::Convert(InResult.mPenetrationAxis);
-		Hit.PenetrationDepth = InResult.mPenetrationDepth * 100.f;
-		Hit.BodyId.ID        = InResult.mBodyID2;
-		FillHitObjectIdentity(Hit);
-		return Hit;
-	}
-
-	/// Compute a safe convex radius for a box shape used in queries.
-	/// Jolt requires convexRadius >= 0 and < each half-extent. Using 0 is valid.
-	static FLOAT SafeBoxConvexRadius(const JPH::Vec3& InHalfExtentsM)
-	{
-		return 0.f;
 	}
 
 	// -----------------------------------------------------------------------
@@ -198,26 +172,36 @@ namespace PigeonEngine
 	}
 
 	// -----------------------------------------------------------------------
-	// FPhysicsQuery::SphereCastSingle
+	// FPhysicsQuery::CastShapeSingle
 	// -----------------------------------------------------------------------
 
-	BOOL32 FPhysicsQuery::SphereCastSingle(
+	BOOL32 FPhysicsQuery::CastShapeSingle(
+		FShape*							InShape,
 		const Vector3&					InOrigin,
+		const Quaternion&				InRotation,
 		const Vector3&					InDirection,
 		FLOAT							InLength,
-		FLOAT							InRadius,
 		FRayCastHit&					OutHit,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
+		{
 			return FALSE;
-		if (InRadius <= 0.f)
+		}
+		if (!InShape)
+		{
 			return FALSE;
+		}
 
-		Ref<SphereShape> Shape = new SphereShape(PhysicsUtility::Convert2Meter(InRadius));
-		const RShapeCast ShapeCast = BuildJoltShapeCast(Shape.GetPtr(), InOrigin, InDirection, InLength, Quaternion::Identity());
+		Shape* JoltShape = InShape->CreateShape();
+		if (!JoltShape)
+		{
+			return FALSE;
+		}
+
+		const RShapeCast ShapeCast = BuildJoltShapeCast(JoltShape, InOrigin, InDirection, InLength, InRotation);
 
 		ShapeCastSettings Settings;
 		ClosestHitCollisionCollector<CastShapeCollector> Collector;
@@ -225,21 +209,24 @@ namespace PigeonEngine
 			ShapeCast, Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
 
 		if (!Collector.HadHit())
+		{
 			return FALSE;
+		}
 
 		OutHit = BuildShapeCastHit(ShapeCast, Collector.mHit);
 		return TRUE;
 	}
 
 	// -----------------------------------------------------------------------
-	// FPhysicsQuery::SphereCastMulti
+	// FPhysicsQuery::CastShapeMulti
 	// -----------------------------------------------------------------------
 
-	BOOL32 FPhysicsQuery::SphereCastMulti(
+	BOOL32 FPhysicsQuery::CastShapeMulti(
+		FShape*							InShape,
 		const Vector3&					InOrigin,
+		const Quaternion&				InRotation,
 		const Vector3&					InDirection,
 		FLOAT							InLength,
-		FLOAT							InRadius,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
@@ -247,12 +234,21 @@ namespace PigeonEngine
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
+		{
 			return FALSE;
-		if (InRadius <= 0.f)
+		}
+		if (!InShape)
+		{
 			return FALSE;
+		}
 
-		Ref<SphereShape> Shape = new SphereShape(PhysicsUtility::Convert2Meter(InRadius));
-		const RShapeCast ShapeCast = BuildJoltShapeCast(Shape.GetPtr(), InOrigin, InDirection, InLength, Quaternion::Identity());
+		Shape* JoltShape = InShape->CreateShape();
+		if (!JoltShape)
+		{
+			return FALSE;
+		}
+
+		const RShapeCast ShapeCast = BuildJoltShapeCast(JoltShape, InOrigin, InDirection, InLength, InRotation);
 
 		ShapeCastSettings Settings;
 		AllHitCollisionCollector<CastShapeCollector> Collector;
@@ -260,286 +256,241 @@ namespace PigeonEngine
 			ShapeCast, Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
 
 		if (!Collector.HadHit())
+		{
 			return FALSE;
+		}
 
 		Collector.Sort();
 
-		const UINT32 Count = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
-		for (UINT32 i = 0u; i < Count; ++i)
-			OutHits.Add(BuildShapeCastHit(ShapeCast, Collector.mHits[i]));
+		const UINT32 HitNum = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
+		for (UINT32 HitIndex = 0u; HitIndex < HitNum; HitIndex++)
+		{
+			OutHits.Add(BuildShapeCastHit(ShapeCast, Collector.mHits[HitIndex]));
+		}
 
 		return TRUE;
 	}
 
 	// -----------------------------------------------------------------------
-	// FPhysicsQuery::BoxCastSingle
+	// Overlap shape helpers
 	// -----------------------------------------------------------------------
 
-	BOOL32 FPhysicsQuery::BoxCastSingle(
-		const Vector3&					InOrigin,
-		const Vector3&					InDirection,
-		FLOAT							InLength,
-		const Vector3&					InHalfExtents,
-		const Quaternion&				InRotation,
-		FRayCastHit&					OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
+	/// CharacterVirtual is not part of the broad phase. Collide the query shape
+	/// against every registered character, with an AABB reject first.
+	static void CollectCharacterOverlaps(
+		JPH::Shape* InJoltShape,
+		const JPH::Mat44& InCOMTransform,
+		UINT32 InMaxHits,
+		ObjectIdentityType InIgnoreObjectId,
+		TArray<FOverlapResult>& OutOverlaps)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
-		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
-			return FALSE;
+		if (!Manager)
+		{
+			return;
+		}
 
-		const JPH::Vec3 HalfExtM = PhysicsUtility::Convert2Meter(InHalfExtents);
-		Ref<BoxShape> Shape = new BoxShape(HalfExtM, SafeBoxConvexRadius(HalfExtM));
-		const RShapeCast ShapeCast = BuildJoltShapeCast(Shape.GetPtr(), InOrigin, InDirection, InLength, InRotation);
+		const JPH::AABox ShapeBounds = InJoltShape->GetWorldSpaceBounds(InCOMTransform, JPH::Vec3::sOne());
+		Manager->ForEachCharacter([&](FCharacterVirtual* Character)
+		{
+			if (!Character || static_cast<UINT32>(OutOverlaps.Num()) >= InMaxHits)
+			{
+				return;
+			}
 
-		ShapeCastSettings Settings;
-		ClosestHitCollisionCollector<CastShapeCollector> Collector;
-		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CastShape(
-			ShapeCast, Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
+			const JPH::Shape* CharacterShape = Character->GetShapeInstance();
+			if (!CharacterShape)
+			{
+				return;
+			}
 
-		if (!Collector.HadHit())
-			return FALSE;
+			const JPH::RMat44 CharacterTransform = Character->GetCenterOfMassTransformInstance();
+			const JPH::AABox CharacterBounds = CharacterShape->GetWorldSpaceBounds(CharacterTransform, JPH::Vec3::sOne());
+			if (!ShapeBounds.Overlaps(CharacterBounds))
+			{
+				return;
+			}
 
-		OutHit = BuildShapeCastHit(ShapeCast, Collector.mHit);
-		return TRUE;
+			CollideShapeSettings CharacterSettings;
+			CharacterSettings.mMaxSeparationDistance = 0.0f;
+			AllHitCollisionCollector<CollideShapeCollector> CharacterCollector;
+			Character->GetTransformedShapeInstance().CollideShape(
+				InJoltShape, JPH::Vec3::sOne(), InCOMTransform,
+				CharacterSettings, JPH::Vec3::sZero(), CharacterCollector);
+
+			if (!CharacterCollector.HadHit())
+			{
+				return;
+			}
+
+			FOverlapResult Overlap;
+			Overlap.ObjectId = Character->GetObjectId();
+			Overlap.Character = Character;
+			if (!CharacterCollector.mHits.empty())
+			{
+				const CollideShapeResult& Result = CharacterCollector.mHits.front();
+				Overlap.ContactPoint = PhysicsUtility::Convert(Result.mContactPointOn1) * 100.f;
+				Overlap.ContactNormal = PhysicsUtility::Convert(Result.mPenetrationAxis);
+				Overlap.PenetrationDepth = Result.mPenetrationDepth * 100.f;
+			}
+
+			if (InIgnoreObjectId != 0ull && Overlap.ObjectId == InIgnoreObjectId)
+			{
+				return;
+			}
+
+			OutOverlaps.Add(static_cast<FOverlapResult&&>(Overlap));
+		});
 	}
 
 	// -----------------------------------------------------------------------
-	// FPhysicsQuery::BoxCastMulti
+	// FPhysicsQuery::OverlapShape
 	// -----------------------------------------------------------------------
 
-	BOOL32 FPhysicsQuery::BoxCastMulti(
-		const Vector3&					InOrigin,
-		const Vector3&					InDirection,
-		FLOAT							InLength,
-		const Vector3&					InHalfExtents,
+	BOOL32 FPhysicsQuery::OverlapShape(
+		FShape*							InShape,
+		const Vector3&					InPosition,
 		const Quaternion&				InRotation,
-		TArray<FRayCastHit>&			OutHits,
+		TArray<FOverlapResult>&			OutOverlaps,
 		UINT32							InMaxHits,
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter,
+		const FPhysicsBodyId&			InIgnoreBody,
+		ObjectIdentityType				InIgnoreObjectId,
+		BOOL32							InIsIncludeStaticBodies,
+		BOOL32							InIsIncludeSensorBodies,
+		BOOL32							InIsIncludeCharacters)
 	{
+		OutOverlaps.Empty();
+
 		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
+		{
 			return FALSE;
-
-		const JPH::Vec3 HalfExtM = PhysicsUtility::Convert2Meter(InHalfExtents);
-		Ref<BoxShape> Shape = new BoxShape(HalfExtM, SafeBoxConvexRadius(HalfExtM));
-		const RShapeCast ShapeCast = BuildJoltShapeCast(Shape.GetPtr(), InOrigin, InDirection, InLength, InRotation);
-
-		ShapeCastSettings Settings;
-		AllHitCollisionCollector<CastShapeCollector> Collector;
-		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CastShape(
-			ShapeCast, Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
-
-		if (!Collector.HadHit())
+		}
+		if (!InShape || InMaxHits == 0u)
+		{
 			return FALSE;
+		}
 
-		Collector.Sort();
-
-		const UINT32 Count = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
-		for (UINT32 i = 0u; i < Count; ++i)
-			OutHits.Add(BuildShapeCastHit(ShapeCast, Collector.mHits[i]));
-
-		return TRUE;
-	}
-
-	// -----------------------------------------------------------------------
-	// FPhysicsQuery::CapsuleCastSingle
-	// -----------------------------------------------------------------------
-
-	BOOL32 FPhysicsQuery::CapsuleCastSingle(
-		const Vector3&					InOrigin,
-		const Vector3&					InDirection,
-		FLOAT							InLength,
-		FLOAT							InRadius,
-		FLOAT							InHalfHeight,
-		const Quaternion&				InRotation,
-		FRayCastHit&					OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
-	{
-		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
-		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
+		// The shape belongs to the caller (FShape caches the Jolt instance), the
+		// query never deletes it.
+		JPH::Shape* JoltShape = InShape->CreateShape();
+		if (!JoltShape)
+		{
 			return FALSE;
-		if (InRadius <= 0.f)
-			return FALSE;
+		}
 
-		Ref<CapsuleShape> Shape = new CapsuleShape(
-			PhysicsUtility::Convert2Meter(InHalfHeight),
-			PhysicsUtility::Convert2Meter(InRadius));
-		const RShapeCast ShapeCast = BuildJoltShapeCast(Shape.GetPtr(), InOrigin, InDirection, InLength, InRotation);
-
-		ShapeCastSettings Settings;
-		ClosestHitCollisionCollector<CastShapeCollector> Collector;
-		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CastShape(
-			ShapeCast, Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
-
-		if (!Collector.HadHit())
-			return FALSE;
-
-		OutHit = BuildShapeCastHit(ShapeCast, Collector.mHit);
-		return TRUE;
-	}
-
-	// -----------------------------------------------------------------------
-	// FPhysicsQuery::CapsuleCastMulti
-	// -----------------------------------------------------------------------
-
-	BOOL32 FPhysicsQuery::CapsuleCastMulti(
-		const Vector3&					InOrigin,
-		const Vector3&					InDirection,
-		FLOAT							InLength,
-		FLOAT							InRadius,
-		FLOAT							InHalfHeight,
-		const Quaternion&				InRotation,
-		TArray<FRayCastHit>&			OutHits,
-		UINT32							InMaxHits,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
-	{
-		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
-		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
-			return FALSE;
-		if (InRadius <= 0.f)
-			return FALSE;
-
-		Ref<CapsuleShape> Shape = new CapsuleShape(
-			PhysicsUtility::Convert2Meter(InHalfHeight),
-			PhysicsUtility::Convert2Meter(InRadius));
-		const RShapeCast ShapeCast = BuildJoltShapeCast(Shape.GetPtr(), InOrigin, InDirection, InLength, InRotation);
-
-		ShapeCastSettings Settings;
-		AllHitCollisionCollector<CastShapeCollector> Collector;
-		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CastShape(
-			ShapeCast, Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
-
-		if (!Collector.HadHit())
-			return FALSE;
-
-		Collector.Sort();
-
-		const UINT32 Count = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
-		for (UINT32 i = 0u; i < Count; ++i)
-			OutHits.Add(BuildShapeCastHit(ShapeCast, Collector.mHits[i]));
-
-		return TRUE;
-	}
-
-	// -----------------------------------------------------------------------
-	// FPhysicsQuery::OverlapSphere
-	// -----------------------------------------------------------------------
-
-	BOOL32 FPhysicsQuery::OverlapSphere(
-		const Vector3&					InCenter,
-		FLOAT							InRadius,
-		TArray<FRayCastHit>&			OutHits,
-		UINT32							InMaxHits,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
-	{
-		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
-		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
-			return FALSE;
-		if (InRadius <= 0.f)
-			return FALSE;
-
-		Ref<SphereShape> Shape = new SphereShape(PhysicsUtility::Convert2Meter(InRadius));
-		const JPH::Mat44 Transform = BuildJoltOverlapTransform(InCenter, Quaternion::Identity());
+		const JPH::Mat44 COMTransform = BuildShapeTransform(JoltShape, InPosition, InRotation);
 
 		CollideShapeSettings Settings;
+		Settings.mMaxSeparationDistance = 0.0f;
 		AllHitCollisionCollector<CollideShapeCollector> Collector;
 		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CollideShape(
-			Shape.GetPtr(), JPH::Vec3::sReplicate(1.0f), Transform,
+			JoltShape, JPH::Vec3::sReplicate(1.0f), COMTransform,
 			Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
 
-		if (!Collector.HadHit())
-			return FALSE;
+		const UINT32 HitNum = static_cast<UINT32>(Collector.mHits.size());
+		for (UINT32 HitIndex = 0u; HitIndex < HitNum; HitIndex++)
+		{
+			if (OutOverlaps.Num<UINT32>() >= InMaxHits)
+			{
+				break;
+			}
 
-		const UINT32 Count = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
-		for (UINT32 i = 0u; i < Count; ++i)
-			OutHits.Add(BuildOverlapHit(Collector.mHits[i]));
+			const CollideShapeResult& Result = Collector.mHits[HitIndex];
+			FPhysicsBodyId BodyId;
+			BodyId.ID = Result.mBodyID2;
+			if (!InIgnoreBody.IsInvalid() && BodyId == InIgnoreBody)
+			{
+				continue;
+			}
 
-		return TRUE;
+			BOOL32 bAlreadyAdded = FALSE;
+			const UINT32 ExistingNum = OutOverlaps.Num<UINT32>();
+			for (UINT32 ExistingIndex = 0u; ExistingIndex < ExistingNum; ExistingIndex++)
+			{
+				const FOverlapResult& Existing = OutOverlaps[ExistingIndex];
+				if (!Existing.IsCharacter() && Existing.BodyId == BodyId)
+				{
+					bAlreadyAdded = TRUE;
+					break;
+				}
+			}
+			if (bAlreadyAdded)
+			{
+				continue;
+			}
+
+			if (!InIsIncludeStaticBodies || !InIsIncludeSensorBodies)
+			{
+				BodyLockRead Lock(Manager->GetPhysicsData()->PhysicsSystem->GetBodyLockInterfaceNoLock(), BodyId.ID);
+				if (!Lock.Succeeded())
+				{
+					continue;
+				}
+				const Body& OverlapBody = Lock.GetBody();
+				if (!InIsIncludeStaticBodies && OverlapBody.IsStatic())
+				{
+					continue;
+				}
+				if (!InIsIncludeSensorBodies && OverlapBody.IsSensor())
+				{
+					continue;
+				}
+			}
+
+			FOverlapResult Overlap;
+			Overlap.BodyId = BodyId;
+			Overlap.ContactPoint = PhysicsUtility::Convert(Result.mContactPointOn1) * 100.f;
+			Overlap.ContactNormal = PhysicsUtility::Convert(Result.mPenetrationAxis);
+			Overlap.PenetrationDepth = Result.mPenetrationDepth * 100.f;
+			Manager->FindObjectIdentityByBodyId(BodyId, Overlap.ObjectId);
+
+			if (InIgnoreObjectId != 0ull && Overlap.ObjectId == InIgnoreObjectId)
+			{
+				continue;
+			}
+
+			OutOverlaps.Add(static_cast<FOverlapResult&&>(Overlap));
+		}
+
+		if (InIsIncludeCharacters)
+		{
+			CollectCharacterOverlaps(JoltShape, COMTransform, InMaxHits, InIgnoreObjectId, OutOverlaps);
+		}
+
+		return (OutOverlaps.Num() > 0);
 	}
 
 	// -----------------------------------------------------------------------
-	// FPhysicsQuery::OverlapBox
+	// FPhysicsQuery::OverlapCharacters
 	// -----------------------------------------------------------------------
 
-	BOOL32 FPhysicsQuery::OverlapBox(
-		const Vector3&					InCenter,
-		const Vector3&					InHalfExtents,
+	BOOL32 FPhysicsQuery::OverlapCharacters(
+		FShape*							InShape,
+		const Vector3&					InPosition,
 		const Quaternion&				InRotation,
-		TArray<FRayCastHit>&			OutHits,
+		TArray<FOverlapResult>&			OutOverlaps,
 		UINT32							InMaxHits,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
+		ObjectIdentityType				InIgnoreObjectId)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
-		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
+		OutOverlaps.Empty();
+
+		if (!InShape || InMaxHits == 0u)
+		{
 			return FALSE;
+		}
 
-		const JPH::Vec3 HalfExtM = PhysicsUtility::Convert2Meter(InHalfExtents);
-		Ref<BoxShape> Shape = new BoxShape(HalfExtM, SafeBoxConvexRadius(HalfExtM));
-		const JPH::Mat44 Transform = BuildJoltOverlapTransform(InCenter, InRotation);
-
-		CollideShapeSettings Settings;
-		AllHitCollisionCollector<CollideShapeCollector> Collector;
-		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CollideShape(
-			Shape.GetPtr(), JPH::Vec3::sReplicate(1.0f), Transform,
-			Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
-
-		if (!Collector.HadHit())
+		JPH::Shape* JoltShape = InShape->CreateShape();
+		if (!JoltShape)
+		{
 			return FALSE;
+		}
 
-		const UINT32 Count = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
-		for (UINT32 i = 0u; i < Count; ++i)
-			OutHits.Add(BuildOverlapHit(Collector.mHits[i]));
-
-		return TRUE;
-	}
-
-	// -----------------------------------------------------------------------
-	// FPhysicsQuery::OverlapCapsule
-	// -----------------------------------------------------------------------
-
-	BOOL32 FPhysicsQuery::OverlapCapsule(
-		const Vector3&					InCenter,
-		FLOAT							InRadius,
-		FLOAT							InHalfHeight,
-		const Quaternion&				InRotation,
-		TArray<FRayCastHit>&			OutHits,
-		UINT32							InMaxHits,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
-	{
-		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
-		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
-			return FALSE;
-		if (InRadius <= 0.f)
-			return FALSE;
-
-		Ref<CapsuleShape> Shape = new CapsuleShape(
-			PhysicsUtility::Convert2Meter(InHalfHeight),
-			PhysicsUtility::Convert2Meter(InRadius));
-		const JPH::Mat44 Transform = BuildJoltOverlapTransform(InCenter, InRotation);
-
-		CollideShapeSettings Settings;
-		AllHitCollisionCollector<CollideShapeCollector> Collector;
-		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CollideShape(
-			Shape.GetPtr(), JPH::Vec3::sReplicate(1.0f), Transform,
-			Settings, JPH::Vec3::sZero(), Collector, InBPLayerFilter, InObjLayerFilter);
-
-		if (!Collector.HadHit())
-			return FALSE;
-
-		const UINT32 Count = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
-		for (UINT32 i = 0u; i < Count; ++i)
-			OutHits.Add(BuildOverlapHit(Collector.mHits[i]));
-
-		return TRUE;
+		const JPH::Mat44 COMTransform = BuildShapeTransform(JoltShape, InPosition, InRotation);
+		CollectCharacterOverlaps(JoltShape, COMTransform, InMaxHits, InIgnoreObjectId, OutOverlaps);
+		return (OutOverlaps.Num() > 0);
 	}
 
 	// -----------------------------------------------------------------------
@@ -555,26 +506,31 @@ namespace PigeonEngine
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
+		{
 			return FALSE;
+		}
 
-		const JPH::Vec3 PointM = PhysicsUtility::Convert2Meter(InPoint);
+		const JPH::Vec3 PointMeter = PhysicsUtility::Convert2Meter(InPoint);
 
 		AllHitCollisionCollector<CollidePointCollector> Collector;
 		Manager->GetPhysicsData()->PhysicsSystem->GetNarrowPhaseQuery().CollidePoint(
-			PointM, Collector, InBPLayerFilter, InObjLayerFilter);
+			PointMeter, Collector, InBPLayerFilter, InObjLayerFilter);
 
 		if (!Collector.HadHit())
+		{
 			return FALSE;
+		}
 
-		const UINT32 Count = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
-		for (UINT32 i = 0u; i < Count; ++i)
+		const UINT32 HitNum = EMath::Min(static_cast<UINT32>(Collector.mHits.size()), InMaxHits);
+		for (UINT32 HitIndex = 0u; HitIndex < HitNum; HitIndex++)
 		{
 			FRayCastHit Hit;
 			Hit.QueryType = EQueryType::PointOverlap;
-			Hit.BodyId.ID = Collector.mHits[i].mBodyID;
+			Hit.BodyId.ID = Collector.mHits[HitIndex].mBodyID;
+			FillHitObjectIdentity(Hit);
 			OutHits.Add(Hit);
 		}
 
 		return TRUE;
 	}
-}
+}   // namespace PigeonEngine

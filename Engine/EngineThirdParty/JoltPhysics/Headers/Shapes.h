@@ -39,8 +39,11 @@ public:
 #endif
 	virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale) { return AABBBox(); }
 protected:
-	Shape* ShapeInstance = nullptr;
-	ShapeSettings* ShapeSettingsInstance = nullptr;
+	// Jolt shapes and shape settings are reference counted. The Ref members own
+	// one reference each; consumers (bodies, characters, compound shapes) take
+	// their own references when they store the raw pointer.
+	JPH::Ref<Shape> ShapeInstance;
+	JPH::Ref<ShapeSettings> ShapeSettingsInstance;
 protected:
 	virtual Shape* CreateShapeInternal() = 0;
 	virtual ShapeSettings* CreateShapeSettingsInternal() = 0;
