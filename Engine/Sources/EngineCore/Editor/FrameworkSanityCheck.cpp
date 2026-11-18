@@ -12,6 +12,7 @@
 #include "Development/Message/Message.h"
 #include <Reflection/Property.h>
 #include <Reflection/JsonArchive.h>
+#include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
 
@@ -745,6 +746,184 @@ namespace PigeonEngine
 		return (bFactoryWorks && bUnknownNameRejected && bTransformMatches && bMobilityMatches) ? TRUE : FALSE;
 	}
 
+	static BOOL32 IsVectorNearlyEqual(const Vector3& InA, const Vector3& InB, const FLOAT& InTolerance)
+	{
+		return ((EMath::Abs(InA.x - InB.x) <= InTolerance) &&
+			(EMath::Abs(InA.y - InB.y) <= InTolerance) &&
+			(EMath::Abs(InA.z - InB.z) <= InTolerance)) ? TRUE : FALSE;
+	}
+
+	// Whole actor graph through the level serializer: a parent actor with a component
+	// chain plus an attached child actor is saved to a JSON document, destroyed, reloaded
+	// and compared - hierarchy, component parentage, transform values and a reflected
+	// primitive property. Finishes by destroying the loaded roots and checking that the
+	// alive object count returns to the baseline.
+	static BOOL32 CheckLevelSerializationRoundTrip(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		PActor* ParentActor = new PActor();
+		POBJ_DEBUGNAME_SET(ParentActor, "SanityLevelParent");
+		InWorld->AddActor(ParentActor);
+
+		PSceneComponent* OffsetComponent = new PSceneComponent();
+		ParentActor->AddComponent(OffsetComponent);
+		OffsetComponent->SetComponentLocation(Vector3(10.f, 20.f, 30.f));
+		OffsetComponent->SetMobility(EMobilityType::EMT_STATIC);
+		PSceneComponent* ChildComponent = new PSceneComponent();
+		ParentActor->AddComponent(ChildComponent);
+		ChildComponent->AttachToComponent(OffsetComponent);
+		ChildComponent->SetComponentLocation(Vector3(-1.f, 0.f, 2.f));
+		PStaticMeshComponent* MeshComponent = new PStaticMeshComponent();
+		ParentActor->AddComponent(MeshComponent);
+		MeshComponent->SetCastShadow(FALSE);
+
+		PActor* ChildActor = new PActor();
+		POBJ_DEBUGNAME_SET(ChildActor, "SanityLevelChild");
+		InWorld->AddActor(ChildActor);
+		ChildActor->SetActorLocation(Vector3(0.f, 5.f, 0.f));
+		ChildActor->AttachToActor(ParentActor);
+
+		TArray<PActor*> SourceActors;
+		SourceActors.Add(ParentActor);
+		SourceActors.Add(ChildActor);
+		CJsonObject Document;
+		const BOOL32 bSaved = ELevelSerializer::SaveActors(SourceActors, Document);
+
+		BOOL32 bDocumentOk = FALSE;
+		if (bSaved)
+		{
+			EJsonArchiveReader VersionReader(Document);
+			UINT32 SavedFormatVersion = 0u;
+			VersionReader.SerializeUInt32(PE_TEXT("FormatVersion"), SavedFormatVersion);
+			bDocumentOk = ((SavedFormatVersion == ELevelSerializer::LevelFormatVersion) && Document.HasField(PE_TEXT("Actors"))) ? TRUE : FALSE;
+		}
+
+		// Destroy only the root: the child actor is destroyed with its parent.
+		InWorld->DestroyActor(ParentActor);
+		InWorld->FlushPendingDestroy();
+
+		TArray<PActor*> LoadedActors;
+		const BOOL32 bLoaded = ELevelSerializer::LoadActors(*InWorld, Document, &LoadedActors);
+
+		BOOL32 bHierarchyOk = FALSE;
+		BOOL32 bComponentTreeOk = FALSE;
+		BOOL32 bPropertiesOk = FALSE;
+		PActor* LoadedParent = nullptr;
+		if (bLoaded)
+		{
+			// Top-level actors are attached to the world root actor by AddActor, so a loaded
+			// child is the actor whose parent is another actor of this same load.
+			PActor* LoadedChild = nullptr;
+			for (UINT32 Index = 0u, Num = LoadedActors.Num<UINT32>(); Index < Num; Index++)
+			{
+				PActor* Actor = LoadedActors[Index];
+				if (!Actor)
+				{
+					continue;
+				}
+				BOOL32 bHasLoadedParent = FALSE;
+				for (UINT32 OtherIndex = 0u; OtherIndex < Num; OtherIndex++)
+				{
+					if (LoadedActors[OtherIndex] == Actor->GetAttachedParentActor())
+					{
+						bHasLoadedParent = TRUE;
+						break;
+					}
+				}
+				if (bHasLoadedParent)
+				{
+					LoadedChild = Actor;
+				}
+				else
+				{
+					LoadedParent = Actor;
+				}
+			}
+			if (LoadedParent && LoadedChild)
+			{
+				bHierarchyOk = ((LoadedChild->GetAttachedParentActor() == LoadedParent) &&
+					IsVectorNearlyEqual(LoadedChild->GetActorLocation(), Vector3(0.f, 5.f, 0.f), 1.0e-3f)) ? TRUE : FALSE;
+
+				PSceneComponent* LoadedOffset = nullptr;
+				const TArray<PSceneComponent*> SceneComponents = LoadedParent->GetComponents<PSceneComponent>();
+				for (UINT32 ComponentIndex = 0u, ComponentNum = SceneComponents.Num<UINT32>(); ComponentIndex < ComponentNum; ComponentIndex++)
+				{
+					if (IsVectorNearlyEqual(SceneComponents[ComponentIndex]->GetTransform().GetLocation_Local(), Vector3(10.f, 20.f, 30.f), 1.0e-3f))
+					{
+						LoadedOffset = SceneComponents[ComponentIndex];
+						break;
+					}
+				}
+				if (LoadedOffset)
+				{
+					BOOL32 bChildUnderOffset = FALSE;
+					const TArray<PSceneComponent*> OffsetChildren = LoadedOffset->GetChildrenComponents();
+					for (UINT32 ChildIndex = 0u, ChildNum = OffsetChildren.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						if (IsVectorNearlyEqual(OffsetChildren[ChildIndex]->GetTransform().GetLocation_Local(), Vector3(-1.f, 0.f, 2.f), 1.0e-3f))
+						{
+							bChildUnderOffset = TRUE;
+							break;
+						}
+					}
+					bComponentTreeOk = ((LoadedOffset->GetMobility() == EMobilityType::EMT_STATIC) && bChildUnderOffset) ? TRUE : FALSE;
+
+					PStaticMeshComponent* LoadedMesh = LoadedParent->FindComponent<PStaticMeshComponent>();
+					bPropertiesOk = ((LoadedMesh != nullptr) && (LoadedMesh->IsCastShadow() == FALSE)) ? TRUE : FALSE;
+				}
+			}
+		}
+
+		// Collect the top-level loaded actors before destroying anything: children are
+		// destroyed with their parent, and their pointers dangle afterwards.
+		TArray<PActor*> LoadedRoots;
+		for (UINT32 Index = 0u, Num = LoadedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			PActor* Actor = LoadedActors[Index];
+			if (!Actor)
+			{
+				continue;
+			}
+			BOOL32 bHasLoadedParent = FALSE;
+			for (UINT32 OtherIndex = 0u; OtherIndex < Num; OtherIndex++)
+			{
+				if (LoadedActors[OtherIndex] == Actor->GetAttachedParentActor())
+				{
+					bHasLoadedParent = TRUE;
+					break;
+				}
+			}
+			if (!bHasLoadedParent)
+			{
+				LoadedRoots.Add(Actor);
+			}
+		}
+		for (UINT32 Index = 0u, Num = LoadedRoots.Num<UINT32>(); Index < Num; Index++)
+		{
+			InWorld->DestroyActor(LoadedRoots[Index]);
+		}
+		InWorld->FlushPendingDestroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("level serialization: alive count before ")) + EString::FromInt(static_cast<INT32>(AliveBefore)) + EString(PE_TEXT(", after ")) + EString::FromInt(static_cast<INT32>(EObjectBase::GetAliveObjectCount())));
+			return FALSE;
+		}
+#endif
+		const BOOL32 bAllOk = (bDocumentOk && bLoaded && bHierarchyOk && bComponentTreeOk && bPropertiesOk) ? TRUE : FALSE;
+		if (!bAllOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("level serialization detail: document=")) + EString::FromInt(bDocumentOk) +
+				EString(PE_TEXT(" loaded=")) + EString::FromInt(bLoaded) +
+				EString(PE_TEXT(" hierarchy=")) + EString::FromInt(bHierarchyOk) +
+				EString(PE_TEXT(" tree=")) + EString::FromInt(bComponentTreeOk) +
+				EString(PE_TEXT(" properties=")) + EString::FromInt(bPropertiesOk));
+		}
+		return bAllOk;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -835,6 +1014,12 @@ namespace PigeonEngine
 		const BOOL32 bReflectionSerialization = CheckReflectionSerialization(InWorld);
 		ReportSanityResult(EString(PE_TEXT("reflection property round trip")), bReflectionSerialization);
 		if (!bReflectionSerialization)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bLevelSerialization = CheckLevelSerializationRoundTrip(InWorld);
+		ReportSanityResult(EString(PE_TEXT("level serialization round trip")), bLevelSerialization);
+		if (!bLevelSerialization)
 		{
 			FailedCount += 1u;
 		}
