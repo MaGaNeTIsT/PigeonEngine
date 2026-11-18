@@ -10,6 +10,9 @@
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "HID/Input/Input.h"
 #include "Development/Message/Message.h"
+#include <Reflection/Property.h>
+#include <Reflection/JsonArchive.h>
+#include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
 
 namespace PigeonEngine
@@ -690,6 +693,58 @@ namespace PigeonEngine
 		return (bResolvesBefore && bFailsAfter) ? TRUE : FALSE;
 	}
 
+	static BOOL32 CheckReflectionSerialization(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		// Stable-name factory: a registered concrete class can be created from the name a
+		// level file would store.
+		BOOL32 bFactoryWorks = FALSE;
+		PObject* CreatedObject = CreateClassObjectByStableName<PObject>(PE_TEXT("PSceneComponent"));
+		if (CreatedObject)
+		{
+			PSceneComponent* CreatedComponent = dynamic_cast<PSceneComponent*>(CreatedObject);
+			bFactoryWorks = (CreatedComponent != nullptr) ? TRUE : FALSE;
+			CreatedObject->Destroy();
+		}
+		const BOOL32 bUnknownNameRejected = (GetClassHashCodeByStableName(PE_TEXT("PNotAClass")) == static_cast<size_t>(-1)) ? TRUE : FALSE;
+
+		// Property round trip through the JSON backend: write the reflected properties of
+		// one component, read them into a fresh instance, compare.
+		PActor* SourceActor = new PActor();
+		POBJ_DEBUGNAME_SET(SourceActor, "SanityReflectionSource");
+		PSceneComponent* SourceComponent = new PSceneComponent();
+		SourceActor->AddComponent(SourceComponent);
+		InWorld->AddActor(SourceActor);
+		SourceComponent->SetComponentLocation(Vector3(1.f, 2.f, 3.f));
+		SourceComponent->SetComponentRotation(MakeQuaternion(Euler(10.f, 20.f, 30.f)));
+		SourceComponent->SetComponentScale(Vector3(2.f, 2.f, 2.f));
+		SourceComponent->SetMobility(EMobilityType::EMT_STATIC);
+
+		CJsonObject Document;
+		EJsonArchiveWriter Writer(Document);
+		EClassPropertyRegistry::SerializeObject(Writer, GetClassHashCode(SourceComponent), SourceComponent);
+
+		PSceneComponent* TargetComponent = new PSceneComponent();
+		EJsonArchiveReader Reader(Document);
+		EClassPropertyRegistry::SerializeObject(Reader, GetClassHashCode(TargetComponent), TargetComponent);
+
+		const BOOL32 bTransformMatches = AreMatricesNearlyEqual(TargetComponent->GetTransform().ToMatrix(), SourceComponent->GetTransform().ToMatrix(), 1.0e-4f);
+		const BOOL32 bMobilityMatches = (TargetComponent->GetMobility() == SourceComponent->GetMobility()) ? TRUE : FALSE;
+
+		TargetComponent->Destroy();
+		InWorld->DestroyActor(SourceActor);
+		InWorld->FlushPendingDestroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return (bFactoryWorks && bUnknownNameRejected && bTransformMatches && bMobilityMatches) ? TRUE : FALSE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -774,6 +829,12 @@ namespace PigeonEngine
 		const BOOL32 bObjectHandleResolution = CheckObjectHandleResolution(InWorld);
 		ReportSanityResult(EString(PE_TEXT("object handle resolution")), bObjectHandleResolution);
 		if (!bObjectHandleResolution)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bReflectionSerialization = CheckReflectionSerialization(InWorld);
+		ReportSanityResult(EString(PE_TEXT("reflection property round trip")), bReflectionSerialization);
+		if (!bReflectionSerialization)
 		{
 			FailedCount += 1u;
 		}
