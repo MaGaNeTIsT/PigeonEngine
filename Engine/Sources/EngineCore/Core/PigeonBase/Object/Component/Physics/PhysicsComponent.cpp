@@ -120,9 +120,13 @@ namespace PigeonEngine
 	{
 		Vector3 pos = GetOwnerActor()->GetRootComponent()->GetComponentWorldLocation();
 		Quaternion rot = GetOwnerActor()->GetRootComponent()->GetComponentWorldRotation();
-		if (FPhysicsManager::GetManagerSingleton()->TryCreateBody(Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), BodyId))
+		// The body is keyed by this component's own ID: one actor may carry several
+		// physics components, and overlap results / RemoveBody must name the exact body
+		// owner. Object IDs are globally unique, so a component ID never collides with an
+		// actor ID (characters stay keyed by their actor).
+		if (FPhysicsManager::GetManagerSingleton()->TryCreateBody(Shape, FALSE, pos, rot, MotionType, Layer, GetUniqueID(), BodyId))
 		{
-		FPhysicsManager::GetManagerSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), BodyId);
+		FPhysicsManager::GetManagerSingleton()->AddBody(GetUniqueID(), BodyId);
 			LastSyncedPosition = pos;
 			LastSyncedRotation = rot;
 			bHasSyncedTransform = TRUE;
@@ -145,10 +149,7 @@ namespace PigeonEngine
 		// The owner is cleared only in the final destroy step, so it is valid on every
 		// orchestrated path; the guard covers a component destroyed before it ever got an
 		// owner (constructed for an actor but never added).
-		if (GetOwnerActor())
-		{
-			FPhysicsManager::GetManagerSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
-		}
+		FPhysicsManager::GetManagerSingleton()->RemoveBody(GetUniqueID(), TRUE);
 		BodyId = FPhysicsBodyId();
 		Shape = nullptr;
 		bBodyActive = FALSE;

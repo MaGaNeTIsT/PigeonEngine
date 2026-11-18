@@ -242,6 +242,10 @@ namespace PigeonEngine
 			for (UINT32 Index = 0u, Num = Hits.Num<UINT32>(); Index < Num; Index++)
 			{
 				const FOverlapResult& Hit = Hits[Index];
+				if (IsOwnedByOwnerActor(Hit))
+				{
+					continue;
+				}
 				if (Hit.IsCharacter())
 				{
 					CurrentCharacters.Add(Hit.ObjectId, Hit);
@@ -264,6 +268,10 @@ namespace PigeonEngine
 				{
 					continue;
 				}
+				if (IsOwnedByOwnerActor(Hit))
+				{
+					continue;
+				}
 				CurrentBodies.Add(It->first, Hit);
 			}
 
@@ -275,6 +283,10 @@ namespace PigeonEngine
 
 				for (UINT32 Index = 0u, Num = CharacterHits.Num<UINT32>(); Index < Num; Index++)
 				{
+					if (IsOwnedByOwnerActor(CharacterHits[Index]))
+					{
+						continue;
+					}
 					CurrentCharacters.Add(CharacterHits[Index].ObjectId, CharacterHits[Index]);
 				}
 			}
@@ -516,5 +528,32 @@ namespace PigeonEngine
 
 		const PActor* OwnerActor = GetOwnerActor();
 		return OwnerActor ? OwnerActor->GetUniqueID() : 0ull;
+	}
+
+	BOOL32 PTriggerComponent::IsOwnedByOwnerActor(const FOverlapResult& InHit) const
+	{
+		if (!bIgnoreOwnerActor)
+		{
+			return FALSE;
+		}
+		const PActor* OwnerActor = GetOwnerActor();
+		if (!OwnerActor)
+		{
+			return FALSE;
+		}
+		if (InHit.IsCharacter())
+		{
+			return (InHit.ObjectId == OwnerActor->GetUniqueID()) ? TRUE : FALSE;
+		}
+		if (PWorld* World = GetWorld())
+		{
+			// The result carries the raw component ID, not a handle; the by-ID lookup is
+			// the world component registry.
+			if (const PActorComponent* OtherComponent = World->GetComponentByUniqueID(InHit.ObjectId, TRUE))
+			{
+				return (OtherComponent->GetOwnerActor() == OwnerActor) ? TRUE : FALSE;
+			}
+		}
+		return FALSE;
 	}
 }   // namespace PigeonEngine

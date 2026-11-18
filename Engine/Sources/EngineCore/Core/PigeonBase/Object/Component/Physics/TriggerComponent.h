@@ -114,6 +114,10 @@ private:
 	void UpdateSensorBodyTransform();
 
 	PE_NODISCARD ObjectIdentityType GetIgnoredObjectId() const;
+	// True when a hit belongs to this trigger's owner actor. Rigid bodies are keyed by
+	// their component ID now, so the actor-level ignore parameter alone no longer filters
+	// the owner's own bodies; characters stay keyed by actor ID.
+	PE_NODISCARD BOOL32 IsOwnedByOwnerActor(const FOverlapResult& InHit) const;
 
 private:
 	FShape* Shape = nullptr;

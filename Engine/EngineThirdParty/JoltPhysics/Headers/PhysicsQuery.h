@@ -75,7 +75,10 @@ struct FOverlapResult
 	/// Overlapping rigid body (invalid for a character overlap).
 	FPhysicsBodyId		BodyId;
 
-	/// Actor identity of the overlapping body or character.
+	/// Identity of the overlapping object: the component ID for a rigid body (a
+	/// PPhysicsComponent or a trigger's sensor body), the actor ID for a character.
+	/// IDs are globally unique across actors and components, so resolve against the
+	/// world's component registry first and the actor registry second.
 	ObjectIdentityType	ObjectId = 0ull;
 
 	/// Non-null when the overlap is a CharacterVirtual.
