@@ -3,13 +3,36 @@
 #include <MeshAsset/MeshAsset.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
+#include <Reflection/Property.h>
 
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		// Asset reference by name: the file stores the mesh asset's name and the setter
+		// re-requests it through the asset manager. The asset must already be importable
+		// (the demo/level pipeline) - loading a level never imports new files.
+		AddClassPropertyAccessors<PStaticMeshComponent, EString>(GetClassHashCode<PStaticMeshComponent>(), PE_TEXT("MeshAsset"),
+			[](const PStaticMeshComponent* Component) -> EString
+			{
+				const EStaticMeshAsset* MeshAsset = Component->GetMeshAsset();
+				return MeshAsset ? MeshAsset->GetAssetName() : EString(PE_TEXT(""));
+			},
+			[](PStaticMeshComponent* Component, const EString& Value) -> void
+			{
+				if (Value.Length() > 0u)
+				{
+					Component->RequestMeshAsset(Value, nullptr);
+				}
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PStaticMeshComponent, PMeshComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
