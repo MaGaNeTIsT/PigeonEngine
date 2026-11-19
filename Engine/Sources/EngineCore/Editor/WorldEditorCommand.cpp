@@ -111,6 +111,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Root);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
+				InContext.World->SetSelectedActor(Root);
 				return TRUE;
 			}
 			virtual EString GetLabel() const override { return Label; }
@@ -140,6 +141,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Root);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
+				InContext.World->SetSelectedActor(Root);
 				return TRUE;
 			}
 			virtual BOOL32 Redo(FWorldEditorCommandContext& InContext) override
@@ -201,6 +203,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Component);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
+				InContext.World->SetSelectedComponent(Component);
 				return TRUE;
 			}
 			virtual EString GetLabel() const override { return Label; }
@@ -241,6 +244,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Component);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
+				InContext.World->SetSelectedComponent(Component);
 				return TRUE;
 			}
 			virtual BOOL32 Redo(FWorldEditorCommandContext& InContext) override

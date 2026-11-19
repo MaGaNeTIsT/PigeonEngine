@@ -199,6 +199,8 @@ namespace PigeonEngine
 					DragAxis        = HitAxis;
 					DragOriginWorld = DragOrigin;
 					ComponentOrigin = SelectedComponent->GetComponentWorldLocation();
+					DragComponentHandle = MakeObjectHandle(SelectedComponent);
+					DragStartTransform = SelectedComponent->GetTransform();
 					bDragging       = TRUE;
 					return; // consumed by gizmo
 				}
@@ -237,11 +239,33 @@ namespace PigeonEngine
 			}
 			LastMousePos = MousePos;
 		}
-		else if (Type == IMouse::Event::EType::LRelease)
-		{
-			bDragging = FALSE;
-			DragAxis  = EGizmoAxis::NONE;
-		}
+			else if (Type == IMouse::Event::EType::LRelease)
+			{
+				// Record a gizmo move as one undoable property edit. The command stores the
+				// local transform, which is what the Transform property serializes.
+				if (bDragging && DragComponentHandle.IsValid() && SelectedComponent && WorldManager->GetWorld())
+				{
+					PActorComponent* Resolved = WorldManager->GetWorld()->ResolveComponent(DragComponentHandle);
+					if (Resolved == SelectedComponent)
+					{
+						const Vector3 Moved = SelectedComponent->GetComponentWorldLocation() - ComponentOrigin;
+						if (Moved.LengthSquare() > PE_SMALL_NUMBER)
+						{
+							FPropertyValue Before;
+							Before.Type = EPropertyValueType::TRANSFORM;
+							Before.TransformValue = DragStartTransform;
+							FPropertyValue After;
+							After.Type = EPropertyValueType::TRANSFORM;
+							After.TransformValue = SelectedComponent->GetTransform();
+							PushSetPropertyCommand(WorldCommands, DragComponentHandle, TRUE,
+								GetClassHashCode(SelectedComponent), EString(PE_TEXT("Transform")), Before, After);
+						}
+					}
+				}
+				DragComponentHandle = FObjectHandle();
+				bDragging = FALSE;
+				DragAxis  = EGizmoAxis::NONE;
+			}
 	}
 
 	void EEditorManager::EditorUpdate()
@@ -332,6 +356,16 @@ namespace PigeonEngine
 		if (EditorProfilerPanel)
 		{
 			EditorProfilerPanel->DrawPanel();
+		}
+
+		// A Details/Outline action can destroy the selected component while those panels are
+		// drawing. Re-read the world selection before the gizmo and bounds passes use the
+		// pointer; the old snapshot would be freed memory.
+		SelectedComponent = CurrentWorld ? dynamic_cast<PSceneComponent*>(CurrentWorld->GetSelectedComponent()) : nullptr;
+		if (!SelectedComponent)
+		{
+			bDragging = FALSE;
+			DragAxis = EGizmoAxis::NONE;
 		}
 
 		// Draw bounds for all actors

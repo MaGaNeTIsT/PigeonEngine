@@ -312,30 +312,73 @@ namespace PigeonEngine
 			FLOAT ScalingValues[3] = { Scaling.x, Scaling.y, Scaling.z };
 
 			BOOL32 bChanged = FALSE;
-			ImGui::TextUnformatted("Location");
-			if (ImGui::DragFloat3("##location", LocationValues, 0.01f))
+			auto HandleEdit = [&InProperty, InObject, InClassHash, &InOutValue](const BOOL32 bFieldChanged, const ETransform& NewTransform) -> void
 			{
-				Transform.SetLocation_Local(Vector3(LocationValues[0], LocationValues[1], LocationValues[2]));
-				bChanged = TRUE;
+				if (ImGui::IsItemActivated())
+				{
+					StoreEditStart(InProperty, InOutValue);
+				}
+				if (bFieldChanged)
+				{
+					InOutValue.TransformValue = NewTransform;
+					InProperty.SetValue(InObject, InOutValue);
+				}
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					FPropertyValue Before;
+					if (TakeEditStart(InProperty, Before))
+					{
+						Commit(InProperty, InObject, InClassHash, Before, InOutValue);
+					}
+				}
+			};
+
+			ImGui::TextUnformatted("Location");
+			const BOOL32 bLocationChanged = ImGui::DragFloat3("##location", LocationValues, 0.01f);
+			{
+				ETransform NewTransform = Transform;
+				if (bLocationChanged)
+				{
+					NewTransform.SetLocation_Local(Vector3(LocationValues[0], LocationValues[1], LocationValues[2]));
+				}
+				HandleEdit(bLocationChanged, NewTransform);
+				if (bLocationChanged)
+				{
+					Transform = NewTransform;
+					bChanged = TRUE;
+				}
 			}
 			ImGui::TextUnformatted("Rotation");
-			if (ImGui::DragFloat4("##rotation", RotationValues, 0.005f))
+			const BOOL32 bRotationChanged = ImGui::DragFloat4("##rotation", RotationValues, 0.005f);
 			{
-				Transform.SetRotation_Local(Quaternion(RotationValues[0], RotationValues[1], RotationValues[2], RotationValues[3]));
-				bChanged = TRUE;
+				ETransform NewTransform = Transform;
+				if (bRotationChanged)
+				{
+					NewTransform.SetRotation_Local(Quaternion(RotationValues[0], RotationValues[1], RotationValues[2], RotationValues[3]));
+				}
+				HandleEdit(bRotationChanged, NewTransform);
+				if (bRotationChanged)
+				{
+					Transform = NewTransform;
+					bChanged = TRUE;
+				}
 			}
 			ImGui::TextUnformatted("Scaling");
-			if (ImGui::DragFloat3("##scaling", ScalingValues, 0.01f))
+			const BOOL32 bScalingChanged = ImGui::DragFloat3("##scaling", ScalingValues, 0.01f);
 			{
-				Transform.SetScaling_Local(Vector3(ScalingValues[0], ScalingValues[1], ScalingValues[2]));
-				bChanged = TRUE;
+				ETransform NewTransform = Transform;
+				if (bScalingChanged)
+				{
+					NewTransform.SetScaling_Local(Vector3(ScalingValues[0], ScalingValues[1], ScalingValues[2]));
+				}
+				HandleEdit(bScalingChanged, NewTransform);
+				if (bScalingChanged)
+				{
+					Transform = NewTransform;
+					bChanged = TRUE;
+				}
 			}
 
-			if (bChanged)
-			{
-				InOutValue.TransformValue = Transform;
-				InProperty.SetValue(InObject, InOutValue);
-			}
 			return bChanged;
 		}
 

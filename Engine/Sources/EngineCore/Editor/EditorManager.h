@@ -53,6 +53,9 @@ namespace PigeonEngine
 		Vector3		ComponentOrigin   = Vector3(0.f, 0.f, 0.f);
 		Vector2		LastMousePos      = Vector2(0.f, 0.f);
 		BOOL8		bDragging         = FALSE;
+		// Gizmo drag undo record: the component and its local transform at press.
+		FObjectHandle	DragComponentHandle;
+		ETransform		DragStartTransform;
 	};
 #endif
 }
