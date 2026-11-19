@@ -603,6 +603,62 @@ namespace PigeonEngine
 		UINT32 Tag = 0u;
 	};
 
+	static BOOL32 CheckRenderTreeDirtySkip(PWorld* InWorld)
+	{
+		class PCountingSceneComponent : public PSceneComponent
+		{
+		public:
+			PCountingSceneComponent(UINT32* InTickCount) : TickCount(InTickCount) {}
+			void Wake()
+			{
+				MarkRenderStateAsDirty();
+			}
+		protected:
+			virtual void TickRenderImpl() override
+			{
+				if (TickCount)
+				{
+					(*TickCount)++;
+				}
+				PSceneComponent::TickRenderImpl();
+			}
+		private:
+			UINT32* TickCount = nullptr;
+		};
+
+		UINT32 TickCount = 0u;
+		PActor* Actor = new PActor();
+		Actor->SetIsTickable(FALSE);
+		InWorld->AddActor(Actor);
+		PCountingSceneComponent* Component = new PCountingSceneComponent(&TickCount);
+		Actor->AddComponent(Component);
+
+		InWorld->Tick(1.0f / 60.0f);
+		const UINT32 FirstTickCount = TickCount;
+		InWorld->Tick(1.0f / 60.0f);
+		const BOOL32 bCleanSkipWorks = (TickCount == FirstTickCount) ? TRUE : FALSE;
+
+		Component->Wake();
+		InWorld->Tick(1.0f / 60.0f);
+		const BOOL32 bDirtyWakeWorks = (TickCount == (FirstTickCount + 1u)) ? TRUE : FALSE;
+
+		INT32 DeferredAttempts = 0;
+		Component->AddDeferredApply([&DeferredAttempts]() -> BOOL32
+		{
+			DeferredAttempts++;
+			return TRUE;
+		});
+		InWorld->Tick(1.0f / 60.0f);
+		const BOOL32 bDeferredWakeWorks = ((DeferredAttempts == 1) && (TickCount == (FirstTickCount + 2u))) ? TRUE : FALSE;
+		const UINT32 DeferredTickCount = TickCount;
+		InWorld->Tick(1.0f / 60.0f);
+		const BOOL32 bDeferredCleanSkipWorks = (TickCount == DeferredTickCount) ? TRUE : FALSE;
+
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+		return (bCleanSkipWorks && bDirtyWakeWorks && bDeferredWakeWorks && bDeferredCleanSkipWorks) ? TRUE : FALSE;
+	}
+
 	static BOOL32 CheckComponentLookupAndTickOrder(PWorld* InWorld)
 	{
 #if ENGINE_DEBUG_MODE
@@ -2147,6 +2203,12 @@ namespace PigeonEngine
 		const BOOL32 bComponentLookupAndTickOrder = CheckComponentLookupAndTickOrder(InWorld);
 		ReportSanityResult(EString(PE_TEXT("component lookup and tick order")), bComponentLookupAndTickOrder);
 		if (!bComponentLookupAndTickOrder)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bRenderTreeDirtySkip = CheckRenderTreeDirtySkip(InWorld);
+		ReportSanityResult(EString(PE_TEXT("render tree dirty skip")), bRenderTreeDirtySkip);
+		if (!bRenderTreeDirtySkip)
 		{
 			FailedCount += 1u;
 		}
