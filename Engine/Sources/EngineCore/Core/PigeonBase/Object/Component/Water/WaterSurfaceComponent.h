@@ -29,6 +29,10 @@ namespace PigeonEngine
 		void	SetSimulation(PWaterSimulationComponent* InSimulation);
 		// Resolved through the world on use; returns nullptr once the simulation is gone.
 		PE_NODISCARD PWaterSimulationComponent*	GetSimulation() const;
+		// Handle form used by the level serializer: the file stores a file-local id, the
+		// loader resolves it after every object exists.
+		PE_NODISCARD const FObjectHandle&			GetSimulationHandle() const;
+		void										SetSimulationHandle(const FObjectHandle& InHandle);
 		void	SetWaterHeightScale(const FLOAT InHeightScale);
 		void	SetWaterMaxHeight(const FLOAT InMaxHeight);
 		PE_NODISCARD FLOAT	GetWaterHeightScale() const noexcept { return WaterHeightScale; }

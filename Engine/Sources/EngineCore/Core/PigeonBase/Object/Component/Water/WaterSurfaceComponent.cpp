@@ -2,15 +2,35 @@
 
 #include <PigeonBase/Object/Component/Water/WaterSimulationComponent.h>
 #include <PigeonBase/Object/World/World.h>
+#include <Reflection/ObjectReference.h>
+#include <Reflection/Property.h>
 #include <Renderer/ScenePass.h>
 #include <ShaderAsset/ShaderInstance.h>
 
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PWaterSurfaceComponent>();
+		AddClassPropertyAccessors<PWaterSurfaceComponent, FLOAT>(ClassHash, PE_TEXT("WaterHeightScale"),
+			[](const PWaterSurfaceComponent* Component) -> FLOAT { return Component->GetWaterHeightScale(); },
+			[](PWaterSurfaceComponent* Component, const FLOAT& Value) -> void { Component->SetWaterHeightScale(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PWaterSurfaceComponent, FLOAT>(ClassHash, PE_TEXT("WaterMaxHeight"),
+			[](const PWaterSurfaceComponent* Component) -> FLOAT { return Component->GetWaterMaxHeight(); },
+			[](PWaterSurfaceComponent* Component, const FLOAT& Value) -> void { Component->SetWaterMaxHeight(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassObjectReferenceProperty<PWaterSurfaceComponent>(ClassHash, PE_TEXT("Simulation"),
+			[](const PWaterSurfaceComponent* Component) -> FObjectHandle { return Component->GetSimulationHandle(); },
+			[](PWaterSurfaceComponent* Component, const FObjectHandle& Value) -> void { Component->SetSimulationHandle(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PWaterSurfaceComponent, PStaticMeshComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -47,6 +67,17 @@ namespace PigeonEngine
 			return nullptr;
 		}
 		return GetWorld()->ResolveComponent<PWaterSimulationComponent>(SimulationHandle);
+	}
+
+	const FObjectHandle& PWaterSurfaceComponent::GetSimulationHandle() const
+	{
+		return SimulationHandle;
+	}
+
+	void PWaterSurfaceComponent::SetSimulationHandle(const FObjectHandle& InHandle)
+	{
+		SimulationHandle = InHandle;
+		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS | PRIMITIVE_UPDATE_VALUES);
 	}
 
 	void PWaterSurfaceComponent::SetWaterHeightScale(const FLOAT InHeightScale)
