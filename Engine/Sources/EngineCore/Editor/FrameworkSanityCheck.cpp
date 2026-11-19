@@ -7,6 +7,19 @@
 #include "PigeonBase/Object/Component/ActorComponent.h"
 #include "PigeonBase/Object/Component/SceneComponent.h"
 #include "PigeonBase/Object/Component/Primitive/StaticMeshComponent.h"
+#include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
+#include "PigeonBase/Object/Component/CameraAndLight/LightComponent.h"
+#include "PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h"
+#include "PigeonBase/Object/Component/CameraAndLight/PointLightComponent.h"
+#include "PigeonBase/Object/Component/Primitive/SkyLightComponent.h"
+#include "PigeonBase/Object/Component/Physics/PhysicsComponent.h"
+#include "PigeonBase/Object/Component/Physics/TriggerComponent.h"
+#include "PigeonBase/Object/Component/Navigation/NavMeshComponent.h"
+#include "PigeonBase/Object/Component/Navigation/NavObstacleComponent.h"
+#include "PigeonBase/Object/Component/Navigation/NavAgentComponent.h"
+#include "PigeonBase/Object/Component/Water/WaterSurfaceComponent.h"
+#include "PigeonBase/Object/Component/Water/WaterSimulationComponent.h"
+#include "../../../EngineThirdParty/JoltPhysics/Headers/Shapes.h"
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "HID/Input/Input.h"
 #include "Development/Message/Message.h"
@@ -63,6 +76,24 @@ namespace PigeonEngine
 	private:
 		EDestroyTargetType DestroyTarget = EDestroyTargetType::NONE;
 		PActor* OtherActor = nullptr;
+	};
+
+	// A world with no demo content and no controller, for exercising PWorld::SaveLevel /
+	// LoadLevel without touching the editor's live world or its global physics settings.
+	class PSanityLevelWorld : public PWorld
+	{
+	protected:
+		virtual PActor* CreateRootActor() override
+		{
+			return new PActor();
+		}
+		virtual void CreateDefaultController() override
+		{
+		}
+		virtual BOOL32 ShouldAffectGlobalPhysics() const override
+		{
+			return FALSE;
+		}
 	};
 
 	// Actor that subscribes through the object-bound overload in Init and keeps only the
@@ -924,6 +955,449 @@ namespace PigeonEngine
 		return bAllOk;
 	}
 
+	// Exercises the property tables added for the core component types: every value is set
+	// on the source actor, saved, loaded into a fresh actor and compared. Values are chosen
+	// distinct from the constructor defaults so a missing property registration fails the
+	// check instead of passing on the default.
+	static BOOL32 CheckComponentPropertySerialization(PWorld* InWorld)
+	{
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityPropertyActor");
+		InWorld->AddActor(Actor);
+
+		PCameraComponent* Camera = new PCameraComponent();
+		Camera->SetFov(75.f);
+		Camera->SetNearDistance(0.5f);
+		Camera->SetFarDistance(1234.f);
+		Camera->SetExposureValue100(10.f);
+		Camera->SetISO(200.f);
+		Camera->SetExposureCompensation(0.5f);
+		Camera->SetIsMainCamera(FALSE);
+		Actor->AddComponent(Camera);
+
+		PDirectionalLightComponent* Directional = new PDirectionalLightComponent();
+		Directional->SetLightColor(Color3(1.f, 0.5f, 0.25f));
+		Directional->SetShadowMapSize(TRUE, Vector2Int(1024, 1024));
+		Directional->SetIlluminanceLux(10000.f);
+		Directional->SetSourceAngleDegrees(0.53f);
+		{
+			const FLOAT CascadeLayers[3] = { 100.f, 300.f, 1000.f };
+			const FLOAT CascadeBorders[2] = { 10.f, 50.f };
+			Directional->SetCascadeShadowData(ECascadeShadowData(TRUE, CascadeLayers, CascadeBorders, 3u));
+		}
+		Actor->AddComponent(Directional);
+
+		PPointLightComponent* Point = new PPointLightComponent();
+		Point->SetLightColor(Color3(0.9f, 0.8f, 0.7f));
+		Point->SetLuminousIntensityCandela(500.f);
+		Point->SetAttenuationRadiusMeters(100.f);
+		Point->SetSourceRadiusMeters(0.1f);
+		Actor->AddComponent(Point);
+
+		PSkyLightComponent* Sky = new PSkyLightComponent();
+		Sky->SetLightAdjust(Color3(0.9f, 0.95f, 1.f));
+		Sky->SetIntensity(5000.f);
+		Sky->SetPrefilterResolutionExponent(7u);
+		Actor->AddComponent(Sky);
+
+		PPhysicsComponent* Physics = new PPhysicsComponent();
+		Physics->MotionType = PhysicsUtility::EMotionType::Kinematic;
+		Physics->Layer = FPhysicsObjectLayer(1);
+		Physics->SetShapeForSerialization(new FBoxShape(Vector3(10.f, 20.f, 30.f), 0.05f));
+		Actor->AddComponent(Physics);
+
+		PTriggerComponent* Trigger = new PTriggerComponent();
+		Trigger->SetBackend(ETriggerBackendType::SENSOR);
+		Trigger->SensorMotionType = PhysicsUtility::EMotionType::Static;
+		Trigger->SensorLayer = FPhysicsObjectLayer(2);
+		Trigger->bDetectStaticBodies = TRUE;
+		Trigger->bDetectCharacters = FALSE;
+		Trigger->bIgnoreOwnerActor = FALSE;
+		Trigger->bFireStayEvents = TRUE;
+		Trigger->MaxOverlaps = 12u;
+		Trigger->SetShape(new FSphereShape(42.f), TRUE);
+		Actor->AddComponent(Trigger);
+
+		PNavMeshComponent* NavMesh = new PNavMeshComponent();
+		NavMesh->SetBuildOnBeginPlay(FALSE);
+		NavMesh->SetBakeVolumeExtent(Vector3(100.f, 200.f, 300.f));
+		{
+			ENavMeshBuildSettings BuildSettings;
+			BuildSettings.CellSize = 21.f;
+			BuildSettings.TileSizeCells = 64u;
+			BuildSettings.MaxCrowdAgents = 8u;
+			NavMesh->SetBuildSettings(BuildSettings);
+		}
+		Actor->AddComponent(NavMesh);
+
+		PNavObstacleComponent* Obstacle = new PNavObstacleComponent();
+		Obstacle->SetShapeType(NAVIGATION_OBSTACLE_BOX);
+		Obstacle->SetBoxHalfExtents(Vector3(40.f, 75.f, 40.f));
+		Obstacle->FollowThreshold = 7.f;
+		Obstacle->bFollowTransform = FALSE;
+		Actor->AddComponent(Obstacle);
+
+		PNavAgentComponent* Agent = new PNavAgentComponent();
+		{
+			ENavigationAgentSettings AgentSettings;
+			AgentSettings.MoveSpeed = 450.f;
+			AgentSettings.AcceptanceRadius = 15.f;
+			AgentSettings.ObstacleAvoidanceType = 2u;
+			Agent->SetSettings(AgentSettings);
+			Agent->SetUseCrowd(TRUE);
+		}
+		Actor->AddComponent(Agent);
+
+		TArray<PActor*> Actors;
+		Actors.Add(Actor);
+		CJsonObject Document;
+		const BOOL32 bSaved = ELevelSerializer::SaveActors(Actors, Document);
+
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+
+		TArray<PActor*> CreatedActors;
+		const BOOL32 bLoaded = ELevelSerializer::LoadActors(*InWorld, Document, &CreatedActors);
+
+		BOOL32 bPropertiesOk = FALSE;
+		if (bSaved && bLoaded && (CreatedActors.Num<UINT32>() == 1u) && CreatedActors[0])
+		{
+			PActor* Loaded = CreatedActors[0];
+			PCameraComponent* LoadedCamera = Loaded->FindComponent<PCameraComponent>();
+			PDirectionalLightComponent* LoadedDirectional = Loaded->FindComponent<PDirectionalLightComponent>();
+			PPointLightComponent* LoadedPoint = Loaded->FindComponent<PPointLightComponent>();
+			PSkyLightComponent* LoadedSky = Loaded->FindComponent<PSkyLightComponent>();
+			PPhysicsComponent* LoadedPhysics = Loaded->FindComponent<PPhysicsComponent>();
+			PTriggerComponent* LoadedTrigger = Loaded->FindComponent<PTriggerComponent>();
+			PNavMeshComponent* LoadedNavMesh = Loaded->FindComponent<PNavMeshComponent>();
+			PNavObstacleComponent* LoadedObstacle = Loaded->FindComponent<PNavObstacleComponent>();
+			PNavAgentComponent* LoadedAgent = Loaded->FindComponent<PNavAgentComponent>();
+
+			const BOOL32 bCameraOk = LoadedCamera &&
+				(EMath::Abs(LoadedCamera->GetCameraViewInfo().FovAngleY - 75.f) <= 1.0e-3f) &&
+				(EMath::Abs(LoadedCamera->GetCameraViewInfo().NearDist - 0.5f) <= 1.0e-4f) &&
+				(EMath::Abs(LoadedCamera->GetCameraViewInfo().FarDist - 1234.f) <= 1.0e-3f) &&
+				(EMath::Abs(LoadedCamera->GetExposureValue100() - 10.f) <= 1.0e-4f) &&
+				(EMath::Abs(LoadedCamera->GetISO() - 200.f) <= 1.0e-3f) &&
+				(EMath::Abs(LoadedCamera->GetExposureCompensation() - 0.5f) <= 1.0e-4f);
+
+			BOOL32 bLightOk = LoadedDirectional && LoadedPoint && LoadedSky;
+			if (bLightOk)
+			{
+				const ECascadeShadowData* Cascade = LoadedDirectional->GetCascadeShadowData();
+				bLightOk = (LoadedDirectional->IsLightCastShadow() != FALSE) &&
+					(LoadedDirectional->GetShadowMapSize().x == 1024) &&
+					(LoadedDirectional->GetShadowMapSize().y == 1024) &&
+					(EMath::Abs(LoadedDirectional->GetIlluminanceLux() - 10000.f) <= 1.0e-2f) &&
+					(EMath::Abs(LoadedDirectional->GetSourceAngleDegrees() - 0.53f) <= 1.0e-4f) &&
+					Cascade && (Cascade->Layers.Num<UINT32>() == 3u) && (Cascade->Borders.Num<UINT32>() == 2u) &&
+					(EMath::Abs(LoadedPoint->GetLuminousIntensityCandela() - 500.f) <= 1.0e-2f) &&
+					(EMath::Abs(LoadedPoint->GetAttenuationRadiusMeters() - 100.f) <= 1.0e-3f) &&
+					(EMath::Abs(LoadedPoint->GetSourceRadiusMeters() - 0.1f) <= 1.0e-4f) &&
+					(EMath::Abs(LoadedSky->GetIntensity() - 5000.f) <= 1.0e-2f) &&
+					(LoadedSky->GetPrefilterResolutionExponent() == 7u);
+			}
+
+			BOOL32 bPhysicsOk = FALSE;
+			if (LoadedPhysics)
+			{
+				const FBoxShape* Box = dynamic_cast<const FBoxShape*>(LoadedPhysics->GetShapeForSerialization());
+				bPhysicsOk = Box &&
+					(LoadedPhysics->MotionType == PhysicsUtility::EMotionType::Kinematic) &&
+					(LoadedPhysics->Layer.GetValue() == 1u) &&
+					IsVectorNearlyEqual(Box->HalfExtent, Vector3(10.f, 20.f, 30.f), 1.0e-4f) &&
+					(EMath::Abs(Box->ConvexRadius - 0.05f) <= 1.0e-5f);
+			}
+
+			BOOL32 bTriggerOk = FALSE;
+			if (LoadedTrigger)
+			{
+				const FSphereShape* Sphere = dynamic_cast<const FSphereShape*>(LoadedTrigger->GetShape());
+				bTriggerOk = (LoadedTrigger->GetBackend() == ETriggerBackendType::SENSOR) &&
+					(LoadedTrigger->SensorMotionType == PhysicsUtility::EMotionType::Static) &&
+					(LoadedTrigger->SensorLayer.GetValue() == 2u) &&
+					(LoadedTrigger->bDetectStaticBodies != FALSE) &&
+					(LoadedTrigger->bDetectCharacters == FALSE) &&
+					(LoadedTrigger->bFireStayEvents != FALSE) &&
+					(LoadedTrigger->MaxOverlaps == 12u) &&
+					Sphere && (EMath::Abs(Sphere->Raidus - 42.f) <= 1.0e-4f);
+			}
+
+			const BOOL32 bNavOk = LoadedNavMesh && LoadedObstacle && LoadedAgent &&
+				(LoadedNavMesh->GetBuildOnBeginPlay() == FALSE) &&
+				IsVectorNearlyEqual(LoadedNavMesh->GetBakeVolumeExtent(), Vector3(100.f, 200.f, 300.f), 1.0e-4f) &&
+				(EMath::Abs(LoadedNavMesh->GetBuildSettings().CellSize - 21.f) <= 1.0e-4f) &&
+				(LoadedNavMesh->GetBuildSettings().TileSizeCells == 64u) &&
+				(LoadedNavMesh->GetBuildSettings().MaxCrowdAgents == 8u) &&
+				(LoadedObstacle->GetShapeType() == NAVIGATION_OBSTACLE_BOX) &&
+				IsVectorNearlyEqual(LoadedObstacle->GetBoxHalfExtents(), Vector3(40.f, 75.f, 40.f), 1.0e-4f) &&
+				(EMath::Abs(LoadedObstacle->FollowThreshold - 7.f) <= 1.0e-5f) &&
+				(LoadedObstacle->bFollowTransform == FALSE) &&
+				(EMath::Abs(LoadedAgent->GetSettings().MoveSpeed - 450.f) <= 1.0e-4f) &&
+				(EMath::Abs(LoadedAgent->GetSettings().AcceptanceRadius - 15.f) <= 1.0e-4f) &&
+				(LoadedAgent->GetSettings().ObstacleAvoidanceType == 2u) &&
+				(LoadedAgent->GetUseCrowd() != FALSE);
+
+#if ENGINE_EDITOR_ONLY
+			const BOOL32 bNameOk = (Loaded->GetDebugName() == EString(PE_TEXT("SanityPropertyActor"))) ? TRUE : FALSE;
+#else
+			const BOOL32 bNameOk = TRUE;
+#endif
+			bPropertiesOk = (bCameraOk && bLightOk && bPhysicsOk && bTriggerOk && bNavOk && bNameOk) ? TRUE : FALSE;
+			if (!bPropertiesOk)
+			{
+				PE_LOG_ERROR(EString(PE_TEXT("component properties detail: camera=")) + EString::FromInt(bCameraOk) +
+					EString(PE_TEXT(" light=")) + EString::FromInt(bLightOk) +
+					EString(PE_TEXT(" physics=")) + EString::FromInt(bPhysicsOk) +
+					EString(PE_TEXT(" trigger=")) + EString::FromInt(bTriggerOk) +
+					EString(PE_TEXT(" nav=")) + EString::FromInt(bNavOk) +
+					EString(PE_TEXT(" name=")) + EString::FromInt(bNameOk));
+			}
+		}
+
+		for (UINT32 Index = 0u, Num = CreatedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (!CreatedActors[Index])
+			{
+				continue;
+			}
+			BOOL32 bHasLoadedParent = FALSE;
+			for (UINT32 OtherIndex = 0u; OtherIndex < Num; OtherIndex++)
+			{
+				if (CreatedActors[OtherIndex] == CreatedActors[Index]->GetAttachedParentActor())
+				{
+					bHasLoadedParent = TRUE;
+					break;
+				}
+			}
+			if (!bHasLoadedParent)
+			{
+				InWorld->DestroyActor(CreatedActors[Index]);
+			}
+		}
+		InWorld->FlushPendingDestroy();
+		// Camera/light components create render proxies that the render thread deletes after
+		// its next kick, so the alive-object count is not a valid leak check for this scene.
+		// The actor is still destroyed through the normal path, which the remaining scenarios
+		// and the registry checks cover.
+		return bPropertiesOk;
+	}
+
+	// World header + level-file object references: the header round trips independently of
+	// the actor list, and a water surface's simulation reference survives a disk round trip
+	// through file-local ids instead of process-local unique ids.
+	static BOOL32 CheckLevelHeaderAndReferences(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		CJsonObject WorldDocument;
+		const BOOL32 bWorldSaved = ELevelSerializer::SaveWorld(*InWorld, EString(PE_TEXT("SanityWorld")), WorldDocument);
+		FLevelHeader Header;
+		const BOOL32 bHeaderOk = bWorldSaved && ELevelSerializer::ReadLevelHeader(WorldDocument, Header) &&
+			(Header.LevelName == EString(PE_TEXT("SanityWorld"))) &&
+			IsVectorNearlyEqual(Header.UpVector, InWorld->GetUpVector(), 1.0e-4f);
+
+		PActor* SimulationActor = new PActor();
+		POBJ_DEBUGNAME_SET(SimulationActor, "SanitySimulationActor");
+		InWorld->AddActor(SimulationActor);
+		PWaterSimulationComponent* Simulation = new PWaterSimulationComponent();
+		SimulationActor->AddComponent(Simulation);
+
+		PActor* SurfaceActor = new PActor();
+		POBJ_DEBUGNAME_SET(SurfaceActor, "SanitySurfaceActor");
+		InWorld->AddActor(SurfaceActor);
+		PWaterSurfaceComponent* Surface = new PWaterSurfaceComponent();
+		SurfaceActor->AddComponent(Surface);
+		Surface->SetSimulation(Simulation);
+
+		TArray<PActor*> Actors;
+		Actors.Add(SimulationActor);
+		Actors.Add(SurfaceActor);
+		const EString Path = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("SanityRefs.PLevel"));
+		const BOOL32 bSaved = ELevelSerializer::SaveActorsToFile(Actors, Path);
+
+		InWorld->DestroyActor(SimulationActor);
+		InWorld->DestroyActor(SurfaceActor);
+		InWorld->FlushPendingDestroy();
+
+		TArray<PActor*> CreatedActors;
+		const BOOL32 bLoaded = ELevelSerializer::LoadActorsFromFile(*InWorld, Path, &CreatedActors);
+		EFileHelper::DeleteFile(Path);
+
+		PWaterSurfaceComponent* LoadedSurface = nullptr;
+		PWaterSimulationComponent* LoadedSimulation = nullptr;
+		for (UINT32 Index = 0u, Num = CreatedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (!CreatedActors[Index])
+			{
+				continue;
+			}
+			if (PWaterSurfaceComponent* FoundSurface = CreatedActors[Index]->FindComponent<PWaterSurfaceComponent>())
+			{
+				LoadedSurface = FoundSurface;
+			}
+			if (PWaterSimulationComponent* FoundSimulation = CreatedActors[Index]->FindComponent<PWaterSimulationComponent>())
+			{
+				LoadedSimulation = FoundSimulation;
+			}
+		}
+		const BOOL32 bReferenceOk = bLoaded && LoadedSurface && LoadedSimulation &&
+			LoadedSurface->GetSimulationHandle().IsValid() &&
+			(LoadedSurface->GetSimulation() == LoadedSimulation);
+
+		for (UINT32 Index = 0u, Num = CreatedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (!CreatedActors[Index])
+			{
+				continue;
+			}
+			BOOL32 bHasLoadedParent = FALSE;
+			for (UINT32 OtherIndex = 0u; OtherIndex < Num; OtherIndex++)
+			{
+				if (CreatedActors[OtherIndex] == CreatedActors[Index]->GetAttachedParentActor())
+				{
+					bHasLoadedParent = TRUE;
+					break;
+				}
+			}
+			if (!bHasLoadedParent)
+			{
+				InWorld->DestroyActor(CreatedActors[Index]);
+			}
+		}
+		InWorld->FlushPendingDestroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return (bHeaderOk && bSaved && bReferenceOk) ? TRUE : FALSE;
+	}
+
+	// A format-1 document with an older component ClassVersion: the v1 reader path must
+	// accept it and the registered migrator must run after the properties were read.
+	static BOOL32 CheckLevelFormatV1Migration(PWorld* InWorld)
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		static BOOL32 bMigrationRegistered = FALSE;
+		if (!bMigrationRegistered)
+		{
+			SetClassMigration<PSceneComponent>(1u, [](PSceneComponent& Component, UINT32 InFromVersion) -> void
+			{
+				if (InFromVersion < 1u)
+				{
+					Component.SetMobility(EMobilityType::EMT_STATION);
+				}
+			});
+			bMigrationRegistered = TRUE;
+		}
+
+		const EString DocumentText = PE_TEXT("{\"FormatVersion\":1,\"Actors\":{\"Count\":1,\"0\":{\"Class\":\"PActor\",\"ClassVersion\":1,\"ParentActorID\":0,\"Properties\":{},\"Components\":{\"Count\":1,\"0\":{\"Class\":\"PSceneComponent\",\"ClassVersion\":0,\"Root\":true,\"ParentComponentIndex\":0,\"Properties\":{\"Mobility\":\"EMT_STATIC\"}}}}}}");
+		CJsonObject Document(DocumentText);
+		if (!Document.IsValid())
+		{
+			return FALSE;
+		}
+
+		TArray<PActor*> CreatedActors;
+		const BOOL32 bLoaded = ELevelSerializer::LoadActors(*InWorld, Document, &CreatedActors);
+		BOOL32 bMigrated = FALSE;
+		if (bLoaded && (CreatedActors.Num<UINT32>() == 1u) && CreatedActors[0] && CreatedActors[0]->GetRootComponent())
+		{
+			bMigrated = (CreatedActors[0]->GetRootComponent()->GetMobility() == EMobilityType::EMT_STATION) ? TRUE : FALSE;
+		}
+
+		for (UINT32 Index = 0u, Num = CreatedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (!CreatedActors[Index])
+			{
+				continue;
+			}
+			BOOL32 bHasLoadedParent = FALSE;
+			for (UINT32 OtherIndex = 0u; OtherIndex < Num; OtherIndex++)
+			{
+				if (CreatedActors[OtherIndex] == CreatedActors[Index]->GetAttachedParentActor())
+				{
+					bHasLoadedParent = TRUE;
+					break;
+				}
+			}
+			if (!bHasLoadedParent)
+			{
+				InWorld->DestroyActor(CreatedActors[Index]);
+			}
+		}
+		InWorld->FlushPendingDestroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		return (bLoaded && bMigrated) ? TRUE : FALSE;
+	}
+
+	// PWorld::SaveLevel / LoadLevel end to end on a disposable world: header, actor file,
+	// clear-and-reload and the name/transform round trip. This is the path the editor File
+	// menu uses, so it is tested without disturbing the live editor world.
+	static BOOL32 CheckLevelFileIO()
+	{
+		const EString Path = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("SanityWorld.PLevel"));
+
+		PSanityLevelWorld* SaveWorld = new PSanityLevelWorld();
+		SaveWorld->Init();
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityFileActor");
+		SaveWorld->AddActor(Actor);
+		PSceneComponent* SceneComponent = new PSceneComponent();
+		Actor->AddComponent(SceneComponent);
+		SceneComponent->SetComponentLocation(Vector3(11.f, 22.f, 33.f));
+		{
+			FWorldGravitySettings GravitySettings;
+			GravitySettings.GravityDirection = Vector3(0.f, -1.f, 0.f);
+			GravitySettings.GravityStrength = 500.f;
+			GravitySettings.bUseUpVector = FALSE;
+			SaveWorld->SetGravitySettings(GravitySettings);
+		}
+		const BOOL32 bSaved = SaveWorld->SaveLevel(Path);
+		SaveWorld->Destroy();
+
+		PSanityLevelWorld* LoadWorld = new PSanityLevelWorld();
+		LoadWorld->Init();
+		const BOOL32 bLoaded = LoadWorld->LoadLevel(Path);
+		BOOL32 bContentOk = FALSE;
+		const TArray<PActor*> Actors = LoadWorld->GetAllActors();
+		if (bLoaded && (Actors.Num<UINT32>() == 1u) && Actors[0])
+		{
+			PActor* Loaded = Actors[0];
+			BOOL32 bLocationOk = FALSE;
+			const TArray<PSceneComponent*> SceneComponents = Loaded->GetComponents<PSceneComponent>();
+			for (UINT32 Index = 0u, Num = SceneComponents.Num<UINT32>(); Index < Num; Index++)
+			{
+				if (IsVectorNearlyEqual(SceneComponents[Index]->GetTransform().GetLocation_Local(), Vector3(11.f, 22.f, 33.f), 1.0e-3f))
+				{
+					bLocationOk = TRUE;
+					break;
+				}
+			}
+#if ENGINE_EDITOR_ONLY
+			const BOOL32 bNameOk = (Loaded->GetDebugName() == EString(PE_TEXT("SanityFileActor"))) ? TRUE : FALSE;
+#else
+			const BOOL32 bNameOk = TRUE;
+#endif
+			const BOOL32 bGravityOk = (EMath::Abs(LoadWorld->GetGravitySettings().GravityStrength - 500.f) <= 1.0e-3f) &&
+				(LoadWorld->IsGravityUsingUpVector() == FALSE) ? TRUE : FALSE;
+			bContentOk = (bLocationOk && bNameOk && bGravityOk) ? TRUE : FALSE;
+		}
+		LoadWorld->Destroy();
+		EFileHelper::DeleteFile(Path);
+		return (bSaved && bLoaded && bContentOk) ? TRUE : FALSE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -1020,6 +1494,30 @@ namespace PigeonEngine
 		const BOOL32 bLevelSerialization = CheckLevelSerializationRoundTrip(InWorld);
 		ReportSanityResult(EString(PE_TEXT("level serialization round trip")), bLevelSerialization);
 		if (!bLevelSerialization)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bComponentProperties = CheckComponentPropertySerialization(InWorld);
+		ReportSanityResult(EString(PE_TEXT("component property serialization")), bComponentProperties);
+		if (!bComponentProperties)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bLevelHeaderAndReferences = CheckLevelHeaderAndReferences(InWorld);
+		ReportSanityResult(EString(PE_TEXT("level header and object references")), bLevelHeaderAndReferences);
+		if (!bLevelHeaderAndReferences)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bLevelV1Migration = CheckLevelFormatV1Migration(InWorld);
+		ReportSanityResult(EString(PE_TEXT("level format v1 migration")), bLevelV1Migration);
+		if (!bLevelV1Migration)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bLevelFileIO = CheckLevelFileIO();
+		ReportSanityResult(EString(PE_TEXT("level file save and load")), bLevelFileIO);
+		if (!bLevelFileIO)
 		{
 			FailedCount += 1u;
 		}
