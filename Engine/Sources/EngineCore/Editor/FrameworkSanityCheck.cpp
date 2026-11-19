@@ -638,6 +638,19 @@ namespace PigeonEngine
 		const BOOL32 bOrderMatches =
 			((TickLog.Num<UINT32>() == 3u) && (TickLog[0] == 2u) && (TickLog[1] == 3u) && (TickLog[2] == 1u)) ? TRUE : FALSE;
 
+		// Changing the component's tickable flag after it joined the actor must refresh the
+		// cached tickable list immediately.
+		TickLog.Empty();
+		GamePlayEarly->SetIsTickable(FALSE);
+		InWorld->Tick(1.f / 60.f);
+		const BOOL32 bDisableTickableWorks =
+			((TickLog.Num<UINT32>() == 2u) && (TickLog[0] == 2u) && (TickLog[1] == 1u)) ? TRUE : FALSE;
+		TickLog.Empty();
+		GamePlayEarly->SetIsTickable(TRUE);
+		InWorld->Tick(1.f / 60.f);
+		const BOOL32 bEnableTickableWorks =
+			((TickLog.Num<UINT32>() == 3u) && (TickLog[0] == 2u) && (TickLog[1] == 3u) && (TickLog[2] == 1u)) ? TRUE : FALSE;
+
 		InWorld->DestroyActor(Actor);
 		InWorld->FlushPendingDestroy();
 #if ENGINE_DEBUG_MODE
@@ -646,7 +659,8 @@ namespace PigeonEngine
 			return FALSE;
 		}
 #endif
-		return (bFindWorks && bListWorks && bBaseLookupWorks && bOrderMatches) ? TRUE : FALSE;
+		return (bFindWorks && bListWorks && bBaseLookupWorks && bOrderMatches &&
+			bDisableTickableWorks && bEnableTickableWorks) ? TRUE : FALSE;
 	}
 
 	static BOOL32 CheckWorldLifecycleEvents(PWorld* InWorld)

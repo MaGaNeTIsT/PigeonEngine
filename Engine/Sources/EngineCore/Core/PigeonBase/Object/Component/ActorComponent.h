@@ -13,6 +13,8 @@ namespace PigeonEngine
 	public:
 		virtual void Init() override;
 		virtual void Uninit() override;
+		// A component's tickable flag changes the owner actor's cached tickable list.
+		virtual void SetIsTickable(const BOOL32& bTickable) override;
 		// Setting either re-sorts the owner actor's cached tick order, so changing them
 		// after AddComponent takes effect immediately.
 		virtual void SetTickGroup(const ETickGroupType& InGroup) override;

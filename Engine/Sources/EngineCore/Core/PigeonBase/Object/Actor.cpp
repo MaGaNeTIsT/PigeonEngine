@@ -127,6 +127,15 @@ namespace PigeonEngine
 			}
 			return (InA->GetTickPriority() < InB->GetTickPriority()) ? TRUE : FALSE;
 		});
+		TickableOrder.Empty();
+		for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
+		{
+			PActorComponent* Component = TickOrder[Index];
+			if (Component && Component->IsTickable())
+			{
+				TickableOrder.Add(Component);
+			}
+		}
 	}
 
 	void PActor::Tick(FLOAT deltaTime)
@@ -134,13 +143,10 @@ namespace PigeonEngine
 		if (IsTickable())
 		{
 			// (group, priority, registration) order, fixed when the component list changed.
-			for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
+			// Only tickable components are in this list, so no per-component test is needed.
+			for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
 			{
-				PActorComponent* Component = TickOrder[Index];
-				if (Component && Component->IsTickable())
-				{
-					Component->Tick(deltaTime);
-				}
+				TickableOrder[Index]->Tick(deltaTime);
 			}
 			UserTick(deltaTime);
 		}
@@ -180,13 +186,9 @@ namespace PigeonEngine
 	{
 		if (IsTickable())
 		{
-			for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
+			for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
 			{
-				PActorComponent* Component = TickOrder[Index];
-				if (Component && Component->IsTickable())
-				{
-					Component->FixedTick(deltaTime);
-				}
+				TickableOrder[Index]->FixedTick(deltaTime);
 			}
 		}
 		// Same reason as Tick: a fixed tick may spawn actors too, so the list is walked by index.
@@ -205,13 +207,9 @@ namespace PigeonEngine
 	{
 		if(IsTickable())
 		{
-			for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
+			for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
 			{
-				PActorComponent* Component = TickOrder[Index];
-				if (Component && Component->IsTickable())
-				{
-					Component->EditorTick(deltaTime);
-				}
+				TickableOrder[Index]->EditorTick(deltaTime);
 			}
 		}
 		// Same reason as Tick: the editor tick is the one a scene builder runs inside, so this is
@@ -664,6 +662,7 @@ namespace PigeonEngine
 		}
 		Components.Empty();
 		TickOrder.Empty();
+		TickableOrder.Empty();
 	}
 
 	EBoundAABB PActor::GetBounds() const

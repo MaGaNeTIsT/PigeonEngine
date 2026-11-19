@@ -123,6 +123,9 @@ protected:
 		// Components sorted by (tick group, priority), rebuilt whenever the list changes.
 		// Registration order is the tie-breaker, so the order is stable across runs.
 		TArray<PActorComponent*> TickOrder;
+		// The tickable subset of TickOrder. Tick/FixedTick walk this list directly instead
+		// of testing every component every frame.
+		TArray<PActorComponent*> TickableOrder;
 	public:
 		// Re-sorts the cached tick order after a component changed its tick group or
 		// priority. Called by PActorComponent::SetTickGroup/SetTickPriority.

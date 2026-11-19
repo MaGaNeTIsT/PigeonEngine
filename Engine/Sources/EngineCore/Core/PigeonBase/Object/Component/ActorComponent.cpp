@@ -140,6 +140,15 @@ namespace PigeonEngine
 		PComponent::Init();
 	}
 
+	void PActorComponent::SetIsTickable(const BOOL32& bTickable)
+	{
+		PObject::SetIsTickable(bTickable);
+		if (PActor* OwnerActor = GetOwnerActor())
+		{
+			OwnerActor->RefreshTickOrder();
+		}
+	}
+
 	void PActorComponent::SetTickGroup(const ETickGroupType& InGroup)
 	{
 		PObject::SetTickGroup(InGroup);
