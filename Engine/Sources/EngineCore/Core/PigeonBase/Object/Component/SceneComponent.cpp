@@ -608,10 +608,6 @@ namespace PigeonEngine
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
 #if ENGINE_EDITOR_ONLY
-	static Vector3 Location;
-	static Euler   Rotation;
-	static Vector3 Scale;
-
 	void PSceneComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
 	{
 		BOOL8 bSelectedComponent = WorldCurrentSelectedComponent == this;
@@ -641,79 +637,17 @@ namespace PigeonEngine
 
 	void PSceneComponent::GenerateComponentDetail()
 	{
-		Location = this->GetComponentLocalLocation();
-		Rotation = MakeEuler(this->GetComponentLocalRotation());
-		Scale    = this->GetComponentLocalScale();
-		const BOOL8 bTransformExpand = ImGui::TreeNodeEx("Transform") ;
-		if (bTransformExpand)
+		// Transform and Mobility come from the reflected property grid; only the reset helper
+		// remains hand-written.
+		PActorComponent::GenerateComponentDetail();
+		if (ImGui::Button("Reset Transform"))
 		{
-			if (ImGui::TreeNodeEx("Location"))
-			{
-				const BOOL8 bChangedX = ImGui::DragScalar("##LocX", ImGuiDataType_Float, &Location.x, 0.05f, NULL, NULL, "X : %.6f");
-				const BOOL8 bChangedY = ImGui::DragScalar("##LocY", ImGuiDataType_Float, &Location.y, 0.05f, NULL, NULL, "Y : %.6f");
-				const BOOL8 bChangedZ = ImGui::DragScalar("##LocZ", ImGuiDataType_Float, &Location.z, 0.05f, NULL, NULL, "Z : %.6f");
-				const BOOL8 bRest     = ImGui::Button("Reset");
-				if (bChangedX || bChangedY || bChangedZ)
-				{
-					this->SetComponentLocation(Location);
-				}
-				if(bRest)
-				{
-					Location = Vector3::Zero();
-					this->SetComponentLocation(Location);
-				}
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("Rotation"))
-			{
-				const FLOAT Min = -180.0f;
-				const FLOAT Max = 180.0f;
-
-				const BOOL8 bChangedPitch = ImGui::DragScalar("##Pitch", ImGuiDataType_Float, &Rotation.Pitch, 0.05f, &Min, &Max, "Pitch : %.6f");
-				const BOOL8 bChangedYaw   = ImGui::DragScalar("##Yaw",   ImGuiDataType_Float, &Rotation.Yaw,   0.05f, &Min, &Max, "Yaw   : %.6f");
-				const BOOL8 bChangedRoll  = ImGui::DragScalar("##Roll",  ImGuiDataType_Float, &Rotation.Roll,  0.05f, &Min, &Max, "Roll  : %.6f");
-				const BOOL8 bRest         = ImGui::Button("Reset");
-				if (bChangedRoll || bChangedPitch || bChangedYaw)
-				{
-					this->SetComponentRotation(MakeQuaternion(Rotation));
-				}
-
-				if(bRest)
-				{
-					Rotation = Euler::Zero();
-					this->SetComponentRotation(MakeQuaternion(Rotation));
-				}
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("Scale"))
-			{
-				const BOOL8 bChangedX = ImGui::DragScalar("##ScaleX", ImGuiDataType_Float, &Scale.x, 0.05f, NULL, NULL, "X : %.6f");
-				const BOOL8 bChangedY = ImGui::DragScalar("##ScaleY", ImGuiDataType_Float, &Scale.y, 0.05f, NULL, NULL, "Y : %.6f");
-				const BOOL8 bChangedZ = ImGui::DragScalar("##ScaleZ", ImGuiDataType_Float, &Scale.z, 0.05f, NULL, NULL, "Z : %.6f");
-				const BOOL8 bRest     = ImGui::Button("Reset");
-
-				if (bChangedX || bChangedY || bChangedZ)
-				{
-					this->SetComponentScale(Scale);
-				}
-				if(bRest)
-				{
-					Scale = Vector3::One();
-					this->SetComponentScale(Scale);
-				}
-				ImGui::TreePop();
-			}
-			ImGui::TreePop();
+			this->SetComponentTransform(ETransform());
 		}
 	}
 
 	void PSceneComponent::OnSelectedByImGui()
 	{
-		Location = this->GetComponentLocalLocation();
-		Rotation = MakeEuler(this->GetComponentLocalRotation());
-		Scale    = this->GetComponentLocalScale();
 	}
 #endif
 };

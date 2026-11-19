@@ -20,7 +20,7 @@ namespace PigeonEngine
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 		// CastShadow and ShadowMapSize share one setter. Each property preserves the other's
 		// current value, so load order does not matter.
-		AddClassPropertyAccessors<PLightComponent, BOOL32>(LightClassHash, PE_TEXT("CastShadow"),
+		AddClassBoolPropertyAccessors<PLightComponent>(LightClassHash, PE_TEXT("CastShadow"),
 			[](const PLightComponent* Component) -> BOOL32 { return Component->IsLightCastShadow(); },
 			[](PLightComponent* Component, const BOOL32& Value) -> void { Component->SetShadowMapSize(Value, Component->GetShadowMapSize()); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));

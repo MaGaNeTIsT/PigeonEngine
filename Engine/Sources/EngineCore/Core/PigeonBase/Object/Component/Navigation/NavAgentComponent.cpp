@@ -42,7 +42,7 @@ namespace PigeonEngine
 			[](PNavAgentComponent* Component, const ENavigationAgentSettings& Value) -> void { Component->SetSettings(Value); },
 			SerializeNavigationAgentSettings,
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PNavAgentComponent, BOOL32>(ClassHash, PE_TEXT("UseCrowd"),
+		AddClassBoolPropertyAccessors<PNavAgentComponent>(ClassHash, PE_TEXT("UseCrowd"),
 			[](const PNavAgentComponent* Component) -> BOOL32 { return Component->GetUseCrowd(); },
 			[](PNavAgentComponent* Component, const BOOL32& Value) -> void { Component->SetUseCrowd(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));

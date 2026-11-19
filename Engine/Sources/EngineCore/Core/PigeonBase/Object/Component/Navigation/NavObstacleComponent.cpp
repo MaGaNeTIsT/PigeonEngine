@@ -36,7 +36,7 @@ namespace PigeonEngine
 			[](const PNavObstacleComponent* Component) -> FLOAT { return Component->FollowThreshold; },
 			[](PNavObstacleComponent* Component, const FLOAT& Value) -> void { Component->FollowThreshold = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PNavObstacleComponent, BOOL32>(ClassHash, PE_TEXT("FollowTransform"),
+		AddClassBoolPropertyAccessors<PNavObstacleComponent>(ClassHash, PE_TEXT("FollowTransform"),
 			[](const PNavObstacleComponent* Component) -> BOOL32 { return Component->bFollowTransform; },
 			[](PNavObstacleComponent* Component, const BOOL32& Value) -> void { Component->bFollowTransform = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));

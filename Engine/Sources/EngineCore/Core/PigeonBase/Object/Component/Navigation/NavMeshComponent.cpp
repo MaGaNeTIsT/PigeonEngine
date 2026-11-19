@@ -57,7 +57,7 @@ namespace PigeonEngine
 			[](const PNavMeshComponent* Component) -> Vector3 { return Component->GetBakeVolumeExtent(); },
 			[](PNavMeshComponent* Component, const Vector3& Value) -> void { Component->SetBakeVolumeExtent(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PNavMeshComponent, BOOL32>(ClassHash, PE_TEXT("BuildOnBeginPlay"),
+		AddClassBoolPropertyAccessors<PNavMeshComponent>(ClassHash, PE_TEXT("BuildOnBeginPlay"),
 			[](const PNavMeshComponent* Component) -> BOOL32 { return Component->GetBuildOnBeginPlay(); },
 			[](PNavMeshComponent* Component, const BOOL32& Value) -> void { Component->SetBuildOnBeginPlay(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));

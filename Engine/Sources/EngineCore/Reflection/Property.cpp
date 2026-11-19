@@ -96,6 +96,53 @@ namespace PigeonEngine
 		}
 	}
 
+	void EClassPropertyRegistry::ForEachProperty(const size_t& InClassHash, const TFunction<void(const FProperty&)>& InVisitor)
+	{
+		if (!InVisitor)
+		{
+			return;
+		}
+		TArray<size_t> Chain;
+		for (size_t ClassHash = InClassHash; ClassHash != static_cast<size_t>(-1); ClassHash = GetClassParentHash(ClassHash))
+		{
+			Chain.Add(ClassHash);
+		}
+		for (INT32 Index = Chain.Num<INT32>() - 1; Index >= 0; Index--)
+		{
+			const TArray<FProperty>* Properties = FindProperties(Chain[static_cast<UINT32>(Index)]);
+			if (!Properties)
+			{
+				continue;
+			}
+			for (UINT32 PropertyIndex = 0u, PropertyNum = Properties->Num<UINT32>(); PropertyIndex < PropertyNum; PropertyIndex++)
+			{
+				InVisitor((*Properties)[PropertyIndex]);
+			}
+		}
+	}
+
+	BOOL32 EClassPropertyRegistry::SetPropertyValue(const size_t& InClassHash, void* InContainer, const EString& InName, const FPropertyValue& InValue)
+	{
+		if (!InContainer)
+		{
+			return FALSE;
+		}
+		const FProperty* FoundProperty = nullptr;
+		ForEachProperty(InClassHash, [&InName, &FoundProperty](const FProperty& Property) -> void
+		{
+			if (Property.Name == InName)
+			{
+				FoundProperty = &Property;
+			}
+		});
+		if ((!FoundProperty) || (!FoundProperty->SetValue))
+		{
+			return FALSE;
+		}
+		FoundProperty->SetValue(InContainer, InValue);
+		return TRUE;
+	}
+
 	BOOL32 SerializeVector2(EArchive& InArchive, const CHAR* InName, Vector2& InOutValue)
 	{
 		InArchive.BeginObject(InName);

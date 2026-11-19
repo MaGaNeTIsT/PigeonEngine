@@ -2,6 +2,9 @@
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/World/World.h>
 #include <PigeonBase/Object/World/WorldTickManager.h>
+#if ENGINE_EDITOR_ONLY
+#include <Editor/PropertyEditor.h>
+#endif
 
 namespace PigeonEngine
 {
@@ -209,7 +212,11 @@ namespace PigeonEngine
 
 	void PActorComponent::GenerateComponentDetail()
 	{
-
+#if ENGINE_EDITOR_ONLY
+		// Reflection draws every editable property; a component with settings the grid cannot
+		// represent keeps its override and calls this base first, then draws its custom extras.
+		EPropertyEditor::DrawProperties(this, GetClassHashCode(this));
+#endif
 	}
 
 	void PActorComponent::OnSelectedByImGui()

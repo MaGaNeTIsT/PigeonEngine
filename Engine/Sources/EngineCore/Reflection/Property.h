@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Transform.h>
+#include <type_traits>
 #include "Archive.h"
 #include "EnumRegistry.h"
 
@@ -18,6 +19,49 @@ namespace PigeonEngine
 		TRANSIENT = (1u << 2),
 	};
 
+	// What the value looks like to an editor. CUSTOM means the component's hand-written
+	// detail panel owns it; everything else can be generated from the property table.
+	enum class EPropertyValueType : UINT8
+	{
+		NONE = 0u,
+		BOOL,
+		INT32,
+		UINT32,
+		INT64,
+		UINT64,
+		FLOAT,
+		DOUBLE,
+		STRING,
+		ENUM,
+		VECTOR2,
+		VECTOR2INT,
+		VECTOR3,
+		QUATERNION,
+		COLOR3,
+		TRANSFORM,
+		CUSTOM,
+	};
+
+	/*
+	* Editor-side value container. One struct for every supported type keeps the Details
+	* panel and the undo commands type erased without depending on ImGui or on any single
+	* component. GetValue/SetValue on FProperty fill and consume it.
+	*/
+	struct FPropertyValue
+	{
+		EPropertyValueType Type = EPropertyValueType::NONE;
+		BOOL32				BoolValue = FALSE;
+		INT64				IntValue = 0;
+		DOUBLE				DoubleValue = 0.0;
+		EString				StringValue;
+		Vector2				Vector2Value;
+		Vector2Int			Vector2IntValue;
+		Vector3				Vector3Value;
+		Quaternion			QuaternionValue;
+		Color3				ColorValue;
+		ETransform			TransformValue;
+	};
+
 	/*
 	* One reflected property of a class. Name is the stable key used in files; Serialize
 	* is type-erased over the owning object so the registry never needs the concrete
@@ -29,8 +73,16 @@ namespace PigeonEngine
 	public:
 		EString Name;
 		UINT32 Flags = static_cast<UINT32>(EPropertyFlagsType::NONE);
+		// How the Details panel should present the value. CUSTOM falls back to the
+		// component's own GenerateComponentDetail.
+		EPropertyValueType ValueType = EPropertyValueType::NONE;
+		// Only meaningful for ENUM; the EEnumRegistry key.
+		size_t EnumHash = 0u;
 		// Serializes the member into/from the archive; InContainer is the owning object.
 		TFunction<void(EArchive&, void*)> Serialize;
+		// Editor-side access. Null for CUSTOM properties; read-only when SetValue is null.
+		TFunction<void(const void*, FPropertyValue&)> GetValue;
+		TFunction<void(void*, const FPropertyValue&)> SetValue;
 	};
 
 	/*
@@ -45,6 +97,12 @@ namespace PigeonEngine
 		static void AddProperty(const size_t& InClassHash, const FProperty& InProperty);
 		PE_NODISCARD static const TArray<FProperty>* FindProperties(const size_t& InClassHash);
 		static void SerializeObject(EArchive& InArchive, const size_t& InClassHash, void* InContainer);
+		// Walks the single-inheritance chain root first, including TRANSIENT properties; the
+		// Details panel filters them out. Serialization and editing share the same order.
+		static void ForEachProperty(const size_t& InClassHash, const TFunction<void(const FProperty&)>& InVisitor);
+		// Applies one editor value by property name. Returns FALSE when the class has no such
+		// property or the property is not editable.
+		static BOOL32 SetPropertyValue(const size_t& InClassHash, void* InContainer, const EString& InName, const FPropertyValue& InValue);
 
 		// Class version: bumped when a class's serialized layout changes. Files written by
 		// an older version are read with the current property code (unknown fields are
@@ -98,17 +156,47 @@ namespace PigeonEngine
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, Color3& InOutValue);
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, ETransform& InOutValue);
 
-	// Register a property backed by accessors. Used when the member is protected (most
-	// OCA components) - the accessor lambdas are written where the class allows it.
+	// What the editor can present for this C++ type. BOOL32 and INT32 are the same type in
+	// this engine, so bool registrations pass the value type explicitly through
+	// AddClassBoolPropertyAccessors; int registrations use the inferred INT32.
+	template <typename TValue>
+	constexpr EPropertyValueType GetPropertyValueType()
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		if constexpr (std::is_same_v<T, BOOL32>)		{ return EPropertyValueType::INT32; }
+		else if constexpr (std::is_same_v<T, UINT32>)	{ return EPropertyValueType::UINT32; }
+		else if constexpr (std::is_same_v<T, INT64>)	{ return EPropertyValueType::INT64; }
+		else if constexpr (std::is_same_v<T, UINT64>)	{ return EPropertyValueType::UINT64; }
+		else if constexpr (std::is_same_v<T, FLOAT>)	{ return EPropertyValueType::FLOAT; }
+		else if constexpr (std::is_same_v<T, DOUBLE>)	{ return EPropertyValueType::DOUBLE; }
+		else if constexpr (std::is_same_v<T, EString>)	{ return EPropertyValueType::STRING; }
+		else if constexpr (std::is_same_v<T, Vector2>)	{ return EPropertyValueType::VECTOR2; }
+		else if constexpr (std::is_same_v<T, Vector2Int>) { return EPropertyValueType::VECTOR2INT; }
+		else if constexpr (std::is_same_v<T, Vector3>)	{ return EPropertyValueType::VECTOR3; }
+		else if constexpr (std::is_same_v<T, Quaternion>) { return EPropertyValueType::QUATERNION; }
+		else if constexpr (std::is_same_v<T, Color3>)	{ return EPropertyValueType::COLOR3; }
+		else if constexpr (std::is_same_v<T, ETransform>) { return EPropertyValueType::TRANSFORM; }
+		else { return EPropertyValueType::CUSTOM; }
+	}
+
 	template <typename TClass, typename TValue>
-	void AddClassPropertyAccessors(const size_t& InClassHash, const CHAR* InName,
+	void AddClassPropertyAccessorsTyped(const size_t& InClassHash, const CHAR* InName,
 		const TFunction<TValue(const TClass*)>& InGetter,
 		const TFunction<void(TClass*, const TValue&)>& InSetter,
-		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+		const UINT32& InFlags,
+		const EPropertyValueType& InValueType)
 	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		EPropertyValueType ValueType = InValueType;
+		if (ValueType == EPropertyValueType::NONE)
+		{
+			ValueType = GetPropertyValueType<TValue>();
+		}
+
 		FProperty Property;
 		Property.Name = InName;
 		Property.Flags = InFlags;
+		Property.ValueType = ValueType;
 		Property.Serialize = [InName = EString(InName), InGetter, InSetter](EArchive& InArchive, void* InContainer) -> void
 		{
 			TClass* Object = static_cast<TClass*>(InContainer);
@@ -119,7 +207,194 @@ namespace PigeonEngine
 				InSetter(Object, Value);
 			}
 		};
+
+		if constexpr (std::is_same_v<T, BOOL32>)
+		{
+			if (ValueType == EPropertyValueType::BOOL)
+			{
+				Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+				{
+					OutValue.Type = EPropertyValueType::BOOL;
+					OutValue.BoolValue = InGetter(static_cast<const TClass*>(InContainer));
+				};
+				Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+				{
+					InSetter(static_cast<TClass*>(InContainer), InValue.BoolValue);
+				};
+			}
+			else
+			{
+				Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+				{
+					OutValue.Type = EPropertyValueType::INT32;
+					OutValue.IntValue = static_cast<INT64>(InGetter(static_cast<const TClass*>(InContainer)));
+				};
+				Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+				{
+					InSetter(static_cast<TClass*>(InContainer), static_cast<TValue>(InValue.IntValue));
+				};
+			}
+		}
+		else if constexpr (std::is_same_v<T, UINT32>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::UINT32;
+				OutValue.IntValue = static_cast<INT64>(InGetter(static_cast<const TClass*>(InContainer)));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), static_cast<UINT32>(InValue.IntValue));
+			};
+		}
+		else if constexpr (std::is_same_v<T, INT64>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::INT64;
+				OutValue.IntValue = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.IntValue);
+			};
+		}
+		else if constexpr (std::is_same_v<T, UINT64>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::UINT64;
+				OutValue.IntValue = static_cast<INT64>(InGetter(static_cast<const TClass*>(InContainer)));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), static_cast<UINT64>(InValue.IntValue));
+			};
+		}
+		else if constexpr (std::is_same_v<T, FLOAT> || std::is_same_v<T, DOUBLE>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = GetPropertyValueType<T>();
+				OutValue.DoubleValue = static_cast<DOUBLE>(InGetter(static_cast<const TClass*>(InContainer)));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), static_cast<T>(InValue.DoubleValue));
+			};
+		}
+		else if constexpr (std::is_same_v<T, EString>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::STRING;
+				OutValue.StringValue = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.StringValue);
+			};
+		}
+		else if constexpr (std::is_same_v<T, Vector2>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::VECTOR2;
+				OutValue.Vector2Value = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.Vector2Value);
+			};
+		}
+		else if constexpr (std::is_same_v<T, Vector2Int>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::VECTOR2INT;
+				OutValue.Vector2IntValue = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.Vector2IntValue);
+			};
+		}
+		else if constexpr (std::is_same_v<T, Vector3>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::VECTOR3;
+				OutValue.Vector3Value = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.Vector3Value);
+			};
+		}
+		else if constexpr (std::is_same_v<T, Quaternion>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::QUATERNION;
+				OutValue.QuaternionValue = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.QuaternionValue);
+			};
+		}
+		else if constexpr (std::is_same_v<T, Color3>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::COLOR3;
+				OutValue.ColorValue = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.ColorValue);
+			};
+		}
+		else if constexpr (std::is_same_v<T, ETransform>)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				OutValue.Type = EPropertyValueType::TRANSFORM;
+				OutValue.TransformValue = InGetter(static_cast<const TClass*>(InContainer));
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				InSetter(static_cast<TClass*>(InContainer), InValue.TransformValue);
+			};
+		}
+		else
+		{
+			Property.ValueType = EPropertyValueType::CUSTOM;
+		}
+
 		EClassPropertyRegistry::AddProperty(InClassHash, Property);
+	}
+
+	// Register a property backed by accessors. Used when the member is protected (most
+	// OCA components) - the accessor lambdas are written where the class allows it.
+	template <typename TClass, typename TValue>
+	void AddClassPropertyAccessors(const size_t& InClassHash, const CHAR* InName,
+		const TFunction<TValue(const TClass*)>& InGetter,
+		const TFunction<void(TClass*, const TValue&)>& InSetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+	{
+		AddClassPropertyAccessorsTyped<TClass, TValue>(InClassHash, InName, InGetter, InSetter, InFlags, EPropertyValueType::NONE);
+	}
+
+	// BOOL32 is the same C++ type as INT32, so the type cannot be inferred: bool properties
+	// register through this overload and the Details panel renders a checkbox.
+	template <typename TClass>
+	void AddClassBoolPropertyAccessors(const size_t& InClassHash, const CHAR* InName,
+		const TFunction<BOOL32(const TClass*)>& InGetter,
+		const TFunction<void(TClass*, const BOOL32&)>& InSetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+	{
+		AddClassPropertyAccessorsTyped<TClass, BOOL32>(InClassHash, InName, InGetter, InSetter, InFlags, EPropertyValueType::BOOL);
 	}
 
 	// Register a property whose value has its own serializer (a struct, an array, a shape).
@@ -135,6 +410,7 @@ namespace PigeonEngine
 		FProperty Property;
 		Property.Name = InName;
 		Property.Flags = InFlags;
+		Property.ValueType = EPropertyValueType::CUSTOM;
 		Property.Serialize = [InName = EString(InName), InGetter, InSetter, InSerializeValue](EArchive& InArchive, void* InContainer) -> void
 		{
 			TClass* Object = static_cast<TClass*>(InContainer);
@@ -159,6 +435,8 @@ namespace PigeonEngine
 		FProperty Property;
 		Property.Name = InName;
 		Property.Flags = InFlags;
+		Property.ValueType = EPropertyValueType::ENUM;
+		Property.EnumHash = InEnumHash;
 		Property.Serialize = [InName = EString(InName), InEnumHash, InGetter, InSetter](EArchive& InArchive, void* InContainer) -> void
 		{
 			TClass* Object = static_cast<TClass*>(InContainer);
@@ -168,6 +446,15 @@ namespace PigeonEngine
 			{
 				InSetter(Object, Value);
 			}
+		};
+		Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+		{
+			OutValue.Type = EPropertyValueType::ENUM;
+			OutValue.IntValue = static_cast<INT64>(InGetter(static_cast<const TClass*>(InContainer)));
+		};
+		Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+		{
+			InSetter(static_cast<TClass*>(InContainer), static_cast<INT32>(InValue.IntValue));
 		};
 		EClassPropertyRegistry::AddProperty(InClassHash, Property);
 	}

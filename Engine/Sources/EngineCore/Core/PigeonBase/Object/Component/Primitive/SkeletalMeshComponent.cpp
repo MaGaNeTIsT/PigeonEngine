@@ -89,7 +89,7 @@ namespace PigeonEngine
 				},
 				SerializeAnimationRequest,
 				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-			AddClassPropertyAccessors<PSkeletalMeshComponent, BOOL32>(ClassHash, PE_TEXT("RootMotionEnabled"),
+			AddClassBoolPropertyAccessors<PSkeletalMeshComponent>(ClassHash, PE_TEXT("RootMotionEnabled"),
 				[](const PSkeletalMeshComponent* Component) -> BOOL32 { return Component->IsRootMotionEnabled(); },
 				[](PSkeletalMeshComponent* Component, const BOOL32& Value) -> void { Component->SetRootMotionEnabled(Value); },
 				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));

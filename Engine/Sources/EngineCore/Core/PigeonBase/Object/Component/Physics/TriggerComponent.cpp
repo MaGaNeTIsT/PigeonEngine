@@ -22,19 +22,19 @@ namespace PigeonEngine
 			[](const PTriggerComponent* Component) -> INT32 { return static_cast<INT32>(Component->SensorLayer.GetValue()); },
 			[](PTriggerComponent* Component, const INT32& Value) -> void { Component->SensorLayer = FPhysicsObjectLayer(static_cast<FPhysicsObjectLayer::Type>(Value)); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("DetectStaticBodies"),
+		AddClassBoolPropertyAccessors<PTriggerComponent>(ClassHash, PE_TEXT("DetectStaticBodies"),
 			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bDetectStaticBodies; },
 			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bDetectStaticBodies = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("DetectCharacters"),
+		AddClassBoolPropertyAccessors<PTriggerComponent>(ClassHash, PE_TEXT("DetectCharacters"),
 			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bDetectCharacters; },
 			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bDetectCharacters = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("IgnoreOwnerActor"),
+		AddClassBoolPropertyAccessors<PTriggerComponent>(ClassHash, PE_TEXT("IgnoreOwnerActor"),
 			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bIgnoreOwnerActor; },
 			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bIgnoreOwnerActor = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("FireStayEvents"),
+		AddClassBoolPropertyAccessors<PTriggerComponent>(ClassHash, PE_TEXT("FireStayEvents"),
 			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bFireStayEvents; },
 			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bFireStayEvents = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));

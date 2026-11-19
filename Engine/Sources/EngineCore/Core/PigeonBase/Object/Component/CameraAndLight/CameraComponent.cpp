@@ -15,7 +15,7 @@ namespace PigeonEngine
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PCameraComponent>();
-		AddClassPropertyAccessors<PCameraComponent, BOOL32>(ClassHash, PE_TEXT("MainCamera"),
+		AddClassBoolPropertyAccessors<PCameraComponent>(ClassHash, PE_TEXT("MainCamera"),
 			[](const PCameraComponent* Component) -> BOOL32 { return Component->IsMainCamera(); },
 			[](PCameraComponent* Component, const BOOL32& Value) -> void { Component->SetIsMainCamera(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));

@@ -27,6 +27,8 @@ namespace PigeonEngine
 		static BOOL32 TryValueToString(const size_t& InEnumHash, INT32 InValue, EString& OutName);
 		// TRUE when the name belongs to this enum; OutValue is left untouched otherwise.
 		static BOOL32 TryStringToValue(const size_t& InEnumHash, const CHAR* InName, INT32& OutValue);
+		// Registered entries in registration order, for editor combo boxes.
+		static void GetValues(const size_t& InEnumHash, TArray<FEnumEntry>& OutEntries);
 	};
 
 	template <typename TEnum>

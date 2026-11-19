@@ -60,4 +60,13 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
+
+	void EEnumRegistry::GetValues(const size_t& InEnumHash, TArray<FEnumEntry>& OutEntries)
+	{
+		const FEnumInfo* Info = GetEnumMap().FindValueAsPtr(InEnumHash);
+		if (Info)
+		{
+			OutEntries = Info->Entries;
+		}
+	}
 }
