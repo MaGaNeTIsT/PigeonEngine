@@ -64,6 +64,9 @@ namespace PigeonEngine
 		* than retrying every frame.
 		*/
 		void	RequestNavMeshAsset(const EString& InAssetName);
+		// Drops the current navmesh asset and any pending request, returning the component to
+		// its runtime bake source.
+		void	ClearNavMeshAsset();
 
 	private:
 		// Runs the automatic publish once the asset queue drained, or once waiting longer would be

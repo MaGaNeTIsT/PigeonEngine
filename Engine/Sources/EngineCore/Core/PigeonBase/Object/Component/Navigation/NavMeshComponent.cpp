@@ -43,7 +43,7 @@ namespace PigeonEngine
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PNavMeshComponent>();
-		AddClassPropertyAccessors<PNavMeshComponent, EString>(ClassHash, PE_TEXT("NavMeshAsset"),
+		AddClassAssetPropertyAccessors<PNavMeshComponent>(ClassHash, PE_TEXT("NavMeshAsset"),
 			[](const PNavMeshComponent* Component) -> EString { return Component->GetNavMeshAssetName(); },
 			[](PNavMeshComponent* Component, const EString& Value) -> void
 			{
@@ -51,7 +51,12 @@ namespace PigeonEngine
 				{
 					Component->RequestNavMeshAsset(Value);
 				}
+				else
+				{
+					Component->ClearNavMeshAsset();
+				}
 			},
+			EPropertyAssetType::NAV_MESH,
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 		AddClassPropertyAccessors<PNavMeshComponent, Vector3>(ClassHash, PE_TEXT("BakeVolumeExtent"),
 			[](const PNavMeshComponent* Component) -> Vector3 { return Component->GetBakeVolumeExtent(); },
@@ -210,6 +215,14 @@ namespace PigeonEngine
 		{
 			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
 		}
+	}
+
+	void PNavMeshComponent::ClearNavMeshAsset()
+	{
+		NavMeshAssetName = EString();
+		bAssetRequestIssued = FALSE;
+		bAssetLoadFailed = FALSE;
+		SetNavMeshAsset(nullptr);
 	}
 
 	EName PNavMeshComponent::GetProviderName() const

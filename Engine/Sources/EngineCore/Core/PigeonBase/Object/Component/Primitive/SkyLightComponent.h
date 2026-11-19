@@ -86,6 +86,8 @@ namespace PigeonEngine
 		* importer expects.
 		*/
 		void	RequestCubeMapAsset(const EString& InAssetName, const FAssetImportCubeSource* InImportSource = nullptr);
+		// Drops the current environment cube and the pending request.
+		void	ClearCubeMapAsset();
 		void	SetLightAdjust(const Color3& InColor);
 		void	SetIntensity(const FLOAT InLuminanceInCandelaPerSquareMeter);
 		void	SetPrefilterResolutionExponent(const UINT32 InExponent);

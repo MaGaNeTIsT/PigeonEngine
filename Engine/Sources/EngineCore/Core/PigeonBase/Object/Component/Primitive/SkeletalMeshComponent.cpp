@@ -97,6 +97,41 @@ namespace PigeonEngine
 				[](const PSkeletalMeshComponent* Component) -> INT32 { return Component->GetRootMotionBoneIndex(); },
 				[](PSkeletalMeshComponent* Component, const INT32& Value) -> void { Component->SetRootMotionBoneIndex(Value); },
 				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			// Editor views onto the serialized MeshAssets pair. The pair stays the file format,
+			// while the picker edits one side at a time; the request keeps the other side until
+			// both names are present, then binds them together.
+			const UINT32 AssetEditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE)
+				| static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY);
+			AddClassAssetPropertyAccessors<PSkeletalMeshComponent>(ClassHash, PE_TEXT("MeshAsset"),
+				[](const PSkeletalMeshComponent* Component) -> EString { return Component->GetMeshAssetName(); },
+				[](PSkeletalMeshComponent* Component, const EString& Value) -> void
+				{
+					if (Value.Length() > 0u)
+					{
+						Component->RequestSkeletalMeshAssets(Value, Component->GetSkeletonAssetName(), nullptr);
+					}
+					else
+					{
+						Component->ClearSkeletalMeshAssets();
+					}
+				},
+				EPropertyAssetType::SKELETAL_MESH,
+				AssetEditFlags);
+			AddClassAssetPropertyAccessors<PSkeletalMeshComponent>(ClassHash, PE_TEXT("SkeletonAsset"),
+				[](const PSkeletalMeshComponent* Component) -> EString { return Component->GetSkeletonAssetName(); },
+				[](PSkeletalMeshComponent* Component, const EString& Value) -> void
+				{
+					if (Value.Length() > 0u)
+					{
+						Component->RequestSkeletalMeshAssets(Component->GetMeshAssetName(), Value, nullptr);
+					}
+					else
+					{
+						Component->ClearSkeletalMeshAssets();
+					}
+				},
+				EPropertyAssetType::SKELETON,
+				AssetEditFlags);
 		}
 	}
 
@@ -258,6 +293,13 @@ namespace PigeonEngine
 	{
 		RequestedMeshAssetName = InMeshAssetName;
 		RequestedSkeletonAssetName = InSkeletonAssetName;
+		// The pair is loaded together. While one side is still empty, keep the requested names
+		// so the other picker can complete the pair on the next edit instead of issuing a load
+		// request for an empty asset name every frame.
+		if ((InMeshAssetName.Length() == 0u) || (InSkeletonAssetName.Length() == 0u))
+		{
+			return;
+		}
 		// Copied by value: the binding outlives this call.
 		FAssetImportSource ImportSource;
 		if (InImportSource)
@@ -291,6 +333,16 @@ namespace PigeonEngine
 		{
 			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
 		}
+	}
+
+	void PSkeletalMeshComponent::ClearSkeletalMeshAssets()
+	{
+		RequestedMeshAssetName = EString();
+		RequestedSkeletonAssetName = EString();
+		SetMeshAsset(nullptr);
+		SetSkeletonAsset(nullptr);
+		SetLocalBound(EBoundAABB(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f), FALSE));
+		SetMaterialSlotsNum(0u);
 	}
 
 	// Animation START

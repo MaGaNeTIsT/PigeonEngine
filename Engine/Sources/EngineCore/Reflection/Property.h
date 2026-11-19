@@ -9,14 +9,17 @@
 namespace PigeonEngine
 {
 
-	// Property behaviour flags. Serialization only skips TRANSIENT; the edit flags are
-	// consumed by the reflection-driven Details panel (Phase 3D).
+	// Property behaviour flags. Serialization skips TRANSIENT and EDITOR_ONLY; the edit
+	// flags are consumed by the reflection-driven Details panel (Phase 3D).
 	enum class EPropertyFlagsType : UINT32
 	{
 		NONE = 0u,
 		EDIT_ANYWHERE = (1u << 0),
 		VISIBLE_ANYWHERE = (1u << 1),
 		TRANSIENT = (1u << 2),
+		// Editable in the Details panel but absent from the file. Used for a view onto data
+		// whose serialized form is a custom property (for example a mesh/skeleton pair).
+		EDITOR_ONLY = (1u << 3),
 	};
 
 	// What the value looks like to an editor. CUSTOM means the component's hand-written
@@ -42,6 +45,21 @@ namespace PigeonEngine
 		ARRAY,
 		MAP,
 		CUSTOM,
+	};
+
+	// Asset families the Details panel can present as a picker. This is intentionally
+	// editor-facing metadata rather than EAssetType: Property.h is compiled into non-editor
+	// builds, where the asset headers are excluded.
+	enum class EPropertyAssetType : UINT8
+	{
+		NONE = 0u,
+		STATIC_MESH,
+		SKELETAL_MESH,
+		SKELETON,
+		ANIMATION,
+		CUBE_MAP,
+		NAV_MESH,
+		MATERIAL,
 	};
 
 	/*
@@ -106,6 +124,9 @@ namespace PigeonEngine
 		EPropertyValueType ElementType = EPropertyValueType::NONE;
 		EPropertyValueType KeyType = EPropertyValueType::NONE;
 		EPropertyValueType MapValueType = EPropertyValueType::NONE;
+		// For STRING properties that name an asset: which asset family the picker lists.
+		// NONE means the regular text field is used.
+		EPropertyAssetType AssetType = EPropertyAssetType::NONE;
 		// Only meaningful for ENUM; the EEnumRegistry key.
 		size_t EnumHash = 0u;
 		// Serializes the member into/from the archive; InContainer is the owning object.
@@ -462,7 +483,8 @@ namespace PigeonEngine
 		const TFunction<TValue(const TClass*)>& InGetter,
 		const TFunction<void(TClass*, const TValue&)>& InSetter,
 		const UINT32& InFlags,
-		const EPropertyValueType& InValueType)
+		const EPropertyValueType& InValueType,
+		const EPropertyAssetType& InAssetType = EPropertyAssetType::NONE)
 	{
 		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
 		EPropertyValueType ValueType = InValueType;
@@ -475,6 +497,7 @@ namespace PigeonEngine
 		Property.Name = InName;
 		Property.Flags = InFlags;
 		Property.ValueType = ValueType;
+		Property.AssetType = InAssetType;
 		if constexpr (TPropertyIsArray<T>::value)
 		{
 			using ElementType = typename TPropertyIsArray<T>::ElementType;
@@ -779,6 +802,17 @@ namespace PigeonEngine
 		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
 	{
 		AddClassPropertyAccessorsTyped<TClass, BOOL32>(InClassHash, InName, InGetter, InSetter, InFlags, EPropertyValueType::BOOL);
+	}
+
+	template <typename TClass>
+	void AddClassAssetPropertyAccessors(const size_t& InClassHash, const CHAR* InName,
+		const TFunction<EString(const TClass*)>& InGetter,
+		const TFunction<void(TClass*, const EString&)>& InSetter,
+		const EPropertyAssetType& InAssetType,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+	{
+		AddClassPropertyAccessorsTyped<TClass, EString>(InClassHash, InName, InGetter, InSetter,
+			InFlags, EPropertyValueType::STRING, InAssetType);
 	}
 
 	// Register a property whose value has its own serializer (a struct, an array, a shape).

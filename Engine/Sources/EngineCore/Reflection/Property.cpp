@@ -88,6 +88,10 @@ namespace PigeonEngine
 				{
 					continue;
 				}
+				if ((Property.Flags & static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY)) != 0u)
+				{
+					continue;
+				}
 				if (Property.Serialize)
 				{
 					Property.Serialize(InArchive, InContainer);

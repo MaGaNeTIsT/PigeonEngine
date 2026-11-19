@@ -21,6 +21,10 @@ namespace PigeonEngine
 		using FOnPropertyCommitted = TFunction<void(void*, const size_t&, const EString&, const FPropertyValue&, const FPropertyValue&)>;
 
 		void SetPropertyCommittedCallback(const FOnPropertyCommitted& InCallback);
+		// Asset picker shared by the reflection grid and hand-written component panels. The
+		// names are scanned from the asset family directory and refreshed periodically, so a
+		// newly imported or baked asset appears without restarting the editor.
+		BOOL32 DrawAssetCombo(const CHAR* InLabel, const EPropertyAssetType InAssetType, EString& InOutAssetName);
 		// Reports an edit that a custom control already applied, so it enters the same undo
 		// history as a grid edit.
 		void NotifyPropertyChanged(void* InObject, const size_t& InClassHash, const EString& InPropertyName,

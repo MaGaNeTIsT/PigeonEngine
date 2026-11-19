@@ -16,7 +16,7 @@ namespace PigeonEngine
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PSkyLightComponent>();
-		AddClassPropertyAccessors<PSkyLightComponent, EString>(ClassHash, PE_TEXT("CubeMapAsset"),
+		AddClassAssetPropertyAccessors<PSkyLightComponent>(ClassHash, PE_TEXT("CubeMapAsset"),
 			[](const PSkyLightComponent* Component) -> EString { return Component->GetCubeMapAssetName(); },
 			[](PSkyLightComponent* Component, const EString& Value) -> void
 			{
@@ -24,7 +24,12 @@ namespace PigeonEngine
 				{
 					Component->RequestCubeMapAsset(Value, nullptr);
 				}
+				else
+				{
+					Component->ClearCubeMapAsset();
+				}
 			},
+			EPropertyAssetType::CUBE_MAP,
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 		AddClassPropertyAccessors<PSkyLightComponent, Color3>(ClassHash, PE_TEXT("LightAdjust"),
 			[](const PSkyLightComponent* Component) -> Color3 { return Component->GetLightAdjust(); },
@@ -134,6 +139,11 @@ namespace PigeonEngine
 		{
 			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
 		}
+	}
+	void PSkyLightComponent::ClearCubeMapAsset()
+	{
+		RequestedCubeMapAssetName = EString();
+		SetCubeMapAsset(nullptr);
 	}
 	void PSkyLightComponent::SetLightAdjust(const Color3& InColor)
 	{

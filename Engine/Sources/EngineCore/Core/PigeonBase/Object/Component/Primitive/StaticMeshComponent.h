@@ -31,6 +31,9 @@ namespace PigeonEngine
 		* load thread when the PAsset has never been imported.
 		*/
 		void                        RequestMeshAsset(const EString& InAssetName, const FAssetImportSource* InImportSource = nullptr);
+		// Drops the current mesh and the pending request. Used when an asset picker clears
+		// the property, so the component does not keep rendering the previous mesh.
+		void                        ClearMeshAsset();
 		// The name the render side builds this component's proxy under. It has to match the one
 		// RStaticMeshSceneProxy registers itself with.
 		PE_NODISCARD virtual const EName& GetRenderProxyTypeName() const override;

@@ -55,6 +55,8 @@ namespace PigeonEngine
 		*/
 		void                            RequestSkeletalMeshAssets(const EString& InMeshAssetName, const EString& InSkeletonAssetName
 			, const FAssetImportSource* InImportSource = nullptr);
+		// Drops the mesh/skeleton pair and returns the component to an empty skinned primitive.
+		void                            ClearSkeletalMeshAssets();
 
 		// Animation START
 	public:

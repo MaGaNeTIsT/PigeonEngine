@@ -3,6 +3,9 @@
 #if ENGINE_EDITOR_ONLY
 
 #include <imgui.h>
+#include <Config/EngineConfig.h>
+#include <IO/FileHelper.h>
+#include <Base/DataStructure/Text/Path.h>
 
 namespace PigeonEngine
 {
@@ -13,6 +16,102 @@ namespace PigeonEngine
 		// property is interacted with at a time, so a name key is enough and avoids storing
 		// a per-object map.
 		TMap<EString, FPropertyValue> EditStartValues;
+
+		struct FAssetNameCache
+		{
+			EPropertyAssetType Type = EPropertyAssetType::NONE;
+			TArray<EString> Names;
+			DOUBLE RefreshedAt = -1.0;
+		};
+		TArray<FAssetNameCache> AssetNameCaches;
+
+		const CHAR* GetAssetDirectory(const EPropertyAssetType InAssetType)
+		{
+			switch (InAssetType)
+			{
+			case EPropertyAssetType::STATIC_MESH:
+			case EPropertyAssetType::SKELETAL_MESH:
+				return EBaseSettings::ENGINE_MESH_PATH;
+			case EPropertyAssetType::SKELETON:
+				return EBaseSettings::ENGINE_SKELETON_PATH;
+			case EPropertyAssetType::ANIMATION:
+				return EBaseSettings::ENGINE_ANIMATION_PATH;
+			case EPropertyAssetType::CUBE_MAP:
+				return EBaseSettings::ENGINE_TEXTURE_PATH;
+			case EPropertyAssetType::NAV_MESH:
+				return EBaseSettings::ENGINE_NAV_MESH_PATH;
+			case EPropertyAssetType::MATERIAL:
+				return EBaseSettings::ENGINE_SHADER_BUILD_DIRECTORY;
+			default:
+				return nullptr;
+			}
+		}
+
+		void CollectAssetNamesFromDirectory(const EString& InDirectory, TArray<EString>& OutNames)
+		{
+			TArray<EString> Folders;
+			TArray<EString> Files;
+			if (!EFileHelper::ScanDirectory(InDirectory, Folders, Files, TRUE))
+			{
+				return;
+			}
+			for (UINT32 Index = 0u, Num = Files.Num<UINT32>(); Index < Num; Index++)
+			{
+				const EString& File = Files[Index];
+				if (EPath::GetExtension(File) != EString(PE_TEXT(".PAsset")))
+				{
+					continue;
+				}
+				const EString AssetName = EPath::GetFileNameWithoutExtension(File);
+				if ((AssetName.Length() > 0u) && (!OutNames.Contains(AssetName)))
+				{
+					OutNames.Add(AssetName);
+				}
+			}
+			// Shader assets live under target / shader model folders; the other families are
+			// flat today, but scanning recursively keeps this independent of that layout.
+			for (UINT32 Index = 0u, Num = Folders.Num<UINT32>(); Index < Num; Index++)
+			{
+				CollectAssetNamesFromDirectory(Folders[Index], OutNames);
+			}
+		}
+
+		void RefreshAssetNames(FAssetNameCache& InOutCache)
+		{
+			const DOUBLE Now = ImGui::GetTime();
+			if ((InOutCache.RefreshedAt >= 0.0) && ((Now - InOutCache.RefreshedAt) < 1.0))
+			{
+				return;
+			}
+			InOutCache.RefreshedAt = Now;
+			InOutCache.Names.Empty();
+
+			const CHAR* AssetDirectory = GetAssetDirectory(InOutCache.Type);
+			if (!AssetDirectory)
+			{
+				return;
+			}
+			CollectAssetNamesFromDirectory(EString(AssetDirectory), InOutCache.Names);
+			InOutCache.Names.Sort([](const EString& InLeft, const EString& InRight) -> BOOL32
+			{
+				return ((InLeft < InRight) != FALSE) ? TRUE : FALSE;
+			});
+		}
+
+		FAssetNameCache& FindAssetNameCache(const EPropertyAssetType InAssetType)
+		{
+			for (UINT32 Index = 0u, Num = AssetNameCaches.Num<UINT32>(); Index < Num; Index++)
+			{
+				if (AssetNameCaches[Index].Type == InAssetType)
+				{
+					return AssetNameCaches[Index];
+				}
+			}
+			FAssetNameCache NewCache;
+			NewCache.Type = InAssetType;
+			AssetNameCaches.Add(NewCache);
+			return AssetNameCaches[AssetNameCaches.Num<UINT32>() - 1u];
+		}
 
 		void Commit(const FProperty& InProperty, void* InObject, const size_t& InClassHash, const FPropertyValue& InBefore, const FPropertyValue& InAfter)
 		{
@@ -120,6 +219,20 @@ namespace PigeonEngine
 
 		BOOL32 DrawStringProperty(const FProperty& InProperty, void* InObject, const size_t& InClassHash, FPropertyValue& InOutValue)
 		{
+			if (InProperty.AssetType != EPropertyAssetType::NONE)
+			{
+				EString SelectedName = InOutValue.StringValue;
+				if (!EPropertyEditor::DrawAssetCombo("##value", InProperty.AssetType, SelectedName))
+				{
+					return FALSE;
+				}
+				const FPropertyValue Before = InOutValue;
+				InOutValue.StringValue = SelectedName;
+				InProperty.SetValue(InObject, InOutValue);
+				Commit(InProperty, InObject, InClassHash, Before, InOutValue);
+				return TRUE;
+			}
+
 			CHAR Buffer[512] = {};
 			const UINT32 Length = EMath::Min(InOutValue.StringValue.Length(), static_cast<UINT32>(sizeof(Buffer) - 1u));
 			if (Length > 0u)
@@ -773,6 +886,50 @@ namespace PigeonEngine
 	void EPropertyEditor::SetPropertyCommittedCallback(const FOnPropertyCommitted& InCallback)
 	{
 		PropertyCommittedCallback = InCallback;
+	}
+
+	BOOL32 EPropertyEditor::DrawAssetCombo(const CHAR* InLabel, const EPropertyAssetType InAssetType, EString& InOutAssetName)
+	{
+		if (InAssetType == EPropertyAssetType::NONE)
+		{
+			return FALSE;
+		}
+		FAssetNameCache& Cache = FindAssetNameCache(InAssetType);
+		RefreshAssetNames(Cache);
+
+		const CHAR* Preview = (InOutAssetName.Length() > 0u) ? *InOutAssetName : "None";
+		if (!ImGui::BeginCombo(InLabel, Preview))
+		{
+			return FALSE;
+		}
+
+		BOOL32 bChanged = FALSE;
+		const BOOL32 bNoneSelected = (InOutAssetName.Length() == 0u) ? TRUE : FALSE;
+		if (ImGui::Selectable("None", bNoneSelected))
+		{
+			InOutAssetName = EString();
+			bChanged = TRUE;
+		}
+		if (bNoneSelected)
+		{
+			ImGui::SetItemDefaultFocus();
+		}
+		for (UINT32 Index = 0u, Num = Cache.Names.Num<UINT32>(); Index < Num; Index++)
+		{
+			const EString& AssetName = Cache.Names[Index];
+			const BOOL32 bSelected = (AssetName == InOutAssetName) ? TRUE : FALSE;
+			if (ImGui::Selectable(*AssetName, bSelected))
+			{
+				InOutAssetName = AssetName;
+				bChanged = TRUE;
+			}
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+		return bChanged;
 	}
 
 	void EPropertyEditor::NotifyPropertyChanged(void* InObject, const size_t& InClassHash, const EString& InPropertyName,

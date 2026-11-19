@@ -13,7 +13,7 @@ namespace PigeonEngine
 		// Asset reference by name: the file stores the mesh asset's name and the setter
 		// re-requests it through the asset manager. The asset must already be importable
 		// (the demo/level pipeline) - loading a level never imports new files.
-		AddClassPropertyAccessors<PStaticMeshComponent, EString>(GetClassHashCode<PStaticMeshComponent>(), PE_TEXT("MeshAsset"),
+		AddClassAssetPropertyAccessors<PStaticMeshComponent>(GetClassHashCode<PStaticMeshComponent>(), PE_TEXT("MeshAsset"),
 			[](const PStaticMeshComponent* Component) -> EString
 			{
 				return Component->GetMeshAssetName();
@@ -24,7 +24,12 @@ namespace PigeonEngine
 				{
 					Component->RequestMeshAsset(Value, nullptr);
 				}
+				else
+				{
+					Component->ClearMeshAsset();
+				}
 			},
+			EPropertyAssetType::STATIC_MESH,
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 
@@ -112,6 +117,14 @@ namespace PigeonEngine
 		{
 			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
 		}
+	}
+
+	void PStaticMeshComponent::ClearMeshAsset()
+	{
+		RequestedMeshAssetName = EString();
+		SetMeshAsset(nullptr);
+		SetLocalBound(EBoundAABB(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f), FALSE));
+		SetMaterialSlotsNum(0u);
 	}
 
 	// Render proxy functions START
