@@ -21,6 +21,10 @@ namespace PigeonEngine
 		using FOnPropertyCommitted = TFunction<void(void*, const size_t&, const EString&, const FPropertyValue&, const FPropertyValue&)>;
 
 		void SetPropertyCommittedCallback(const FOnPropertyCommitted& InCallback);
+		// Reports an edit that a custom control already applied, so it enters the same undo
+		// history as a grid edit.
+		void NotifyPropertyChanged(void* InObject, const size_t& InClassHash, const EString& InPropertyName,
+			const FPropertyValue& InBefore, const FPropertyValue& InAfter);
 		// Draws every editable reflected property of the object. Returns TRUE when any value
 		// was applied this frame.
 		BOOL32 DrawProperties(void* InObject, const size_t& InClassHash);

@@ -65,6 +65,21 @@ namespace PigeonEngine
 				EBoundAABB TempActorBound(InActors[i]->GetBounds());
 				if (!(TempActorBound.IsValid))
 				{
+					// Actors without geometry (lights, cameras, navigation volumes, physics-
+					// only actors) have no AABB. Pick them by their origin so they stay
+					// selectable in the viewport; the Details panel edits them like any other
+					// actor.
+					Vector3 OriginScreenCoord;
+					if (InCamera->TransformWorldToScreen(InActors[i]->GetActorWorldLocation(), OriginScreenCoord))
+					{
+						const FLOAT DeltaX = EMath::Abs(OriginScreenCoord.x - MouseScreenCoord.x);
+						const FLOAT DeltaY = EMath::Abs(OriginScreenCoord.y - MouseScreenCoord.y);
+						if ((DeltaX <= 18.0f) && (DeltaY <= 18.0f))
+						{
+							TargetActors.Add(InActors[i]);
+							TargetDepths.Add(OriginScreenCoord.z);
+						}
+					}
 					continue;
 				}
 				TArray<Vector3> TempBoundPoints;
@@ -475,6 +490,10 @@ namespace PigeonEngine
 				EBoundAABB TempBound(InObjects[i]->GetBounds());
 				if (!(TempBound.IsValid))
 				{
+					// No geometry (light, camera, navigation volume, physics-only actor):
+					// draw a small origin marker so the actor has a visible, clickable point.
+					DebugPrimitiveMangaer->DrawCuboid(InObjects[i]->GetActorWorldLocation(), InObjects[i]->GetActorWorldRotation(),
+						10.0f, 10.0f, 10.0f, DebugColor);
 					continue;
 				}
 				const Vector3		BoundWorldLocation(InObjects[i]->GetActorWorldLocation());

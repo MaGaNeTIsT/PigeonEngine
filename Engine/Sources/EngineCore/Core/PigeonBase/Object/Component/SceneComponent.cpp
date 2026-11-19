@@ -7,6 +7,7 @@
 #include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
+#include <Editor/PropertyEditor.h>
 #include <imgui.h>
 #endif
 
@@ -642,7 +643,14 @@ namespace PigeonEngine
 		PActorComponent::GenerateComponentDetail();
 		if (ImGui::Button("Reset Transform"))
 		{
+			FPropertyValue Before;
+			Before.Type = EPropertyValueType::TRANSFORM;
+			Before.TransformValue = this->GetTransform();
 			this->SetComponentTransform(ETransform());
+			FPropertyValue After;
+			After.Type = EPropertyValueType::TRANSFORM;
+			After.TransformValue = this->GetTransform();
+			EPropertyEditor::NotifyPropertyChanged(this, GetClassHashCode(this), EString(PE_TEXT("Transform")), Before, After);
 		}
 	}
 

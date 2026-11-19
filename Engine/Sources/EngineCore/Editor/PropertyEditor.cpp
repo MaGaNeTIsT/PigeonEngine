@@ -462,6 +462,15 @@ namespace PigeonEngine
 		PropertyCommittedCallback = InCallback;
 	}
 
+	void EPropertyEditor::NotifyPropertyChanged(void* InObject, const size_t& InClassHash, const EString& InPropertyName,
+		const FPropertyValue& InBefore, const FPropertyValue& InAfter)
+	{
+		if ((InObject) && (PropertyCommittedCallback))
+		{
+			PropertyCommittedCallback(InObject, InClassHash, InPropertyName, InBefore, InAfter);
+		}
+	}
+
 	BOOL32 EPropertyEditor::DrawProperties(void* InObject, const size_t& InClassHash)
 	{
 		BOOL32 bAnyChanged = FALSE;
