@@ -42,6 +42,7 @@ namespace PigeonEngine
 		FWorldEditorCommandStack WorldCommands;
 		// Level revision the command stack belongs to; a new/loaded level drops history.
 		UINT64 LastLevelRevision = 0u;
+		UINT64 LastCommandRevision = 0u;
 
 		// The controller whose OnMouseEvent currently carries the HandleMouseEvent
 		// subscription. The world can be re-initialized at runtime, which replaces the

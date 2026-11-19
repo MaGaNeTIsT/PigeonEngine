@@ -81,6 +81,15 @@ namespace PigeonEngine
 
 	void EWorldManager::RequestNewLevel()
 	{
+#if ENGINE_EDITOR_ONLY
+		if (bLevelDirty)
+		{
+			PendingDiscardRequest = ELevelRequestType::NEW;
+			PendingDiscardPath = EString();
+			bUnsavedPromptRequested = TRUE;
+			return;
+		}
+#endif
 		PendingLevelRequest = ELevelRequestType::NEW;
 		PendingLevelPath = EString();
 	}
@@ -93,6 +102,15 @@ namespace PigeonEngine
 
 	void EWorldManager::RequestLoadLevel(const EString& InPath)
 	{
+#if ENGINE_EDITOR_ONLY
+		if (bLevelDirty)
+		{
+			PendingDiscardRequest = ELevelRequestType::LOAD;
+			PendingDiscardPath = InPath;
+			bUnsavedPromptRequested = TRUE;
+			return;
+		}
+#endif
 		PendingLevelRequest = ELevelRequestType::LOAD;
 		PendingLevelPath = InPath;
 	}
@@ -113,6 +131,34 @@ namespace PigeonEngine
 	UINT64 EWorldManager::GetLevelRevision() const
 	{
 		return LevelRevision;
+	}
+
+	BOOL32 EWorldManager::IsLevelDirty() const
+	{
+		return bLevelDirty;
+	}
+
+	void EWorldManager::MarkLevelDirty()
+	{
+		bLevelDirty = TRUE;
+	}
+
+	BOOL32 EWorldManager::SaveLevelNow(const EString& InPath)
+	{
+		if ((!this->World) || (InPath.Length() == 0u))
+		{
+			return FALSE;
+		}
+		if (!this->World->SaveLevel(InPath))
+		{
+			return FALSE;
+		}
+		CurrentLevelPath = InPath;
+		bLevelDirty = FALSE;
+#if ENGINE_EDITOR_ONLY
+		bLevelListDirty = TRUE;
+#endif
+		return TRUE;
 	}
 
 	void EWorldManager::ProcessPendingLevelRequest()
@@ -138,6 +184,7 @@ namespace PigeonEngine
 			this->World->SetGravitySettings(FWorldGravitySettings());
 			CurrentLevelPath = EString();
 			LevelRevision += 1u;
+			bLevelDirty = FALSE;
 #if ENGINE_EDITOR_ONLY
 			bLevelListDirty = TRUE;
 #endif
@@ -146,6 +193,7 @@ namespace PigeonEngine
 			if (this->World->SaveLevel(Path))
 			{
 				CurrentLevelPath = Path;
+				bLevelDirty = FALSE;
 #if ENGINE_EDITOR_ONLY
 				bLevelListDirty = TRUE;
 #endif
@@ -156,6 +204,7 @@ namespace PigeonEngine
 			{
 				CurrentLevelPath = Path;
 				LevelRevision += 1u;
+				bLevelDirty = FALSE;
 #if ENGINE_EDITOR_ONLY
 				bLevelListDirty = TRUE;
 #endif
@@ -189,6 +238,23 @@ namespace PigeonEngine
 	void EWorldManager::RequestSaveAsPopup()
 	{
 		bSaveAsPopupRequested = TRUE;
+	}
+
+	void EWorldManager::ExecutePendingDiscardAction()
+	{
+		const ELevelRequestType Request = PendingDiscardRequest;
+		const EString Path = PendingDiscardPath;
+		PendingDiscardRequest = ELevelRequestType::NONE;
+		PendingDiscardPath = EString();
+		bLevelDirty = FALSE;
+		if (Request == ELevelRequestType::NEW)
+		{
+			RequestNewLevel();
+		}
+		else if (Request == ELevelRequestType::LOAD)
+		{
+			RequestLoadLevel(Path);
+		}
 	}
 
 	void EWorldManager::RefreshLevelList()
@@ -230,11 +296,16 @@ namespace PigeonEngine
 		ImGui::SameLine();
 		if (CurrentLevelPath.Length() > 0u)
 		{
-			ImGui::TextUnformatted(*GetLevelFileName(CurrentLevelPath));
+			EString DisplayName = GetLevelFileName(CurrentLevelPath);
+			if (bLevelDirty)
+			{
+				DisplayName += EString(PE_TEXT(" *"));
+			}
+			ImGui::TextUnformatted(*DisplayName);
 		}
 		else
 		{
-			ImGui::TextUnformatted("<unsaved>");
+			ImGui::TextUnformatted(bLevelDirty ? "<unsaved> *" : "<unsaved>");
 		}
 		if (CurrentLevelPath.Length() > 0u)
 		{
@@ -288,6 +359,73 @@ namespace PigeonEngine
 				memcpy(SaveAsNameBuffer, *InitialName, NameLength);
 			}
 			ImGui::OpenPopup("Save Level As");
+		}
+		if (bUnsavedPromptRequested)
+		{
+			bUnsavedPromptRequested = FALSE;
+			EString InitialName = EString(PE_TEXT("NewLevel.PLevel"));
+			if (CurrentLevelPath.Length() > 0u)
+			{
+				InitialName = GetLevelFileName(CurrentLevelPath);
+			}
+			const UINT32 NameLength = EMath::Min(InitialName.Length(), static_cast<UINT32>(sizeof(SaveAsNameBuffer) - 1u));
+			memset(SaveAsNameBuffer, 0, sizeof(SaveAsNameBuffer));
+			if (NameLength > 0u)
+			{
+				memcpy(SaveAsNameBuffer, *InitialName, NameLength);
+			}
+			ImGui::OpenPopup("Unsaved Level Changes");
+		}
+		if (ImGui::BeginPopupModal("Unsaved Level Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("The current level has unsaved changes.");
+			if (CurrentLevelPath.Length() > 0u)
+			{
+				ImGui::TextDisabled("%s", *CurrentLevelPath);
+			}
+			else
+			{
+				ImGui::TextUnformatted("Save as:");
+				ImGui::SetNextItemWidth(320.0f);
+				ImGui::InputText("##UnsavedName", SaveAsNameBuffer, sizeof(SaveAsNameBuffer));
+			}
+
+			if (ImGui::Button("Save"))
+			{
+				EString SavePath = CurrentLevelPath;
+				if (SavePath.Length() == 0u)
+				{
+					EString FileName(SaveAsNameBuffer);
+					if ((FileName.Length() > 0u) && (!HasLevelExtension(FileName)))
+					{
+						FileName += EString(PE_TEXT(".PLevel"));
+					}
+					if (FileName.Length() > 0u)
+					{
+						SavePath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName;
+					}
+				}
+				if (SaveLevelNow(SavePath))
+				{
+					ExecutePendingDiscardAction();
+					ImGui::CloseCurrentPopup();
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Discard"))
+			{
+				bLevelDirty = FALSE;
+				ExecutePendingDiscardAction();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				PendingDiscardRequest = ELevelRequestType::NONE;
+				PendingDiscardPath = EString();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
 		}
 		if (ImGui::BeginPopupModal("Save Level As", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{

@@ -280,6 +280,7 @@ namespace PigeonEngine
 		{
 			LastLevelRevision = WorldManager->GetLevelRevision();
 			WorldCommands.Clear();
+			LastCommandRevision = WorldCommands.GetHistoryRevision();
 		}
 		if (ImGui::BeginMainMenuBar())
 		{
@@ -287,7 +288,6 @@ namespace PigeonEngine
 			{
 				if (ImGui::MenuItem("New Level"))
 				{
-					WorldCommands.Clear();
 					WorldManager->RequestNewLevel();
 				}
 				if (ImGui::MenuItem("Open Level..."))
@@ -374,6 +374,17 @@ namespace PigeonEngine
 		if (EditorProfilerPanel)
 		{
 			EditorProfilerPanel->DrawPanel();
+		}
+
+		// Any command pushed by the panels (property edits, structural edits, gizmo release)
+		// makes the current level dirty.
+		if (WorldCommands.GetHistoryRevision() != LastCommandRevision)
+		{
+			LastCommandRevision = WorldCommands.GetHistoryRevision();
+			if (WorldManager->GetWorld())
+			{
+				WorldManager->MarkLevelDirty();
+			}
 		}
 
 		// A Details/Outline action can destroy the selected component while those panels are

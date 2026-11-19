@@ -35,6 +35,10 @@ namespace PigeonEngine
 		// Bumped whenever a level is created or loaded. The editor uses it to drop undo
 		// commands that point into the previous level's objects.
 		PE_NODISCARD UINT64 GetLevelRevision() const;
+		PE_NODISCARD BOOL32 IsLevelDirty() const;
+		void MarkLevelDirty();
+		// Synchronous save used by the unsaved-changes prompt before it continues a New/Open.
+		BOOL32 SaveLevelNow(const EString& InPath);
 		void ProcessPendingLevelRequest();
 	private:
 		enum class ELevelRequestType : UINT8
@@ -49,6 +53,16 @@ namespace PigeonEngine
 		// Last path that was loaded or saved; empty for a new, never-saved level.
 		EString				CurrentLevelPath;
 		UINT64				LevelRevision = 0u;
+		BOOL32				bLevelDirty = FALSE;
+#if ENGINE_EDITOR_ONLY
+	private:
+		void ExecutePendingDiscardAction();
+	private:
+		// A New/Load request that is waiting for the unsaved-changes prompt.
+		ELevelRequestType	PendingDiscardRequest = ELevelRequestType::NONE;
+		EString				PendingDiscardPath;
+		BOOL32				bUnsavedPromptRequested = FALSE;
+#endif
 #if ENGINE_EDITOR_ONLY
 	private:
 		void RefreshLevelList();

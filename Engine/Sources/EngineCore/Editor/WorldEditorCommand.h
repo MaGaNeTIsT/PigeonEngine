@@ -56,11 +56,15 @@ namespace PigeonEngine
 		BOOL32 Redo();
 
 		PE_NODISCARD FWorldEditorCommandContext& GetContext();
+		// Increments whenever an edit enters or leaves the history; the editor uses it to
+		// mark the level dirty without subscribing to every command type.
+		PE_NODISCARD UINT64 GetHistoryRevision() const;
 	private:
 		TArray<IWorldEditorCommand*> UndoStack;
 		TArray<IWorldEditorCommand*> RedoStack;
 		FWorldEditorCommandContext Context;
 		UINT32 MaxHistory = 100u;
+		UINT64 HistoryRevision = 0u;
 	};
 
 	// UI-facing helpers. Each records the command and performs the mutation that the command

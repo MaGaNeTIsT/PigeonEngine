@@ -374,6 +374,7 @@ namespace PigeonEngine
 		}
 		DeleteCommands(RedoStack);
 		UndoStack.Add(InCommand);
+		HistoryRevision += 1u;
 		if (UndoStack.Num<UINT32>() > MaxHistory)
 		{
 			delete UndoStack[0];
@@ -415,6 +416,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		RedoStack.Add(Command);
+		HistoryRevision += 1u;
 		return TRUE;
 	}
 
@@ -432,12 +434,18 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		UndoStack.Add(Command);
+		HistoryRevision += 1u;
 		return TRUE;
 	}
 
 	FWorldEditorCommandContext& FWorldEditorCommandStack::GetContext()
 	{
 		return Context;
+	}
+
+	UINT64 FWorldEditorCommandStack::GetHistoryRevision() const
+	{
+		return HistoryRevision;
 	}
 
 	BOOL32 PushSpawnActorCommand(FWorldEditorCommandStack& InStack, PWorld& InWorld, PActor* InActor)
