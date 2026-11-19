@@ -110,6 +110,12 @@ namespace PigeonEngine
 		void			DrawCone(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor = Color4::Black());
 		void			DrawCylinder(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InBottomRadius, const FLOAT InTopRadius, const Color4& InDebugColor = Color4::Black());
 		void			DrawCapsule(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InBottomRadius, const FLOAT InTopRadius, const Color4& InDebugColor = Color4::Black());
+		// Gizmo overlay: always-on-top geometry. Kept in separate arrays from the normal debug
+		// primitives and drawn with a depth-disabled pipeline after them, so the gizmo cannot be
+		// hidden by the selected object or by the bounds/wireframe it sits inside. The overlay
+		// does not write depth, so later passes (water) are unaffected.
+		void			DrawSingleLineOverlay(const Vector3& InPos0, const Vector3& InPos1, const Color4& InDebugColor = Color4::Black());
+		void			DrawConeOverlay(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor = Color4::Black());
 		void			DrawCustom(const EString& InCustomName, const Matrix4x4& InLocalToWorld, const Color4& InDebugColor = Color4::Black());
 	public:
 		void			CreatePrimitive(RDebugWireframeType InType);
@@ -162,10 +168,14 @@ namespace PigeonEngine
 		TAtomic<BOOL32>						bDebugWireframeVisible;
 		RStructuredBuffer					PrimitiveTransformsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		RStructuredBuffer					PrimitiveColorsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
+		RStructuredBuffer					OverlayPrimitiveTransformsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
+		RStructuredBuffer					OverlayPrimitiveColorsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		TMap<EString, RStructuredBuffer>	CustomPrimitiveTransformsBuffer;
 		TMap<EString, RStructuredBuffer>	CustomPrimitiveColorsBuffer;
 		TArray<Matrix4x4>					PrimitiveTransforms[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		TArray<Color4>						PrimitiveColors[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
+		TArray<Matrix4x4>					OverlayPrimitiveTransforms[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
+		TArray<Color4>						OverlayPrimitiveColors[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		TMap<EString, TArray<Matrix4x4>>	CustomPrimitiveTransforms;
 		TMap<EString, TArray<Color4>>		CustomPrimitiveColors;
 		// The pass's own draw block. The wireframe program declares it, and this pass is its

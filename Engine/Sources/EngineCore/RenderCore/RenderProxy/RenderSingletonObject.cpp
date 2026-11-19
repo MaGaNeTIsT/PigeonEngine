@@ -558,6 +558,8 @@ namespace PigeonEngine
 			{
 				PrimitiveTransforms[i].Empty();
 				PrimitiveColors[i].Empty();
+				OverlayPrimitiveTransforms[i].Empty();
+				OverlayPrimitiveColors[i].Empty();
 			}
 			for (TMap<EString, TArray<Matrix4x4>>::TIterator It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
 			{
@@ -579,6 +581,7 @@ namespace PigeonEngine
 			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
 			{
 				Check(PrimitiveTransforms[i].Num() == PrimitiveColors[i].Num());
+				Check(OverlayPrimitiveTransforms[i].Num() == OverlayPrimitiveColors[i].Num());
 			}
 			Check(CustomPrimitiveTransforms.Num() == CustomPrimitiveColors.Num());
 #endif
@@ -618,6 +621,30 @@ namespace PigeonEngine
 		FRenderPassRegistry::FillPipelineStateDesc(
 			FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_FORWARD), _GDebugWireframePrimitiveProgram, Desc);
 		Desc.Topology = RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST;
+		return Renderer->GetPipelineStateCache().GetOrCreateGraphics(Desc);
+	}
+	// The gizmo's pipeline: the same program and target shape as the debug overlay, but depth
+	// testing is off and depth writes are dropped. That is what keeps the gizmo readable when
+	// it sits inside the selected mesh and prevents its lines from cutting holes in later
+	// passes such as water.
+	static IRRHIPipelineState* ResolveDebugWireframeOverlayPipelineState()
+	{
+		if (!_GDebugWireframePrimitiveProgram)
+		{
+			return nullptr;
+		}
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
+		if (!Renderer)
+		{
+			return nullptr;
+		}
+		RGraphicsPipelineStateDesc Desc;
+		FRenderPassRegistry::FillPipelineStateDesc(
+			FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_FORWARD), _GDebugWireframePrimitiveProgram, Desc);
+		Desc.Topology = RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST;
+		Desc.Depth.DepthEnable = FALSE;
+		Desc.Depth.DepthWriteMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO;
+		Desc.Depth.DepthFunc = RComparisonFunctionType::COMPARISON_ALWAYS;
 		return Renderer->GetPipelineStateCache().GetOrCreateGraphics(Desc);
 	}
 	// Binds one debug primitive with the instance data of this frame and draws it. The vertex
@@ -794,63 +821,127 @@ namespace PigeonEngine
 				}
 			}
 
-			for (TMap<EString, TArray<Matrix4x4>>::TIterator It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
-			{
-				const EString& Name = (It->first);
+				for (TMap<EString, TArray<Matrix4x4>>::TIterator It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
+				{
+					const EString& Name = (It->first);
 
-				const TArray<Matrix4x4>& CustomTransforms = (It->second);
-				TArray<Color4>* CustomColors = CustomPrimitiveColors.FindValueAsPtr(Name);
-				Check(((!!CustomColors) && (CustomColors->Num() == CustomTransforms.Num())));
+					const TArray<Matrix4x4>& CustomTransforms = (It->second);
+					TArray<Color4>* CustomColors = CustomPrimitiveColors.FindValueAsPtr(Name);
+					Check(((!!CustomColors) && (CustomColors->Num() == CustomTransforms.Num())));
 
-				if (!(CustomPrimitiveTransformsBuffer.ContainsKey(Name)))
-				{
-					CustomPrimitiveTransformsBuffer.Add(Name, RStructuredBuffer());
-				}
-				if (!(CustomPrimitiveColorsBuffer.ContainsKey(Name)))
-				{
-					CustomPrimitiveColorsBuffer.Add(Name, RStructuredBuffer());
-				}
-				RStructuredBuffer* TransformsBuffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
-				RStructuredBuffer* ColorsBuffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
-				if ((!TransformsBuffer) || (!ColorsBuffer))
-				{
-					continue;
-				}
-				if (!(TransformsBuffer->IsRenderResourceValid()))
-				{
-					CreateDebugStructuredBuffer((*TransformsBuffer), sizeof(Matrix4x4), PrimitiveDrawableMaxNum);
-				}
-				if (!(ColorsBuffer->IsRenderResourceValid()))
-				{
-					CreateDebugStructuredBuffer((*ColorsBuffer), sizeof(Color4), PrimitiveDrawableMaxNum);
-				}
-
-				if (const UINT32 InstanceNum = CustomTransforms.Num<UINT32>(); InstanceNum > 0u)
-				{
-					Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
-					Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
-
-					for (UINT32 Index = 0u; (Index < InstanceNum) && (Index < PrimitiveDrawableMaxNum); Index++)
+					if (!(CustomPrimitiveTransformsBuffer.ContainsKey(Name)))
 					{
-						TempDataTransforms[Index] = CustomTransforms[Index];
-						TempDataColor4s[Index] = (*CustomColors)[Index];
+						CustomPrimitiveTransformsBuffer.Add(Name, RStructuredBuffer());
+					}
+					if (!(CustomPrimitiveColorsBuffer.ContainsKey(Name)))
+					{
+						CustomPrimitiveColorsBuffer.Add(Name, RStructuredBuffer());
+					}
+					RStructuredBuffer* TransformsBuffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
+					RStructuredBuffer* ColorsBuffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
+					if ((!TransformsBuffer) || (!ColorsBuffer))
+					{
+						continue;
+					}
+					if (!(TransformsBuffer->IsRenderResourceValid()))
+					{
+						CreateDebugStructuredBuffer((*TransformsBuffer), sizeof(Matrix4x4), PrimitiveDrawableMaxNum);
+					}
+					if (!(ColorsBuffer->IsRenderResourceValid()))
+					{
+						CreateDebugStructuredBuffer((*ColorsBuffer), sizeof(Color4), PrimitiveDrawableMaxNum);
 					}
 
-					TransformsBuffer->UploadDataViaRHI(RenderDevice, TempDataTransforms, TransformSize, 0u);
-					ColorsBuffer->UploadDataViaRHI(RenderDevice, TempDataColor4s, ColorSize, 0u);
-
-					delete[]TempDataTransforms;
-					delete[]TempDataColor4s;
-
-					RDebugWireframePrimitive* Primitive = DebugWireframeCustomPrimitives.FindValueAsPtr(Name);
-					if (Primitive)
+					if (const UINT32 InstanceNum = CustomTransforms.Num<UINT32>(); InstanceNum > 0u)
 					{
-						DrawDebugPrimitive(CmdList, (*Primitive), (*TransformsBuffer), (*ColorsBuffer), InstanceNum, VertexPlan);
+						Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
+						Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
+
+						for (UINT32 Index = 0u; (Index < InstanceNum) && (Index < PrimitiveDrawableMaxNum); Index++)
+						{
+							TempDataTransforms[Index] = CustomTransforms[Index];
+							TempDataColor4s[Index] = (*CustomColors)[Index];
+						}
+
+						TransformsBuffer->UploadDataViaRHI(RenderDevice, TempDataTransforms, TransformSize, 0u);
+						ColorsBuffer->UploadDataViaRHI(RenderDevice, TempDataColor4s, ColorSize, 0u);
+
+						delete[]TempDataTransforms;
+						delete[]TempDataColor4s;
+
+						RDebugWireframePrimitive* Primitive = DebugWireframeCustomPrimitives.FindValueAsPtr(Name);
+						if (Primitive)
+						{
+							DrawDebugPrimitive(CmdList, (*Primitive), (*TransformsBuffer), (*ColorsBuffer), InstanceNum, VertexPlan);
+						}
+					}
+				}
+
+				// The gizmo overlay last: depth testing is off and depth writes are dropped, so
+				// it stays readable inside the selected object and cannot affect later passes.
+				IRRHIPipelineState* OverlayPipelineState = ResolveDebugWireframeOverlayPipelineState();
+				if (!OverlayPipelineState)
+				{
+					ReportSkippedDraw(EString(PE_TEXT("the gizmo overlay")), EString(PE_TEXT("its depth-disabled pipeline state could not be built")));
+				}
+				else
+				{
+					CmdList->SetPipelineState(OverlayPipelineState);
+					RSceneRenderer* OverlayPassRenderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
+					if (OverlayPassRenderer)
+					{
+						OverlayPassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram, InView);
+					}
+					DrawParameterBlock.Upload(RenderDevice);
+					DrawParameterBlock.Bind(CmdList, *_GDebugWireframePrimitiveProgram);
+					if (_GDebugWireframePrimitiveInstance)
+					{
+						_GDebugWireframePrimitiveInstance->Prepare();
+						RShaderParameterBuffers* MaterialBuffers = ResolveShaderParameterBuffers(*_GDebugWireframePrimitiveInstance);
+						if (MaterialBuffers)
+						{
+							(void)PublishShaderParameters(CmdList, RenderDevice
+								, const_cast<EShaderParameterSet&>(_GDebugWireframePrimitiveInstance->GetParameters())
+								, *MaterialBuffers, *_GDebugWireframePrimitiveProgram
+								, ENGINE_SHADER_STAGE_MASK_PIXEL, EName(SHADER_BINDING_SCOPE_MATERIAL));
+						}
+					}
+
+					for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
+					{
+						if (!(OverlayPrimitiveTransformsBuffer[i].IsRenderResourceValid()))
+						{
+							CreateDebugStructuredBuffer(OverlayPrimitiveTransformsBuffer[i], sizeof(Matrix4x4), PrimitiveDrawableMaxNum);
+						}
+						if (!(OverlayPrimitiveColorsBuffer[i].IsRenderResourceValid()))
+						{
+							CreateDebugStructuredBuffer(OverlayPrimitiveColorsBuffer[i], sizeof(Color4), PrimitiveDrawableMaxNum);
+						}
+
+						const TArray<Matrix4x4>& OverlayTransforms = OverlayPrimitiveTransforms[i];
+						const TArray<Color4>& OverlayColors = OverlayPrimitiveColors[i];
+						Check(OverlayTransforms.Num() == OverlayColors.Num());
+						if (const UINT32 OverlayInstanceNum = OverlayTransforms.Num<UINT32>(); OverlayInstanceNum > 0u)
+						{
+							Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
+							Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
+							for (UINT32 Index = 0u; (Index < OverlayInstanceNum) && (Index < PrimitiveDrawableMaxNum); Index++)
+							{
+								TempDataTransforms[Index] = OverlayTransforms[Index];
+								TempDataColor4s[Index] = OverlayColors[Index];
+							}
+							OverlayPrimitiveTransformsBuffer[i].UploadDataViaRHI(RenderDevice, TempDataTransforms, TransformSize, 0u);
+							OverlayPrimitiveColorsBuffer[i].UploadDataViaRHI(RenderDevice, TempDataColor4s, ColorSize, 0u);
+							delete[]TempDataTransforms;
+							delete[]TempDataColor4s;
+
+							DrawDebugPrimitive(CmdList, DebugWireframePrimitives[i]
+								, OverlayPrimitiveTransformsBuffer[i], OverlayPrimitiveColorsBuffer[i], OverlayInstanceNum, VertexPlan);
+						}
 					}
 				}
 			}
 		}
-	}
 	void RDebugWireframePrimitiveManager::DrawSingleLine(const Vector3& InPos0, const Vector3& InPos1, const Color4& InDebugColor)
 	{
 		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SINGLELINE - 1u;
@@ -948,6 +1039,62 @@ namespace PigeonEngine
 		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE - 1u;
 		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
 		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		Vector3 Direction = InTopLocation - InBottomCenterLocation;
+		FLOAT DirectionLength = Direction.Length();
+		if (DirectionLength <= 1e-3f)
+		{
+			Direction = Vector3::XVector();
+			DirectionLength = 1e-3f;
+		}
+		else
+		{
+			Direction = Direction / DirectionLength;
+		}
+
+		RequireCommands[BackSlotIndex].EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InBottomCenterLocation, MakeQuaternion(Vector3::YVector(), Direction), Vector3(InRadius, DirectionLength, InRadius)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawSingleLineOverlay(const Vector3& InPos0, const Vector3& InPos1, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SINGLELINE - 1u;
+		TArray<Matrix4x4>& TargetTransforms = OverlayPrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = OverlayPrimitiveColors[TargetIndex];
+
+		Vector3 Direction = InPos1 - InPos0;
+		FLOAT DirectionLength = Direction.Length();
+		if (DirectionLength <= 1e-3f)
+		{
+			Direction = Vector3::XVector();
+			DirectionLength = 1e-3f;
+		}
+		else
+		{
+			Direction = Direction / DirectionLength;
+		}
+
+		RequireCommands[BackSlotIndex].EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InPos0, MakeQuaternion(Vector3::YVector(), Direction), Vector3(1.f, DirectionLength, 1.f)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawConeOverlay(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE - 1u;
+		TArray<Matrix4x4>& TargetTransforms = OverlayPrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = OverlayPrimitiveColors[TargetIndex];
 
 		Vector3 Direction = InTopLocation - InBottomCenterLocation;
 		FLOAT DirectionLength = Direction.Length();
