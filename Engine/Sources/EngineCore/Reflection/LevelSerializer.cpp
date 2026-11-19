@@ -77,6 +77,24 @@ namespace PigeonEngine
 			}
 		};
 
+		TArray<PActorComponent*> CollectSerializedComponents(const PActor& InActor)
+		{
+			// Object-reference indexes are file-local component indexes. The writer skips
+			// components whose factory state cannot be recreated, so the reference map has to
+			// use the same filtered list or every later index shifts.
+			TArray<PActorComponent*> Result;
+			const TArray<PActorComponent*> AllComponents = InActor.GetAllComponents();
+			for (UINT32 ComponentIndex = 0u, ComponentNum = AllComponents.Num<UINT32>(); ComponentIndex < ComponentNum; ComponentIndex++)
+			{
+				PActorComponent* Component = AllComponents[ComponentIndex];
+				if (Component && Component->ShouldSerializeToLevel())
+				{
+					Result.Add(Component);
+				}
+			}
+			return Result;
+		}
+
 		void BuildReferenceMap(const TArray<PActor*>& InActors, TMap<ObjectIdentityType, EString>& OutReferences)
 		{
 			for (UINT32 ActorIndex = 0u, ActorNum = InActors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
@@ -89,13 +107,10 @@ namespace PigeonEngine
 				const UINT32 ActorFileId = ActorIndex + 1u;
 				OutReferences.Add(Actor->GetUniqueID(), MakeObjectReferenceString(ActorFileId, 0u));
 
-				const TArray<PActorComponent*> Components = Actor->GetAllComponents();
+				const TArray<PActorComponent*> Components = CollectSerializedComponents(*Actor);
 				for (UINT32 ComponentIndex = 0u, ComponentNum = Components.Num<UINT32>(); ComponentIndex < ComponentNum; ComponentIndex++)
 				{
-					if (Components[ComponentIndex])
-					{
-						OutReferences.Add(Components[ComponentIndex]->GetUniqueID(), MakeObjectReferenceString(ActorFileId, ComponentIndex + 1u));
-					}
+					OutReferences.Add(Components[ComponentIndex]->GetUniqueID(), MakeObjectReferenceString(ActorFileId, ComponentIndex + 1u));
 				}
 			}
 		}
@@ -151,16 +166,7 @@ namespace PigeonEngine
 			EClassPropertyRegistry::SerializeObject(Writer, ActorClassHash, const_cast<PActor*>(&InActor));
 			Writer.EndObject();
 
-			const TArray<PActorComponent*> AllComponents = InActor.GetAllComponents();
-			TArray<PActorComponent*> Components;
-			for (UINT32 ComponentIndex = 0u, ComponentNum = AllComponents.Num<UINT32>(); ComponentIndex < ComponentNum; ComponentIndex++)
-			{
-				PActorComponent* Component = AllComponents[ComponentIndex];
-				if (Component && Component->ShouldSerializeToLevel())
-				{
-					Components.Add(Component);
-				}
-			}
+			const TArray<PActorComponent*> Components = CollectSerializedComponents(InActor);
 			UINT32 ComponentCount = Components.Num<UINT32>();
 			Writer.BeginArray(PE_TEXT("Components"), ComponentCount);
 			for (UINT32 ComponentIndex = 0u; ComponentIndex < ComponentCount; ComponentIndex++)
