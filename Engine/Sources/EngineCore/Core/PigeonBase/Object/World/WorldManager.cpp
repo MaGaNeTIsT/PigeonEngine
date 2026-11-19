@@ -58,8 +58,14 @@ namespace PigeonEngine
 		// The default demo is a level asset now. A missing file is a warning, not a fallback:
 		// the world stays empty and the editor can create content or load another level.
 		const EString DefaultLevelPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("Demo.PLevel"));
-		if (!this->World->LoadLevel(DefaultLevelPath))
+		if (this->World->LoadLevel(DefaultLevelPath))
 		{
+			CurrentLevelPath = DefaultLevelPath;
+			LevelRevision += 1u;
+		}
+		else
+		{
+			CurrentLevelPath = EString();
 			PE_LOG_WARN(EString(PE_TEXT("World: default level missing or failed to load: ")) + DefaultLevelPath);
 		}
 	}
@@ -91,6 +97,24 @@ namespace PigeonEngine
 		PendingLevelPath = InPath;
 	}
 
+	void EWorldManager::RequestReloadLevel()
+	{
+		if (CurrentLevelPath.Length() > 0u)
+		{
+			RequestLoadLevel(CurrentLevelPath);
+		}
+	}
+
+	const EString& EWorldManager::GetCurrentLevelPath() const
+	{
+		return CurrentLevelPath;
+	}
+
+	UINT64 EWorldManager::GetLevelRevision() const
+	{
+		return LevelRevision;
+	}
+
 	void EWorldManager::ProcessPendingLevelRequest()
 	{
 		if ((!this->World) || (PendingLevelRequest == ELevelRequestType::NONE))
@@ -112,12 +136,30 @@ namespace PigeonEngine
 #endif
 			this->World->SetUpVector(Vector3::YVector());
 			this->World->SetGravitySettings(FWorldGravitySettings());
+			CurrentLevelPath = EString();
+			LevelRevision += 1u;
+#if ENGINE_EDITOR_ONLY
+			bLevelListDirty = TRUE;
+#endif
 			break;
 		case ELevelRequestType::SAVE:
-			this->World->SaveLevel(Path);
+			if (this->World->SaveLevel(Path))
+			{
+				CurrentLevelPath = Path;
+#if ENGINE_EDITOR_ONLY
+				bLevelListDirty = TRUE;
+#endif
+			}
 			break;
 		case ELevelRequestType::LOAD:
-			this->World->LoadLevel(Path);
+			if (this->World->LoadLevel(Path))
+			{
+				CurrentLevelPath = Path;
+				LevelRevision += 1u;
+#if ENGINE_EDITOR_ONLY
+				bLevelListDirty = TRUE;
+#endif
+			}
 			break;
 		default:
 			break;
@@ -125,9 +167,218 @@ namespace PigeonEngine
 	}
 
 #if ENGINE_EDITOR_ONLY
+	namespace
+	{
+		EString GetLevelFileName(const EString& InPath)
+		{
+			const INT32 Separator = InPath.RightFind(EString(PE_TEXT("/")));
+			return (Separator >= 0) ? InPath.Right(InPath.Length() - static_cast<UINT32>(Separator) - 1u) : InPath;
+		}
+
+		BOOL32 HasLevelExtension(const EString& InName)
+		{
+			return ((InName.Length() >= 7u) && (InName.Right(7u) == EString(PE_TEXT(".PLevel")))) ? TRUE : FALSE;
+		}
+	}
+
+	void EWorldManager::RequestOpenLevelPopup()
+	{
+		bOpenLevelPopupRequested = TRUE;
+	}
+
+	void EWorldManager::RequestSaveAsPopup()
+	{
+		bSaveAsPopupRequested = TRUE;
+	}
+
+	void EWorldManager::RefreshLevelList()
+	{
+		LevelFiles.Empty();
+		TArray<EString> Folders;
+		TArray<EString> Files;
+		if (EFileHelper::ScanDirectory(EString(EBaseSettings::ENGINE_LEVEL_PATH), Folders, Files, FALSE))
+		{
+			for (UINT32 Index = 0u, Num = Files.Num<UINT32>(); Index < Num; Index++)
+			{
+				if (HasLevelExtension(Files[Index]))
+				{
+					LevelFiles.Add(Files[Index]);
+				}
+			}
+		}
+		// ScanDirectory's order is filesystem order; sort so the list is stable.
+		for (INT32 Index = 1, Num = LevelFiles.Num<INT32>(); Index < Num; Index++)
+		{
+			for (INT32 Insert = Index; (Insert > 0) && (LevelFiles[Insert] < LevelFiles[Insert - 1]); Insert--)
+			{
+				const EString Temp = LevelFiles[Insert];
+				LevelFiles[Insert] = LevelFiles[Insert - 1];
+				LevelFiles[Insert - 1] = Temp;
+			}
+		}
+		bLevelListDirty = FALSE;
+	}
+
+	void EWorldManager::DrawLevelPanelContents()
+	{
+		if (bLevelListDirty)
+		{
+			RefreshLevelList();
+		}
+
+		ImGui::TextUnformatted("Current level:");
+		ImGui::SameLine();
+		if (CurrentLevelPath.Length() > 0u)
+		{
+			ImGui::TextUnformatted(*GetLevelFileName(CurrentLevelPath));
+		}
+		else
+		{
+			ImGui::TextUnformatted("<unsaved>");
+		}
+		if (CurrentLevelPath.Length() > 0u)
+		{
+			ImGui::TextDisabled("%s", *CurrentLevelPath);
+		}
+
+		if (ImGui::Button("New"))
+		{
+			RequestNewLevel();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Save"))
+		{
+			if (CurrentLevelPath.Length() > 0u)
+			{
+				RequestSaveLevel(CurrentLevelPath);
+			}
+			else
+			{
+				RequestSaveAsPopup();
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Save As..."))
+		{
+			RequestSaveAsPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Reload"))
+		{
+			RequestReloadLevel();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Refresh"))
+		{
+			bLevelListDirty = TRUE;
+		}
+
+		if (bSaveAsPopupRequested)
+		{
+			bSaveAsPopupRequested = FALSE;
+			EString InitialName = EString(PE_TEXT("NewLevel.PLevel"));
+			if (CurrentLevelPath.Length() > 0u)
+			{
+				InitialName = GetLevelFileName(CurrentLevelPath);
+			}
+			const UINT32 NameLength = EMath::Min(InitialName.Length(), static_cast<UINT32>(sizeof(SaveAsNameBuffer) - 1u));
+			memset(SaveAsNameBuffer, 0, sizeof(SaveAsNameBuffer));
+			if (NameLength > 0u)
+			{
+				memcpy(SaveAsNameBuffer, *InitialName, NameLength);
+			}
+			ImGui::OpenPopup("Save Level As");
+		}
+		if (ImGui::BeginPopupModal("Save Level As", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("File name (saved under Assets/Levels):");
+			ImGui::SetNextItemWidth(320.0f);
+			ImGui::InputText("##SaveAsName", SaveAsNameBuffer, sizeof(SaveAsNameBuffer));
+			if (ImGui::Button("Save"))
+			{
+				EString FileName(SaveAsNameBuffer);
+				if ((FileName.Length() > 0u) && (!HasLevelExtension(FileName)))
+				{
+					FileName += EString(PE_TEXT(".PLevel"));
+				}
+				if (FileName.Length() > 0u)
+				{
+					RequestSaveLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
+				}
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		if (bOpenLevelPopupRequested)
+		{
+			bOpenLevelPopupRequested = FALSE;
+			bLevelListDirty = TRUE;
+			ImGui::OpenPopup("Open Level");
+		}
+		if (ImGui::BeginPopupModal("Open Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			if (bLevelListDirty)
+			{
+				RefreshLevelList();
+			}
+			if (LevelFiles.Num<UINT32>() == 0u)
+			{
+				ImGui::TextUnformatted("No .PLevel files under Assets/Levels.");
+			}
+			for (UINT32 Index = 0u, Num = LevelFiles.Num<UINT32>(); Index < Num; Index++)
+			{
+				const EString& FileName = LevelFiles[Index];
+				ImGui::PushID(Index);
+				if (ImGui::Selectable(*FileName))
+				{
+					RequestLoadLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::PopID();
+			}
+			ImGui::Separator();
+			if (ImGui::Button("Cancel"))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::Separator();
+		ImGui::TextUnformatted("Levels");
+		if (ImGui::BeginChild("LevelList", ImVec2(0.0f, 180.0f), TRUE))
+		{
+			for (UINT32 Index = 0u, Num = LevelFiles.Num<UINT32>(); Index < Num; Index++)
+			{
+				const EString& FileName = LevelFiles[Index];
+				ImGui::PushID(Index);
+				const BOOL32 bCurrent = (CurrentLevelPath.Length() > 0u) &&
+					(GetLevelFileName(CurrentLevelPath) == FileName) ? TRUE : FALSE;
+				if (ImGui::Selectable(*FileName, bCurrent))
+				{
+					RequestLoadLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
+				}
+				if (bCurrent)
+				{
+					ImGui::SameLine();
+					ImGui::TextDisabled("(current)");
+				}
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndChild();
+	}
+#endif
+
+#if ENGINE_EDITOR_ONLY
 	void EWorldManager::EditorInit()
 	{
-
 	}
 
 	void EWorldManager::EditorUpdate()
@@ -136,6 +387,13 @@ namespace PigeonEngine
 		{
 			return;
 		}
+
+		// ---- Level panel: current file plus New/Open/Save/Save As/Reload ----
+		ImGui::SetNextWindowSize(ImVec2(360, 330), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(300, 30), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Level");
+		this->DrawLevelPanelContents();
+		ImGui::End();
 
 		// ---- World Outline panel ----
 		ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_FirstUseEver);

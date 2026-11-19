@@ -28,6 +28,13 @@ namespace PigeonEngine
 		void RequestNewLevel();
 		void RequestSaveLevel(const EString& InPath);
 		void RequestLoadLevel(const EString& InPath);
+		void RequestReloadLevel();
+		void RequestOpenLevelPopup();
+		void RequestSaveAsPopup();
+		PE_NODISCARD const EString& GetCurrentLevelPath() const;
+		// Bumped whenever a level is created or loaded. The editor uses it to drop undo
+		// commands that point into the previous level's objects.
+		PE_NODISCARD UINT64 GetLevelRevision() const;
 		void ProcessPendingLevelRequest();
 	private:
 		enum class ELevelRequestType : UINT8
@@ -39,6 +46,20 @@ namespace PigeonEngine
 		};
 		ELevelRequestType	PendingLevelRequest = ELevelRequestType::NONE;
 		EString				PendingLevelPath;
+		// Last path that was loaded or saved; empty for a new, never-saved level.
+		EString				CurrentLevelPath;
+		UINT64				LevelRevision = 0u;
+#if ENGINE_EDITOR_ONLY
+	private:
+		void RefreshLevelList();
+		void DrawLevelPanelContents();
+	private:
+		TArray<EString>		LevelFiles;
+		BOOL32				bLevelListDirty = TRUE;
+		BOOL32				bOpenLevelPopupRequested = FALSE;
+		BOOL32				bSaveAsPopupRequested = FALSE;
+		CHAR				SaveAsNameBuffer[256] = {};
+#endif
 	private:
 		PWorld*  World;
 

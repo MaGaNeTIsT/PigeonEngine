@@ -276,6 +276,11 @@ namespace PigeonEngine
 		{
 			MenuWorld->SetEditorCommandStack(&WorldCommands);
 		}
+		if (WorldManager->GetLevelRevision() != LastLevelRevision)
+		{
+			LastLevelRevision = WorldManager->GetLevelRevision();
+			WorldCommands.Clear();
+		}
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -285,15 +290,28 @@ namespace PigeonEngine
 					WorldCommands.Clear();
 					WorldManager->RequestNewLevel();
 				}
-				const EString DefaultLevelPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("Demo.PLevel"));
+				if (ImGui::MenuItem("Open Level..."))
+				{
+					WorldManager->RequestOpenLevelPopup();
+				}
 				if (ImGui::MenuItem("Save Level"))
 				{
-					WorldManager->RequestSaveLevel(DefaultLevelPath);
+					if (WorldManager->GetCurrentLevelPath().Length() > 0u)
+					{
+						WorldManager->RequestSaveLevel(WorldManager->GetCurrentLevelPath());
+					}
+					else
+					{
+						WorldManager->RequestSaveAsPopup();
+					}
 				}
-				if (ImGui::MenuItem("Load Level"))
+				if (ImGui::MenuItem("Save Level As..."))
 				{
-					WorldCommands.Clear();
-					WorldManager->RequestLoadLevel(DefaultLevelPath);
+					WorldManager->RequestSaveAsPopup();
+				}
+				if (ImGui::MenuItem("Reload Level"))
+				{
+					WorldManager->RequestReloadLevel();
 				}
 				ImGui::EndMenu();
 			}
