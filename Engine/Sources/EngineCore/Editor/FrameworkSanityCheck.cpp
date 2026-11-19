@@ -1596,6 +1596,120 @@ namespace PigeonEngine
 		return (bHitOk && bDragOk) ? TRUE : FALSE;
 	}
 
+	// A plain C++ class used only by the container-property scenario: it exercises the
+	// TArray/TMap serialization and the editor value metadata without polluting the OCA class
+	// registry.
+	struct FSanityContainerData
+	{
+		TArray<INT32> Numbers;
+		TMap<EString, FLOAT> Weights;
+	};
+
+	static BOOL32 CheckContainerPropertySerialization()
+	{
+		static BOOL32 bPropertiesRegistered = FALSE;
+		const size_t ClassHash = GetClassHashCode<FSanityContainerData>();
+		if (!bPropertiesRegistered)
+		{
+			AddClassPropertyAccessors<FSanityContainerData, TArray<INT32>>(ClassHash, PE_TEXT("Numbers"),
+				[](const FSanityContainerData* Data) -> TArray<INT32> { return Data->Numbers; },
+				[](FSanityContainerData* Data, const TArray<INT32>& Value) -> void { Data->Numbers = Value; },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyAccessors<FSanityContainerData, TMap<EString, FLOAT>>(ClassHash, PE_TEXT("Weights"),
+				[](const FSanityContainerData* Data) -> TMap<EString, FLOAT> { return Data->Weights; },
+				[](FSanityContainerData* Data, const TMap<EString, FLOAT>& Value) -> void { Data->Weights = Value; },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			bPropertiesRegistered = TRUE;
+		}
+
+		FSanityContainerData Source;
+		Source.Numbers.Add(1);
+		Source.Numbers.Add(2);
+		Source.Numbers.Add(3);
+		Source.Weights.Add(EString(PE_TEXT("A")), 1.5f);
+		Source.Weights.Add(EString(PE_TEXT("B")), 2.5f);
+
+		// Editor metadata: the array element type and the map key/value types are available
+		// without knowing the concrete C++ class.
+		const FProperty* NumberProperty = nullptr;
+		const FProperty* WeightProperty = nullptr;
+		EClassPropertyRegistry::ForEachProperty(ClassHash, [&NumberProperty, &WeightProperty](const FProperty& Property) -> void
+		{
+			if (Property.Name == EString(PE_TEXT("Numbers")))
+			{
+				NumberProperty = &Property;
+			}
+			else if (Property.Name == EString(PE_TEXT("Weights")))
+			{
+				WeightProperty = &Property;
+			}
+		});
+
+		BOOL32 bMetadataOk = FALSE;
+		if (NumberProperty && WeightProperty && NumberProperty->GetValue && WeightProperty->GetValue)
+		{
+			FPropertyValue NumbersValue;
+			NumberProperty->GetValue(&Source, NumbersValue);
+			FPropertyValue WeightsValue;
+			WeightProperty->GetValue(&Source, WeightsValue);
+			bMetadataOk = (NumbersValue.Type == EPropertyValueType::ARRAY) &&
+				(NumbersValue.ElementType == EPropertyValueType::INT32) &&
+				(NumbersValue.ArrayValues.Num<UINT32>() == 3u) &&
+				(WeightsValue.Type == EPropertyValueType::MAP) &&
+				(WeightsValue.KeyType == EPropertyValueType::STRING) &&
+				(WeightsValue.MapValueType == EPropertyValueType::FLOAT) &&
+				(WeightsValue.MapEntries.Num<UINT32>() == 2u) ? TRUE : FALSE;
+
+			FPropertyElement NewNumber;
+			NewNumber.Type = EPropertyValueType::INT32;
+			NewNumber.IntValue = 4;
+			NumbersValue.ArrayValues.Add(NewNumber);
+			NumberProperty->SetValue(&Source, NumbersValue);
+
+			FPropertyMapEntry NewWeight;
+			NewWeight.Key.Type = EPropertyValueType::STRING;
+			NewWeight.Key.StringValue = EString(PE_TEXT("C"));
+			NewWeight.Value.Type = EPropertyValueType::FLOAT;
+			NewWeight.Value.DoubleValue = 3.5;
+			WeightsValue.MapEntries.Add(NewWeight);
+			WeightProperty->SetValue(&Source, WeightsValue);
+		}
+
+		CJsonObject Document;
+		EJsonArchiveWriter Writer(Document);
+		EClassPropertyRegistry::SerializeObject(Writer, ClassHash, &Source);
+
+		FSanityContainerData Target;
+		EJsonArchiveReader Reader(Document);
+		EClassPropertyRegistry::SerializeObject(Reader, ClassHash, &Target);
+
+		FLOAT AValue = 0.f;
+		FLOAT BValue = 0.f;
+		FLOAT CValue = 0.f;
+		const BOOL32 bMapValues = Target.Weights.FindValue(EString(PE_TEXT("A")), AValue) &&
+			Target.Weights.FindValue(EString(PE_TEXT("B")), BValue) &&
+			Target.Weights.FindValue(EString(PE_TEXT("C")), CValue) ? TRUE : FALSE;
+		const BOOL32 bValuesOk = (Target.Numbers.Num<UINT32>() == 4u) &&
+			(Target.Numbers[0] == 1) && (Target.Numbers[1] == 2) && (Target.Numbers[2] == 3) && (Target.Numbers[3] == 4) &&
+			bMapValues &&
+			(EMath::Abs(AValue - 1.5f) <= 1.0e-4f) &&
+			(EMath::Abs(BValue - 2.5f) <= 1.0e-4f) &&
+			(EMath::Abs(CValue - 3.5f) <= 1.0e-4f) ? TRUE : FALSE;
+
+		if (!(bMetadataOk && bValuesOk))
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("container detail: metadata=")) + EString::FromInt(bMetadataOk) +
+				EString(PE_TEXT(" values=")) + EString::FromInt(bValuesOk) +
+				EString(PE_TEXT(" sourceNumbers=")) + EString::FromInt(Source.Numbers.Num<UINT32>()) +
+				EString(PE_TEXT(" targetNumbers=")) + EString::FromInt(Target.Numbers.Num<UINT32>()) +
+				EString(PE_TEXT(" targetWeights=")) + EString::FromInt(Target.Weights.Num<UINT32>()) +
+				EString(PE_TEXT(" A=")) + EString::FromFloat(AValue) +
+				EString(PE_TEXT(" B=")) + EString::FromFloat(BValue) +
+				EString(PE_TEXT(" C=")) + EString::FromFloat(CValue));
+		}
+		return (bMetadataOk && bValuesOk) ? TRUE : FALSE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -1728,6 +1842,12 @@ namespace PigeonEngine
 		const BOOL32 bGizmoProjection = CheckGizmoProjectionAndDrag(InWorld);
 		ReportSanityResult(EString(PE_TEXT("gizmo projection and drag")), bGizmoProjection);
 		if (!bGizmoProjection)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bContainerProperties = CheckContainerPropertySerialization();
+		ReportSanityResult(EString(PE_TEXT("container property serialization")), bContainerProperties);
+		if (!bContainerProperties)
 		{
 			FailedCount += 1u;
 		}
