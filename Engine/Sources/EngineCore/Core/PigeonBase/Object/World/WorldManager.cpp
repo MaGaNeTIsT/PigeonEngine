@@ -65,6 +65,57 @@ namespace PigeonEngine
 		}
 	}
 
+	void EWorldManager::RequestNewLevel()
+	{
+		PendingLevelRequest = ELevelRequestType::NEW;
+		PendingLevelPath = EString();
+	}
+
+	void EWorldManager::RequestSaveLevel(const EString& InPath)
+	{
+		PendingLevelRequest = ELevelRequestType::SAVE;
+		PendingLevelPath = InPath;
+	}
+
+	void EWorldManager::RequestLoadLevel(const EString& InPath)
+	{
+		PendingLevelRequest = ELevelRequestType::LOAD;
+		PendingLevelPath = InPath;
+	}
+
+	void EWorldManager::ProcessPendingLevelRequest()
+	{
+		if ((!this->World) || (PendingLevelRequest == ELevelRequestType::NONE))
+		{
+			return;
+		}
+		const ELevelRequestType Request = PendingLevelRequest;
+		const EString Path = PendingLevelPath;
+		PendingLevelRequest = ELevelRequestType::NONE;
+		PendingLevelPath = EString();
+
+		switch (Request)
+		{
+		case ELevelRequestType::NEW:
+			this->World->ClearLevelActors();
+#if ENGINE_EDITOR_ONLY
+			this->World->SetSelectedActor(nullptr);
+			this->World->SetSelectedComponent(nullptr);
+#endif
+			this->World->SetUpVector(Vector3::YVector());
+			this->World->SetGravitySettings(FWorldGravitySettings());
+			break;
+		case ELevelRequestType::SAVE:
+			this->World->SaveLevel(Path);
+			break;
+		case ELevelRequestType::LOAD:
+			this->World->LoadLevel(Path);
+			break;
+		default:
+			break;
+		}
+	}
+
 #if ENGINE_EDITOR_ONLY
 	void EWorldManager::EditorInit()
 	{

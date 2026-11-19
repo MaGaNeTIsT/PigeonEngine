@@ -227,6 +227,28 @@ namespace PigeonEngine
 
 	void EEditorManager::EditorUpdate()
 	{
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("New Level"))
+				{
+					WorldManager->RequestNewLevel();
+				}
+				const EString DefaultLevelPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("Demo.PLevel"));
+				if (ImGui::MenuItem("Save Level"))
+				{
+					WorldManager->RequestSaveLevel(DefaultLevelPath);
+				}
+				if (ImGui::MenuItem("Load Level"))
+				{
+					WorldManager->RequestLoadLevel(DefaultLevelPath);
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
 		// The world may have been re-initialized since the last frame, replacing the

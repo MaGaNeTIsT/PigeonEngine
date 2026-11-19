@@ -80,11 +80,20 @@ namespace PigeonEngine
 	{
 		return dynamic_cast<TComponent*>(ResolveComponent(InHandle));
 	}
-	void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
-	// Attach-rule version: KEEP_WORLD adds an actor whose transform the caller already
-	// set in world space without the world root re-basing it; KEEP_RELATIVE applies the
-	// provided transform relative to the world root.
-	void AddActor(PActor* NewActor, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
+		void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
+		// Attach-rule version: KEEP_WORLD adds an actor whose transform the caller already
+		// set in world space without the world root re-basing it; KEEP_RELATIVE applies the
+		// provided transform relative to the world root.
+		void AddActor(PActor* NewActor, EAttachmentRuleType InRule, const ETransform& RelativeTransform = ETransform());
+		// Level IO: SaveLevel writes every ShouldSerializeToLevel actor plus the world
+		// header; LoadLevel reads a file, clears the current level actors (root and default
+		// controller stay), loads the file and applies the header. Both go through the
+		// reflection serializer, so a binary backend can replace the file encoding later.
+		BOOL32 SaveLevel(const EString& InPath);
+		BOOL32 LoadLevel(const EString& InPath);
+		// Destroys every level actor, keeping the world root and its controller. Child actors
+		// are destroyed through their top-level ancestor.
+		void ClearLevelActors();
 	// Takes the actor out of the world and every lookup without destroying it; the
 	// caller keeps ownership.
 	void RemoveActor(PActor* Actor);

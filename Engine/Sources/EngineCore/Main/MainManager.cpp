@@ -470,6 +470,9 @@ namespace PigeonEngine
 		{
 			World->FlushPendingDestroy();
 		}
+		// Editor level IO queued last frame: run it after the destroy queue flushed and before
+		// navigation/world tick, so the new actors are part of this frame's update.
+		WorldManager->ProcessPendingLevelRequest();
 
 		// Async with render thread
 		GameTimer->Update();

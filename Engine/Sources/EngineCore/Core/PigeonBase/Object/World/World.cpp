@@ -3,11 +3,14 @@
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 #include <Renderer/RenderInterface.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
+#include <Reflection/LevelSerializer.h>
+#include <RapidJson/Headers/JsonObject.h>
+#include <Editor/EditorLogManager.h>
 #include "PigeonBase/Object/Actor/LevelActor.h"
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #if ENGINE_EDITOR_ONLY
-#include <Editor/EditorLogManager.h>
+#include <imgui.h>
 #endif
 
 
@@ -280,6 +283,97 @@ namespace PigeonEngine
 		}
 		ActorById.Add(NewActor->GetUniqueID(), NewActor);
 		OnActorAdded.Broadcast(NewActor);
+	}
+
+	BOOL32 PWorld::SaveLevel(const EString& InPath)
+	{
+		EString LevelName = InPath;
+		const INT32 LastSlash = LevelName.RightFind(EString(PE_TEXT("/")));
+		if (LastSlash >= 0)
+		{
+			LevelName = LevelName.Right(LevelName.Length() - static_cast<UINT32>(LastSlash) - 1u);
+		}
+		const INT32 LastDot = LevelName.RightFind(EString(PE_TEXT(".")));
+		if (LastDot > 0)
+		{
+			LevelName = LevelName.Left(static_cast<UINT32>(LastDot));
+		}
+
+		if (!ELevelSerializer::SaveWorldToFile(*this, LevelName, InPath))
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("Level save failed: ")) + InPath);
+			return FALSE;
+		}
+		PE_LOG_LOG(EString(PE_TEXT("Level saved: ")) + InPath);
+		return TRUE;
+	}
+
+	BOOL32 PWorld::LoadLevel(const EString& InPath)
+	{
+		EString DocumentText;
+		if (!EFileHelper::ReadFileAsString(InPath, DocumentText))
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("Level load: cannot read ")) + InPath);
+			return FALSE;
+		}
+		CJsonObject Document(DocumentText);
+		if (!Document.IsValid())
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("Level load: invalid JSON in ")) + InPath);
+			return FALSE;
+		}
+
+		FLevelHeader Header;
+		const BOOL32 bHasHeader = ELevelSerializer::ReadLevelHeader(Document, Header);
+
+		ClearLevelActors();
+		TArray<PActor*> CreatedActors;
+		if (!ELevelSerializer::LoadActors(*this, Document, &CreatedActors))
+		{
+			return FALSE;
+		}
+
+		if (bHasHeader)
+		{
+			SetUpVector(Header.UpVector);
+			FWorldGravitySettings LoadedGravitySettings;
+			LoadedGravitySettings.GravityDirection = Header.GravityDirection;
+			LoadedGravitySettings.GravityStrength = Header.GravityStrength;
+			LoadedGravitySettings.bUseUpVector = Header.bUseUpVector;
+			SetGravitySettings(LoadedGravitySettings);
+		}
+
+#if ENGINE_EDITOR_ONLY
+		ImguiSelectedActor = nullptr;
+		ImguiSelectedComponent = nullptr;
+#endif
+		PE_LOG_LOG(EString(PE_TEXT("Level loaded: ")) + InPath + EString(PE_TEXT(", actors ")) + EString::FromInt(CreatedActors.Num<UINT32>()));
+		return TRUE;
+	}
+
+	void PWorld::ClearLevelActors()
+	{
+		if (!RootActor)
+		{
+			return;
+		}
+		const TArray<PActor*> Actors = AllActors;
+		PActor* DefaultController = GetController();
+		for (UINT32 Index = 0u, Num = Actors.Num<UINT32>(); Index < Num; Index++)
+		{
+			PActor* Actor = Actors[Index];
+			if ((!Actor) || (Actor == DefaultController))
+			{
+				continue;
+			}
+			// Only top-level level actors: a child is destroyed through its ancestor.
+			if (Actor->GetAttachedParentActor() != RootActor)
+			{
+				continue;
+			}
+			DestroyActor(Actor);
+		}
+		FlushPendingDestroy();
 	}
 
 	void PWorld::RemoveActor(PActor* Actor)
