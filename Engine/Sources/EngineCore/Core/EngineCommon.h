@@ -651,23 +651,32 @@ namespace PigeonEngine
 
 			Vector4 TempPoint(InPositionWS.x, InPositionWS.y, InPositionWS.z, 1.f);
 			TempPoint = Matrix4x4TransformVector(ViewProjectionMatrix, TempPoint);
+			// The clip-space values have to be divided by w before they mean anything:
+			// comparing the raw clip x/y/z against [-1, 1] rejects every point once w > 1,
+			// which is most of the scene under a perspective projection.
+			const FLOAT W = TempPoint.w;
+			const FLOAT InvW = (EMath::Abs(W) > PE_SMALL_NUMBER) ? (1.f / W) : 0.f;
+			const FLOAT NdcX = TempPoint.x * InvW;
+			const FLOAT NdcY = TempPoint.y * InvW;
+			const FLOAT NdcZ = TempPoint.z * InvW;
 
 			BOOL32 bIfOutScreen =
-				(TempPoint.x < -1.f) ||
-				(TempPoint.x > 1.f) ||
-				(TempPoint.y < -1.f) ||
-				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RCommonSettings::RENDER_DEPTH_NEAR) ||
-				(TempPoint.z > RCommonSettings::RENDER_DEPTH_FAR);
+				(W <= 0.f) ||
+				(NdcX < -1.f) ||
+				(NdcX > 1.f) ||
+				(NdcY < -1.f) ||
+				(NdcY > 1.f) ||
+				(NdcZ < RCommonSettings::RENDER_DEPTH_NEAR) ||
+				(NdcZ > RCommonSettings::RENDER_DEPTH_FAR);
 
-			FLOAT ScreenCoordX = EMath::Clamp(TempPoint.x / TempPoint.w, -1.f, 1.f);
-			FLOAT ScreenCoordY = EMath::Clamp(TempPoint.y / TempPoint.w, -1.f, 1.f);
+			FLOAT ScreenCoordX = EMath::Clamp(NdcX, -1.f, 1.f);
+			FLOAT ScreenCoordY = EMath::Clamp(NdcY, -1.f, 1.f);
 
 			Vector2 ViewPortPointMul(InViewport.Width, InViewport.Height);
 			Vector2 ViewPortPointAdd(InViewport.TopLeftX, InViewport.TopLeftY);
 
 			Vector2 Result(ScreenCoordX, ScreenCoordY);
-			if (TempPoint.z < 0.f)
+			if (W < 0.f)
 			{
 				Result *= -1.f;
 			}
@@ -682,15 +691,20 @@ namespace PigeonEngine
 
 			Vector4 TempPoint(InPositionWS.x, InPositionWS.y, InPositionWS.z, 1.f);
 			TempPoint = Matrix4x4TransformVector(ViewProjectionMatrix, TempPoint);
-			TempPoint = TempPoint / TempPoint.w;
+			const FLOAT W = TempPoint.w;
+			const FLOAT InvW = (EMath::Abs(W) > PE_SMALL_NUMBER) ? (1.f / W) : 0.f;
+			const FLOAT NdcX = TempPoint.x * InvW;
+			const FLOAT NdcY = TempPoint.y * InvW;
+			const FLOAT NdcZ = TempPoint.z * InvW;
 
 			BOOL32 bIfOutScreen =
-				(TempPoint.x < -1.f) ||
-				(TempPoint.x > 1.f) ||
-				(TempPoint.y < -1.f) ||
-				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RCommonSettings::RENDER_DEPTH_NEAR) ||
-				(TempPoint.z > RCommonSettings::RENDER_DEPTH_FAR);
+				(W <= 0.f) ||
+				(NdcX < -1.f) ||
+				(NdcX > 1.f) ||
+				(NdcY < -1.f) ||
+				(NdcY > 1.f) ||
+				(NdcZ < RCommonSettings::RENDER_DEPTH_NEAR) ||
+				(NdcZ > RCommonSettings::RENDER_DEPTH_FAR);
 
 			PE_CONSTEXPR_STATIC Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
 			PE_CONSTEXPR_STATIC Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
@@ -698,7 +712,7 @@ namespace PigeonEngine
 			Vector3 ViewPortPointMul(InViewport.Width, InViewport.Height, 1.f);
 			Vector3 ViewPortPointAdd(InViewport.TopLeftX, InViewport.TopLeftY, 0.f);
 
-			Vector3 Result(TempPoint.x, TempPoint.y, TempPoint.z);
+			Vector3 Result(NdcX, NdcY, NdcZ);
 			OutPositionSS = (Result * _StaticPointScl + _StaticPointAdd) * ViewPortPointMul + ViewPortPointAdd;
 
 			return (!bIfOutScreen);

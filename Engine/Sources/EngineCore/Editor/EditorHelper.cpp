@@ -56,10 +56,17 @@ namespace PigeonEngine
 
 		TArray<PActor*> TargetActors;
 		TArray<FLOAT> TargetDepths;
+		// Actors without geometry are lower priority: they are only considered when the click
+		// did not hit any real bound, so an invisible light/nav origin cannot steal a click
+		// from the mesh under the cursor.
+		TArray<PActor*> FallbackActors;
+		TArray<FLOAT> FallbackDepths;
 		{
 			Vector2 MouseScreenCoord(UsedMouseX - InScreenRect.Left, UsedMouseY - InScreenRect.Top);
 			TargetActors.Reserve(ActorNum);
 			TargetDepths.Reserve(ActorNum);
+			FallbackActors.Reserve(ActorNum);
+			FallbackDepths.Reserve(ActorNum);
 			for (UINT32 i = 0u; i < ActorNum; i++)
 			{
 				EBoundAABB TempActorBound(InActors[i]->GetBounds());
@@ -76,8 +83,8 @@ namespace PigeonEngine
 						const FLOAT DeltaY = EMath::Abs(OriginScreenCoord.y - MouseScreenCoord.y);
 						if ((DeltaX <= 18.0f) && (DeltaY <= 18.0f))
 						{
-							TargetActors.Add(InActors[i]);
-							TargetDepths.Add(OriginScreenCoord.z);
+							FallbackActors.Add(InActors[i]);
+							FallbackDepths.Add(OriginScreenCoord.z);
 						}
 					}
 					continue;
@@ -157,16 +164,18 @@ namespace PigeonEngine
 		}
 
 		PActor* Result = nullptr;
-		if (const UINT32 TargetActorNum = TargetActors.Num<UINT32>(); TargetActorNum > 0u)
+		const TArray<PActor*>& Candidates = (TargetActors.Num<UINT32>() > 0u) ? TargetActors : FallbackActors;
+		const TArray<FLOAT>& CandidateDepths = (TargetActors.Num<UINT32>() > 0u) ? TargetDepths : FallbackDepths;
+		if (const UINT32 CandidateNum = Candidates.Num<UINT32>(); CandidateNum > 0u)
 		{
-			Result = TargetActors[0];
+			Result = Candidates[0];
 			FLOAT CurrentDepth = RCommonSettings::RENDER_DEPTH_FAR;
-			for (UINT32 TargetActorIndex = 0u; TargetActorIndex < TargetActorNum; TargetActorIndex++)
+			for (UINT32 CandidateIndex = 0u; CandidateIndex < CandidateNum; CandidateIndex++)
 			{
-				if (TargetDepths[TargetActorIndex] < CurrentDepth)
+				if (CandidateDepths[CandidateIndex] < CurrentDepth)
 				{
-					CurrentDepth = TargetDepths[TargetActorIndex];
-					Result = TargetActors[TargetActorIndex];
+					CurrentDepth = CandidateDepths[CandidateIndex];
+					Result = Candidates[CandidateIndex];
 				}
 			}
 		}
