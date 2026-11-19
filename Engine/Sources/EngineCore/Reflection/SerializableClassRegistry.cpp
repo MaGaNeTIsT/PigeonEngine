@@ -30,6 +30,7 @@
 #include <PigeonBase/Object/Component/Navigation/NavAgentComponent.h>
 #include <PigeonBase/Object/Component/Water/WaterSimulationComponent.h>
 #include <PigeonBase/Object/Component/Water/WaterSurfaceComponent.h>
+#include <Demo/DemoObstacleMotionComponent.h>
 
 namespace PigeonEngine
 {
@@ -109,6 +110,10 @@ namespace PigeonEngine
 		RegisterSerializableClassType<PWaterSimulationComponent, PPrimitiveComponent>(PE_TEXT("PWaterSimulationComponent"));
 		SaveDefaultClassFactory<PWaterSurfaceComponent>();
 		RegisterSerializableClassType<PWaterSurfaceComponent, PStaticMeshComponent>(PE_TEXT("PWaterSurfaceComponent"));
+		// Demo-only behaviour component, stored in the default demo level so the obstacle
+		// motion survives a data-driven load.
+		SaveDefaultClassFactory<PDemoObstacleMotionComponent>();
+		RegisterSerializableClassType<PDemoObstacleMotionComponent, PActorComponent>(PE_TEXT("PDemoObstacleMotionComponent"));
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterSerializableClasses);

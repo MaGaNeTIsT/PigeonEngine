@@ -46,6 +46,14 @@ namespace PigeonEngine
 			[](const PNavAgentComponent* Component) -> BOOL32 { return Component->GetUseCrowd(); },
 			[](PNavAgentComponent* Component, const BOOL32& Value) -> void { Component->SetUseCrowd(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavAgentComponent, Vector3>(ClassHash, PE_TEXT("TargetLocation"),
+			[](const PNavAgentComponent* Component) -> Vector3 { return Component->GetTargetLocation(); },
+			[](PNavAgentComponent* Component, const Vector3& Value) -> void { Component->SetTargetLocation(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassBoolPropertyAccessors<PNavAgentComponent>(ClassHash, PE_TEXT("MoveOnBeginPlay"),
+			[](const PNavAgentComponent* Component) -> BOOL32 { return Component->GetMoveOnBeginPlay(); },
+			[](PNavAgentComponent* Component, const BOOL32& Value) -> void { Component->SetMoveOnBeginPlay(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 
 	static void RegisterClassTypes()
@@ -163,9 +171,35 @@ namespace PigeonEngine
 		return OwnerActor ? OwnerActor->GetActorWorldLocation() : Vector3::Zero();
 	}
 
+	const Vector3& PNavAgentComponent::GetTargetLocation() const
+	{
+		return TargetLocation;
+	}
+
+	void PNavAgentComponent::SetTargetLocation(const Vector3& InTarget)
+	{
+		TargetLocation = InTarget;
+	}
+
+	BOOL32 PNavAgentComponent::GetMoveOnBeginPlay() const
+	{
+		return bMoveOnBeginPlay;
+	}
+
+	void PNavAgentComponent::SetMoveOnBeginPlay(const BOOL32& bInMoveOnBeginPlay)
+	{
+		bMoveOnBeginPlay = bInMoveOnBeginPlay;
+	}
+
 	void PNavAgentComponent::Tick(FLOAT InDeltaTime)
 	{
 		PActorComponent::Tick(InDeltaTime);
+
+		if (bMoveOnBeginPlay && (!bAutoMoveIssued))
+		{
+			MoveToLocation(TargetLocation);
+			bAutoMoveIssued = TRUE;
+		}
 
 		if (bUseCrowd)
 		{

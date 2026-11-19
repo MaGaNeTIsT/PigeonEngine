@@ -45,6 +45,14 @@ namespace PigeonEngine
 		PE_NODISCARD BOOL32	GetUseCrowd() const;
 		void				SetUseCrowd(const BOOL32& InUseCrowd);
 
+		// A target moved to once after the component joins the scene. Levels use this to
+		// store patrol/demo behaviour as data instead of calling MoveToLocation from a
+		// hardcoded builder; MoveOnBeginPlay stays true when the file is saved again.
+		PE_NODISCARD const Vector3&	GetTargetLocation() const;
+		void						SetTargetLocation(const Vector3& InTarget);
+		PE_NODISCARD BOOL32			GetMoveOnBeginPlay() const;
+		void						SetMoveOnBeginPlay(const BOOL32& bInMoveOnBeginPlay);
+
 		// Invoked once per finished move with COMPLETE, PARTIAL or INVALID.
 		TFunction<void(ENavigationPathStatusType)>	OnMoveFinished;
 
@@ -74,6 +82,9 @@ namespace PigeonEngine
 		ENavigationPathStatusType	LastMoveStatus = ENavigationPathStatusType::NAVIGATION_PATH_INVALID;
 		FLOAT						SecondsSincePathRequest = 0.0f;
 		BOOL32						bUseCrowd = FALSE;
+		Vector3						TargetLocation = Vector3::Zero();
+		BOOL32						bMoveOnBeginPlay = FALSE;
+		BOOL32						bAutoMoveIssued = FALSE;
 		// TRUE while the crowd holds the current target. Without it a freshly registered agent,
 		// whose target state starts as "none", would look like a finished move.
 		BOOL32						bCrowdMoveRequested = FALSE;
