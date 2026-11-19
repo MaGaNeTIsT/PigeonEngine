@@ -495,6 +495,100 @@ namespace PigeonEngine
 			return bChanged;
 		}
 
+		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash, BOOL32& bOutActivated, BOOL32& bOutDeactivated);
+
+		void InitializeDefaultElement(FPropertyElement& OutElement, const EPropertyValueType InType, const size_t InEnumHash);
+
+		BOOL32 DrawNestedArray(FPropertyValue& InOutValue)
+		{
+			BOOL32 bChanged = FALSE;
+			for (UINT32 Index = 0u; Index < InOutValue.ArrayValues.Num<UINT32>(); Index++)
+			{
+				ImGui::PushID(Index);
+				BOOL32 bActivated = FALSE;
+				BOOL32 bDeactivated = FALSE;
+				if (DrawElementWidget(InOutValue.ArrayValues[Index], InOutValue.ElementType, InOutValue.ElementEnumHash, bActivated, bDeactivated))
+				{
+					bChanged = TRUE;
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton("X"))
+				{
+					InOutValue.ArrayValues.RemoveAt(Index);
+					bChanged = TRUE;
+					ImGui::PopID();
+					break;
+				}
+				ImGui::PopID();
+			}
+			if (ImGui::SmallButton("Add Element"))
+			{
+				FPropertyElement NewElement;
+				InitializeDefaultElement(NewElement, InOutValue.ElementType, InOutValue.ElementEnumHash);
+				InOutValue.ArrayValues.Add(NewElement);
+				bChanged = TRUE;
+			}
+			return bChanged;
+		}
+
+		BOOL32 DrawNestedMap(FPropertyValue& InOutValue)
+		{
+			BOOL32 bChanged = FALSE;
+			for (UINT32 Index = 0u; Index < InOutValue.MapEntries.Num<UINT32>(); Index++)
+			{
+				ImGui::PushID(Index);
+				FPropertyMapEntry& Entry = InOutValue.MapEntries[Index];
+				BOOL32 bKeyActivated = FALSE;
+				BOOL32 bKeyDeactivated = FALSE;
+				ImGui::PushID("Key");
+				if (DrawElementWidget(Entry.Key, InOutValue.KeyType, InOutValue.KeyEnumHash, bKeyActivated, bKeyDeactivated))
+				{
+					bChanged = TRUE;
+				}
+				ImGui::PopID();
+				ImGui::SameLine();
+				BOOL32 bValueActivated = FALSE;
+				BOOL32 bValueDeactivated = FALSE;
+				ImGui::PushID("Value");
+				if (DrawElementWidget(Entry.Value, InOutValue.MapValueType, InOutValue.MapValueEnumHash, bValueActivated, bValueDeactivated))
+				{
+					bChanged = TRUE;
+				}
+				ImGui::PopID();
+				ImGui::SameLine();
+				if (ImGui::SmallButton("X"))
+				{
+					InOutValue.MapEntries.RemoveAt(Index);
+					bChanged = TRUE;
+					ImGui::PopID();
+					break;
+				}
+				ImGui::PopID();
+			}
+			if (ImGui::SmallButton("Add Entry"))
+			{
+				FPropertyMapEntry Entry;
+				if (InOutValue.KeyType == EPropertyValueType::STRING)
+				{
+					InitializeDefaultElement(Entry.Key, InOutValue.KeyType, InOutValue.KeyEnumHash);
+					Entry.Key.StringValue = EString(PE_TEXT("Key")) + EString::FromInt(InOutValue.MapEntries.Num<UINT32>());
+				}
+				else if (InOutValue.KeyType == EPropertyValueType::ENUM)
+				{
+					InitializeDefaultElement(Entry.Key, InOutValue.KeyType, InOutValue.KeyEnumHash);
+				}
+				else
+				{
+					Entry.Key.Type = InOutValue.KeyType;
+					Entry.Key.IntValue = static_cast<INT64>(InOutValue.MapEntries.Num<UINT32>());
+				}
+				InitializeDefaultElement(Entry.Value, InOutValue.MapValueType, InOutValue.MapValueEnumHash);
+				InOutValue.MapEntries.Add(Entry);
+				bChanged = TRUE;
+			}
+			return bChanged;
+		}
+
 		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
 		{
 			bOutActivated = FALSE;
@@ -701,6 +795,22 @@ namespace PigeonEngine
 				bOutActivated = (bOutActivated || (ImGui::IsItemActivated() != FALSE)) ? TRUE : FALSE;
 				bOutDeactivated = (bOutDeactivated || (ImGui::IsItemDeactivatedAfterEdit() != FALSE)) ? TRUE : FALSE;
 				return bChanged;
+			}
+			case EPropertyValueType::ARRAY:
+			{
+				if (!InOutElement.ContainerValue)
+				{
+					return FALSE;
+				}
+				return DrawNestedArray(*InOutElement.ContainerValue);
+			}
+			case EPropertyValueType::MAP:
+			{
+				if (!InOutElement.ContainerValue)
+				{
+					return FALSE;
+				}
+				return DrawNestedMap(*InOutElement.ContainerValue);
 			}
 			default:
 				return FALSE;

@@ -1632,6 +1632,8 @@ namespace PigeonEngine
 		TMap<EString, FLOAT> Weights;
 		TArray<EWaterGroundType> GroundTypes;
 		TMap<EWaterGroundType, INT32> EnumKeys;
+		TArray<TArray<INT32>> NestedNumbers;
+		TMap<EString, TArray<FLOAT>> NestedWeights;
 	};
 
 	static BOOL32 CheckContainerPropertySerialization()
@@ -1656,6 +1658,14 @@ namespace PigeonEngine
 				[](const FSanityContainerData* Data) -> TMap<EWaterGroundType, INT32> { return Data->EnumKeys; },
 				[](FSanityContainerData* Data, const TMap<EWaterGroundType, INT32>& Value) -> void { Data->EnumKeys = Value; },
 				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyAccessors<FSanityContainerData, TArray<TArray<INT32>>>(ClassHash, PE_TEXT("NestedNumbers"),
+				[](const FSanityContainerData* Data) -> TArray<TArray<INT32>> { return Data->NestedNumbers; },
+				[](FSanityContainerData* Data, const TArray<TArray<INT32>>& Value) -> void { Data->NestedNumbers = Value; },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyAccessors<FSanityContainerData, TMap<EString, TArray<FLOAT>>>(ClassHash, PE_TEXT("NestedWeights"),
+				[](const FSanityContainerData* Data) -> TMap<EString, TArray<FLOAT>> { return Data->NestedWeights; },
+				[](FSanityContainerData* Data, const TMap<EString, TArray<FLOAT>>& Value) -> void { Data->NestedWeights = Value; },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 			bPropertiesRegistered = TRUE;
 		}
 
@@ -1669,6 +1679,19 @@ namespace PigeonEngine
 		Source.GroundTypes.Add(EWaterGroundType::WATER_GROUND_HEIGHT_MAP);
 		Source.EnumKeys.Add(EWaterGroundType::WATER_GROUND_FLAT, 10);
 		Source.EnumKeys.Add(EWaterGroundType::WATER_GROUND_HEIGHT_MAP, 20);
+		{
+			TArray<INT32> FirstRow;
+			FirstRow.Add(1);
+			FirstRow.Add(2);
+			Source.NestedNumbers.Add(FirstRow);
+			TArray<INT32> SecondRow;
+			SecondRow.Add(3);
+			Source.NestedNumbers.Add(SecondRow);
+			TArray<FLOAT> FirstWeights;
+			FirstWeights.Add(0.5f);
+			FirstWeights.Add(0.75f);
+			Source.NestedWeights.Add(EString(PE_TEXT("A")), FirstWeights);
+		}
 
 		// Editor metadata: the array element type and the map key/value types are available
 		// without knowing the concrete C++ class.
@@ -1676,7 +1699,9 @@ namespace PigeonEngine
 		const FProperty* WeightProperty = nullptr;
 		const FProperty* GroundTypesProperty = nullptr;
 		const FProperty* EnumKeysProperty = nullptr;
-		EClassPropertyRegistry::ForEachProperty(ClassHash, [&NumberProperty, &WeightProperty, &GroundTypesProperty, &EnumKeysProperty](const FProperty& Property) -> void
+		const FProperty* NestedNumbersProperty = nullptr;
+		const FProperty* NestedWeightsProperty = nullptr;
+		EClassPropertyRegistry::ForEachProperty(ClassHash, [&NumberProperty, &WeightProperty, &GroundTypesProperty, &EnumKeysProperty, &NestedNumbersProperty, &NestedWeightsProperty](const FProperty& Property) -> void
 		{
 			if (Property.Name == EString(PE_TEXT("Numbers")))
 			{
@@ -1694,12 +1719,22 @@ namespace PigeonEngine
 			{
 				EnumKeysProperty = &Property;
 			}
+			else if (Property.Name == EString(PE_TEXT("NestedNumbers")))
+			{
+				NestedNumbersProperty = &Property;
+			}
+			else if (Property.Name == EString(PE_TEXT("NestedWeights")))
+			{
+				NestedWeightsProperty = &Property;
+			}
 		});
 
 		BOOL32 bMetadataOk = FALSE;
 		if (NumberProperty && WeightProperty && GroundTypesProperty && EnumKeysProperty &&
+			NestedNumbersProperty && NestedWeightsProperty &&
 			NumberProperty->GetValue && WeightProperty->GetValue &&
-			GroundTypesProperty->GetValue && EnumKeysProperty->GetValue)
+			GroundTypesProperty->GetValue && EnumKeysProperty->GetValue &&
+			NestedNumbersProperty->GetValue && NestedWeightsProperty->GetValue)
 		{
 			FPropertyValue NumbersValue;
 			NumberProperty->GetValue(&Source, NumbersValue);
@@ -1709,6 +1744,10 @@ namespace PigeonEngine
 			GroundTypesProperty->GetValue(&Source, GroundTypesValue);
 			FPropertyValue EnumKeysValue;
 			EnumKeysProperty->GetValue(&Source, EnumKeysValue);
+			FPropertyValue NestedNumbersValue;
+			NestedNumbersProperty->GetValue(&Source, NestedNumbersValue);
+			FPropertyValue NestedWeightsValue;
+			NestedWeightsProperty->GetValue(&Source, NestedWeightsValue);
 			const size_t GroundTypeEnumHash = GetClassHashCode<EWaterGroundType>();
 			bMetadataOk = (NumbersValue.Type == EPropertyValueType::ARRAY) &&
 				(NumbersValue.ElementType == EPropertyValueType::INT32) &&
@@ -1725,7 +1764,19 @@ namespace PigeonEngine
 				(EnumKeysValue.KeyType == EPropertyValueType::ENUM) &&
 				(EnumKeysValue.KeyEnumHash == GroundTypeEnumHash) &&
 				(EnumKeysValue.MapValueType == EPropertyValueType::INT32) &&
-				(EnumKeysValue.MapEntries.Num<UINT32>() == 2u) ? TRUE : FALSE;
+				(EnumKeysValue.MapEntries.Num<UINT32>() == 2u) &&
+				(NestedNumbersValue.Type == EPropertyValueType::ARRAY) &&
+				(NestedNumbersValue.ElementType == EPropertyValueType::ARRAY) &&
+				(NestedNumbersValue.ArrayValues.Num<UINT32>() == 2u) &&
+				(NestedNumbersValue.ArrayValues[0].ContainerValue) &&
+				(NestedNumbersValue.ArrayValues[0].ContainerValue->ElementType == EPropertyValueType::INT32) &&
+				(NestedNumbersValue.ArrayValues[0].ContainerValue->ArrayValues.Num<UINT32>() == 2u) &&
+				(NestedWeightsValue.Type == EPropertyValueType::MAP) &&
+				(NestedWeightsValue.MapValueType == EPropertyValueType::ARRAY) &&
+				(NestedWeightsValue.MapEntries.Num<UINT32>() == 1u) &&
+				(NestedWeightsValue.MapEntries[0].Value.ContainerValue) &&
+				(NestedWeightsValue.MapEntries[0].Value.ContainerValue->ElementType == EPropertyValueType::FLOAT) &&
+				(NestedWeightsValue.MapEntries[0].Value.ContainerValue->ArrayValues.Num<UINT32>() == 2u) ? TRUE : FALSE;
 
 			FPropertyElement NewNumber;
 			NewNumber.Type = EPropertyValueType::INT32;
@@ -1760,6 +1811,18 @@ namespace PigeonEngine
 		INT32 HeightValue = 0;
 		const BOOL32 bEnumMapValues = Target.EnumKeys.FindValue(EWaterGroundType::WATER_GROUND_FLAT, FlatValue) &&
 			Target.EnumKeys.FindValue(EWaterGroundType::WATER_GROUND_HEIGHT_MAP, HeightValue) ? TRUE : FALSE;
+		TArray<FLOAT> NestedWeightValues;
+		const BOOL32 bNestedWeightsFound = Target.NestedWeights.FindValue(EString(PE_TEXT("A")), NestedWeightValues) ? TRUE : FALSE;
+		const BOOL32 bNestedValuesOk =
+			(Target.NestedNumbers.Num<UINT32>() == 2u) &&
+			(Target.NestedNumbers[0].Num<UINT32>() == 2u) &&
+			(Target.NestedNumbers[0][0] == 1) && (Target.NestedNumbers[0][1] == 2) &&
+			(Target.NestedNumbers[1].Num<UINT32>() == 1u) &&
+			(Target.NestedNumbers[1][0] == 3) &&
+			bNestedWeightsFound &&
+			(NestedWeightValues.Num<UINT32>() == 2u) &&
+			(EMath::Abs(NestedWeightValues[0] - 0.5f) <= 1.0e-5f) &&
+			(EMath::Abs(NestedWeightValues[1] - 0.75f) <= 1.0e-5f) ? TRUE : FALSE;
 		const BOOL32 bValuesOk = (Target.Numbers.Num<UINT32>() == 4u) &&
 			(Target.Numbers[0] == 1) && (Target.Numbers[1] == 2) && (Target.Numbers[2] == 3) && (Target.Numbers[3] == 4) &&
 			bMapValues &&
@@ -1769,7 +1832,8 @@ namespace PigeonEngine
 			(Target.GroundTypes.Num<UINT32>() == 2u) &&
 			(Target.GroundTypes[0] == EWaterGroundType::WATER_GROUND_FLAT) &&
 			(Target.GroundTypes[1] == EWaterGroundType::WATER_GROUND_HEIGHT_MAP) &&
-			bEnumMapValues && (FlatValue == 10) && (HeightValue == 20) ? TRUE : FALSE;
+			bEnumMapValues && (FlatValue == 10) && (HeightValue == 20) &&
+			bNestedValuesOk ? TRUE : FALSE;
 
 		if (!(bMetadataOk && bValuesOk))
 		{

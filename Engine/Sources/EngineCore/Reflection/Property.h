@@ -66,8 +66,9 @@ namespace PigeonEngine
 	* One scalar editor value. Container elements use this type rather than FPropertyValue
 	* itself: TArray<T> requires sizeof(T) when it is instantiated, so a recursive container
 	* of FPropertyValue would need FPropertyValue to be complete inside its own definition.
-	* Nested containers are not supported by the generic inspector; they remain CUSTOM.
+	* A nested container is represented by a shared FPropertyValue subtree instead.
 	*/
+	struct FPropertyValue;
 	struct FPropertyElement
 	{
 		EPropertyValueType Type = EPropertyValueType::NONE;
@@ -81,6 +82,9 @@ namespace PigeonEngine
 		Quaternion			QuaternionValue;
 		Color3				ColorValue;
 		ETransform			TransformValue;
+		// Set only for ARRAY / MAP elements. Shared because FPropertyElement is copied by
+		// value through TArray and undo values, while the nested tree is read-only payload.
+		TSharedPtr<FPropertyValue> ContainerValue;
 	};
 
 	struct FPropertyMapEntry
@@ -349,7 +353,44 @@ namespace PigeonEngine
 	{
 		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
 		OutElement = FPropertyElement();
-		if constexpr (std::is_same_v<T, BOOL32>)
+		if constexpr (TPropertyIsArray<T>::value)
+		{
+			using ElementType = typename TPropertyIsArray<T>::ElementType;
+			OutElement.Type = EPropertyValueType::ARRAY;
+			OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			OutElement.ContainerValue->ElementType = GetPropertyValueType<ElementType>();
+			OutElement.ContainerValue->ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			for (UINT32 Index = 0u, Num = InValue.Num<UINT32>(); Index < Num; Index++)
+			{
+				FPropertyElement Element;
+				if (MakePropertyElement(InValue[Index], Element))
+				{
+					OutElement.ContainerValue->ArrayValues.Add(Element);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (TPropertyIsMap<T>::value)
+		{
+			using KeyType = typename TPropertyIsMap<T>::KeyType;
+			using MapValueType = typename TPropertyIsMap<T>::ValueType;
+			OutElement.Type = EPropertyValueType::MAP;
+			OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			OutElement.ContainerValue->KeyType = GetPropertyValueType<KeyType>();
+			OutElement.ContainerValue->MapValueType = GetPropertyValueType<MapValueType>();
+			OutElement.ContainerValue->KeyEnumHash = GetPropertyEnumHash<KeyType>();
+			OutElement.ContainerValue->MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			for (typename T::TConstIterator It = InValue.Begin(); It != InValue.End(); ++It)
+			{
+				FPropertyMapEntry Entry;
+				if (MakePropertyElement(It->first, Entry.Key) && MakePropertyElement(It->second, Entry.Value))
+				{
+					OutElement.ContainerValue->MapEntries.Add(Entry);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (std::is_same_v<T, BOOL32>)
 		{
 			OutElement.Type = EPropertyValueType::BOOL;
 			OutElement.BoolValue = InValue;
@@ -438,7 +479,46 @@ namespace PigeonEngine
 	BOOL32 ReadPropertyElement(const FPropertyElement& InElement, TValue& OutValue)
 	{
 		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
-		if constexpr (std::is_same_v<T, BOOL32>)
+		if constexpr (TPropertyIsArray<T>::value)
+		{
+			using ElementType = typename TPropertyIsArray<T>::ElementType;
+			if (!InElement.ContainerValue)
+			{
+				return FALSE;
+			}
+			OutValue.Empty();
+			for (UINT32 Index = 0u, Num = InElement.ContainerValue->ArrayValues.Num<UINT32>(); Index < Num; Index++)
+			{
+				ElementType Element = ElementType();
+				if (ReadPropertyElement(InElement.ContainerValue->ArrayValues[Index], Element))
+				{
+					OutValue.Add(Element);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (TPropertyIsMap<T>::value)
+		{
+			using KeyType = typename TPropertyIsMap<T>::KeyType;
+			using MapValueType = typename TPropertyIsMap<T>::ValueType;
+			if (!InElement.ContainerValue)
+			{
+				return FALSE;
+			}
+			OutValue.Empty();
+			for (UINT32 Index = 0u, Num = InElement.ContainerValue->MapEntries.Num<UINT32>(); Index < Num; Index++)
+			{
+				KeyType Key = KeyType();
+				MapValueType Value = MapValueType();
+				if (ReadPropertyElement(InElement.ContainerValue->MapEntries[Index].Key, Key) &&
+					ReadPropertyElement(InElement.ContainerValue->MapEntries[Index].Value, Value))
+				{
+					OutValue.Add(Key, Value);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (std::is_same_v<T, BOOL32>)
 		{
 			OutValue = (InElement.Type == EPropertyValueType::BOOL) ? InElement.BoolValue : static_cast<BOOL32>(InElement.IntValue);
 			return TRUE;
