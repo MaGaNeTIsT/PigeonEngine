@@ -843,6 +843,8 @@ namespace PigeonEngine
 		BOOL32 bHierarchyOk = FALSE;
 		BOOL32 bComponentTreeOk = FALSE;
 		BOOL32 bPropertiesOk = FALSE;
+		BOOL32 bComponentCountOk = FALSE;
+		BOOL32 bRootNameOk = FALSE;
 		PActor* LoadedParent = nullptr;
 		if (bLoaded)
 		{
@@ -878,6 +880,14 @@ namespace PigeonEngine
 			{
 				bHierarchyOk = ((LoadedChild->GetAttachedParentActor() == LoadedParent) &&
 					IsVectorNearlyEqual(LoadedChild->GetActorLocation(), Vector3(0.f, 5.f, 0.f), 1.0e-3f)) ? TRUE : FALSE;
+				// The loader adopts exactly the component set in the file. Construction-time
+				// defaults, including the factory root, must not survive as extra components.
+				bComponentCountOk = ((LoadedParent->GetAllComponents().Num<UINT32>() == 4u) &&
+					(LoadedChild->GetAllComponents().Num<UINT32>() == 1u)) ? TRUE : FALSE;
+				// A root's debug name carries the suffix once, no matter how often the actor
+				// is loaded or saved.
+				bRootNameOk = ((LoadedParent->GetRootComponent() != nullptr) &&
+					(!POBJ_DEBUGNAME_GET(LoadedParent->GetRootComponent()).Contains(EString(PE_TEXT("(Root)(Root)"))))) ? TRUE : FALSE;
 
 				PSceneComponent* LoadedOffset = nullptr;
 				const TArray<PSceneComponent*> SceneComponents = LoadedParent->GetComponents<PSceneComponent>();
@@ -945,14 +955,16 @@ namespace PigeonEngine
 			return FALSE;
 		}
 #endif
-		const BOOL32 bAllOk = (bDocumentOk && bLoaded && bHierarchyOk && bComponentTreeOk && bPropertiesOk) ? TRUE : FALSE;
+		const BOOL32 bAllOk = (bDocumentOk && bLoaded && bHierarchyOk && bComponentTreeOk && bPropertiesOk && bComponentCountOk && bRootNameOk) ? TRUE : FALSE;
 		if (!bAllOk)
 		{
 			PE_LOG_ERROR(EString(PE_TEXT("level serialization detail: document=")) + EString::FromInt(bDocumentOk) +
 				EString(PE_TEXT(" loaded=")) + EString::FromInt(bLoaded) +
 				EString(PE_TEXT(" hierarchy=")) + EString::FromInt(bHierarchyOk) +
 				EString(PE_TEXT(" tree=")) + EString::FromInt(bComponentTreeOk) +
-				EString(PE_TEXT(" properties=")) + EString::FromInt(bPropertiesOk));
+				EString(PE_TEXT(" properties=")) + EString::FromInt(bPropertiesOk) +
+				EString(PE_TEXT(" componentCount=")) + EString::FromInt(bComponentCountOk) +
+				EString(PE_TEXT(" rootName=")) + EString::FromInt(bRootNameOk));
 		}
 		return bAllOk;
 	}

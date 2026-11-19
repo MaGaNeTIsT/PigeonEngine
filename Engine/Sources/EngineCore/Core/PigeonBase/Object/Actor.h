@@ -47,9 +47,9 @@ namespace PigeonEngine
 	public:
 		PE_NODISCARD PSceneComponent* GetRootComponent() const;
 		void                          SetRootComponent(PSceneComponent* NewRoot);
-		// Loader path: install a root component that already carries its serialized local
-		// transform. Same as SetRootComponent except the old root's transform is not
-		// carried over onto the new root. Only valid before the actor joins a world.
+		// Loader path: adopt a root component that already carries its serialized local
+		// transform. The caller must call PrepareForDeserialize first; this method only
+		// installs the file's root and never removes a pre-existing root.
 		void                          ReplaceRootComponentForLoad(PSceneComponent* NewRoot);
 		// Every component in insertion order, including the root (serializer/editor
 		// enumeration; the returned array is a copy).
@@ -58,6 +58,12 @@ namespace PigeonEngine
 		// character's physics setup is created by InitCharacter rather than by the factory,
 		// so both are out of the level format until their init hooks are serializable.
 		PE_NODISCARD virtual BOOL32    ShouldSerializeToLevel() const;
+		// Deserialization lifecycle: the class factory constructs a default actor, including
+		// its root component and any constructor-created components. The level loader calls
+		// this after construction and before installing the file's component set, so those
+		// construction defaults do not become level content. Subclasses that create other
+		// constructor state override it and call the base implementation first.
+		virtual void                   PrepareForDeserialize();
 
 		PE_NODISCARD virtual Vector3    GetActorLocation() const;
 		PE_NODISCARD virtual Quaternion GetActorRotation() const;

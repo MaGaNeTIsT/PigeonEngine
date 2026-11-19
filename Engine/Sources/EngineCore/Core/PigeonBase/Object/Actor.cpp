@@ -56,6 +56,25 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_FACTORY(&RegisterClassFactories);
 
+	// Root debug names carry exactly one "(Root)" suffix. The suffix is editor metadata and
+	// is written to level files, so installing a serialized root must normalize the name
+	// instead of appending to a suffix that is already present.
+	static EString StripRootDebugSuffix(const EString& InName)
+	{
+		const EString Suffix(PE_TEXT("(Root)"));
+		EString Result = InName;
+		while ((Result.Length() >= Suffix.Length()) && (Result.Right(Suffix.Length()) == Suffix))
+		{
+			Result = Result.Left(Result.Length() - Suffix.Length());
+		}
+		return Result;
+	}
+
+	static EString EnsureRootDebugName(const EString& InName)
+	{
+		return StripRootDebugSuffix(InName) + EString(PE_TEXT("(Root)"));
+	}
+
 	PActor::PActor()
 	{
 		if(!RootComponent)
@@ -360,33 +379,35 @@ namespace PigeonEngine
 		return ((StableName) && (StableName[0] != '\0')) ? TRUE : FALSE;
 	}
 
+	void PActor::PrepareForDeserialize()
+	{
+		// The class factory constructs a playable default actor, including its root and any
+		// components a subclass constructor creates. A level file owns the actor's complete
+		// component set, so the loader clears all construction-created components before
+		// installing the serialized ones. Subclasses that cache other constructor state
+		// override this and reset those caches around the base call.
+		ClearComponents();
+	}
+
 	void PActor::ReplaceRootComponentForLoad(PSceneComponent* NewRoot)
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Replacing root component with a nullptr", NewRoot != nullptr);
-		if ((!NewRoot) || (NewRoot == RootComponent))
+		PE_CHECK(ENGINE_ACTOR_ERROR, "Replacing a root component requires PrepareForDeserialize first", RootComponent == nullptr);
+		if ((!NewRoot) || (RootComponent != nullptr))
 		{
 			return;
 		}
+		// The loader calls PrepareForDeserialize before installing a serialized root. This
+		// method only adopts the file's root; it never interprets a pre-existing root as a
+		// construction default.
 		NewRoot->SetOwnerActor(this);
 		if (!Components.Contains(NewRoot))
 		{
 			Components.Add(NewRoot);
 		}
-		if (RootComponent)
-		{
-			TArray<PSceneComponent*> TempComponents = RootComponent->ChildrenComponents;
-			for (PSceneComponent* Component : TempComponents)
-			{
-				Component->AttachToComponent(NewRoot);
-			}
-			this->RootComponent->AttachToComponent(NewRoot);
-			POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)).Replace("(Root)", ""));
-			this->RootComponent->SetComponentTransform(ETransform());
-			this->RootComponent = nullptr;
-		}
 		this->RootComponent = NewRoot;
 		this->RootComponent->SetOwnerActor(this);
-		POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)) + "(Root)");
+		POBJ_DEBUGNAME_SET(this->RootComponent, EnsureRootDebugName(POBJ_DEBUGNAME_GET(this->RootComponent)));
 		RebuildTickOrder();
 	}
 
@@ -414,14 +435,14 @@ namespace PigeonEngine
 				Component->AttachToComponent(NewRoot);
 			}
 			this->RootComponent->AttachToComponent(NewRoot);
-			POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)).Replace("(Root)", ""));
+			POBJ_DEBUGNAME_SET(this->RootComponent, StripRootDebugSuffix(POBJ_DEBUGNAME_GET(this->RootComponent)));
 			this->RootComponent->SetComponentTransform(ETransform());
 			this->RootComponent = nullptr;
 		}
 
 		this->RootComponent = NewRoot;
 		this->RootComponent->SetOwnerActor(this);
-		POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)) + "(Root)");
+		POBJ_DEBUGNAME_SET(this->RootComponent, EnsureRootDebugName(POBJ_DEBUGNAME_GET(this->RootComponent)));
 		this->RootComponent->SetComponentTransform(trans);
 
 		if(this->GetWorld())

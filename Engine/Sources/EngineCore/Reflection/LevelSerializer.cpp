@@ -385,6 +385,10 @@ namespace PigeonEngine
 					}
 					if (PSceneComponent* RootSceneComponent = dynamic_cast<PSceneComponent*>(RootComponent))
 					{
+						// The factory constructed the actor with its default root and any
+						// constructor-created components. The file owns the component set, so
+						// clear those construction defaults before adopting the serialized root.
+						Actor->PrepareForDeserialize();
 						Actor->ReplaceRootComponentForLoad(RootSceneComponent);
 					}
 					else if (RootComponent)
@@ -716,6 +720,9 @@ namespace PigeonEngine
 		PSceneComponent* SceneComponent = dynamic_cast<PSceneComponent*>(Component);
 		if (bIsRoot && SceneComponent)
 		{
+			// A root component in a saved component replaces the actor's constructed default
+			// root; the loader owns clearing that default before installing the saved state.
+			InActor.PrepareForDeserialize();
 			InActor.ReplaceRootComponentForLoad(SceneComponent);
 		}
 		else
