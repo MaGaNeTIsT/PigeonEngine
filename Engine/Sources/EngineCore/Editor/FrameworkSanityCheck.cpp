@@ -1630,6 +1630,8 @@ namespace PigeonEngine
 	{
 		TArray<INT32> Numbers;
 		TMap<EString, FLOAT> Weights;
+		TArray<EWaterGroundType> GroundTypes;
+		TMap<EWaterGroundType, INT32> EnumKeys;
 	};
 
 	static BOOL32 CheckContainerPropertySerialization()
@@ -1646,6 +1648,14 @@ namespace PigeonEngine
 				[](const FSanityContainerData* Data) -> TMap<EString, FLOAT> { return Data->Weights; },
 				[](FSanityContainerData* Data, const TMap<EString, FLOAT>& Value) -> void { Data->Weights = Value; },
 				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyAccessors<FSanityContainerData, TArray<EWaterGroundType>>(ClassHash, PE_TEXT("GroundTypes"),
+				[](const FSanityContainerData* Data) -> TArray<EWaterGroundType> { return Data->GroundTypes; },
+				[](FSanityContainerData* Data, const TArray<EWaterGroundType>& Value) -> void { Data->GroundTypes = Value; },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyAccessors<FSanityContainerData, TMap<EWaterGroundType, INT32>>(ClassHash, PE_TEXT("EnumKeys"),
+				[](const FSanityContainerData* Data) -> TMap<EWaterGroundType, INT32> { return Data->EnumKeys; },
+				[](FSanityContainerData* Data, const TMap<EWaterGroundType, INT32>& Value) -> void { Data->EnumKeys = Value; },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 			bPropertiesRegistered = TRUE;
 		}
 
@@ -1655,12 +1665,18 @@ namespace PigeonEngine
 		Source.Numbers.Add(3);
 		Source.Weights.Add(EString(PE_TEXT("A")), 1.5f);
 		Source.Weights.Add(EString(PE_TEXT("B")), 2.5f);
+		Source.GroundTypes.Add(EWaterGroundType::WATER_GROUND_FLAT);
+		Source.GroundTypes.Add(EWaterGroundType::WATER_GROUND_HEIGHT_MAP);
+		Source.EnumKeys.Add(EWaterGroundType::WATER_GROUND_FLAT, 10);
+		Source.EnumKeys.Add(EWaterGroundType::WATER_GROUND_HEIGHT_MAP, 20);
 
 		// Editor metadata: the array element type and the map key/value types are available
 		// without knowing the concrete C++ class.
 		const FProperty* NumberProperty = nullptr;
 		const FProperty* WeightProperty = nullptr;
-		EClassPropertyRegistry::ForEachProperty(ClassHash, [&NumberProperty, &WeightProperty](const FProperty& Property) -> void
+		const FProperty* GroundTypesProperty = nullptr;
+		const FProperty* EnumKeysProperty = nullptr;
+		EClassPropertyRegistry::ForEachProperty(ClassHash, [&NumberProperty, &WeightProperty, &GroundTypesProperty, &EnumKeysProperty](const FProperty& Property) -> void
 		{
 			if (Property.Name == EString(PE_TEXT("Numbers")))
 			{
@@ -1670,22 +1686,46 @@ namespace PigeonEngine
 			{
 				WeightProperty = &Property;
 			}
+			else if (Property.Name == EString(PE_TEXT("GroundTypes")))
+			{
+				GroundTypesProperty = &Property;
+			}
+			else if (Property.Name == EString(PE_TEXT("EnumKeys")))
+			{
+				EnumKeysProperty = &Property;
+			}
 		});
 
 		BOOL32 bMetadataOk = FALSE;
-		if (NumberProperty && WeightProperty && NumberProperty->GetValue && WeightProperty->GetValue)
+		if (NumberProperty && WeightProperty && GroundTypesProperty && EnumKeysProperty &&
+			NumberProperty->GetValue && WeightProperty->GetValue &&
+			GroundTypesProperty->GetValue && EnumKeysProperty->GetValue)
 		{
 			FPropertyValue NumbersValue;
 			NumberProperty->GetValue(&Source, NumbersValue);
 			FPropertyValue WeightsValue;
 			WeightProperty->GetValue(&Source, WeightsValue);
+			FPropertyValue GroundTypesValue;
+			GroundTypesProperty->GetValue(&Source, GroundTypesValue);
+			FPropertyValue EnumKeysValue;
+			EnumKeysProperty->GetValue(&Source, EnumKeysValue);
+			const size_t GroundTypeEnumHash = GetClassHashCode<EWaterGroundType>();
 			bMetadataOk = (NumbersValue.Type == EPropertyValueType::ARRAY) &&
 				(NumbersValue.ElementType == EPropertyValueType::INT32) &&
 				(NumbersValue.ArrayValues.Num<UINT32>() == 3u) &&
 				(WeightsValue.Type == EPropertyValueType::MAP) &&
 				(WeightsValue.KeyType == EPropertyValueType::STRING) &&
 				(WeightsValue.MapValueType == EPropertyValueType::FLOAT) &&
-				(WeightsValue.MapEntries.Num<UINT32>() == 2u) ? TRUE : FALSE;
+				(WeightsValue.MapEntries.Num<UINT32>() == 2u) &&
+				(GroundTypesValue.Type == EPropertyValueType::ARRAY) &&
+				(GroundTypesValue.ElementType == EPropertyValueType::ENUM) &&
+				(GroundTypesValue.ElementEnumHash == GroundTypeEnumHash) &&
+				(GroundTypesValue.ArrayValues.Num<UINT32>() == 2u) &&
+				(EnumKeysValue.Type == EPropertyValueType::MAP) &&
+				(EnumKeysValue.KeyType == EPropertyValueType::ENUM) &&
+				(EnumKeysValue.KeyEnumHash == GroundTypeEnumHash) &&
+				(EnumKeysValue.MapValueType == EPropertyValueType::INT32) &&
+				(EnumKeysValue.MapEntries.Num<UINT32>() == 2u) ? TRUE : FALSE;
 
 			FPropertyElement NewNumber;
 			NewNumber.Type = EPropertyValueType::INT32;
@@ -1716,12 +1756,20 @@ namespace PigeonEngine
 		const BOOL32 bMapValues = Target.Weights.FindValue(EString(PE_TEXT("A")), AValue) &&
 			Target.Weights.FindValue(EString(PE_TEXT("B")), BValue) &&
 			Target.Weights.FindValue(EString(PE_TEXT("C")), CValue) ? TRUE : FALSE;
+		INT32 FlatValue = 0;
+		INT32 HeightValue = 0;
+		const BOOL32 bEnumMapValues = Target.EnumKeys.FindValue(EWaterGroundType::WATER_GROUND_FLAT, FlatValue) &&
+			Target.EnumKeys.FindValue(EWaterGroundType::WATER_GROUND_HEIGHT_MAP, HeightValue) ? TRUE : FALSE;
 		const BOOL32 bValuesOk = (Target.Numbers.Num<UINT32>() == 4u) &&
 			(Target.Numbers[0] == 1) && (Target.Numbers[1] == 2) && (Target.Numbers[2] == 3) && (Target.Numbers[3] == 4) &&
 			bMapValues &&
 			(EMath::Abs(AValue - 1.5f) <= 1.0e-4f) &&
 			(EMath::Abs(BValue - 2.5f) <= 1.0e-4f) &&
-			(EMath::Abs(CValue - 3.5f) <= 1.0e-4f) ? TRUE : FALSE;
+			(EMath::Abs(CValue - 3.5f) <= 1.0e-4f) &&
+			(Target.GroundTypes.Num<UINT32>() == 2u) &&
+			(Target.GroundTypes[0] == EWaterGroundType::WATER_GROUND_FLAT) &&
+			(Target.GroundTypes[1] == EWaterGroundType::WATER_GROUND_HEIGHT_MAP) &&
+			bEnumMapValues && (FlatValue == 10) && (HeightValue == 20) ? TRUE : FALSE;
 
 		if (!(bMetadataOk && bValuesOk))
 		{

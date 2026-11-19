@@ -101,6 +101,10 @@ namespace PigeonEngine
 		EPropertyValueType ElementType = EPropertyValueType::NONE;
 		EPropertyValueType KeyType = EPropertyValueType::NONE;
 		EPropertyValueType MapValueType = EPropertyValueType::NONE;
+		// Enum registry keys for enum-typed container elements.
+		size_t ElementEnumHash = 0u;
+		size_t KeyEnumHash = 0u;
+		size_t MapValueEnumHash = 0u;
 		// Container payloads; empty for scalar types.
 		TArray<FPropertyElement> ArrayValues;
 		TArray<FPropertyMapEntry> MapEntries;
@@ -124,6 +128,10 @@ namespace PigeonEngine
 		EPropertyValueType ElementType = EPropertyValueType::NONE;
 		EPropertyValueType KeyType = EPropertyValueType::NONE;
 		EPropertyValueType MapValueType = EPropertyValueType::NONE;
+		// Enum registry keys for enum-typed container elements.
+		size_t ElementEnumHash = 0u;
+		size_t KeyEnumHash = 0u;
+		size_t MapValueEnumHash = 0u;
 		// For STRING properties that name an asset: which asset family the picker lists.
 		// NONE means the regular text field is used.
 		EPropertyAssetType AssetType = EPropertyAssetType::NONE;
@@ -208,6 +216,14 @@ namespace PigeonEngine
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, ETransform& InOutValue);
 
 	// Containers. Element/key/value types must themselves support SerializeValue.
+	template <typename TEnum, typename std::enable_if_t<std::is_enum_v<TEnum>, INT32> = 0>
+	void SerializeValue(EArchive& InArchive, const CHAR* InName, TEnum& InOutValue)
+	{
+		INT32 Value = static_cast<INT32>(InOutValue);
+		SerializeEnumValue(InArchive, InName, Value, GetClassHashCode<TEnum>());
+		InOutValue = static_cast<TEnum>(Value);
+	}
+
 	template <typename TValue>
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, TArray<TValue>& InOutValues)
 	{
@@ -310,7 +326,22 @@ namespace PigeonEngine
 		else if constexpr (std::is_same_v<T, Quaternion>) { return EPropertyValueType::QUATERNION; }
 		else if constexpr (std::is_same_v<T, Color3>)	{ return EPropertyValueType::COLOR3; }
 		else if constexpr (std::is_same_v<T, ETransform>) { return EPropertyValueType::TRANSFORM; }
+		else if constexpr (std::is_enum_v<T>)			{ return EPropertyValueType::ENUM; }
 		else { return EPropertyValueType::CUSTOM; }
+	}
+
+	template <typename TValue>
+	constexpr size_t GetPropertyEnumHash()
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		if constexpr (std::is_enum_v<T>)
+		{
+			return GetClassHashCode<T>();
+		}
+		else
+		{
+			return 0u;
+		}
 	}
 
 	template <typename TValue>
@@ -502,6 +533,7 @@ namespace PigeonEngine
 		{
 			using ElementType = typename TPropertyIsArray<T>::ElementType;
 			Property.ElementType = GetPropertyValueType<ElementType>();
+			Property.ElementEnumHash = GetPropertyEnumHash<ElementType>();
 			if (Property.ElementType == EPropertyValueType::CUSTOM)
 			{
 				Property.ValueType = EPropertyValueType::CUSTOM;
@@ -513,6 +545,8 @@ namespace PigeonEngine
 			using MapValueType = typename TPropertyIsMap<T>::ValueType;
 			Property.KeyType = GetPropertyValueType<KeyType>();
 			Property.MapValueType = GetPropertyValueType<MapValueType>();
+			Property.KeyEnumHash = GetPropertyEnumHash<KeyType>();
+			Property.MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
 			if ((Property.KeyType == EPropertyValueType::CUSTOM) || (Property.MapValueType == EPropertyValueType::CUSTOM))
 			{
 				Property.ValueType = EPropertyValueType::CUSTOM;
@@ -534,11 +568,13 @@ namespace PigeonEngine
 			using ElementType = typename TPropertyIsArray<T>::ElementType;
 			if (Property.ValueType == EPropertyValueType::ARRAY)
 			{
-				Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+				const size_t ElementEnumHash = Property.ElementEnumHash;
+				Property.GetValue = [InGetter, ElementEnumHash](const void* InContainer, FPropertyValue& OutValue) -> void
 				{
 					OutValue = FPropertyValue();
 					OutValue.Type = EPropertyValueType::ARRAY;
 					OutValue.ElementType = GetPropertyValueType<ElementType>();
+					OutValue.ElementEnumHash = ElementEnumHash;
 					const T& Values = InGetter(static_cast<const TClass*>(InContainer));
 					for (UINT32 Index = 0u, Num = Values.Num<UINT32>(); Index < Num; Index++)
 					{
@@ -570,12 +606,16 @@ namespace PigeonEngine
 			using MapValueType = typename TPropertyIsMap<T>::ValueType;
 			if (Property.ValueType == EPropertyValueType::MAP)
 			{
-				Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+				const size_t KeyEnumHash = Property.KeyEnumHash;
+				const size_t MapValueEnumHash = Property.MapValueEnumHash;
+				Property.GetValue = [InGetter, KeyEnumHash, MapValueEnumHash](const void* InContainer, FPropertyValue& OutValue) -> void
 				{
 					OutValue = FPropertyValue();
 					OutValue.Type = EPropertyValueType::MAP;
 					OutValue.KeyType = GetPropertyValueType<KeyType>();
 					OutValue.MapValueType = GetPropertyValueType<MapValueType>();
+					OutValue.KeyEnumHash = KeyEnumHash;
+					OutValue.MapValueEnumHash = MapValueEnumHash;
 					const T& Values = InGetter(static_cast<const TClass*>(InContainer));
 					for (typename T::TConstIterator It = Values.Begin(); It != Values.End(); ++It)
 					{

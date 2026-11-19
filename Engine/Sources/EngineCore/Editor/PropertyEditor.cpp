@@ -495,7 +495,7 @@ namespace PigeonEngine
 			return bChanged;
 		}
 
-		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
+		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
 		{
 			bOutActivated = FALSE;
 			bOutDeactivated = FALSE;
@@ -513,7 +513,6 @@ namespace PigeonEngine
 			}
 			case EPropertyValueType::INT32:
 			case EPropertyValueType::UINT32:
-			case EPropertyValueType::ENUM:
 			{
 				INT32 Value = static_cast<INT32>(InOutElement.IntValue);
 				const BOOL32 bChanged = ImGui::DragInt("##element", &Value, 1.0f);
@@ -522,6 +521,47 @@ namespace PigeonEngine
 				if (bChanged)
 				{
 					InOutElement.IntValue = static_cast<INT64>(Value);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::ENUM:
+			{
+				TArray<FEnumEntry> Entries;
+				EEnumRegistry::GetValues(InEnumHash, Entries);
+				if (Entries.Num<UINT32>() == 0u)
+				{
+					INT32 Value = static_cast<INT32>(InOutElement.IntValue);
+					const BOOL32 bChanged = ImGui::DragInt("##element", &Value, 1.0f);
+					bOutActivated = ImGui::IsItemActivated();
+					bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+					if (bChanged)
+					{
+						InOutElement.IntValue = static_cast<INT64>(Value);
+					}
+					return bChanged;
+				}
+				EString CurrentName;
+				if (!EEnumRegistry::TryValueToString(InEnumHash, static_cast<INT32>(InOutElement.IntValue), CurrentName))
+				{
+					CurrentName = EString::FromInt(static_cast<UINT32>(InOutElement.IntValue));
+				}
+				BOOL32 bChanged = FALSE;
+				if (ImGui::BeginCombo("##element", *CurrentName))
+				{
+					for (UINT32 Index = 0u, Num = Entries.Num<UINT32>(); Index < Num; Index++)
+					{
+						const BOOL32 bSelected = (Entries[Index].Value == static_cast<INT32>(InOutElement.IntValue)) ? TRUE : FALSE;
+						if (ImGui::Selectable(*Entries[Index].Name, bSelected))
+						{
+							InOutElement.IntValue = static_cast<INT64>(Entries[Index].Value);
+							bChanged = TRUE;
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
 				}
 				return bChanged;
 			}
@@ -667,6 +707,21 @@ namespace PigeonEngine
 			}
 		}
 
+		void InitializeDefaultElement(FPropertyElement& OutElement, const EPropertyValueType InType, const size_t InEnumHash)
+		{
+			OutElement = FPropertyElement();
+			OutElement.Type = InType;
+			if (InType == EPropertyValueType::ENUM)
+			{
+				TArray<FEnumEntry> Entries;
+				EEnumRegistry::GetValues(InEnumHash, Entries);
+				if (Entries.Num<UINT32>() > 0u)
+				{
+					OutElement.IntValue = static_cast<INT64>(Entries[0].Value);
+				}
+			}
+		}
+
 		BOOL32 DrawArrayProperty(const FProperty& InProperty, void* InObject, const size_t& InClassHash, FPropertyValue& InOutValue)
 		{
 			BOOL32 bChanged = FALSE;
@@ -677,7 +732,7 @@ namespace PigeonEngine
 				InProperty.GetValue(InObject, BeforeElement);
 				BOOL32 bActivated = FALSE;
 				BOOL32 bDeactivated = FALSE;
-				const BOOL32 bElementChanged = DrawElementWidget(InOutValue.ArrayValues[Index], InProperty.ElementType, bActivated, bDeactivated);
+				const BOOL32 bElementChanged = DrawElementWidget(InOutValue.ArrayValues[Index], InProperty.ElementType, InProperty.ElementEnumHash, bActivated, bDeactivated);
 				if (bActivated)
 				{
 					StoreEditStart(InProperty, BeforeElement);
@@ -719,7 +774,7 @@ namespace PigeonEngine
 				FPropertyValue BeforeArray;
 				InProperty.GetValue(InObject, BeforeArray);
 				FPropertyElement NewElement;
-				NewElement.Type = InProperty.ElementType;
+				InitializeDefaultElement(NewElement, InProperty.ElementType, InProperty.ElementEnumHash);
 				InOutValue.ArrayValues.Add(NewElement);
 				InProperty.SetValue(InObject, InOutValue);
 				Commit(InProperty, InObject, InClassHash, BeforeArray, InOutValue);
@@ -739,11 +794,15 @@ namespace PigeonEngine
 				InProperty.GetValue(InObject, BeforeEntry);
 				BOOL32 bKeyActivated = FALSE;
 				BOOL32 bKeyDeactivated = FALSE;
-				const BOOL32 bKeyChanged = DrawElementWidget(Entry.Key, InProperty.KeyType, bKeyActivated, bKeyDeactivated);
+				ImGui::PushID("Key");
+				const BOOL32 bKeyChanged = DrawElementWidget(Entry.Key, InProperty.KeyType, InProperty.KeyEnumHash, bKeyActivated, bKeyDeactivated);
+				ImGui::PopID();
 				ImGui::SameLine();
 				BOOL32 bValueActivated = FALSE;
 				BOOL32 bValueDeactivated = FALSE;
-				const BOOL32 bValueChanged = DrawElementWidget(Entry.Value, InProperty.MapValueType, bValueActivated, bValueDeactivated);
+				ImGui::PushID("Value");
+				const BOOL32 bValueChanged = DrawElementWidget(Entry.Value, InProperty.MapValueType, InProperty.MapValueEnumHash, bValueActivated, bValueDeactivated);
+				ImGui::PopID();
 				if (bKeyActivated || bValueActivated)
 				{
 					StoreEditStart(InProperty, BeforeEntry);
@@ -784,16 +843,21 @@ namespace PigeonEngine
 				FPropertyValue BeforeMap;
 				InProperty.GetValue(InObject, BeforeMap);
 				FPropertyMapEntry Entry;
-				Entry.Key.Type = InProperty.KeyType;
 				if (InProperty.KeyType == EPropertyValueType::STRING)
 				{
+					InitializeDefaultElement(Entry.Key, InProperty.KeyType, InProperty.KeyEnumHash);
 					Entry.Key.StringValue = EString(PE_TEXT("Key")) + EString::FromInt(InOutValue.MapEntries.Num<UINT32>());
+				}
+				else if (InProperty.KeyType == EPropertyValueType::ENUM)
+				{
+					InitializeDefaultElement(Entry.Key, InProperty.KeyType, InProperty.KeyEnumHash);
 				}
 				else
 				{
+					Entry.Key.Type = InProperty.KeyType;
 					Entry.Key.IntValue = static_cast<INT64>(InOutValue.MapEntries.Num<UINT32>());
 				}
-				Entry.Value.Type = InProperty.MapValueType;
+				InitializeDefaultElement(Entry.Value, InProperty.MapValueType, InProperty.MapValueEnumHash);
 				InOutValue.MapEntries.Add(Entry);
 				InProperty.SetValue(InObject, InOutValue);
 				Commit(InProperty, InObject, InClassHash, BeforeMap, InOutValue);
