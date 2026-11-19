@@ -4,6 +4,7 @@
 
 namespace PigeonEngine
 {
+	class IObjectReferenceHandler;
 
 	/*
 	* Direction-agnostic serializer interface used by property reflection and, later, by
@@ -47,6 +48,17 @@ namespace PigeonEngine
 		// When reading, TRUE when the current scope has this field. Lets an older file
 		// omit fields the current class gained; when writing, always TRUE.
 		PE_NODISCARD virtual BOOL32 HasField(const CHAR* InName) const = 0;
+
+		/*
+		* Object references are encoded by the serializer that owns the file format (the
+		* level serializer maps them to file-local actor/component ids). An archive without
+		* a handler - a plain property round trip - skips reference fields instead of
+		* writing process-local unique ids.
+		*/
+		void SetObjectReferenceHandler(IObjectReferenceHandler* InHandler) { ObjectReferenceHandler = InHandler; }
+		PE_NODISCARD IObjectReferenceHandler* GetObjectReferenceHandler() const { return ObjectReferenceHandler; }
+	private:
+		IObjectReferenceHandler* ObjectReferenceHandler = nullptr;
 	};
 
 }
