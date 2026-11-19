@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Transform.h>
 #include "Archive.h"
+#include "EnumRegistry.h"
 
 namespace PigeonEngine
 {
@@ -67,9 +68,19 @@ namespace PigeonEngine
 
 	// Value serialization. These are the one place that knows how a math type is stored,
 	// so both the JSON and a future binary backend stay in sync through EArchive.
+	BOOL32 SerializeVector2(EArchive& InArchive, const CHAR* InName, Vector2& InOutValue);
+	BOOL32 SerializeVector2Int(EArchive& InArchive, const CHAR* InName, Vector2Int& InOutValue);
 	BOOL32 SerializeVector3(EArchive& InArchive, const CHAR* InName, Vector3& InOutValue);
 	BOOL32 SerializeQuaternion(EArchive& InArchive, const CHAR* InName, Quaternion& InOutValue);
+	BOOL32 SerializeColor3(EArchive& InArchive, const CHAR* InName, Color3& InOutValue);
 	BOOL32 SerializeTransform(EArchive& InArchive, const CHAR* InName, ETransform& InOutValue);
+
+	/*
+	* Enum values are stored by name. A value without a registered name falls back to the
+	* integer, and a reader that finds an integer treats it as the legacy encoding - so the
+	* integer-valued files written before the enum registry existed still load.
+	*/
+	void SerializeEnumValue(EArchive& InArchive, const CHAR* InName, INT32& InOutValue, const size_t& InEnumHash);
 
 	// Overloads used by the property templates below.
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, BOOL32& InOutValue);
@@ -80,8 +91,11 @@ namespace PigeonEngine
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, FLOAT& InOutValue);
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, DOUBLE& InOutValue);
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, EString& InOutValue);
+	void SerializeValue(EArchive& InArchive, const CHAR* InName, Vector2& InOutValue);
+	void SerializeValue(EArchive& InArchive, const CHAR* InName, Vector2Int& InOutValue);
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, Vector3& InOutValue);
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, Quaternion& InOutValue);
+	void SerializeValue(EArchive& InArchive, const CHAR* InName, Color3& InOutValue);
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, ETransform& InOutValue);
 
 	// Register a property backed by accessors. Used when the member is protected (most
@@ -106,6 +120,69 @@ namespace PigeonEngine
 			}
 		};
 		EClassPropertyRegistry::AddProperty(InClassHash, Property);
+	}
+
+	// Register a property whose value has its own serializer (a struct, an array, a shape).
+	// The getter/setter form is kept so the property stays one registration shared by
+	// serialization and the editor.
+	template <typename TClass, typename TValue>
+	void AddClassPropertyCustom(const size_t& InClassHash, const CHAR* InName,
+		const TFunction<TValue(const TClass*)>& InGetter,
+		const TFunction<void(TClass*, const TValue&)>& InSetter,
+		const TFunction<void(EArchive&, const CHAR*, TValue&)>& InSerializeValue,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+	{
+		FProperty Property;
+		Property.Name = InName;
+		Property.Flags = InFlags;
+		Property.Serialize = [InName = EString(InName), InGetter, InSetter, InSerializeValue](EArchive& InArchive, void* InContainer) -> void
+		{
+			TClass* Object = static_cast<TClass*>(InContainer);
+			TValue Value = InGetter(Object);
+			InSerializeValue(InArchive, *InName, Value);
+			if (!InArchive.IsSaving())
+			{
+				InSetter(Object, Value);
+			}
+		};
+		EClassPropertyRegistry::AddProperty(InClassHash, Property);
+	}
+
+	// Enum-like values that are not plain C++ enums (FPhysicsObjectLayer wraps a UINT16):
+	// the getter/setter work in INT32 and the registry supplies the on-disk names.
+	template <typename TClass>
+	void AddClassEnumValuePropertyAccessors(const size_t& InClassHash, const CHAR* InName, const size_t& InEnumHash,
+		const TFunction<INT32(const TClass*)>& InGetter,
+		const TFunction<void(TClass*, const INT32&)>& InSetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+	{
+		FProperty Property;
+		Property.Name = InName;
+		Property.Flags = InFlags;
+		Property.Serialize = [InName = EString(InName), InEnumHash, InGetter, InSetter](EArchive& InArchive, void* InContainer) -> void
+		{
+			TClass* Object = static_cast<TClass*>(InContainer);
+			INT32 Value = InGetter(Object);
+			SerializeEnumValue(InArchive, *InName, Value, InEnumHash);
+			if (!InArchive.IsSaving())
+			{
+				InSetter(Object, Value);
+			}
+		};
+		EClassPropertyRegistry::AddProperty(InClassHash, Property);
+	}
+
+	template <typename TClass, typename TEnum>
+	void AddClassEnumPropertyAccessors(const size_t& InClassHash, const CHAR* InName,
+		const TFunction<TEnum(const TClass*)>& InGetter,
+		const TFunction<void(TClass*, const TEnum&)>& InSetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+	{
+		const size_t EnumHash = GetClassHashCode<TEnum>();
+		AddClassEnumValuePropertyAccessors<TClass>(InClassHash, InName, EnumHash,
+			[InGetter](const TClass* Object) -> INT32 { return static_cast<INT32>(InGetter(Object)); },
+			[InSetter](TClass* Object, const INT32& Value) -> void { InSetter(Object, static_cast<TEnum>(Value)); },
+			InFlags);
 	}
 
 }

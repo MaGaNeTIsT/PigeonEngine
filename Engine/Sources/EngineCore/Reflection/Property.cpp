@@ -96,6 +96,24 @@ namespace PigeonEngine
 		}
 	}
 
+	BOOL32 SerializeVector2(EArchive& InArchive, const CHAR* InName, Vector2& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeFloat(PE_TEXT("X"), InOutValue.x);
+		InArchive.SerializeFloat(PE_TEXT("Y"), InOutValue.y);
+		InArchive.EndObject();
+		return TRUE;
+	}
+
+	BOOL32 SerializeVector2Int(EArchive& InArchive, const CHAR* InName, Vector2Int& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeInt32(PE_TEXT("X"), InOutValue.x);
+		InArchive.SerializeInt32(PE_TEXT("Y"), InOutValue.y);
+		InArchive.EndObject();
+		return TRUE;
+	}
+
 	BOOL32 SerializeVector3(EArchive& InArchive, const CHAR* InName, Vector3& InOutValue)
 	{
 		InArchive.BeginObject(InName);
@@ -115,6 +133,44 @@ namespace PigeonEngine
 		InArchive.SerializeFloat(PE_TEXT("W"), InOutValue.w);
 		InArchive.EndObject();
 		return TRUE;
+	}
+
+	BOOL32 SerializeColor3(EArchive& InArchive, const CHAR* InName, Color3& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeFloat(PE_TEXT("R"), InOutValue.x);
+		InArchive.SerializeFloat(PE_TEXT("G"), InOutValue.y);
+		InArchive.SerializeFloat(PE_TEXT("B"), InOutValue.z);
+		InArchive.EndObject();
+		return TRUE;
+	}
+
+	void SerializeEnumValue(EArchive& InArchive, const CHAR* InName, INT32& InOutValue, const size_t& InEnumHash)
+	{
+		if (InArchive.IsSaving())
+		{
+			EString ValueName;
+			if (EEnumRegistry::TryValueToString(InEnumHash, InOutValue, ValueName))
+			{
+				InArchive.SerializeString(InName, ValueName);
+			}
+			else
+			{
+				// Unregistered value: keep the integer so nothing is lost. The reader tells
+				// the two encodings apart by trying the string first.
+				InArchive.SerializeInt32(InName, InOutValue);
+			}
+			return;
+		}
+
+		EString ValueName;
+		InArchive.SerializeString(InName, ValueName);
+		if ((ValueName.Length() > 0u) && EEnumRegistry::TryStringToValue(InEnumHash, *ValueName, InOutValue))
+		{
+			return;
+		}
+		// Legacy integer encoding, or a string field that this registry does not know.
+		InArchive.SerializeInt32(InName, InOutValue);
 	}
 
 	BOOL32 SerializeTransform(EArchive& InArchive, const CHAR* InName, ETransform& InOutValue)
@@ -174,6 +230,16 @@ namespace PigeonEngine
 		InArchive.SerializeString(InName, InOutValue);
 	}
 
+	void SerializeValue(EArchive& InArchive, const CHAR* InName, Vector2& InOutValue)
+	{
+		SerializeVector2(InArchive, InName, InOutValue);
+	}
+
+	void SerializeValue(EArchive& InArchive, const CHAR* InName, Vector2Int& InOutValue)
+	{
+		SerializeVector2Int(InArchive, InName, InOutValue);
+	}
+
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, Vector3& InOutValue)
 	{
 		SerializeVector3(InArchive, InName, InOutValue);
@@ -182,6 +248,11 @@ namespace PigeonEngine
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, Quaternion& InOutValue)
 	{
 		SerializeQuaternion(InArchive, InName, InOutValue);
+	}
+
+	void SerializeValue(EArchive& InArchive, const CHAR* InName, Color3& InOutValue)
+	{
+		SerializeColor3(InArchive, InName, InOutValue);
 	}
 
 	void SerializeValue(EArchive& InArchive, const CHAR* InName, ETransform& InOutValue)

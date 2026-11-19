@@ -22,11 +22,11 @@ namespace PigeonEngine
 			[](const PSceneComponent* Component) -> ETransform { return Component->GetTransform(); },
 			[](PSceneComponent* Component, const ETransform& Value) -> void { Component->SetComponentTransform(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		// Stored as its integer value for now; named enum serialization arrives with the
-		// enum registry in the editor phase.
-		AddClassPropertyAccessors<PSceneComponent, INT32>(ClassHash, PE_TEXT("Mobility"),
-			[](const PSceneComponent* Component) -> INT32 { return static_cast<INT32>(Component->GetMobility()); },
-			[](PSceneComponent* Component, const INT32& Value) -> void { Component->SetMobility(static_cast<EMobilityType>(Value)); },
+		// Stored by name (EMobilityType registry), so reordering the enum does not
+		// reinterpret existing files. Integer files from before the registry still load.
+		AddClassEnumPropertyAccessors<PSceneComponent, EMobilityType>(ClassHash, PE_TEXT("Mobility"),
+			[](const PSceneComponent* Component) -> EMobilityType { return Component->GetMobility(); },
+			[](PSceneComponent* Component, const EMobilityType& Value) -> void { Component->SetMobility(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 
