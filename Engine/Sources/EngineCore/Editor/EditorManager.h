@@ -2,6 +2,7 @@
 
 #include <Base/DataStructure/ObjectBase.h>
 #include "EditorHelper.h"
+#include "WorldEditorCommand.h"
 
 namespace PigeonEngine
 {
@@ -34,8 +35,11 @@ namespace PigeonEngine
 		class EEditorGlobalPanel*	EditorGlobalPanel	= nullptr;
 		class EEditorProfilerPanel*	EditorProfilerPanel = nullptr;
 
-		// Currently selected component (gizmo target)
+		// Currently selected component (gizmo target), mirrored from PWorld's handle
+		// selection every frame; the world remains the authority.
 		class PSceneComponent* SelectedComponent = nullptr;
+
+		FWorldEditorCommandStack WorldCommands;
 
 		// The controller whose OnMouseEvent currently carries the HandleMouseEvent
 		// subscription. The world can be re-initialized at runtime, which replaces the

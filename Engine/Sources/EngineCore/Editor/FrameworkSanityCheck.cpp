@@ -28,6 +28,7 @@
 #include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
+#include <Editor/WorldEditorCommand.h>
 
 namespace PigeonEngine
 {
@@ -1398,6 +1399,133 @@ namespace PigeonEngine
 		return (bSaved && bLoaded && bContentOk) ? TRUE : FALSE;
 	}
 
+	// Command stack end to end on a disposable world: spawn/undo/redo, add/delete component,
+	// a property edit and the handle remap that lets an older property command address a
+	// component recreated by a structural undo.
+	static BOOL32 CheckWorldEditorCommands()
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		PSanityLevelWorld* World = new PSanityLevelWorld();
+		World->Init();
+		FWorldEditorCommandStack Stack;
+		Stack.GetContext().World = World;
+
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityCommandActor");
+		World->AddActor(Actor);
+		const BOOL32 bSpawnPushed = PushSpawnActorCommand(Stack, *World, Actor);
+
+		PSceneComponent* Component = new PSceneComponent();
+		POBJ_DEBUGNAME_SET(Component, "SanityCommandComponent");
+		Actor->AddComponent(Component);
+		const BOOL32 bAddPushed = PushAddComponentCommand(Stack, *World, Actor, Component);
+
+		Component->SetMobility(EMobilityType::EMT_DYNAMIC);
+		FPropertyValue BeforeMobility;
+		BeforeMobility.Type = EPropertyValueType::ENUM;
+		BeforeMobility.IntValue = static_cast<INT64>(EMobilityType::EMT_STATIC);
+		FPropertyValue AfterMobility;
+		AfterMobility.Type = EPropertyValueType::ENUM;
+		AfterMobility.IntValue = static_cast<INT64>(EMobilityType::EMT_DYNAMIC);
+		const BOOL32 bPropertyPushed = PushSetPropertyCommand(Stack, MakeObjectHandle(Component), TRUE,
+			GetClassHashCode<PSceneComponent>(), EString(PE_TEXT("Mobility")), BeforeMobility, AfterMobility);
+
+		const BOOL32 bDeletePushed = PushDeleteComponentCommand(Stack, *World, Component);
+		// Find the added component by identity, not by type: the actor's default root is also
+		// a PSceneComponent and is always first in the component list.
+		auto FindCommandComponent = [](PActor* InActor) -> PSceneComponent*
+		{
+			const TArray<PSceneComponent*> SceneComponents = InActor ? InActor->GetComponents<PSceneComponent>() : TArray<PSceneComponent*>();
+			for (UINT32 Index = 0u, Num = SceneComponents.Num<UINT32>(); Index < Num; Index++)
+			{
+				if ((SceneComponents[Index] != InActor->GetRootComponent()) &&
+					(POBJ_DEBUGNAME_GET(SceneComponents[Index]) == EString(PE_TEXT("SanityCommandComponent"))))
+				{
+					return SceneComponents[Index];
+				}
+			}
+			return nullptr;
+		};
+		BOOL32 bDeleteOk = (FindCommandComponent(Actor) == nullptr) ? TRUE : FALSE;
+
+		// Undo the delete: the component comes back and older commands must find it.
+		BOOL32 bUndoDeleteOk = Stack.Undo();
+		PSceneComponent* Restored = FindCommandComponent(Actor);
+		bUndoDeleteOk = (bUndoDeleteOk && Restored && (Restored->GetMobility() == EMobilityType::EMT_DYNAMIC)) ? TRUE : FALSE;
+
+		const BOOL32 bUndoPropertyOk = Stack.Undo();
+		const BOOL32 bUndoPropertyValue = (Restored && (Restored->GetMobility() == EMobilityType::EMT_STATIC)) ? TRUE : FALSE;
+		const BOOL32 bRedoPropertyOk = Stack.Redo();
+		const BOOL32 bRedoPropertyValue = (Restored && (Restored->GetMobility() == EMobilityType::EMT_DYNAMIC)) ? TRUE : FALSE;
+
+		const BOOL32 bRedoDeleteOk = Stack.Redo();
+		const BOOL32 bRedoDeleteValue = (FindCommandComponent(Actor) == nullptr) ? TRUE : FALSE;
+		const BOOL32 bUndoDeleteAgainOk = Stack.Undo();
+		const BOOL32 bUndoDeleteAgainValue = (FindCommandComponent(Actor) != nullptr) ? TRUE : FALSE;
+
+		// The property edit was redone above, so it sits between the delete and the add in the
+		// undo stack; undo it again before undoing the add itself.
+		const BOOL32 bUndoPropertyAgainOk = Stack.Undo();
+		const BOOL32 bUndoPropertyAgainValue = (FindCommandComponent(Actor) && (FindCommandComponent(Actor)->GetMobility() == EMobilityType::EMT_STATIC)) ? TRUE : FALSE;
+
+		const BOOL32 bUndoAddOk = Stack.Undo();
+		const BOOL32 bUndoAddValue = (FindCommandComponent(Actor) == nullptr) ? TRUE : FALSE;
+
+		const BOOL32 bUndoSpawnOk = Stack.Undo();
+		const BOOL32 bUndoSpawnValue = (World->GetAllActors().Num<UINT32>() == 0u) ? TRUE : FALSE;
+		if (!bUndoSpawnValue)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("command stack: actors after undoing spawn: ")) + EString::FromInt(World->GetAllActors().Num<UINT32>()));
+		}
+		const BOOL32 bRedoSpawnOk = Stack.Redo();
+		const BOOL32 bRedoSpawnValue = (World->GetAllActors().Num<UINT32>() == 1u) ? TRUE : FALSE;
+
+		// Delete the recreated actor through the same command and restore it.
+		PActor* RecreatedActor = (World->GetAllActors().Num<UINT32>() > 0u) ? World->GetAllActors()[0] : nullptr;
+		const BOOL32 bDeleteActorPushed = RecreatedActor ? PushDeleteActorCommand(Stack, *World, RecreatedActor) : FALSE;
+		const BOOL32 bDeleteActorValue = (World->GetAllActors().Num<UINT32>() == 0u) ? TRUE : FALSE;
+		const BOOL32 bUndoDeleteActorOk = Stack.Undo();
+		const BOOL32 bUndoDeleteActorValue = (World->GetAllActors().Num<UINT32>() == 1u) ? TRUE : FALSE;
+
+		Stack.Clear();
+		World->Destroy();
+		(void)bSpawnPushed;
+		(void)bAddPushed;
+		(void)bPropertyPushed;
+		(void)bDeletePushed;
+		(void)bDeleteOk;
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		const BOOL32 bOk = (bSpawnPushed && bAddPushed && bPropertyPushed && bDeletePushed && bUndoDeleteOk &&
+			bUndoPropertyOk && bUndoPropertyValue && bRedoPropertyOk && bRedoPropertyValue &&
+			bRedoDeleteOk && bRedoDeleteValue && bUndoDeleteAgainOk && bUndoDeleteAgainValue &&
+			bUndoPropertyAgainOk && bUndoPropertyAgainValue &&
+			bUndoAddOk && bUndoAddValue && bUndoSpawnOk && bUndoSpawnValue && bRedoSpawnOk && bRedoSpawnValue &&
+			bDeleteActorPushed && bDeleteActorValue && bUndoDeleteActorOk && bUndoDeleteActorValue) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("command stack detail: pushed=")) + EString::FromInt(bSpawnPushed) + EString::FromInt(bAddPushed) + EString::FromInt(bPropertyPushed) + EString::FromInt(bDeletePushed) +
+				EString(PE_TEXT(" undoDelete=")) + EString::FromInt(bUndoDeleteOk) +
+				EString(PE_TEXT(" undoProp=")) + EString::FromInt(bUndoPropertyOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoPropertyValue) +
+				EString(PE_TEXT(" redoProp=")) + EString::FromInt(bRedoPropertyOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoPropertyValue) +
+				EString(PE_TEXT(" redoDelete=")) + EString::FromInt(bRedoDeleteOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoDeleteValue) +
+				EString(PE_TEXT(" undoDelete2=")) + EString::FromInt(bUndoDeleteAgainOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoDeleteAgainValue) +
+				EString(PE_TEXT(" undoProp2=")) + EString::FromInt(bUndoPropertyAgainOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoPropertyAgainValue) +
+				EString(PE_TEXT(" undoAdd=")) + EString::FromInt(bUndoAddOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoAddValue) +
+				EString(PE_TEXT(" undoSpawn=")) + EString::FromInt(bUndoSpawnOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoSpawnValue) +
+				EString(PE_TEXT(" redoSpawn=")) + EString::FromInt(bRedoSpawnOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoSpawnValue) +
+				EString(PE_TEXT(" deleteActor=")) + EString::FromInt(bDeleteActorPushed) + EString(PE_TEXT("/")) + EString::FromInt(bDeleteActorValue) +
+				EString(PE_TEXT(" undoDeleteActor=")) + EString::FromInt(bUndoDeleteActorOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoDeleteActorValue));
+		}
+		return bOk;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -1518,6 +1646,12 @@ namespace PigeonEngine
 		const BOOL32 bLevelFileIO = CheckLevelFileIO();
 		ReportSanityResult(EString(PE_TEXT("level file save and load")), bLevelFileIO);
 		if (!bLevelFileIO)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bWorldEditorCommands = CheckWorldEditorCommands();
+		ReportSanityResult(EString(PE_TEXT("world editor command stack")), bWorldEditorCommands);
+		if (!bWorldEditorCommands)
 		{
 			FailedCount += 1u;
 		}

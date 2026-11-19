@@ -1,15 +1,32 @@
 #include <PigeonBase/Object/Actor.h>
 
 #include "Component/SceneComponent.h"
+#include "Component/ActorComponent.h"
+#include "Component/Character/CharacterInputComponent.h"
+#include "Component/Character/MovementComponent.h"
 #include "World/World.h"
 #include <Editor/EditorLogManager.h>
 
 #if ENGINE_EDITOR_ONLY
+#include <Editor/WorldEditorCommand.h>
 #include <imgui.h>
 #endif
 
 namespace PigeonEngine
 {
+#if ENGINE_EDITOR_ONLY
+	static BOOL32 IsClassDerivedFrom(const size_t& InClassHash, const size_t& InBaseHash)
+	{
+		for (size_t ClassHash = InClassHash; ClassHash != static_cast<size_t>(-1); ClassHash = GetClassParentHash(ClassHash))
+		{
+			if (ClassHash == InBaseHash)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+#endif
 
 	static void RegisterClassTypes()
 	{
@@ -712,6 +729,10 @@ namespace PigeonEngine
 
 	void PActor::GenerateWorldOutline(const PActor* WorldCurrentSelectedActor)
 	{
+#if ENGINE_EDITOR_ONLY
+		static PActor* RenameActor = nullptr;
+		static CHAR RenameBuffer[256] = {};
+#endif
 		BOOL8 bSelectedActor	= WorldCurrentSelectedActor == this;
 		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenActors.Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 
@@ -719,14 +740,92 @@ namespace PigeonEngine
 		BOOL8 bTreeNodeExpand	= ImGui::TreeNodeEx("##node", TreeNodeFlag);
 		ImGui::SameLine();
 		BOOL8 bSelected			= ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
+
+		if (ImGui::BeginPopupContextItem("##ActorContext"))
+		{
+			if (ImGui::MenuItem("Rename"))
+			{
+				RenameActor = this;
+				const EString& ActorName = POBJ_DEBUGNAME_GET(this);
+				const UINT32 NameLength = EMath::Min(ActorName.Length(), static_cast<UINT32>(sizeof(RenameBuffer) - 1u));
+				memset(RenameBuffer, 0, sizeof(RenameBuffer));
+				if (NameLength > 0u)
+				{
+					memcpy(RenameBuffer, *ActorName, NameLength);
+				}
+			}
+			PWorld* OwnerWorld = GetWorld();
+			FWorldEditorCommandStack* Commands = OwnerWorld ? OwnerWorld->GetEditorCommandStack() : nullptr;
+			if (Commands && ImGui::MenuItem("Delete"))
+			{
+				PushDeleteActorCommand(*Commands, *OwnerWorld, this);
+				ImGui::EndPopup();
+				ImGui::PopID();
+				return;
+			}
+			if (Commands && ImGui::BeginMenu("Add Component"))
+			{
+				std::vector<ERTTIManager::ESerializableClassInfo> ClassInfos;
+				ERTTIManager::GetManagerSingleton()->GetSerializableClassInfos(ClassInfos);
+				const size_t ComponentBaseHash = GetClassHashCode<PActorComponent>();
+				const size_t MovementComponentHash = GetClassHashCode<PMovementComponent>();
+				const size_t CharacterInputComponentHash = GetClassHashCode<PCharacterInputComponent>();
+				for (UINT32 Index = 0u, Num = static_cast<UINT32>(ClassInfos.size()); Index < Num; Index++)
+				{
+					const ERTTIManager::ESerializableClassInfo& ClassInfo = ClassInfos[Index];
+					if ((!ClassInfo.bHasFactory) ||
+						(!IsClassDerivedFrom(ClassInfo.ClassHash, ComponentBaseHash)) ||
+						(ClassInfo.ClassHash == MovementComponentHash) ||
+						(ClassInfo.ClassHash == CharacterInputComponentHash))
+					{
+						continue;
+					}
+					if (ImGui::MenuItem(ClassInfo.StableName.c_str()))
+					{
+						PActorComponent* NewComponent = CreateClassObjectByStableName<PActorComponent>(ClassInfo.StableName.c_str());
+						if (NewComponent)
+						{
+							POBJ_DEBUGNAME_SET(NewComponent, EString(ClassInfo.StableName.c_str()));
+							AddComponent(NewComponent);
+							OwnerWorld->SetSelectedComponent(NewComponent);
+							PushAddComponentCommand(*Commands, *OwnerWorld, this, NewComponent);
+						}
+					}
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndPopup();
+		}
 		ImGui::PopID();
+
+		if (RenameActor == this)
+		{
+			ImGui::SetNextItemWidth(220.0f);
+			ImGui::InputText("##ActorRename", RenameBuffer, sizeof(RenameBuffer));
+			if (ImGui::IsItemDeactivatedAfterEdit() || ImGui::IsKeyPressed(ImGuiKey_Enter))
+			{
+				POBJ_DEBUGNAME_SET(this, EString(RenameBuffer));
+				RenameActor = nullptr;
+			}
+			else if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+			{
+				RenameActor = nullptr;
+			}
+		}
 
 		if (bTreeNodeExpand)
 		{
-			// child actors
-			for (PActor* Element : ChildrenActors)
+			// Snapshot: a context menu inside a child can delete it (and its subtree) while
+			// this loop is still running, which mutates ChildrenActors.
+			const TArray<PActor*> ChildSnapshot = ChildrenActors;
+			for (PActor* Element : ChildSnapshot)
 			{
-				Element->GenerateWorldOutline(WorldCurrentSelectedActor);
+				// Contains only compares pointer values, so it is safe to ask after the child
+				// was destroyed and unlinked.
+				if (ChildrenActors.Contains(Element))
+				{
+					Element->GenerateWorldOutline(WorldCurrentSelectedActor);
+				}
 			}
 			ImGui::TreePop();
 		}
@@ -739,6 +838,22 @@ namespace PigeonEngine
 
 	void PActor::GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent)
 	{
+#if ENGINE_EDITOR_ONLY
+		CHAR NameBuffer[256] = {};
+		{
+			const EString& ActorDebugName = POBJ_DEBUGNAME_GET(this);
+			const UINT32 NameLength = EMath::Min(ActorDebugName.Length(), static_cast<UINT32>(sizeof(NameBuffer) - 1u));
+			if (NameLength > 0u)
+			{
+				memcpy(NameBuffer, *ActorDebugName, NameLength);
+			}
+		}
+		if (ImGui::InputText("##ActorName", NameBuffer, sizeof(NameBuffer)))
+		{
+			POBJ_DEBUGNAME_SET(this, EString(NameBuffer));
+		}
+		ImGui::Separator();
+#endif
 		if(RootComponent)
 		{
 			BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_DefaultOpen);
@@ -747,6 +862,31 @@ namespace PigeonEngine
 				RootComponent->GenerateComponentOutline(WorldCurrentSelectedComponent);
 				ImGui::TreePop();
 			}
+		}
+
+		// Non-scene components (physics, navigation, input, ...) are not part of the scene
+		// component tree, so they get their own list. The insertion order is the actor's
+		// component order.
+		ImGui::Separator();
+		ImGui::TextUnformatted("Other Components");
+		const TArray<PActorComponent*> AllComponents = GetAllComponents();
+		for (UINT32 Index = 0u, Num = AllComponents.Num<UINT32>(); Index < Num; Index++)
+		{
+			PActorComponent* Component = AllComponents[Index];
+			if ((!Component) || (dynamic_cast<PSceneComponent*>(Component) != nullptr))
+			{
+				continue;
+			}
+			ImGui::PushID(Component);
+			const BOOL32 bSelected = (Component == WorldCurrentSelectedComponent) ? TRUE : FALSE;
+			if (ImGui::Selectable(*POBJ_DEBUGNAME_GET(Component), bSelected))
+			{
+				if (GetWorld())
+				{
+					GetWorld()->SetSelectedComponent(Component);
+				}
+			}
+			ImGui::PopID();
 		}
 	}
 #endif

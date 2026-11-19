@@ -10,7 +10,9 @@
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/Component/SceneComponent.h"
+#include "PigeonBase/Object/Component/ActorComponent.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
+#include "PropertyEditor.h"
 #include <RenderProxy/RenderSingletonObject.h>
 #include "Navigation/NavigationManager.h"
 #include <imgui.h>
@@ -96,6 +98,8 @@ namespace PigeonEngine
 
 	void EEditorManager::ShutDown()
 	{
+		EPropertyEditor::SetPropertyCommittedCallback(EPropertyEditor::FOnPropertyCommitted());
+		WorldCommands.Clear();
 		LogsManager->ShutDown();
 		AssetManager->ShutDown();
 		ImportManager->ShutDown();
@@ -121,6 +125,21 @@ namespace PigeonEngine
 		AssetManager->EditorInit();
 		WorldManager->EditorInit();
 		ImportManager->EditorInit();
+
+		// One registration point for every reflected edit: the Details panel applies the value
+		// and hands the before/after pair here, which records the undo command.
+		EPropertyEditor::SetPropertyCommittedCallback([this](void* InObject, const size_t& InClassHash,
+			const EString& InPropertyName, const FPropertyValue& InBefore, const FPropertyValue& InAfter) -> void
+		{
+			if (!InObject)
+			{
+				return;
+			}
+			EObjectBase* Object = static_cast<EObjectBase*>(InObject);
+			const BOOL32 bIsComponent = (dynamic_cast<PActorComponent*>(Object) != nullptr) ? TRUE : FALSE;
+			PushSetPropertyCommand(WorldCommands, MakeObjectHandle(Object), bIsComponent, InClassHash,
+				InPropertyName, InBefore, InAfter);
+		});
 
 		AttachToCurrentController();
 	}
@@ -194,7 +213,7 @@ namespace PigeonEngine
 			if (ClickedActor)
 			{
 				World->SetSelectedActor(ClickedActor);
-				SelectedComponent = ClickedActor->GetRootComponent();
+				SelectedComponent = dynamic_cast<PSceneComponent*>(World->GetSelectedComponent());
 			}
 			else
 			{
@@ -227,12 +246,19 @@ namespace PigeonEngine
 
 	void EEditorManager::EditorUpdate()
 	{
+		PWorld* MenuWorld = WorldManager->GetWorld();
+		WorldCommands.GetContext().World = MenuWorld;
+		if (MenuWorld)
+		{
+			MenuWorld->SetEditorCommandStack(&WorldCommands);
+		}
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New Level"))
 				{
+					WorldCommands.Clear();
 					WorldManager->RequestNewLevel();
 				}
 				const EString DefaultLevelPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("Demo.PLevel"));
@@ -242,11 +268,41 @@ namespace PigeonEngine
 				}
 				if (ImGui::MenuItem("Load Level"))
 				{
+					WorldCommands.Clear();
 					WorldManager->RequestLoadLevel(DefaultLevelPath);
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Edit"))
+			{
+				const EString UndoLabel = WorldCommands.GetUndoLabel();
+				const EString RedoLabel = WorldCommands.GetRedoLabel();
+				const EString UndoMenuLabel = WorldCommands.CanUndo() ? (EString(PE_TEXT("Undo ")) + UndoLabel) : EString(PE_TEXT("Undo"));
+				const EString RedoMenuLabel = WorldCommands.CanRedo() ? (EString(PE_TEXT("Redo ")) + RedoLabel) : EString(PE_TEXT("Redo"));
+				if (ImGui::MenuItem(*UndoMenuLabel, "Ctrl+Z", false, WorldCommands.CanUndo() != FALSE))
+				{
+					WorldCommands.Undo();
+				}
+				if (ImGui::MenuItem(*RedoMenuLabel, "Ctrl+Y", false, WorldCommands.CanRedo() != FALSE))
+				{
+					WorldCommands.Redo();
+				}
+				ImGui::EndMenu();
+			}
 			ImGui::EndMainMenuBar();
+		}
+
+		ImGuiIO& IO = ImGui::GetIO();
+		if ((!IO.WantTextInput) && IO.KeyCtrl)
+		{
+			if (ImGui::IsKeyPressed(ImGuiKey_Z))
+			{
+				WorldCommands.Undo();
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_Y))
+			{
+				WorldCommands.Redo();
+			}
 		}
 
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
@@ -255,18 +311,14 @@ namespace PigeonEngine
 		// controller our mouse subscription points at.
 		AttachToCurrentController();
 
-		// A destroyed selection leaves this pointer dangling; the world validates its own
-		// selection inside the panels, this covers the gizmo target.
-		if (SelectedComponent)
+		// Selection is owned by the world. Mirror the resolved component for the gizmo, so a
+		// destroyed object reads as null immediately and the two selections cannot diverge.
+		PWorld* CurrentWorld = WorldManager->GetWorld();
+		SelectedComponent = CurrentWorld ? dynamic_cast<PSceneComponent*>(CurrentWorld->GetSelectedComponent()) : nullptr;
+		if (!SelectedComponent)
 		{
-			PWorld* CurrentWorld = WorldManager->GetWorld();
-			const PActor* SelectedOwner = SelectedComponent->GetOwnerActor();
-			if (!CurrentWorld || !SelectedOwner || (SelectedOwner->GetWorld() != CurrentWorld))
-			{
-				SelectedComponent = nullptr;
-				bDragging = FALSE;
-				DragAxis = EGizmoAxis::NONE;
-			}
+			bDragging = FALSE;
+			DragAxis = EGizmoAxis::NONE;
 		}
 
 		WorldManager->EditorUpdate();

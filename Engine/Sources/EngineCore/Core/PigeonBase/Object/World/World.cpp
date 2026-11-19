@@ -3,13 +3,16 @@
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 #include <Renderer/RenderInterface.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
+#include <PigeonBase/Object/Component/ActorComponent.h>
 #include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
 #include "PigeonBase/Object/Actor/LevelActor.h"
+#include "PigeonBase/Object/Actor/LevelCharacter.h"
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #if ENGINE_EDITOR_ONLY
+#include <Editor/WorldEditorCommand.h>
 #include <imgui.h>
 #endif
 
@@ -27,6 +30,20 @@ namespace PigeonEngine
 
 			return Vector3::Normalize(InVector);
 		}
+
+#if ENGINE_EDITOR_ONLY
+		BOOL32 IsClassDerivedFrom(const size_t& InClassHash, const size_t& InBaseHash)
+		{
+			for (size_t ClassHash = InClassHash; ClassHash != static_cast<size_t>(-1); ClassHash = GetClassParentHash(ClassHash))
+			{
+				if (ClassHash == InBaseHash)
+				{
+					return TRUE;
+				}
+			}
+			return FALSE;
+		}
+#endif
 	}
 
 	static void RegisterClassTypes()
@@ -241,6 +258,12 @@ namespace PigeonEngine
 			ComponentById.Remove(Component->GetUniqueID());
 			OnComponentRemoved.Broadcast(Component);
 		}
+#if ENGINE_EDITOR_ONLY
+		if (ImguiSelectedComponent == Component)
+		{
+			SetSelectedComponent(nullptr);
+		}
+#endif
 	}
 
 	void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
@@ -418,6 +441,12 @@ namespace PigeonEngine
 			ActorById.Remove(Actor->GetUniqueID());
 			OnActorRemoved.Broadcast(Actor);
 		}
+#if ENGINE_EDITOR_ONLY
+		if (ImguiSelectedActor == Actor)
+		{
+			SetSelectedActor(nullptr);
+		}
+#endif
 	}
 
 	void PWorld::DestroyActor(PActor* Actor)
@@ -663,6 +692,7 @@ namespace PigeonEngine
 	void PWorld::SetSelectedActor(PActor* Selected)
 	{
 		this->ImguiSelectedActor = Selected;
+		this->ImguiSelectedActorHandle = MakeObjectHandle(Selected);
 		if (!this->ImguiSelectedActor)
 		{
 			this->SetSelectedComponent(nullptr);
@@ -688,30 +718,70 @@ namespace PigeonEngine
 	void PWorld::SetSelectedComponent(PActorComponent* Selected)
 	{
 		this->ImguiSelectedComponent = Selected;
+		this->ImguiSelectedComponentHandle = MakeObjectHandle(Selected);
 		if (this->ImguiSelectedComponent)
 		{
 			this->ImguiSelectedComponent->OnSelectedByImGui();
 		}
 	}
 
+	PActor* PWorld::GetSelectedActor() const
+	{
+		return ImguiSelectedActorHandle.IsValid() ? ResolveActor(ImguiSelectedActorHandle) : nullptr;
+	}
+
+	PActorComponent* PWorld::GetSelectedComponent() const
+	{
+		return ImguiSelectedComponentHandle.IsValid() ? ResolveComponent(ImguiSelectedComponentHandle) : nullptr;
+	}
+
 	void PWorld::ValidateSelection()
 	{
-		// A destroyed actor or component leaves the selection pointers dangling.
-		// RemovedFromScene clears a dying object's world pointer, so a mismatch here is
-		// the cheap per-frame validity check - and a valid selection can only ever point
-		// at an object of this world.
-		if (ImguiSelectedActor && (ImguiSelectedActor->GetWorld() != this))
+		// Handles, not raw pointers, are the authority: a destroyed object leaves the
+		// registries at mark time, so resolution fails before its memory is freed.
+		if (ImguiSelectedActorHandle.IsValid())
+		{
+			PActor* ResolvedActor = ResolveActor(ImguiSelectedActorHandle);
+			if (!ResolvedActor)
+			{
+				SetSelectedActor(nullptr);
+			}
+			else
+			{
+				ImguiSelectedActor = ResolvedActor;
+			}
+		}
+		else if (ImguiSelectedActor)
 		{
 			SetSelectedActor(nullptr);
 		}
-		if (ImguiSelectedComponent)
+
+		if (ImguiSelectedComponentHandle.IsValid())
 		{
-			const PActor* SelectedOwner = ImguiSelectedComponent->GetOwnerActor();
-			if (!SelectedOwner || (SelectedOwner->GetWorld() != this))
+			PActorComponent* ResolvedComponent = ResolveComponent(ImguiSelectedComponentHandle);
+			if (!ResolvedComponent)
 			{
 				SetSelectedComponent(nullptr);
 			}
+			else
+			{
+				ImguiSelectedComponent = ResolvedComponent;
+			}
 		}
+		else if (ImguiSelectedComponent)
+		{
+			SetSelectedComponent(nullptr);
+		}
+	}
+
+	void PWorld::SetEditorCommandStack(FWorldEditorCommandStack* InCommands)
+	{
+		EditorCommandStack = InCommands;
+	}
+
+	FWorldEditorCommandStack* PWorld::GetEditorCommandStack() const
+	{
+		return EditorCommandStack;
 	}
 
 	void PWorld::GenerateWorldOutline()
@@ -721,6 +791,49 @@ namespace PigeonEngine
 			return;
 		}
 		ValidateSelection();
+
+		if (EditorCommandStack)
+		{
+			if (ImGui::Button("Create Actor"))
+			{
+				ImGui::OpenPopup("CreateActorPopup");
+			}
+			if (ImGui::BeginPopup("CreateActorPopup"))
+			{
+				std::vector<ERTTIManager::ESerializableClassInfo> ClassInfos;
+				ERTTIManager::GetManagerSingleton()->GetSerializableClassInfos(ClassInfos);
+				const size_t ActorBaseHash = GetClassHashCode<PActor>();
+				const size_t LevelActorHash = GetClassHashCode<PLevelActor>();
+				const size_t ControllerBaseHash = GetClassHashCode<PController>();
+				const size_t CharacterBaseHash = GetClassHashCode<PCharacter>();
+				for (UINT32 Index = 0u, Num = static_cast<UINT32>(ClassInfos.size()); Index < Num; Index++)
+				{
+					const ERTTIManager::ESerializableClassInfo& ClassInfo = ClassInfos[Index];
+					if ((!ClassInfo.bHasFactory) ||
+						(!IsClassDerivedFrom(ClassInfo.ClassHash, ActorBaseHash)) ||
+						(ClassInfo.ClassHash == LevelActorHash) ||
+						IsClassDerivedFrom(ClassInfo.ClassHash, ControllerBaseHash) ||
+						IsClassDerivedFrom(ClassInfo.ClassHash, CharacterBaseHash))
+					{
+						continue;
+					}
+					if (ImGui::MenuItem(ClassInfo.StableName.c_str()))
+					{
+						PActor* NewActor = CreateClassObjectByStableName<PActor>(ClassInfo.StableName.c_str());
+						if (NewActor)
+						{
+							POBJ_DEBUGNAME_SET(NewActor, EString(ClassInfo.StableName.c_str()));
+							AddActor(NewActor);
+							SetSelectedActor(NewActor);
+							PushSpawnActorCommand(*EditorCommandStack, *this, NewActor);
+						}
+					}
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::Separator();
+		}
+
 		for (PActor* Actor : RootActor->GetAllActorsAttached())
 		{
 			Actor->GenerateWorldOutline(ImguiSelectedActor);
@@ -741,6 +854,16 @@ namespace PigeonEngine
 			return;
 		}
 		ImguiSelectedComponent->GenerateComponentDetail();
+		if (EditorCommandStack &&
+			(ImguiSelectedComponent != ImguiSelectedActor->GetRootComponent()) &&
+			(ImguiSelectedActor->GetWorld() == this))
+		{
+			ImGui::Separator();
+			if (ImGui::Button("Remove Component"))
+			{
+				PushDeleteComponentCommand(*EditorCommandStack, *this, ImguiSelectedComponent);
+			}
+		}
 	}
 #endif
 };
