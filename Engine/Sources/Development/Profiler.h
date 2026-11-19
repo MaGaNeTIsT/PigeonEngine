@@ -86,6 +86,15 @@ namespace PigeonEngine
 	// game thread and its cost is visible as a frame spike rather than as steady work.
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_NAVIGATION				= PE_TEXT("GameThread.Navigation");
 
+	// World tick split. RenderTree is deferred asset applies / transform cache / render-state
+	// sends; Gameplay is the actor/component Tick walk. Keeping them as children of WorldTick
+	// lets performance work distinguish transform cost from gameplay cost.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_WORLD_TICK				= PE_TEXT("GameThread.WorldTick");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_WORLD_RENDER_TREE		= PE_TEXT("GameThread.WorldTick.RenderTree");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_WORLD_GAMEPLAY			= PE_TEXT("GameThread.WorldTick.Gameplay");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_WORLD_ACTOR_NUM		= PE_TEXT("WorldActorNum");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_WORLD_COMPONENT_NUM	= PE_TEXT("WorldComponentNum");
+
 	// Render-thread sub-brackets. The whole-thread row above says how long the frame took;
 	// these say where it went. They are separate rows rather than nested children because the
 	// profiler records each scope as an independent trace.

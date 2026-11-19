@@ -1,4 +1,5 @@
 ﻿#include "World.h"
+#include <Development/Profiler.h>
 #include "../../../../Main/MainManager.h"
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 #include <Renderer/RenderInterface.h>
@@ -98,14 +99,31 @@ namespace PigeonEngine
 
 	void PWorld::Tick(FLOAT deltaTime)
 	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_TICK);
+		TickRenderTree();
+		TickGameplay(deltaTime);
+		PE_PROFILE_COUNTER(PROFILER_COUNTER_WORLD_ACTOR_NUM, GetActorCount());
+		PE_PROFILE_COUNTER(PROFILER_COUNTER_WORLD_COMPONENT_NUM, GetComponentCount());
+	}
+
+	void PWorld::TickRenderTree()
+	{
 		if (RootActor)
 		{
 			// Render updates first and independently of tickability: deferred asset applies
 			// and render-state sends must resolve even on a non-tickable actor's subtree.
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_RENDER_TREE);
 			RootActor->TickRenderTree();
+		}
+	}
+
+	void PWorld::TickGameplay(FLOAT deltaTime)
+	{
+		if (RootActor)
+		{
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_GAMEPLAY);
 			RootActor->Tick(deltaTime);
 		}
-
 	}
 
 	void PWorld::FixedTick(FLOAT deltaTime)
@@ -175,6 +193,16 @@ namespace PigeonEngine
 		// The registry is flat and insertion ordered, so this is one array copy - the
 		// editor picking and the navigation bake both used to walk and copy the tree.
 		return AllActors;
+	}
+
+	UINT32 PWorld::GetActorCount() const
+	{
+		return AllActors.Num<UINT32>();
+	}
+
+	UINT32 PWorld::GetComponentCount() const
+	{
+		return ComponentById.Num<UINT32>();
 	}
 
 	const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const

@@ -68,6 +68,12 @@ namespace PigeonEngine
 	// Actors in world management
 	public:
 		PE_NODISCARD TArray<PActor*>        GetAllActors() const;
+		PE_NODISCARD UINT32                 GetActorCount() const;
+		PE_NODISCARD UINT32                 GetComponentCount() const;
+		// Tick is split so the render-update pass can be measured and optimized apart from
+		// the gameplay tick. Tick still calls both in order.
+		void                                TickRenderTree();
+		void                                TickGameplay(FLOAT deltaTime);
 		PE_NODISCARD const PActor*          GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
 	// Handle resolution: looks the object up in the registries and validates its

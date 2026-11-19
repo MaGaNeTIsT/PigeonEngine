@@ -7,6 +7,9 @@ namespace PigeonEngine
 {
 #if ENGINE_EDITOR_ONLY
 
+	class PWorld;
+	class PActor;
+
 	// One row of either profiler table. A plain value on purpose: a snapshot can
 	// be cached while the panel is paused, so the tables never reach back into
 	// the profiler on the frames they draw from a frozen copy.
@@ -58,6 +61,20 @@ namespace PigeonEngine
 	private:
 		void			RefreshRows();
 		void			BuildCpuTree();
+		void			DrawPerformanceBenchmarkPanel();
+		void			TickPerformanceBenchmark();
+		void			StartPerformanceBenchmark();
+		void			StopPerformanceBenchmark();
+	private:
+		enum class EBenchmarkStateType : UINT8
+		{
+			IDLE,
+			BUILDING,
+			WARMUP,
+			RUNNING,
+			DONE,
+			FAILED,
+		};
 	private:
 		BOOL32						bWindowOpen		= TRUE;
 		BOOL32						bPaused			= FALSE;
@@ -70,6 +87,34 @@ namespace PigeonEngine
 		TArray<INT32>				CpuRootNodes;
 		TArray<EProfilerTableRow>	GpuRows;
 		TArray<TPair<EName, EProfileCounterStat>>	CounterRows;
+
+		// Performance benchmark. A disposable world keeps the measurement out of the editor
+		// world; actors are built in batches so the panel itself does not freeze.
+		EBenchmarkStateType		BenchmarkState = EBenchmarkStateType::IDLE;
+		BOOL32						bPerformanceBenchmarkAutoStart = FALSE;
+		INT32						BenchmarkActorCount = 5000;
+		INT32						BenchmarkFrameCount = 120;
+		PWorld*						BenchmarkWorld = nullptr;
+		TArray<PActor*>				BenchmarkActors;
+		UINT32						BenchmarkBuildCursor = 0u;
+		UINT32						BenchmarkWarmupFrames = 10u;
+		UINT32						BenchmarkRunFrames = 0u;
+		DOUBLE						BenchmarkSumMilliseconds = 0.0;
+		DOUBLE						BenchmarkMoveSumMilliseconds = 0.0;
+		DOUBLE						BenchmarkTickSumMilliseconds = 0.0;
+		DOUBLE						BenchmarkRenderTreeSumMilliseconds = 0.0;
+		DOUBLE						BenchmarkGameplaySumMilliseconds = 0.0;
+		DOUBLE						BenchmarkMinMilliseconds = 0.0;
+		DOUBLE						BenchmarkMaxMilliseconds = 0.0;
+		TArray<FLOAT>				BenchmarkSamplesMilliseconds;
+		DOUBLE						BenchmarkLastAverageMilliseconds = 0.0;
+		DOUBLE						BenchmarkLastMoveAverageMilliseconds = 0.0;
+		DOUBLE						BenchmarkLastTickAverageMilliseconds = 0.0;
+		DOUBLE						BenchmarkLastRenderTreeAverageMilliseconds = 0.0;
+		DOUBLE						BenchmarkLastGameplayAverageMilliseconds = 0.0;
+		DOUBLE						BenchmarkLastP95Milliseconds = 0.0;
+		DOUBLE						BenchmarkLastMinMilliseconds = 0.0;
+		DOUBLE						BenchmarkLastMaxMilliseconds = 0.0;
 	};
 
 #endif

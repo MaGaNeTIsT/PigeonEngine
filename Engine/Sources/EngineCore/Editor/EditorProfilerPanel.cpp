@@ -4,11 +4,78 @@
 
 #include <Base/RTTI/RTTIManager.h>
 #include <imgui.h>
+#include <cstdlib>
 #include <Base/DataStructure/Text/Name.h>
+#include <Base/Timer/Timer.h>
 #include <Development/GPUProfiler.h>
+#include <Editor/EditorLogManager.h>
+#include <PigeonBase/Object/Actor.h>
+#include <PigeonBase/Object/Component/SceneComponent.h>
+#include <PigeonBase/Object/World/World.h>
 
 namespace PigeonEngine
 {
+	namespace
+	{
+		// The benchmark must not touch the editor world or global physics. A bare actor root
+		// and no controller is enough for the transform/tick path being measured.
+		class FPerformanceBenchmarkWorld final : public PWorld
+		{
+		protected:
+			virtual PActor* CreateRootActor() override
+			{
+				return new PActor();
+			}
+			virtual void CreateDefaultController() override
+			{
+			}
+			virtual BOOL32 ShouldAffectGlobalPhysics() const override
+			{
+				return FALSE;
+			}
+		};
+
+		BOOL32 ShouldAutoStartPerformanceBenchmark()
+		{
+#if defined(_MSC_VER)
+			CHAR* Value = nullptr;
+			size_t Length = 0u;
+			if (_dupenv_s(&Value, &Length, "PIGEON_PERFORMANCE_BENCHMARK") != 0)
+			{
+				return FALSE;
+			}
+			const BOOL32 bEnabled = ((Value != nullptr) && (Value[0] != static_cast<CHAR>(0)) && (Value[0] != '0')) ? TRUE : FALSE;
+			std::free(Value);
+			return bEnabled;
+#else
+			const CHAR* Value = std::getenv("PIGEON_PERFORMANCE_BENCHMARK");
+			return ((Value != nullptr) && (Value[0] != static_cast<CHAR>(0)) && (Value[0] != '0')) ? TRUE : FALSE;
+#endif
+		}
+
+		UINT32 ReadBenchmarkEnvironmentValue(const CHAR* InName, const UINT32 InDefault)
+		{
+#if defined(_MSC_VER)
+			CHAR* Value = nullptr;
+			size_t Length = 0u;
+			if (_dupenv_s(&Value, &Length, InName) != 0)
+			{
+				return InDefault;
+			}
+			UINT32 Result = InDefault;
+			if ((Value != nullptr) && (Value[0] != static_cast<CHAR>(0)))
+			{
+				Result = static_cast<UINT32>(std::strtoul(Value, nullptr, 10));
+			}
+			std::free(Value);
+			return Result;
+#else
+			const CHAR* Value = std::getenv(InName);
+			return ((Value != nullptr) && (Value[0] != static_cast<CHAR>(0)))
+				? static_cast<UINT32>(std::strtoul(Value, nullptr, 10)) : InDefault;
+#endif
+		}
+	}
 	static void RegisterEditorProfilerPanelClassTypes()
 	{
 		RegisterClassType<EEditorProfilerPanel, EManagerBase>();
@@ -24,6 +91,16 @@ namespace PigeonEngine
 	}
 	void EEditorProfilerPanel::Initialize()
 	{
+		StopPerformanceBenchmark();
+		BenchmarkLastAverageMilliseconds = 0.0;
+		BenchmarkLastMoveAverageMilliseconds = 0.0;
+		BenchmarkLastTickAverageMilliseconds = 0.0;
+		BenchmarkLastRenderTreeAverageMilliseconds = 0.0;
+		BenchmarkLastGameplayAverageMilliseconds = 0.0;
+		BenchmarkLastP95Milliseconds = 0.0;
+		BenchmarkLastMinMilliseconds = 0.0;
+		BenchmarkLastMaxMilliseconds = 0.0;
+		BenchmarkSamplesMilliseconds.Empty();
 		bWindowOpen	= TRUE;
 		bPaused		= FALSE;
 		bRowsValid	= FALSE;
@@ -31,14 +108,254 @@ namespace PigeonEngine
 		CpuTree.Empty();
 		CpuRootNodes.Empty();
 		GpuRows.Empty();
+		// Developer/CI hook: PIGEON_PERFORMANCE_BENCHMARK=1 runs the default stress benchmark
+		// through the normal editor frame loop, so its log is available without UI input.
+		// Deferred to the first editor update: manager initialization is not complete yet.
+		BenchmarkActorCount = static_cast<INT32>(ReadBenchmarkEnvironmentValue("PIGEON_BENCHMARK_ACTORS", static_cast<UINT32>(BenchmarkActorCount)));
+		BenchmarkFrameCount = static_cast<INT32>(ReadBenchmarkEnvironmentValue("PIGEON_BENCHMARK_FRAMES", static_cast<UINT32>(BenchmarkFrameCount)));
+		bPerformanceBenchmarkAutoStart = ShouldAutoStartPerformanceBenchmark();
 	}
 	void EEditorProfilerPanel::ShutDown()
 	{
+		StopPerformanceBenchmark();
 		CpuRows.Empty();
 		CpuTree.Empty();
 		CpuRootNodes.Empty();
 		GpuRows.Empty();
 		bRowsValid = FALSE;
+	}
+
+	void EEditorProfilerPanel::StartPerformanceBenchmark()
+	{
+		StopPerformanceBenchmark();
+
+		BenchmarkActorCount = static_cast<INT32>(EMath::Clamp(BenchmarkActorCount, 100, 50000));
+		BenchmarkFrameCount = static_cast<INT32>(EMath::Clamp(BenchmarkFrameCount, 10, 1200));
+		BenchmarkWorld = new FPerformanceBenchmarkWorld();
+		BenchmarkWorld->Init();
+		PE_LOG_LOG(EString(PE_TEXT("[PerformanceBenchmark] start actors=")) + EString::FromInt(BenchmarkActorCount)
+			+ EString(PE_TEXT(" frames=")) + EString::FromInt(BenchmarkFrameCount));
+		BenchmarkActors.Empty();
+		BenchmarkBuildCursor = 0u;
+		BenchmarkWarmupFrames = 10u;
+		BenchmarkRunFrames = 0u;
+		BenchmarkSumMilliseconds = 0.0;
+		BenchmarkMoveSumMilliseconds = 0.0;
+		BenchmarkTickSumMilliseconds = 0.0;
+		BenchmarkRenderTreeSumMilliseconds = 0.0;
+		BenchmarkGameplaySumMilliseconds = 0.0;
+		BenchmarkMinMilliseconds = 0.0;
+		BenchmarkMaxMilliseconds = 0.0;
+		BenchmarkSamplesMilliseconds.Empty();
+		BenchmarkState = EBenchmarkStateType::BUILDING;
+	}
+
+	void EEditorProfilerPanel::StopPerformanceBenchmark()
+	{
+		if (BenchmarkWorld)
+		{
+			// PObject::Destroy owns the final delete; only clear the pointer here.
+			BenchmarkWorld->Destroy();
+			BenchmarkWorld = nullptr;
+		}
+		BenchmarkActors.Empty();
+		BenchmarkState = EBenchmarkStateType::IDLE;
+		BenchmarkBuildCursor = 0u;
+		BenchmarkRunFrames = 0u;
+	}
+
+	void EEditorProfilerPanel::TickPerformanceBenchmark()
+	{
+		if (bPerformanceBenchmarkAutoStart)
+		{
+			bPerformanceBenchmarkAutoStart = FALSE;
+			StartPerformanceBenchmark();
+		}
+		if (!BenchmarkWorld)
+		{
+			return;
+		}
+		if (BenchmarkState == EBenchmarkStateType::BUILDING)
+		{
+			const UINT32 TargetNum = static_cast<UINT32>(BenchmarkActorCount);
+			const UINT32 BuildEnd = EMath::Min(TargetNum, BenchmarkBuildCursor + 200u);
+			for (; BenchmarkBuildCursor < BuildEnd; BenchmarkBuildCursor++)
+			{
+				PActor* Actor = new PActor();
+				Actor->SetIsTickable(TRUE);
+				BenchmarkWorld->AddActor(Actor);
+				PSceneComponent* Root = Actor->GetRootComponent();
+				Root->SetMobility(EMobilityType::EMT_DYNAMIC);
+				Root->SetComponentLocation(Vector3(
+					static_cast<FLOAT>(BenchmarkBuildCursor % 100u) * 2.0f,
+					0.0f,
+					static_cast<FLOAT>(BenchmarkBuildCursor / 100u) * 2.0f));
+				PSceneComponent* Child = new PSceneComponent();
+				Actor->AddComponent(Child);
+				Child->SetMobility(EMobilityType::EMT_DYNAMIC);
+				Child->SetComponentLocation(Vector3(0.0f, 0.0f, 1.0f));
+				BenchmarkActors.Add(Actor);
+			}
+			if (BenchmarkBuildCursor >= TargetNum)
+			{
+				BenchmarkState = EBenchmarkStateType::WARMUP;
+				PE_LOG_LOG(EString(PE_TEXT("[PerformanceBenchmark] built actors=")) + EString::FromInt(BenchmarkActorCount));
+			}
+			return;
+		}
+		if (BenchmarkState == EBenchmarkStateType::WARMUP)
+		{
+			BenchmarkWorld->Tick(1.0f / 60.0f);
+			if (BenchmarkWarmupFrames > 0u)
+			{
+				BenchmarkWarmupFrames--;
+			}
+			if (BenchmarkWarmupFrames == 0u)
+			{
+				BenchmarkState = EBenchmarkStateType::RUNNING;
+				PE_LOG_LOG(EString(PE_TEXT("[PerformanceBenchmark] warmup done")));
+			}
+			return;
+		}
+		if (BenchmarkState != EBenchmarkStateType::RUNNING)
+		{
+			return;
+		}
+
+		const UINT64 StartTicks = EBaseTimer::GetClockTicks();
+		const FLOAT MotionPhase = static_cast<FLOAT>(BenchmarkRunFrames % 60u) * 0.01f;
+		const UINT64 MoveStartTicks = EBaseTimer::GetClockTicks();
+		for (UINT32 Index = 0u, Num = BenchmarkActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			PActor* Actor = BenchmarkActors[Index];
+			if (Actor)
+			{
+				Actor->GetRootComponent()->SetComponentLocation(Vector3(
+					static_cast<FLOAT>(Index % 100u) * 2.0f + MotionPhase,
+					0.0f,
+					static_cast<FLOAT>(Index / 100u) * 2.0f));
+			}
+		}
+		const DOUBLE MoveMilliseconds = EBaseTimer::TicksToSeconds(EBaseTimer::GetClockTicks() - MoveStartTicks) * 1000.0;
+		const UINT64 TickStartTicks = EBaseTimer::GetClockTicks();
+		BenchmarkWorld->TickRenderTree();
+		const DOUBLE RenderTreeMilliseconds = EBaseTimer::TicksToSeconds(EBaseTimer::GetClockTicks() - TickStartTicks) * 1000.0;
+		const UINT64 GameplayStartTicks = EBaseTimer::GetClockTicks();
+		BenchmarkWorld->TickGameplay(1.0f / 60.0f);
+		const DOUBLE GameplayMilliseconds = EBaseTimer::TicksToSeconds(EBaseTimer::GetClockTicks() - GameplayStartTicks) * 1000.0;
+		const DOUBLE TickMilliseconds = RenderTreeMilliseconds + GameplayMilliseconds;
+		const DOUBLE ElapsedMilliseconds = EBaseTimer::TicksToSeconds(EBaseTimer::GetClockTicks() - StartTicks) * 1000.0;
+		BenchmarkSamplesMilliseconds.Add(static_cast<FLOAT>(ElapsedMilliseconds));
+		BenchmarkSumMilliseconds += ElapsedMilliseconds;
+		BenchmarkMoveSumMilliseconds += MoveMilliseconds;
+		BenchmarkTickSumMilliseconds += TickMilliseconds;
+		BenchmarkRenderTreeSumMilliseconds += RenderTreeMilliseconds;
+		BenchmarkGameplaySumMilliseconds += GameplayMilliseconds;
+		if ((BenchmarkRunFrames == 0u) || (ElapsedMilliseconds < BenchmarkMinMilliseconds))
+		{
+			BenchmarkMinMilliseconds = ElapsedMilliseconds;
+		}
+		if (ElapsedMilliseconds > BenchmarkMaxMilliseconds)
+		{
+			BenchmarkMaxMilliseconds = ElapsedMilliseconds;
+		}
+		BenchmarkRunFrames++;
+
+		if (BenchmarkRunFrames >= static_cast<UINT32>(BenchmarkFrameCount))
+		{
+			TArray<FLOAT> SortedSamples(BenchmarkSamplesMilliseconds);
+			SortedSamples.Sort([](const FLOAT& InLeft, const FLOAT& InRight) -> BOOL32
+			{
+				return (InLeft < InRight) ? TRUE : FALSE;
+			});
+			const UINT32 SampleNum = SortedSamples.Num<UINT32>();
+			const UINT32 P95Index = (SampleNum > 0u) ? EMath::Min(SampleNum - 1u, static_cast<UINT32>(static_cast<FLOAT>(SampleNum) * 0.95f)) : 0u;
+			BenchmarkLastAverageMilliseconds = BenchmarkSumMilliseconds / static_cast<DOUBLE>(BenchmarkRunFrames);
+			BenchmarkLastMoveAverageMilliseconds = BenchmarkMoveSumMilliseconds / static_cast<DOUBLE>(BenchmarkRunFrames);
+			BenchmarkLastTickAverageMilliseconds = BenchmarkTickSumMilliseconds / static_cast<DOUBLE>(BenchmarkRunFrames);
+			BenchmarkLastRenderTreeAverageMilliseconds = BenchmarkRenderTreeSumMilliseconds / static_cast<DOUBLE>(BenchmarkRunFrames);
+			BenchmarkLastGameplayAverageMilliseconds = BenchmarkGameplaySumMilliseconds / static_cast<DOUBLE>(BenchmarkRunFrames);
+			BenchmarkLastMinMilliseconds = BenchmarkMinMilliseconds;
+			BenchmarkLastMaxMilliseconds = BenchmarkMaxMilliseconds;
+			BenchmarkLastP95Milliseconds = (SampleNum > 0u) ? static_cast<DOUBLE>(SortedSamples[P95Index]) : 0.0;
+			PE_LOG_LOG(EString(PE_TEXT("[PerformanceBenchmark] actors=")) + EString::FromInt(BenchmarkActorCount)
+				+ EString(PE_TEXT(" components=")) + EString::FromInt(static_cast<INT32>(BenchmarkWorld->GetComponentCount()))
+				+ EString(PE_TEXT(" frames=")) + EString::FromInt(BenchmarkFrameCount)
+				+ EString(PE_TEXT(" avg_ms=")) + EString::FromFloat(static_cast<FLOAT>(BenchmarkLastAverageMilliseconds))
+				+ EString(PE_TEXT(" move_ms=")) + EString::FromFloat(static_cast<FLOAT>(BenchmarkLastMoveAverageMilliseconds))
+				+ EString(PE_TEXT(" render_tree_ms=")) + EString::FromFloat(static_cast<FLOAT>(BenchmarkLastRenderTreeAverageMilliseconds))
+				+ EString(PE_TEXT(" gameplay_ms=")) + EString::FromFloat(static_cast<FLOAT>(BenchmarkLastGameplayAverageMilliseconds))
+				+ EString(PE_TEXT(" p95_ms=")) + EString::FromFloat(static_cast<FLOAT>(BenchmarkLastP95Milliseconds))
+				+ EString(PE_TEXT(" min_ms=")) + EString::FromFloat(static_cast<FLOAT>(BenchmarkLastMinMilliseconds))
+				+ EString(PE_TEXT(" max_ms=")) + EString::FromFloat(static_cast<FLOAT>(BenchmarkLastMaxMilliseconds)));
+			// PObject::Destroy owns the final delete; only clear the pointer here.
+			BenchmarkWorld->Destroy();
+			BenchmarkWorld = nullptr;
+			BenchmarkActors.Empty();
+			BenchmarkState = EBenchmarkStateType::DONE;
+		}
+	}
+
+	void EEditorProfilerPanel::DrawPerformanceBenchmarkPanel()
+	{
+		if (!ImGui::CollapsingHeader("Performance Benchmark"))
+		{
+			return;
+		}
+		ImGui::TextDisabled("Measures transform dirty + World::Tick in a disposable world (no render scene).");
+		ImGui::SetNextItemWidth(160.0f);
+		ImGui::InputInt("Actors", &BenchmarkActorCount);
+		ImGui::SetNextItemWidth(160.0f);
+		ImGui::InputInt("Frames", &BenchmarkFrameCount);
+		BenchmarkActorCount = static_cast<INT32>(EMath::Clamp(BenchmarkActorCount, 100, 50000));
+		BenchmarkFrameCount = static_cast<INT32>(EMath::Clamp(BenchmarkFrameCount, 10, 1200));
+
+		const BOOL32 bRunning = ((BenchmarkState == EBenchmarkStateType::BUILDING) ||
+			(BenchmarkState == EBenchmarkStateType::WARMUP) ||
+			(BenchmarkState == EBenchmarkStateType::RUNNING)) ? TRUE : FALSE;
+		if (bRunning)
+		{
+			ImGui::BeginDisabled();
+		}
+		if (ImGui::Button("Run Benchmark"))
+		{
+			StartPerformanceBenchmark();
+		}
+		if (bRunning)
+		{
+			ImGui::EndDisabled();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Stop"))
+		{
+			StopPerformanceBenchmark();
+		}
+
+		switch (BenchmarkState)
+		{
+		case EBenchmarkStateType::IDLE:
+			ImGui::TextDisabled("Idle.");
+			break;
+		case EBenchmarkStateType::BUILDING:
+			ImGui::Text("Building %u / %d", static_cast<unsigned int>(BenchmarkBuildCursor), BenchmarkActorCount);
+			break;
+		case EBenchmarkStateType::WARMUP:
+			ImGui::Text("Warming up (%u frames left).", static_cast<unsigned int>(BenchmarkWarmupFrames));
+			break;
+		case EBenchmarkStateType::RUNNING:
+			ImGui::Text("Running %u / %d", static_cast<unsigned int>(BenchmarkRunFrames), BenchmarkFrameCount);
+			break;
+		case EBenchmarkStateType::DONE:
+			ImGui::Text("Last run: avg %.3f ms (move %.3f + render tree %.3f + gameplay %.3f)  p95 %.3f ms  min %.3f ms  max %.3f ms",
+				BenchmarkLastAverageMilliseconds, BenchmarkLastMoveAverageMilliseconds, BenchmarkLastRenderTreeAverageMilliseconds,
+				BenchmarkLastGameplayAverageMilliseconds, BenchmarkLastP95Milliseconds, BenchmarkLastMinMilliseconds, BenchmarkLastMaxMilliseconds);
+			break;
+		case EBenchmarkStateType::FAILED:
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Benchmark failed.");
+			break;
+		default:
+			break;
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -710,6 +1027,7 @@ namespace PigeonEngine
 
 	void EEditorProfilerPanel::DrawPanel()
 	{
+		TickPerformanceBenchmark();
 		bool bOpen = (bWindowOpen != FALSE);
 		if (!ImGui::Begin("Profiler", &bOpen))
 		{
@@ -785,6 +1103,8 @@ namespace PigeonEngine
 		// Avg is per call; the new column multiplies it by calls/frame. Worker rows overlap in
 		// time, so their per-frame cell is left empty rather than summing concurrent samples.
 		ImGui::TextDisabled("Per-Frame = Avg x calls/frame; approx, workers excluded");
+
+		DrawPerformanceBenchmarkPanel();
 
 #if ENGINE_ENABLE_GPU_PROFILER
 		// A GPU sample that never arrived: the D3D11 delay ring ran out of
