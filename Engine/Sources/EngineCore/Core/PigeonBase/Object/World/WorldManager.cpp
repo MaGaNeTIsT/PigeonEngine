@@ -228,7 +228,14 @@ namespace PigeonEngine
 		{
 			return ((InName.Length() >= 7u) && (InName.Right(7u) == EString(PE_TEXT(".PLevel")))) ? TRUE : FALSE;
 		}
+
+		EString GetLevelStem(const EString& InPath)
+		{
+			const EString FileName = GetLevelFileName(InPath);
+			return HasLevelExtension(FileName) ? FileName.Left(FileName.Length() - 7u) : FileName;
+		}
 	}
+
 
 	void EWorldManager::RequestOpenLevelPopup()
 	{
@@ -238,6 +245,44 @@ namespace PigeonEngine
 	void EWorldManager::RequestSaveAsPopup()
 	{
 		bSaveAsPopupRequested = TRUE;
+	}
+
+	void EWorldManager::RequestRenameLevel(const EString& InPath)
+	{
+		PendingLevelFileOperation = ELevelFileOperationType::RENAME;
+		PendingLevelFilePath = InPath;
+		LevelFileOperationError = EString();
+		const EString Stem = GetLevelStem(InPath);
+		const UINT32 NameLength = EMath::Min(Stem.Length(), static_cast<UINT32>(sizeof(LevelFileNameBuffer) - 1u));
+		memset(LevelFileNameBuffer, 0, sizeof(LevelFileNameBuffer));
+		if (NameLength > 0u)
+		{
+			memcpy(LevelFileNameBuffer, *Stem, NameLength);
+		}
+		bLevelFileOperationPopupRequested = TRUE;
+	}
+
+	void EWorldManager::RequestDuplicateLevel(const EString& InPath)
+	{
+		PendingLevelFileOperation = ELevelFileOperationType::DUPLICATE;
+		PendingLevelFilePath = InPath;
+		LevelFileOperationError = EString();
+		const EString Stem = GetLevelStem(InPath) + EString(PE_TEXT("_Copy"));
+		const UINT32 NameLength = EMath::Min(Stem.Length(), static_cast<UINT32>(sizeof(LevelFileNameBuffer) - 1u));
+		memset(LevelFileNameBuffer, 0, sizeof(LevelFileNameBuffer));
+		if (NameLength > 0u)
+		{
+			memcpy(LevelFileNameBuffer, *Stem, NameLength);
+		}
+		bLevelFileOperationPopupRequested = TRUE;
+	}
+
+	void EWorldManager::RequestDeleteLevel(const EString& InPath)
+	{
+		PendingLevelFileOperation = ELevelFileOperationType::REMOVE;
+		PendingLevelFilePath = InPath;
+		LevelFileOperationError = EString();
+		bLevelFileOperationPopupRequested = TRUE;
 	}
 
 	void EWorldManager::ExecutePendingDiscardAction()
@@ -283,6 +328,218 @@ namespace PigeonEngine
 			}
 		}
 		bLevelListDirty = FALSE;
+	}
+
+	void EWorldManager::DrawLevelFileOperationPopup()
+	{
+		if (PendingLevelFileOperation == ELevelFileOperationType::NONE)
+		{
+			return;
+		}
+		if (bLevelFileOperationPopupRequested)
+		{
+			bLevelFileOperationPopupRequested = FALSE;
+			switch (PendingLevelFileOperation)
+			{
+			case ELevelFileOperationType::RENAME:
+				ImGui::OpenPopup("Rename Level");
+				break;
+			case ELevelFileOperationType::DUPLICATE:
+				ImGui::OpenPopup("Duplicate Level");
+				break;
+			case ELevelFileOperationType::REMOVE:
+				ImGui::OpenPopup("Delete Level");
+				break;
+			default:
+				break;
+			}
+		}
+
+		const EString SourceFileName = GetLevelFileName(PendingLevelFilePath);
+		const BOOL32 bIsCurrentLevel = (CurrentLevelPath == PendingLevelFilePath) ? TRUE : FALSE;
+
+		if ((PendingLevelFileOperation == ELevelFileOperationType::RENAME) &&
+			ImGui::BeginPopupModal("Rename Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("Rename:");
+			ImGui::TextDisabled("%s", *SourceFileName);
+			ImGui::SetNextItemWidth(320.0f);
+			BOOL32 bConfirm = ImGui::InputText("##RenameLevelName", LevelFileNameBuffer, sizeof(LevelFileNameBuffer),
+				ImGuiInputTextFlags_EnterReturnsTrue);
+			if (ImGui::Button("Rename"))
+			{
+				bConfirm = TRUE;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				PendingLevelFileOperation = ELevelFileOperationType::NONE;
+				PendingLevelFilePath = EString();
+				ImGui::CloseCurrentPopup();
+			}
+
+			if (bConfirm)
+			{
+				LevelFileOperationError = EString();
+				EString TargetFileName(LevelFileNameBuffer);
+				if (TargetFileName.Length() == 0u)
+				{
+					LevelFileOperationError = EString(PE_TEXT("The file name cannot be empty."));
+				}
+				else
+				{
+					if (!HasLevelExtension(TargetFileName))
+					{
+						TargetFileName += EString(PE_TEXT(".PLevel"));
+					}
+					if (TargetFileName == SourceFileName)
+					{
+						LevelFileOperationError = EString(PE_TEXT("The new name is the same as the current name."));
+					}
+					else
+					{
+						const EString TargetPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + TargetFileName;
+						if (EFileHelper::IsFileExists(TargetPath))
+						{
+							LevelFileOperationError = EString(PE_TEXT("A level with that name already exists."));
+						}
+						else if (!EFileHelper::MoveFile(PendingLevelFilePath, TargetPath))
+						{
+							LevelFileOperationError = EString(PE_TEXT("The level file could not be renamed."));
+						}
+						else
+						{
+							if (bIsCurrentLevel)
+							{
+								CurrentLevelPath = TargetPath;
+							}
+							PendingLevelFileOperation = ELevelFileOperationType::NONE;
+							PendingLevelFilePath = EString();
+							bLevelListDirty = TRUE;
+							ImGui::CloseCurrentPopup();
+						}
+					}
+				}
+			}
+			if (LevelFileOperationError.Length() > 0u)
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", *LevelFileOperationError);
+			}
+			ImGui::EndPopup();
+		}
+
+		if ((PendingLevelFileOperation == ELevelFileOperationType::DUPLICATE) &&
+			ImGui::BeginPopupModal("Duplicate Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("Duplicate:");
+			ImGui::TextDisabled("%s", *SourceFileName);
+			ImGui::SetNextItemWidth(320.0f);
+			BOOL32 bConfirm = ImGui::InputText("##DuplicateLevelName", LevelFileNameBuffer, sizeof(LevelFileNameBuffer),
+				ImGuiInputTextFlags_EnterReturnsTrue);
+			if (ImGui::Button("Duplicate"))
+			{
+				bConfirm = TRUE;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				PendingLevelFileOperation = ELevelFileOperationType::NONE;
+				PendingLevelFilePath = EString();
+				ImGui::CloseCurrentPopup();
+			}
+
+			if (bConfirm)
+			{
+				LevelFileOperationError = EString();
+				EString TargetFileName(LevelFileNameBuffer);
+				if (TargetFileName.Length() == 0u)
+				{
+					LevelFileOperationError = EString(PE_TEXT("The file name cannot be empty."));
+				}
+				else
+				{
+					if (!HasLevelExtension(TargetFileName))
+					{
+						TargetFileName += EString(PE_TEXT(".PLevel"));
+					}
+					const EString TargetPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + TargetFileName;
+					if (EFileHelper::IsFileExists(TargetPath))
+					{
+						LevelFileOperationError = EString(PE_TEXT("A level with that name already exists."));
+					}
+					else if (!EFileHelper::CopyFileToNewPath(PendingLevelFilePath, TargetPath))
+					{
+						LevelFileOperationError = EString(PE_TEXT("The level file could not be copied."));
+					}
+					else
+					{
+						PendingLevelFileOperation = ELevelFileOperationType::NONE;
+						PendingLevelFilePath = EString();
+						bLevelListDirty = TRUE;
+						ImGui::CloseCurrentPopup();
+					}
+				}
+			}
+			if (LevelFileOperationError.Length() > 0u)
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", *LevelFileOperationError);
+			}
+			ImGui::EndPopup();
+		}
+
+		if ((PendingLevelFileOperation == ELevelFileOperationType::REMOVE) &&
+			ImGui::BeginPopupModal("Delete Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted("Delete this level file? This cannot be undone.");
+			ImGui::TextDisabled("%s", *SourceFileName);
+			const BOOL32 bDeleteBlocked = ((bIsCurrentLevel) && (bLevelDirty)) ? TRUE : FALSE;
+			if (bDeleteBlocked)
+			{
+				ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f),
+					"Save or discard the open level's changes before deleting it.");
+			}
+			if (bDeleteBlocked)
+			{
+				ImGui::BeginDisabled();
+			}
+			if (ImGui::Button("Delete"))
+			{
+				LevelFileOperationError = EString();
+				if (!EFileHelper::DeleteFile(PendingLevelFilePath))
+				{
+					LevelFileOperationError = EString(PE_TEXT("The level file could not be deleted."));
+				}
+				else
+				{
+					if (bIsCurrentLevel)
+					{
+						CurrentLevelPath = EString();
+						bLevelDirty = FALSE;
+						RequestNewLevel();
+					}
+					PendingLevelFileOperation = ELevelFileOperationType::NONE;
+					PendingLevelFilePath = EString();
+					bLevelListDirty = TRUE;
+					ImGui::CloseCurrentPopup();
+				}
+			}
+			if (bDeleteBlocked)
+			{
+				ImGui::EndDisabled();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				PendingLevelFileOperation = ELevelFileOperationType::NONE;
+				PendingLevelFilePath = EString();
+				ImGui::CloseCurrentPopup();
+			}
+			if (LevelFileOperationError.Length() > 0u)
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", *LevelFileOperationError);
+			}
+			ImGui::EndPopup();
+		}
 	}
 
 	void EWorldManager::DrawLevelPanelContents()
@@ -452,6 +709,7 @@ namespace PigeonEngine
 			}
 			ImGui::EndPopup();
 		}
+		this->DrawLevelFileOperationPopup();
 
 		if (bOpenLevelPopupRequested)
 		{
@@ -495,12 +753,29 @@ namespace PigeonEngine
 			for (UINT32 Index = 0u, Num = LevelFiles.Num<UINT32>(); Index < Num; Index++)
 			{
 				const EString& FileName = LevelFiles[Index];
+				const EString LevelPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName;
 				ImGui::PushID(Index);
 				const BOOL32 bCurrent = (CurrentLevelPath.Length() > 0u) &&
 					(GetLevelFileName(CurrentLevelPath) == FileName) ? TRUE : FALSE;
 				if (ImGui::Selectable(*FileName, bCurrent))
 				{
-					RequestLoadLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
+					RequestLoadLevel(LevelPath);
+				}
+				if (ImGui::BeginPopupContextItem("##LevelContext"))
+				{
+					if (ImGui::MenuItem("Rename..."))
+					{
+						RequestRenameLevel(LevelPath);
+					}
+					if (ImGui::MenuItem("Duplicate..."))
+					{
+						RequestDuplicateLevel(LevelPath);
+					}
+					if (ImGui::MenuItem("Delete..."))
+					{
+						RequestDeleteLevel(LevelPath);
+					}
+					ImGui::EndPopup();
 				}
 				if (bCurrent)
 				{
@@ -511,6 +786,7 @@ namespace PigeonEngine
 			}
 		}
 		ImGui::EndChild();
+		ImGui::TextDisabled("Right-click a level to rename, duplicate or delete it.");
 	}
 #endif
 

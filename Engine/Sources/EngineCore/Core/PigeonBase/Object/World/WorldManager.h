@@ -67,13 +67,29 @@ namespace PigeonEngine
 	private:
 		void RefreshLevelList();
 		void DrawLevelPanelContents();
+		enum class ELevelFileOperationType : UINT8
+		{
+			NONE,
+			RENAME,
+			DUPLICATE,
+			REMOVE,
+		};
+		void RequestRenameLevel(const EString& InPath);
+		void RequestDuplicateLevel(const EString& InPath);
+		void RequestDeleteLevel(const EString& InPath);
+		void DrawLevelFileOperationPopup();
 	private:
 		TArray<EString>		LevelFiles;
 		BOOL32				bLevelListDirty = TRUE;
 		BOOL32				bOpenLevelPopupRequested = FALSE;
 		BOOL32				bSaveAsPopupRequested = FALSE;
 		CHAR				SaveAsNameBuffer[256] = {};
-#endif
+		ELevelFileOperationType	PendingLevelFileOperation = ELevelFileOperationType::NONE;
+		EString				PendingLevelFilePath;
+		EString				LevelFileOperationError;
+		BOOL32				bLevelFileOperationPopupRequested = FALSE;
+		CHAR				LevelFileNameBuffer[256] = {};
+	#endif
 	private:
 		PWorld*  World;
 
