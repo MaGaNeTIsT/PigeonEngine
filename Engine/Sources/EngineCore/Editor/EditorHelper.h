@@ -23,8 +23,10 @@ namespace PigeonEngine
 		AXIS_Z
 	};
 
-	// Draw XYZ translation arrows for a selected component
-	extern void DrawTranslationGizmo(const class PCameraComponent* InCamera, const class PSceneComponent* InComponent);
+	// Draw XYZ translation arrows for a selected component. The gizmo is drawn as an
+	// always-on-top overlay; InHighlightAxis (the dragged axis) is drawn last and brightened.
+	extern void DrawTranslationGizmo(const class PCameraComponent* InCamera, const class PSceneComponent* InComponent,
+		EGizmoAxis InHighlightAxis = EGizmoAxis::NONE);
 
 	// Hit-test the gizmo arrows; returns which axis was clicked (NONE if miss)
 	// OutDragOriginWorld is the world-space point on the axis ray at click time

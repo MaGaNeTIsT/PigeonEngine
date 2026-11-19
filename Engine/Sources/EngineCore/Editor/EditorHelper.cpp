@@ -353,31 +353,88 @@ namespace PigeonEngine
 		}
 	}
 
-	void DrawTranslationGizmo(const PCameraComponent* InCamera, const PSceneComponent* InComponent)
+	void DrawTranslationGizmo(const PCameraComponent* InCamera, const PSceneComponent* InComponent, EGizmoAxis InHighlightAxis)
 	{
 		if (!InCamera || !InComponent) { return; }
 
 		RDebugWireframePrimitiveManager* DbgMgr = RDebugWireframePrimitiveManager::GetManagerSingleton();
 		const Vector3 Origin = InComponent->GetComponentWorldLocation();
 
-		// X axis - red
+		// Draw the highlighted axis last: the overlay does not depth test, so the last draw
+		// wins overlapping pixels at the shared origin and where a cone crosses a shaft.
+		const EGizmoAxis Axes[3] = { EGizmoAxis::AXIS_X, EGizmoAxis::AXIS_Y, EGizmoAxis::AXIS_Z };
+		for (UINT32 Pass = 0u; Pass < 2u; Pass++)
 		{
-			const Vector3 Tip = GetGizmoAxisTip(InComponent, EGizmoAxis::AXIS_X);
-			DbgMgr->DrawSingleLine(Origin, Tip, Color4(1.f, 0.f, 0.f, 1.f));
-			DbgMgr->DrawCone(Tip - Vector3(GIZMO_ARROW_RADIUS * 2.f, 0.f, 0.f), Tip, GIZMO_ARROW_RADIUS, Color4(1.f, 0.f, 0.f, 1.f));
+			for (UINT32 AxisIndex = 0u; AxisIndex < 3u; AxisIndex++)
+			{
+				const EGizmoAxis Axis = Axes[AxisIndex];
+				const BOOL32 bHighlighted = (Axis == InHighlightAxis) ? TRUE : FALSE;
+				if ((Pass == 0u) == (bHighlighted != FALSE))
+				{
+					// First pass draws everything except the highlighted axis, second pass only it.
+					continue;
+				}
+
+				Color4 Color = Color4::Black();
+				switch (Axis)
+				{
+				case EGizmoAxis::AXIS_X: Color = Color4(1.f, 0.f, 0.f, 1.f); break;
+				case EGizmoAxis::AXIS_Y: Color = Color4(0.f, 1.f, 0.f, 1.f); break;
+				case EGizmoAxis::AXIS_Z: Color = Color4(0.f, 0.f, 1.f, 1.f); break;
+				default: break;
+				}
+				if (bHighlighted)
+				{
+					// Lift the selected axis towards white while keeping its hue.
+					Color.x += (1.f - Color.x) * 0.6f;
+					Color.y += (1.f - Color.y) * 0.6f;
+					Color.z += (1.f - Color.z) * 0.6f;
+				}
+
+				const Vector3 AxisDir = GetGizmoAxisDir(Axis);
+				const Vector3 Tip = Origin + AxisDir * GIZMO_ARROW_LENGTH;
+				DbgMgr->DrawSingleLineOverlay(Origin, Tip, Color);
+				DbgMgr->DrawConeOverlay(Tip - AxisDir * (GIZMO_ARROW_RADIUS * 2.f), Tip, GIZMO_ARROW_RADIUS, Color);
+			}
 		}
-		// Y axis - green
+	}
+
+	// Parameter of the point on the axis closest to the mouse ray.
+	// P(t) = AxisOrigin + t * AxisDir; Q(s) = RayOrigin + s * RayDir.
+	// With a = c = 1 the closest point is t = (b*e - d) / (1 - b*b), where
+	// b = AxisDir.RayDir, d = AxisDir.W0, e = RayDir.W0, W0 = AxisOrigin - RayOrigin.
+	static BOOL32 ComputeAxisParameterFromMouseRay(
+		const PCameraComponent* InCamera,
+		const Vector3& InAxisOrigin,
+		const Vector3& InAxisDir,
+		const FLOAT InMouseX, const FLOAT InMouseY,
+		FLOAT& OutT)
+	{
+		if (!InCamera)
 		{
-			const Vector3 Tip = GetGizmoAxisTip(InComponent, EGizmoAxis::AXIS_Y);
-			DbgMgr->DrawSingleLine(Origin, Tip, Color4(0.f, 1.f, 0.f, 1.f));
-			DbgMgr->DrawCone(Tip - Vector3(0.f, GIZMO_ARROW_RADIUS * 2.f, 0.f), Tip, GIZMO_ARROW_RADIUS, Color4(0.f, 1.f, 0.f, 1.f));
+			return FALSE;
 		}
-		// Z axis - blue
+		const EViewport& VP = InCamera->GetCameraViewInfo().Viewport;
+		const EViewMatrix& VM = InCamera->GetCameraMatrix();
+
+		Vector3 NearWorld, FarWorld;
+		VM.TransformScreenPointToWorld(VP, Vector3(InMouseX, InMouseY, 0.f), NearWorld);
+		VM.TransformScreenPointToWorld(VP, Vector3(InMouseX, InMouseY, 1.f), FarWorld);
+		const Vector3 RayDir = Vector3::Normalize(FarWorld - NearWorld);
+		const Vector3 W0 = InAxisOrigin - NearWorld;
+
+		const FLOAT b = Vector3::Dot(InAxisDir, RayDir);
+		const FLOAT d = Vector3::Dot(InAxisDir, W0);
+		const FLOAT e = Vector3::Dot(RayDir, W0);
+		const FLOAT Denom = 1.f - b * b;
+		if (EMath::Abs(Denom) < PE_SMALL_NUMBER)
 		{
-			const Vector3 Tip = GetGizmoAxisTip(InComponent, EGizmoAxis::AXIS_Z);
-			DbgMgr->DrawSingleLine(Origin, Tip, Color4(0.f, 0.f, 1.f, 1.f));
-			DbgMgr->DrawCone(Tip - Vector3(0.f, 0.f, GIZMO_ARROW_RADIUS * 2.f), Tip, GIZMO_ARROW_RADIUS, Color4(0.f, 0.f, 1.f, 1.f));
+			// The axis is nearly parallel to the view ray; dragging it has no stable
+			// screen-space direction.
+			return FALSE;
 		}
+		OutT = (b * e - d) / Denom;
+		return TRUE;
 	}
 
 	// Compute screen-space distance from a point to a line segment (both in screen space)
@@ -406,8 +463,13 @@ namespace PigeonEngine
 		const Vector2 MousePx(InMouseX, InMouseY);
 		const Vector3 Origin3D = InComponent->GetComponentWorldLocation();
 
-		Vector3 OriginScreen;
-		VM.TransformWorldPointToScreen(VP, Origin3D, OriginScreen);
+		Vector2 OriginScreen;
+		if (!VM.TransformWorldPointToScreen(VP, Origin3D, OriginScreen))
+		{
+			// The gizmo origin is behind the camera or off screen: no axis can be hit
+			// reliably from a projection the hit test cannot use.
+			return EGizmoAxis::NONE;
+		}
 		const Vector2 OriginPx(OriginScreen.x, OriginScreen.y);
 
 		EGizmoAxis BestAxis = EGizmoAxis::NONE;
@@ -417,8 +479,11 @@ namespace PigeonEngine
 		for (INT32 i = 0; i < 3; ++i)
 		{
 			const Vector3 Tip3D = GetGizmoAxisTip(InComponent, Axes[i]);
-			Vector3 TipScreen;
-			VM.TransformWorldPointToScreen(VP, Tip3D, TipScreen);
+			Vector2 TipScreen;
+			if (!VM.TransformWorldPointToScreen(VP, Tip3D, TipScreen))
+			{
+				continue;
+			}
 			const Vector2 TipPx(TipScreen.x, TipScreen.y);
 
 			const FLOAT Dist = ScreenSegmentDistance(MousePx, OriginPx, TipPx);
@@ -431,7 +496,18 @@ namespace PigeonEngine
 
 		if (BestAxis != EGizmoAxis::NONE)
 		{
-			OutDragOriginWorld = Origin3D;
+			// Anchor at the closest point on the chosen axis to the press ray, not at the
+			// component origin: dragging then measures a pure delta and does not jump on
+			// the first mouse move.
+			FLOAT PressT = 0.f;
+			if (ComputeAxisParameterFromMouseRay(InCamera, Origin3D, GetGizmoAxisDir(BestAxis), InMouseX, InMouseY, PressT))
+			{
+				OutDragOriginWorld = Origin3D + GetGizmoAxisDir(BestAxis) * PressT;
+			}
+			else
+			{
+				OutDragOriginWorld = Origin3D;
+			}
 		}
 		return BestAxis;
 	}
@@ -446,37 +522,15 @@ namespace PigeonEngine
 	{
 		if (!InCamera || !InComponent || InAxis == EGizmoAxis::NONE) { return Vector3::Zero(); }
 
-		// Build a proper ray by unprojecting at near (z=0) and far (z=1) depth,
-		// then taking the direction between them. This avoids the instability of
-		// using a single mid-depth point.
-		const EViewport& VP = InCamera->GetCameraViewInfo().Viewport;
-		const EViewMatrix& VM = InCamera->GetCameraMatrix();
-
-		Vector3 NearWorld, FarWorld;
-		VM.TransformScreenPointToWorld(VP, Vector3(InMouseX, InMouseY, 0.f), NearWorld);
-		VM.TransformScreenPointToWorld(VP, Vector3(InMouseX, InMouseY, 1.f), FarWorld);
-
-		const Vector3 RayDir = Vector3::Normalize(FarWorld - NearWorld);
-		const Vector3 RayOrigin = NearWorld;
-
-		const Vector3 AxisDir    = GetGizmoAxisDir(InAxis);
-		const Vector3 AxisOrigin = InDragOriginWorld;
-
-		// Closest point between two lines (parametric):
-		// P(t) = AxisOrigin + t * AxisDir
-		// Q(s) = RayOrigin  + s * RayDir
-		const Vector3 W0    = AxisOrigin - RayOrigin;
-		const FLOAT   b     = Vector3::Dot(AxisDir, RayDir);
-		const FLOAT   d     = Vector3::Dot(AxisDir, W0);
-		const FLOAT   e     = Vector3::Dot(RayDir,  W0);
-		const FLOAT   Denom = 1.f - b * b;
-
-		if (EMath::Abs(Denom) < PE_SMALL_NUMBER) { return Vector3::Zero(); }
-
-		const FLOAT t = (d - b * e) / Denom;
-		const Vector3 ClosestOnAxis = AxisOrigin + AxisDir * t;
-
-		return ClosestOnAxis - InDragOriginWorld;
+		const Vector3 AxisDir = GetGizmoAxisDir(InAxis);
+		FLOAT DeltaT = 0.f;
+		if (!ComputeAxisParameterFromMouseRay(InCamera, InDragOriginWorld, AxisDir, InMouseX, InMouseY, DeltaT))
+		{
+			return Vector3::Zero();
+		}
+		// InDragOriginWorld is already the press-time point on the axis, so this is a pure
+		// delta from the press position (and the sign follows the positive world axis).
+		return AxisDir * DeltaT;
 	}
 
 	void DrawObjectBounds(TArray<PActor*>& InObjects)

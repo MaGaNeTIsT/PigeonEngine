@@ -381,7 +381,7 @@ namespace PigeonEngine
 			PController* PC = WorldManager->GetWorld()->GetController();
 			if (PC && PC->GetCamera())
 			{
-				DrawTranslationGizmo(PC->GetCamera(), SelectedComponent);
+				DrawTranslationGizmo(PC->GetCamera(), SelectedComponent, bDragging ? DragAxis : EGizmoAxis::NONE);
 			}
 		}
 	}
