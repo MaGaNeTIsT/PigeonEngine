@@ -40,6 +40,57 @@ namespace PigeonEngine
 		InArchive.EndObject();
 	}
 
+	static void AddNavMeshFloatProperty(const size_t& InClassHash, const CHAR* InName,
+		FLOAT ENavMeshBuildSettings::* InMember)
+	{
+		AddClassPropertyAccessors<PNavMeshComponent, FLOAT>(InClassHash, InName,
+			[InMember](const PNavMeshComponent* Component) -> FLOAT
+			{
+				return (Component->GetBuildSettings().*InMember);
+			},
+			[InMember](PNavMeshComponent* Component, const FLOAT& Value) -> void
+			{
+				ENavMeshBuildSettings Settings = Component->GetBuildSettings();
+				Settings.*InMember = Value;
+				Component->SetBuildSettings(Settings);
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE) | static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY));
+	}
+
+	static void AddNavMeshUIntProperty(const size_t& InClassHash, const CHAR* InName,
+		UINT32 ENavMeshBuildSettings::* InMember)
+	{
+		AddClassPropertyAccessors<PNavMeshComponent, UINT32>(InClassHash, InName,
+			[InMember](const PNavMeshComponent* Component) -> UINT32
+			{
+				return (Component->GetBuildSettings().*InMember);
+			},
+			[InMember](PNavMeshComponent* Component, const UINT32& Value) -> void
+			{
+				ENavMeshBuildSettings Settings = Component->GetBuildSettings();
+				Settings.*InMember = Value;
+				Component->SetBuildSettings(Settings);
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE) | static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY));
+	}
+
+	static void AddNavMeshBoolProperty(const size_t& InClassHash, const CHAR* InName,
+		BOOL32 ENavMeshBuildSettings::* InMember)
+	{
+		AddClassBoolPropertyAccessors<PNavMeshComponent>(InClassHash, InName,
+			[InMember](const PNavMeshComponent* Component) -> BOOL32
+			{
+				return (Component->GetBuildSettings().*InMember);
+			},
+			[InMember](PNavMeshComponent* Component, const BOOL32& Value) -> void
+			{
+				ENavMeshBuildSettings Settings = Component->GetBuildSettings();
+				Settings.*InMember = Value;
+				Component->SetBuildSettings(Settings);
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE) | static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY));
+	}
+
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PNavMeshComponent>();
@@ -71,6 +122,27 @@ namespace PigeonEngine
 			[](PNavMeshComponent* Component, const ENavMeshBuildSettings& Value) -> void { Component->SetBuildSettings(Value); },
 			SerializeNavMeshBuildSettings,
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+
+		// Editor views onto the serialized BuildSettings object. Keeping the object as the file
+		// format avoids flattening the level schema while still giving each field its own
+		// Details row and undo command.
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("CellSize"), &ENavMeshBuildSettings::CellSize);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("CellHeight"), &ENavMeshBuildSettings::CellHeight);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("AgentRadius"), &ENavMeshBuildSettings::AgentRadius);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("AgentHeight"), &ENavMeshBuildSettings::AgentHeight);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("AgentMaxClimb"), &ENavMeshBuildSettings::AgentMaxClimb);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("AgentMaxSlopeAngle"), &ENavMeshBuildSettings::AgentMaxSlopeAngle);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("MaxEdgeLength"), &ENavMeshBuildSettings::MaxEdgeLength);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("MaxSimplificationError"), &ENavMeshBuildSettings::MaxSimplificationError);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("DetailSampleDistance"), &ENavMeshBuildSettings::DetailSampleDistance);
+		AddNavMeshFloatProperty(ClassHash, PE_TEXT("DetailSampleMaxError"), &ENavMeshBuildSettings::DetailSampleMaxError);
+		AddNavMeshUIntProperty(ClassHash, PE_TEXT("MinRegionArea"), &ENavMeshBuildSettings::MinRegionArea);
+		AddNavMeshUIntProperty(ClassHash, PE_TEXT("MergeRegionArea"), &ENavMeshBuildSettings::MergeRegionArea);
+		AddNavMeshUIntProperty(ClassHash, PE_TEXT("MaxVertsPerPoly"), &ENavMeshBuildSettings::MaxVertsPerPoly);
+		AddNavMeshUIntProperty(ClassHash, PE_TEXT("TileSizeCells"), &ENavMeshBuildSettings::TileSizeCells);
+		AddNavMeshUIntProperty(ClassHash, PE_TEXT("MaxLayersPerTile"), &ENavMeshBuildSettings::MaxLayersPerTile);
+		AddNavMeshUIntProperty(ClassHash, PE_TEXT("MaxCrowdAgents"), &ENavMeshBuildSettings::MaxCrowdAgents);
+		AddNavMeshBoolProperty(ClassHash, PE_TEXT("FlipTriangleWinding"), &ENavMeshBuildSettings::bFlipTriangleWinding);
 	}
 
 	// How long the automatic bake waits for the asset queue to drain before it reports an
@@ -580,55 +652,7 @@ namespace PigeonEngine
 			return;
 		}
 
-		// The widgets edit a copy; the settings reach the provider only through a build, so a
-		// partially typed value never changes a running query.
-		ENavMeshBuildSettings Settings = BuildSettings;
-		bool bSettingsChanged = false;
-		bSettingsChanged |= ImGui::DragFloat("Cell Size (cm)", &Settings.CellSize, 0.5f, 5.0f, 100.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Cell Height (cm)", &Settings.CellHeight, 0.5f, 2.0f, 50.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Agent Radius (cm)", &Settings.AgentRadius, 0.5f, 5.0f, 200.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Agent Height (cm)", &Settings.AgentHeight, 0.5f, 20.0f, 400.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Max Climb (cm)", &Settings.AgentMaxClimb, 0.5f, 0.0f, 200.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Max Slope (deg)", &Settings.AgentMaxSlopeAngle, 0.5f, 1.0f, 89.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Max Edge Length (cm, 0=auto)", &Settings.MaxEdgeLength, 1.0f, 0.0f, 2000.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Simplify Error (cm, 0=auto)", &Settings.MaxSimplificationError, 0.1f, 0.0f, 200.0f, "%.2f");
-		bSettingsChanged |= ImGui::DragFloat("Detail Sample Dist (cm, 0=auto)", &Settings.DetailSampleDistance, 0.5f, 0.0f, 500.0f, "%.1f");
-		bSettingsChanged |= ImGui::DragFloat("Detail Sample Error (cm, 0=auto)", &Settings.DetailSampleMaxError, 0.1f, 0.0f, 100.0f, "%.2f");
-		bSettingsChanged |= ImGui::DragScalar("Min Region Area (cells)", ImGuiDataType_U32, &Settings.MinRegionArea, 1.0f);
-		bSettingsChanged |= ImGui::DragScalar("Merge Region Area (cells)", ImGuiDataType_U32, &Settings.MergeRegionArea, 1.0f);
-		bSettingsChanged |= ImGui::DragScalar("Tile Size (cells, 0=single)", ImGuiDataType_U32, &Settings.TileSizeCells, 1.0f);
-		bSettingsChanged |= ImGui::DragScalar("Max Layers Per Tile", ImGuiDataType_U32, &Settings.MaxLayersPerTile, 1.0f);
-
-		INT32 VertsPerPoly = static_cast<INT32>(Settings.MaxVertsPerPoly);
-		if (ImGui::SliderInt("Max Verts Per Poly", &VertsPerPoly, 3, 6))
-		{
-			Settings.MaxVertsPerPoly = static_cast<UINT32>(VertsPerPoly);
-			bSettingsChanged = TRUE;
-		}
-
-		bool bFlipWinding = (Settings.bFlipTriangleWinding != FALSE);
-		if (ImGui::Checkbox("Flip Triangle Winding", &bFlipWinding))
-		{
-			Settings.bFlipTriangleWinding = (bFlipWinding ? TRUE : FALSE);
-			bSettingsChanged = TRUE;
-		}
-		if (bSettingsChanged)
-		{
-			BuildSettings = Settings;
-		}
-
-		Vector3 Extent = BakeVolumeExtent;
-		if (ImGui::DragFloat3("Bake Extent (cm, 0=world)", &Extent.x, 10.0f, 0.0f, 100000.0f, "%.0f"))
-		{
-			SetBakeVolumeExtent(Extent);
-		}
-
-		bool bAutoBuild = (bBuildOnBeginPlay != FALSE);
-		if (ImGui::Checkbox("Build On Begin Play", &bAutoBuild))
-		{
-			bBuildOnBeginPlay = (bAutoBuild ? TRUE : FALSE);
-		}
-
+		ImGui::TextDisabled("Build settings are editable in the Details grid above.");
 		ImGui::Separator();
 		const ENavigationBuildStateType BuildState = ENavigationManager::GetManagerSingleton()->GetBuildState(GetUniqueID());
 		if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
@@ -644,7 +668,7 @@ namespace PigeonEngine
 			RequestBuildNavigation();
 		}
 
-		ImGui::InputText("Asset Name", AssetNameBuffer, sizeof(AssetNameBuffer));
+		ImGui::InputText("New Asset Name", AssetNameBuffer, sizeof(AssetNameBuffer));
 		const BOOL32 bCanSave = (AssetNameBuffer[0] != '\0') ? TRUE : FALSE;
 		if (!bCanSave)
 		{
@@ -662,15 +686,6 @@ namespace PigeonEngine
 		if (!bCanSave)
 		{
 			ImGui::EndDisabled();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Load Asset"))
-		{
-			LastAssetError = EString();
-			if (AssetNameBuffer[0] != '\0')
-			{
-				RequestNavMeshAsset(EString(AssetNameBuffer));
-			}
 		}
 		if (LastAssetError.Length() > 0u)
 		{
