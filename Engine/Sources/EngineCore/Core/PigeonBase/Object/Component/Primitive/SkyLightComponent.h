@@ -68,6 +68,8 @@ namespace PigeonEngine
 	{
 	public:
 		const ETextureCubeAsset*	GetCubeMapAsset() const;
+		// Live asset name, or the last requested name while the asynchronous load is pending.
+		PE_NODISCARD const EString&	GetCubeMapAssetName() const;
 		const Color3&				GetLightAdjust() const;
 		// The mean luminance in cd/m2 the environment is adjusted to. The render side normalizes
 		// the cube by its own mean first, so this is a physical mean rather than a scale.
@@ -89,6 +91,7 @@ namespace PigeonEngine
 		void	SetPrefilterResolutionExponent(const UINT32 InExponent);
 	protected:
 		const ETextureCubeAsset*	CubeMapAsset;
+		EString						RequestedCubeMapAssetName;
 		Color3						LightAdjust;
 		FLOAT						Intensity;
 		UINT32						PrefilterResolutionExponent;

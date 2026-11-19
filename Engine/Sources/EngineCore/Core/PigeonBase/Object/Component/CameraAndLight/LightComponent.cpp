@@ -1,6 +1,7 @@
 #include "LightComponent.h"
 #include <RenderProxy/LightSceneProxy.h>
 #include <PigeonBase/Object/World/World.h>
+#include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
 
 #if ENGINE_EDITOR_ONLY
@@ -10,9 +11,43 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t LightClassHash = GetClassHashCode<PLightComponent>();
+		AddClassPropertyAccessors<PLightComponent, Color3>(LightClassHash, PE_TEXT("LightColor"),
+			[](const PLightComponent* Component) -> Color3 { return Component->GetLightColor(); },
+			[](PLightComponent* Component, const Color3& Value) -> void { Component->SetLightColor(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		// CastShadow and ShadowMapSize share one setter. Each property preserves the other's
+		// current value, so load order does not matter.
+		AddClassPropertyAccessors<PLightComponent, BOOL32>(LightClassHash, PE_TEXT("CastShadow"),
+			[](const PLightComponent* Component) -> BOOL32 { return Component->IsLightCastShadow(); },
+			[](PLightComponent* Component, const BOOL32& Value) -> void { Component->SetShadowMapSize(Value, Component->GetShadowMapSize()); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PLightComponent, Vector2Int>(LightClassHash, PE_TEXT("ShadowMapSize"),
+			[](const PLightComponent* Component) -> Vector2Int { return Component->GetShadowMapSize(); },
+			[](PLightComponent* Component, const Vector2Int& Value) -> void { Component->SetShadowMapSize(Component->IsLightCastShadow(), Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+
+		const size_t LocalLightClassHash = GetClassHashCode<PLocalLightComponent>();
+		AddClassPropertyAccessors<PLocalLightComponent, FLOAT>(LocalLightClassHash, PE_TEXT("LuminousIntensityCandela"),
+			[](const PLocalLightComponent* Component) -> FLOAT { return Component->GetLuminousIntensityCandela(); },
+			[](PLocalLightComponent* Component, const FLOAT& Value) -> void { Component->SetLuminousIntensityCandela(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PLocalLightComponent, FLOAT>(LocalLightClassHash, PE_TEXT("AttenuationRadiusMeters"),
+			[](const PLocalLightComponent* Component) -> FLOAT { return Component->GetAttenuationRadiusMeters(); },
+			[](PLocalLightComponent* Component, const FLOAT& Value) -> void { Component->SetAttenuationRadiusMeters(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PLocalLightComponent, FLOAT>(LocalLightClassHash, PE_TEXT("SourceRadiusMeters"),
+			[](const PLocalLightComponent* Component) -> FLOAT { return Component->GetSourceRadiusMeters(); },
+			[](PLocalLightComponent* Component, const FLOAT& Value) -> void { Component->SetSourceRadiusMeters(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PLightComponent, PSceneComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

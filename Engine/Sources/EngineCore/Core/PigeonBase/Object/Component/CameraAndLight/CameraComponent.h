@@ -141,6 +141,9 @@ namespace PigeonEngine
 		void	SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = EEngineSettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
 		void	SetViewport(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight);
 		void	SetFov(FLOAT InFovAngleY);
+		// Clip planes are part of the projection; both setters regenerate the matrix like SetFov.
+		void	SetNearDistance(FLOAT InNearDist);
+		void	SetFarDistance(FLOAT InFarDist);
 	public:
 		// Exposure. EV100 and ISO are the whole exposure API: aperture and shutter are folded
 		// into EV100 by whoever authors them, which is what keeps the number the renderer reads

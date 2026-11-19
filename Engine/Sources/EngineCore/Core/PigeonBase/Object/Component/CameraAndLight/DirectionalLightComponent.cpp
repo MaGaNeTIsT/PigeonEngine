@@ -1,6 +1,7 @@
 #include "DirectionalLightComponent.h"
 #include <RenderProxy/LightSceneProxy.h>
 #include <PigeonBase/Object/World/World.h>
+#include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
 
 #if ENGINE_EDITOR_ONLY
@@ -10,9 +11,79 @@
 namespace PigeonEngine
 {
 
+	static void SerializeCascadeShadowData(EArchive& InArchive, const CHAR* InName, ECascadeShadowData& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeBool(PE_TEXT("UseShadow"), InOutValue.IsUseShadow);
+
+		UINT32 LayerCount = InOutValue.Layers.Num<UINT32>();
+		InArchive.BeginArray(PE_TEXT("Layers"), LayerCount);
+		if (!InArchive.IsSaving())
+		{
+			InOutValue.Layers.Empty();
+		}
+		for (UINT32 Index = 0u; Index < LayerCount; Index++)
+		{
+			const EString IndexKey = EString::FromInt(Index);
+			FLOAT Layer = InArchive.IsSaving() ? InOutValue.Layers[Index] : 0.f;
+			InArchive.SerializeFloat(*IndexKey, Layer);
+			if (!InArchive.IsSaving())
+			{
+				InOutValue.Layers.Add(Layer);
+			}
+		}
+		InArchive.EndArray();
+
+		UINT32 BorderCount = InOutValue.Borders.Num<UINT32>();
+		InArchive.BeginArray(PE_TEXT("Borders"), BorderCount);
+		if (!InArchive.IsSaving())
+		{
+			InOutValue.Borders.Empty();
+		}
+		for (UINT32 Index = 0u; Index < BorderCount; Index++)
+		{
+			const EString IndexKey = EString::FromInt(Index);
+			FLOAT Border = InArchive.IsSaving() ? InOutValue.Borders[Index] : 0.f;
+			InArchive.SerializeFloat(*IndexKey, Border);
+			if (!InArchive.IsSaving())
+			{
+				InOutValue.Borders.Add(Border);
+			}
+		}
+		InArchive.EndArray();
+
+		InArchive.EndObject();
+	}
+
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PDirectionalLightComponent>();
+		AddClassPropertyAccessors<PDirectionalLightComponent, FLOAT>(ClassHash, PE_TEXT("IlluminanceLux"),
+			[](const PDirectionalLightComponent* Component) -> FLOAT { return Component->GetIlluminanceLux(); },
+			[](PDirectionalLightComponent* Component, const FLOAT& Value) -> void { Component->SetIlluminanceLux(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PDirectionalLightComponent, FLOAT>(ClassHash, PE_TEXT("SourceAngleDegrees"),
+			[](const PDirectionalLightComponent* Component) -> FLOAT { return Component->GetSourceAngleDegrees(); },
+			[](PDirectionalLightComponent* Component, const FLOAT& Value) -> void { Component->SetSourceAngleDegrees(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyCustom<PDirectionalLightComponent, ECascadeShadowData>(ClassHash, PE_TEXT("CascadeShadowData"),
+			[](const PDirectionalLightComponent* Component) -> ECascadeShadowData
+			{
+				const ECascadeShadowData* Data = Component->GetCascadeShadowData();
+				return Data ? *Data : ECascadeShadowData();
+			},
+			[](PDirectionalLightComponent* Component, const ECascadeShadowData& Value) -> void
+			{
+				Component->SetCascadeShadowData(Value);
+			},
+			SerializeCascadeShadowData,
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PDirectionalLightComponent, PLightComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -71,6 +142,15 @@ namespace PigeonEngine
 	{
 		LightData.SourceAngleDegrees = EMath::Max(0.f, InSourceAngleDegrees);
 		MarkAsDirty(PLightUpdateState::LIGHT_UPDATE_STATE_DATA);
+	}
+	void PDirectionalLightComponent::SetCascadeShadowData(const ECascadeShadowData& InData)
+	{
+		if (!CascadeShadowData)
+		{
+			CascadeShadowData = new ECascadeShadowData();
+		}
+		*CascadeShadowData = InData;
+		MarkAsDirty(PLightUpdateState::LIGHT_UPDATE_STATE_CASCADE);
 	}
 
 	// Render proxy functions START

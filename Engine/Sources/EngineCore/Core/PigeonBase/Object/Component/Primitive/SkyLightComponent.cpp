@@ -4,6 +4,7 @@
 #include <TextureAsset/TextureAsset.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
+#include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
@@ -12,9 +13,37 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PSkyLightComponent>();
+		AddClassPropertyAccessors<PSkyLightComponent, EString>(ClassHash, PE_TEXT("CubeMapAsset"),
+			[](const PSkyLightComponent* Component) -> EString { return Component->GetCubeMapAssetName(); },
+			[](PSkyLightComponent* Component, const EString& Value) -> void
+			{
+				if (Value.Length() > 0u)
+				{
+					Component->RequestCubeMapAsset(Value, nullptr);
+				}
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PSkyLightComponent, Color3>(ClassHash, PE_TEXT("LightAdjust"),
+			[](const PSkyLightComponent* Component) -> Color3 { return Component->GetLightAdjust(); },
+			[](PSkyLightComponent* Component, const Color3& Value) -> void { Component->SetLightAdjust(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PSkyLightComponent, FLOAT>(ClassHash, PE_TEXT("Intensity"),
+			[](const PSkyLightComponent* Component) -> FLOAT { return Component->GetIntensity(); },
+			[](PSkyLightComponent* Component, const FLOAT& Value) -> void { Component->SetIntensity(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PSkyLightComponent, UINT32>(ClassHash, PE_TEXT("PrefilterResolutionExponent"),
+			[](const PSkyLightComponent* Component) -> UINT32 { return Component->GetPrefilterResolutionExponent(); },
+			[](PSkyLightComponent* Component, const UINT32& Value) -> void { Component->SetPrefilterResolutionExponent(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PSkyLightComponent, PSceneComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -33,6 +62,14 @@ namespace PigeonEngine
 	const ETextureCubeAsset* PSkyLightComponent::GetCubeMapAsset() const
 	{
 		return CubeMapAsset;
+	}
+	const EString& PSkyLightComponent::GetCubeMapAssetName() const
+	{
+		if (CubeMapAsset)
+		{
+			return CubeMapAsset->GetAssetName();
+		}
+		return RequestedCubeMapAssetName;
 	}
 	const Color3& PSkyLightComponent::GetLightAdjust() const
 	{
@@ -72,6 +109,7 @@ namespace PigeonEngine
 	}
 	void PSkyLightComponent::RequestCubeMapAsset(const EString& InAssetName, const FAssetImportCubeSource* InImportSource)
 	{
+		RequestedCubeMapAssetName = InAssetName;
 		// Copied by value: the binding outlives this call.
 		FAssetImportCubeSource ImportSource;
 		if (InImportSource)

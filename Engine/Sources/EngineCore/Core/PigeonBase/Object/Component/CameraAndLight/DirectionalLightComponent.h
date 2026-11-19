@@ -89,6 +89,9 @@ namespace PigeonEngine
 	public:
 		void	SetIlluminanceLux(const FLOAT InIlluminanceLux);
 		void	SetSourceAngleDegrees(const FLOAT InSourceAngleDegrees);
+		// Copies the cascade ladder and marks the proxy's cascade data dirty. The component
+		// owns the storage, so the caller's struct is not retained.
+		void	SetCascadeShadowData(const ECascadeShadowData& InData);
 	public:
 		// Render proxy functions START
 	public:

@@ -1,6 +1,7 @@
 #include "CameraComponent.h"
 #include <RenderProxy/ViewProxy.h>
 #include <PigeonBase/Object/World/World.h>
+#include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
 #if ENGINE_EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
@@ -11,9 +12,43 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PCameraComponent>();
+		AddClassPropertyAccessors<PCameraComponent, BOOL32>(ClassHash, PE_TEXT("MainCamera"),
+			[](const PCameraComponent* Component) -> BOOL32 { return Component->IsMainCamera(); },
+			[](PCameraComponent* Component, const BOOL32& Value) -> void { Component->SetIsMainCamera(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCameraComponent, FLOAT>(ClassHash, PE_TEXT("FOV"),
+			[](const PCameraComponent* Component) -> FLOAT { return Component->GetCameraViewInfo().FovAngleY; },
+			[](PCameraComponent* Component, const FLOAT& Value) -> void { Component->SetFov(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCameraComponent, FLOAT>(ClassHash, PE_TEXT("NearDistance"),
+			[](const PCameraComponent* Component) -> FLOAT { return Component->GetCameraViewInfo().NearDist; },
+			[](PCameraComponent* Component, const FLOAT& Value) -> void { Component->SetNearDistance(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCameraComponent, FLOAT>(ClassHash, PE_TEXT("FarDistance"),
+			[](const PCameraComponent* Component) -> FLOAT { return Component->GetCameraViewInfo().FarDist; },
+			[](PCameraComponent* Component, const FLOAT& Value) -> void { Component->SetFarDistance(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCameraComponent, FLOAT>(ClassHash, PE_TEXT("ExposureValue100"),
+			[](const PCameraComponent* Component) -> FLOAT { return Component->GetExposureValue100(); },
+			[](PCameraComponent* Component, const FLOAT& Value) -> void { Component->SetExposureValue100(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCameraComponent, FLOAT>(ClassHash, PE_TEXT("ISO"),
+			[](const PCameraComponent* Component) -> FLOAT { return Component->GetISO(); },
+			[](PCameraComponent* Component, const FLOAT& Value) -> void { Component->SetISO(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCameraComponent, FLOAT>(ClassHash, PE_TEXT("ExposureCompensation"),
+			[](const PCameraComponent* Component) -> FLOAT { return Component->GetExposureCompensation(); },
+			[](PCameraComponent* Component, const FLOAT& Value) -> void { Component->SetExposureCompensation(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PCameraComponent, PSceneComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -85,6 +120,28 @@ namespace PigeonEngine
 	void PCameraComponent::SetFov(FLOAT InFovAngleY)
 	{
 		CameraViewInfo.FovAngleY = InFovAngleY;
+
+		RefreshCameraFrustum();
+		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
+		CameraMatrix.GenerateFinalMatrix();
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
+	}
+	void PCameraComponent::SetNearDistance(FLOAT InNearDist)
+	{
+		CameraViewInfo.NearDist = InNearDist;
+
+		RefreshCameraFrustum();
+		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
+		CameraMatrix.GenerateFinalMatrix();
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
+	}
+	void PCameraComponent::SetFarDistance(FLOAT InFarDist)
+	{
+		CameraViewInfo.FarDist = InFarDist;
 
 		RefreshCameraFrustum();
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);

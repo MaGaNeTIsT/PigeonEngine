@@ -1,4 +1,5 @@
 #include "SpotLightComponent.h"
+#include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
@@ -7,9 +8,23 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PSpotLightComponent>();
+		AddClassPropertyAccessors<PSpotLightComponent, FLOAT>(ClassHash, PE_TEXT("SpotInnerAngleDegrees"),
+			[](const PSpotLightComponent* Component) -> FLOAT { return Component->GetSpotInnerAngleDegrees(); },
+			[](PSpotLightComponent* Component, const FLOAT& Value) -> void { Component->SetSpotInnerAngleDegrees(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PSpotLightComponent, FLOAT>(ClassHash, PE_TEXT("SpotOuterAngleDegrees"),
+			[](const PSpotLightComponent* Component) -> FLOAT { return Component->GetSpotOuterAngleDegrees(); },
+			[](PSpotLightComponent* Component, const FLOAT& Value) -> void { Component->SetSpotOuterAngleDegrees(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PSpotLightComponent, PLocalLightComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
