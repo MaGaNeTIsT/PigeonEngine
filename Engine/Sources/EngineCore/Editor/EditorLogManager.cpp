@@ -1,6 +1,7 @@
 #include "EditorLogManager.h"
 #if !(ENGINE_SHIPPING_MODE)
 #include "Base/Timer/Timer.h"
+#include <filesystem>
 #include <imgui.h>
 
 namespace PigeonEngine
@@ -208,22 +209,42 @@ namespace PigeonEngine
 		TArray<EString> Folders, LogFiles;
 		if (EFileHelper::ScanDirectory(LogDir, Folders, LogFiles, TRUE))
 		{
+			struct FLogFileEntry
+			{
+				EString Name;
+				EString FullPath;
+				std::filesystem::file_time_type Time;
+			};
+
 			// Keep only files that match our naming pattern (contain "Log.txt")
-			TArray<EString> FilteredLogs;
+			TArray<FLogFileEntry> FilteredLogs;
 			for (INT32 i = 0, n = LogFiles.Num<INT32>(); i < n; i++)
 			{
-				if (LogFiles[i].Contains("Log.txt"))
+				if (!LogFiles[i].Contains("Log.txt"))
 				{
-					FilteredLogs.Add(LogFiles[i]);
+					continue;
 				}
+				FLogFileEntry Entry;
+				Entry.Name = LogFiles[i];
+				Entry.FullPath = LogDir + LogFiles[i];
+				std::error_code Error;
+				Entry.Time = std::filesystem::last_write_time(std::filesystem::path(*Entry.FullPath), Error);
+				if (Error)
+				{
+					// A file whose timestamp cannot be read is treated as the oldest.
+					Entry.Time = std::filesystem::file_time_type();
+				}
+				FilteredLogs.Add(Entry);
 			}
 
-			// Insertion sort ascending by filename (timestamp names -> oldest first)
+			// Sort by actual write time, not filename. The timestamp in the name is not
+			// zero padded, so a string sort puts "2026-11-7" after "2026-11-19" and deletes
+			// the newest log instead of the oldest.
 			for (INT32 i = 1, n = FilteredLogs.Num<INT32>(); i < n; i++)
 			{
-				for (INT32 j = i; j > 0 && FilteredLogs[j] < FilteredLogs[j - 1]; j--)
+				for (INT32 j = i; (j > 0) && (FilteredLogs[j].Time < FilteredLogs[j - 1].Time); j--)
 				{
-					EString Tmp = FilteredLogs[j];
+					const FLogFileEntry Tmp = FilteredLogs[j];
 					FilteredLogs[j] = FilteredLogs[j - 1];
 					FilteredLogs[j - 1] = Tmp;
 				}
@@ -234,7 +255,7 @@ namespace PigeonEngine
 			const INT32 NumToDelete = FilteredLogs.Num<INT32>() - MaxLogCount;
 			for (INT32 i = 0; i < NumToDelete; i++)
 			{
-				::DeleteFileA(*FilteredLogs[i]);
+				::DeleteFileA(*FilteredLogs[i].FullPath);
 			}
 		}
 	}
