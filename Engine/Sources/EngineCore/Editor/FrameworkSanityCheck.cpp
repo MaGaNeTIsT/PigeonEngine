@@ -29,6 +29,7 @@
 #include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
 #include <Editor/WorldEditorCommand.h>
+#include "EditorHelper.h"
 
 namespace PigeonEngine
 {
@@ -1552,6 +1553,49 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	// Exercises the real camera projection, gizmo screen-space hit test and drag delta: a
+	// world point on the X axis must project on screen, be hit as AXIS_X, and dragging to a
+	// second point must produce the matching +X delta (the sign used to be inverted).
+	static BOOL32 CheckGizmoProjectionAndDrag(PWorld* InWorld)
+	{
+		PController* Controller = InWorld ? InWorld->GetController() : nullptr;
+		PCameraComponent* Camera = Controller ? Controller->GetCamera() : nullptr;
+		if (!Camera)
+		{
+			return FALSE;
+		}
+
+		PActor* Actor = new PActor();
+		InWorld->AddActor(Actor);
+		PSceneComponent* Component = new PSceneComponent();
+		Actor->AddComponent(Component);
+		Component->SetComponentWorldLocation(Vector3::Zero());
+
+		const Vector3 Origin = Component->GetComponentWorldLocation();
+		const Vector3 PressWorld = Origin + Vector3(20.f, 0.f, 0.f);
+		const Vector3 MoveWorld = Origin + Vector3(40.f, 0.f, 0.f);
+		Vector3 PressScreen;
+		Vector3 MoveScreen;
+		const ERect ScreenRect(0.f, 0.f, EEngineSettings::ENGINE_SCREEN_WIDTH, EEngineSettings::ENGINE_SCREEN_HEIGHT);
+
+		BOOL32 bHitOk = FALSE;
+		BOOL32 bDragOk = FALSE;
+		Vector3 DragOrigin = Origin;
+		if (Camera->TransformWorldToScreen(PressWorld, PressScreen) &&
+			Camera->TransformWorldToScreen(MoveWorld, MoveScreen))
+		{
+			const EGizmoAxis HitAxis = HitTestTranslationGizmo(Camera, Component, PressScreen.x, PressScreen.y, ScreenRect, DragOrigin);
+			bHitOk = (HitAxis == EGizmoAxis::AXIS_X) && IsVectorNearlyEqual(DragOrigin, PressWorld, 0.75f);
+
+			const Vector3 Delta = ComputeGizmoDragDelta(Camera, Component, EGizmoAxis::AXIS_X, DragOrigin, MoveScreen.x, MoveScreen.y, ScreenRect);
+			bDragOk = IsVectorNearlyEqual(Delta, Vector3(20.f, 0.f, 0.f), 0.75f);
+		}
+
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+		return (bHitOk && bDragOk) ? TRUE : FALSE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -1678,6 +1722,12 @@ namespace PigeonEngine
 		const BOOL32 bWorldEditorCommands = CheckWorldEditorCommands();
 		ReportSanityResult(EString(PE_TEXT("world editor command stack")), bWorldEditorCommands);
 		if (!bWorldEditorCommands)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bGizmoProjection = CheckGizmoProjectionAndDrag(InWorld);
+		ReportSanityResult(EString(PE_TEXT("gizmo projection and drag")), bGizmoProjection);
+		if (!bGizmoProjection)
 		{
 			FailedCount += 1u;
 		}
