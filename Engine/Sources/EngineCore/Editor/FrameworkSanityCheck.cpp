@@ -646,10 +646,11 @@ namespace PigeonEngine
 		Component->AddDeferredApply([&DeferredAttempts]() -> BOOL32
 		{
 			DeferredAttempts++;
-			return TRUE;
+			return (DeferredAttempts >= 2) ? TRUE : FALSE;
 		});
 		InWorld->Tick(1.0f / 60.0f);
-		const BOOL32 bDeferredWakeWorks = ((DeferredAttempts == 1) && (TickCount == (FirstTickCount + 2u))) ? TRUE : FALSE;
+		InWorld->Tick(1.0f / 60.0f);
+		const BOOL32 bDeferredWakeWorks = ((DeferredAttempts == 2) && (TickCount == (FirstTickCount + 3u))) ? TRUE : FALSE;
 		const UINT32 DeferredTickCount = TickCount;
 		InWorld->Tick(1.0f / 60.0f);
 		const BOOL32 bDeferredCleanSkipWorks = (TickCount == DeferredTickCount) ? TRUE : FALSE;

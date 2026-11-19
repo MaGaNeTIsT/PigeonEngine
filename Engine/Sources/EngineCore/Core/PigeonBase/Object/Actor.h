@@ -29,7 +29,6 @@ namespace PigeonEngine
 		// Marks this actor's render subtree as needing a TickRenderTree walk. Propagates to
 		// attached parent actors, so a clean ancestor can skip its whole subtree.
 		void	MarkRenderTreeDirty();
-		PE_NODISCARD BOOL32 IsRenderTreeDirty() const { return bRenderTreeDirty; }
 #if ENGINE_EDITOR_ONLY
 		void	EditorTick(FLOAT deltaTime) override;
 #endif

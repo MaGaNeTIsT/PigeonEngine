@@ -301,6 +301,15 @@ namespace PigeonEngine
 		if (DeferredApplies.Num<UINT32>() > 0u)
 		{
 			RunDeferredApplies();
+			// A step that reported "not yet" has to keep its actor's render subtree awake.
+			// Otherwise a clean-subtree skip would stop retrying it forever.
+			if (DeferredApplies.Num<UINT32>() > 0u)
+			{
+				if (PActor* OwnerActor = GetOwnerActor())
+				{
+					OwnerActor->MarkRenderTreeDirty();
+				}
+			}
 		}
 		TickRenderImpl();
 	}
