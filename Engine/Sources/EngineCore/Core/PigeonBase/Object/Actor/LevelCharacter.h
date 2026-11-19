@@ -12,13 +12,13 @@ namespace PigeonEngine
 	public:
 		virtual void InitCharacter(class FCharacterVirtualSettings& InCharacterSettings);
 		virtual void UninitCharacter();
+		// Rebuilds the physics character after the loader has applied the serialized size and
+		// movement properties. Character components themselves are constructed by this hook,
+		// not by the component factory.
+		virtual void PostDeserialize() override;
 
 		virtual void SetUp(Vector3 UpVector);
 
-		// The default factory does not run InitCharacter, so a level-loaded character would
-		// reach BeginAddedToScene without its physics character. Keep characters out of level
-		// files until that init path is a serializable factory.
-		PE_NODISCARD virtual BOOL32 ShouldSerializeToLevel() const override { return FALSE; }
 
 		class FShape* GetStandingShape();
 		class FShape* GetCrouchingShape();

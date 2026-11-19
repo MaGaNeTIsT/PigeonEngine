@@ -389,6 +389,11 @@ namespace PigeonEngine
 		ClearComponents();
 	}
 
+	void PActor::PostDeserialize()
+	{
+		// The base actor has no runtime state to rebuild after its components are installed.
+	}
+
 	void PActor::ReplaceRootComponentForLoad(PSceneComponent* NewRoot)
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Replacing root component with a nullptr", NewRoot != nullptr);

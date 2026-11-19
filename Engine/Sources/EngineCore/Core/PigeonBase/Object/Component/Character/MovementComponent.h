@@ -28,6 +28,9 @@ namespace PigeonEngine
 		PMovementComponent(PCharacter* InCharacter) :CharacterActor(InCharacter) {};
 		virtual ~PMovementComponent();
 
+		// Created by PCharacter::InitCharacter; a factory-created one would have no character.
+		PE_NODISCARD virtual BOOL32 ShouldSerializeToLevel() const override { return FALSE; }
+
 		virtual void Init() override;
 		virtual void Uninit() override;
 

@@ -27,6 +27,10 @@ namespace PigeonEngine
 		void    RemoveFromOwnerActor();
 		void	OnAddedToScene(PWorld* World);
 		void	OnRemovedFromScene();
+		// FALSE keeps this component out of level files. Components whose construction is
+		// owned by an actor initialization hook (movement, controller input) override this
+		// rather than being recreated by the class factory with missing runtime links.
+		PE_NODISCARD virtual BOOL32 ShouldSerializeToLevel() const { return TRUE; }
 	//protected: //Phyiscs Test note : Time 23/11/5
 		void    SetOwnerActor(PActor* NewOwner);
 	private:

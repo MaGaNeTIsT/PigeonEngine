@@ -151,7 +151,16 @@ namespace PigeonEngine
 			EClassPropertyRegistry::SerializeObject(Writer, ActorClassHash, const_cast<PActor*>(&InActor));
 			Writer.EndObject();
 
-			const TArray<PActorComponent*> Components = InActor.GetAllComponents();
+			const TArray<PActorComponent*> AllComponents = InActor.GetAllComponents();
+			TArray<PActorComponent*> Components;
+			for (UINT32 ComponentIndex = 0u, ComponentNum = AllComponents.Num<UINT32>(); ComponentIndex < ComponentNum; ComponentIndex++)
+			{
+				PActorComponent* Component = AllComponents[ComponentIndex];
+				if (Component && Component->ShouldSerializeToLevel())
+				{
+					Components.Add(Component);
+				}
+			}
 			UINT32 ComponentCount = Components.Num<UINT32>();
 			Writer.BeginArray(PE_TEXT("Components"), ComponentCount);
 			for (UINT32 ComponentIndex = 0u; ComponentIndex < ComponentCount; ComponentIndex++)
@@ -413,6 +422,11 @@ namespace PigeonEngine
 							}
 						}
 					}
+
+					// Runtime state that the factory cannot construct (a character's physics
+					// body, for example) is rebuilt now that every serialized property and
+					// component is in place, but before the actor can enter a world.
+					Actor->PostDeserialize();
 
 					InWorld.AddActor(Actor, EAttachmentRuleType::KEEP_CURRENT, ETransform());
 					CreatedActors.Add(Actor);

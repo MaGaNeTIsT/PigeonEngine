@@ -3,6 +3,8 @@
 #if ENGINE_EDITOR_ONLY
 
 #include "PigeonBase/Object/Actor.h"
+#include "PigeonBase/Object/Actor/LevelCharacter.h"
+#include "PigeonBase/Object/Component/Character/MovementComponent.h"
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/Component/ActorComponent.h"
 #include "PigeonBase/Object/Component/SceneComponent.h"
@@ -1849,6 +1851,53 @@ namespace PigeonEngine
 		return (bMetadataOk && bValuesOk) ? TRUE : FALSE;
 	}
 
+	// A character's physics body and movement component are constructed by InitCharacter,
+	// not by the class factory. Loading one must therefore run PostDeserialize after the
+	// serialized properties and components are installed, and the movement component must
+	// not be written to the file as a disconnected factory object.
+	static BOOL32 CheckCharacterSerialization(PWorld* InWorld)
+	{
+		PCharacter* Character = new PCharacter();
+		Character->CharacterHeightStanding = 150.f;
+		{
+			FCharacterVirtualSettings Settings;
+			Character->InitCharacter(Settings);
+		}
+		POBJ_DEBUGNAME_SET(Character, "SanityCharacter");
+		InWorld->AddActor(Character);
+
+		TArray<PActor*> Actors;
+		Actors.Add(Character);
+		CJsonObject Document;
+		const BOOL32 bSaved = ELevelSerializer::SaveActors(Actors, Document);
+
+		InWorld->DestroyActor(Character);
+		InWorld->FlushPendingDestroy();
+
+		TArray<PActor*> LoadedActors;
+		const BOOL32 bLoaded = ELevelSerializer::LoadActors(*InWorld, Document, &LoadedActors);
+		PCharacter* LoadedCharacter = nullptr;
+		if (bLoaded && (LoadedActors.Num<UINT32>() == 1u))
+		{
+			LoadedCharacter = dynamic_cast<PCharacter*>(LoadedActors[0]);
+		}
+		const BOOL32 bBodyOk = (LoadedCharacter && LoadedCharacter->GetPhysicsCharacter()) ? TRUE : FALSE;
+		const BOOL32 bMovementOk = (LoadedCharacter && LoadedCharacter->GetMovementComponent() &&
+			(LoadedCharacter->GetMovementComponent()->GetOwnerActor() == LoadedCharacter)) ? TRUE : FALSE;
+		const BOOL32 bHeightOk = (LoadedCharacter &&
+			(EMath::Abs(LoadedCharacter->CharacterHeightStanding - 150.f) <= 1.0e-4f)) ? TRUE : FALSE;
+
+		for (UINT32 Index = 0u, Num = LoadedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (LoadedActors[Index])
+			{
+				InWorld->DestroyActor(LoadedActors[Index]);
+			}
+		}
+		InWorld->FlushPendingDestroy();
+		return (bSaved && bLoaded && bBodyOk && bMovementOk && bHeightOk) ? TRUE : FALSE;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -1987,6 +2036,12 @@ namespace PigeonEngine
 		const BOOL32 bContainerProperties = CheckContainerPropertySerialization();
 		ReportSanityResult(EString(PE_TEXT("container property serialization")), bContainerProperties);
 		if (!bContainerProperties)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bCharacterSerialization = CheckCharacterSerialization(InWorld);
+		ReportSanityResult(EString(PE_TEXT("character serialization round trip")), bCharacterSerialization);
+		if (!bCharacterSerialization)
 		{
 			FailedCount += 1u;
 		}

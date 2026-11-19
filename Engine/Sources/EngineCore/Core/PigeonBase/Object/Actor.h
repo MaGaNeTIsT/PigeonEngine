@@ -64,6 +64,11 @@ namespace PigeonEngine
 		// construction defaults do not become level content. Subclasses that create other
 		// constructor state override it and call the base implementation first.
 		virtual void                   PrepareForDeserialize();
+		// Called after the loader has installed and wired every serialized component, before
+		// the actor joins the world. Actors whose runtime state is created by an initialization
+		// hook rather than by the factory use this to rebuild that state from the loaded
+		// properties.
+		virtual void                   PostDeserialize();
 
 		PE_NODISCARD virtual Vector3    GetActorLocation() const;
 		PE_NODISCARD virtual Quaternion GetActorRotation() const;

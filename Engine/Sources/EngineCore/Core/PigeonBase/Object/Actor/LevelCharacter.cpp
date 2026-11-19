@@ -71,8 +71,21 @@ void PigeonEngine::PCharacter::InitCharacter(FCharacterVirtualSettings& InCharac
 	CrouchingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
 	InCharacterSettings.Shape = StandingShape;
 	Character = new FCharacterVirtual(InCharacterSettings);
-	MovementComponent = new PMovementComponent(this);
-	this->AddComponent(MovementComponent);
+	// A loaded character may already carry a serialized movement component. Reuse and link
+	// it instead of adding a second one; for a freshly launched character this creates it.
+	if (!MovementComponent)
+	{
+		MovementComponent = FindComponent<PMovementComponent>();
+	}
+	if (MovementComponent)
+	{
+		MovementComponent->SetCharacter(this);
+	}
+	else
+	{
+		MovementComponent = new PMovementComponent(this);
+		this->AddComponent(MovementComponent);
+	}
 	FPhysicsManager::GetManagerSingleton()->AddCharacter(Character);
 }
 
@@ -93,6 +106,21 @@ void PigeonEngine::PCharacter::UninitCharacter()
 	{
 		delete CrouchingShape;
 		CrouchingShape = nullptr;
+	}
+	// Components are destroyed before this runs from the destructor; do not leave a pointer
+	// to a component the actor has already released.
+	MovementComponent = nullptr;
+}
+
+void PigeonEngine::PCharacter::PostDeserialize()
+{
+	PActor::PostDeserialize();
+	if (!Character)
+	{
+		// The serialized height/radius properties are already applied; InitCharacter reads
+		// them when it builds the standing and crouching shapes.
+		FCharacterVirtualSettings Settings;
+		InitCharacter(Settings);
 	}
 }
 

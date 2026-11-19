@@ -18,6 +18,9 @@ namespace PigeonEngine
 		virtual void Init() override;
 		virtual void Uninit() override;
 		virtual void FixedTick(FLOAT deltaTime) override;
+		// The factory cannot restore the character/controller links; the controller creates
+		// this component at runtime.
+		PE_NODISCARD virtual BOOL32 ShouldSerializeToLevel() const override { return FALSE; }
 
 		void SetCharacter(PCharacter* InCharacter);
 		void SetController(PCharacterController* InController);
