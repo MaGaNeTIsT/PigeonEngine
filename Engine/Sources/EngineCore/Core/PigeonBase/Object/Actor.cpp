@@ -8,6 +8,7 @@
 #include <Editor/EditorLogManager.h>
 
 #if ENGINE_EDITOR_ONLY
+#include <Editor/PropertyEditor.h>
 #include <Editor/WorldEditorCommand.h>
 #include <imgui.h>
 #endif
@@ -852,6 +853,8 @@ namespace PigeonEngine
 		{
 			POBJ_DEBUGNAME_SET(this, EString(NameBuffer));
 		}
+		// Actor-level reflected properties (character settings, future gameplay fields).
+		EPropertyEditor::DrawProperties(this, GetClassHashCode(this));
 		ImGui::Separator();
 #endif
 		if(RootComponent)
