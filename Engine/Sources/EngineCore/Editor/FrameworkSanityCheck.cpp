@@ -9,6 +9,7 @@
 #include "PigeonBase/Object/Component/ActorComponent.h"
 #include "PigeonBase/Object/Component/SceneComponent.h"
 #include "PigeonBase/Object/Component/Primitive/StaticMeshComponent.h"
+#include "PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #include "PigeonBase/Object/Component/CameraAndLight/LightComponent.h"
 #include "PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h"
@@ -32,6 +33,7 @@
 #include <Editor/EditorLogManager.h>
 #include <Editor/WorldEditorCommand.h>
 #include "EditorHelper.h"
+#include "PropertyEditor.h"
 
 namespace PigeonEngine
 {
@@ -1232,6 +1234,9 @@ namespace PigeonEngine
 		PActor* SimulationActor = new PActor();
 		POBJ_DEBUGNAME_SET(SimulationActor, "SanitySimulationActor");
 		InWorld->AddActor(SimulationActor);
+		// A non-serialized component before the simulation shifts the live component list but
+		// not the file list; the object-reference map must use the same filtered order.
+		SimulationActor->AddComponent(new PMovementComponent());
 		PWaterSimulationComponent* Simulation = new PWaterSimulationComponent();
 		SimulationActor->AddComponent(Simulation);
 
@@ -1423,6 +1428,138 @@ namespace PigeonEngine
 			const BOOL32 bGravityOk = (EMath::Abs(LoadWorld->GetGravitySettings().GravityStrength - 500.f) <= 1.0e-3f) &&
 				(LoadWorld->IsGravityUsingUpVector() == FALSE) ? TRUE : FALSE;
 			bContentOk = (bLocationOk && bNameOk && bGravityOk) ? TRUE : FALSE;
+		}
+		LoadWorld->Destroy();
+		EFileHelper::DeleteFile(Path);
+		return (bSaved && bLoaded && bContentOk) ? TRUE : FALSE;
+	}
+
+	// A combined acceptance round trip: several actor/component families, a parent-child
+	// actor link and an object reference whose target is shifted by a non-serialized
+	// component. The existing focused checks cover each property in isolation; this one
+	// exercises the complete PWorld::SaveLevel/LoadLevel path the editor uses.
+	static BOOL32 CheckLevelAcceptanceRoundTrip()
+	{
+		const EString Path = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("SanityAcceptance.PLevel"));
+
+		PSanityLevelWorld* SaveWorld = new PSanityLevelWorld();
+		SaveWorld->Init();
+
+		PActor* ContentActor = new PActor();
+		POBJ_DEBUGNAME_SET(ContentActor, "SanityAcceptanceContent");
+		SaveWorld->AddActor(ContentActor);
+		PStaticMeshComponent* StaticMesh = new PStaticMeshComponent();
+		ContentActor->AddComponent(StaticMesh);
+		PSkeletalMeshComponent* SkeletalMesh = new PSkeletalMeshComponent();
+		ContentActor->AddComponent(SkeletalMesh);
+		PCameraComponent* Camera = new PCameraComponent();
+		Camera->SetFov(83.f);
+		ContentActor->AddComponent(Camera);
+		PDirectionalLightComponent* Directional = new PDirectionalLightComponent();
+		Directional->SetIlluminanceLux(12345.f);
+		ContentActor->AddComponent(Directional);
+		PPhysicsComponent* Physics = new PPhysicsComponent();
+		Physics->SetShapeForSerialization(new FBoxShape(Vector3(11.f, 22.f, 33.f), 0.02f));
+		ContentActor->AddComponent(Physics);
+		PTriggerComponent* Trigger = new PTriggerComponent();
+		Trigger->SetBackend(ETriggerBackendType::SENSOR);
+		Trigger->SetShape(new FSphereShape(44.f), TRUE);
+		ContentActor->AddComponent(Trigger);
+		PNavMeshComponent* NavMesh = new PNavMeshComponent();
+		{
+			ENavMeshBuildSettings Settings = NavMesh->GetBuildSettings();
+			Settings.CellSize = 31.f;
+			Settings.MaxCrowdAgents = 7u;
+			NavMesh->SetBuildSettings(Settings);
+		}
+		ContentActor->AddComponent(NavMesh);
+
+		PActor* ChildActor = new PActor();
+		POBJ_DEBUGNAME_SET(ChildActor, "SanityAcceptanceChild");
+		SaveWorld->AddActor(ChildActor);
+		PSceneComponent* ChildScene = new PSceneComponent();
+		ChildScene->SetComponentLocation(Vector3(1.f, 2.f, 3.f));
+		ChildActor->AddComponent(ChildScene);
+		ChildActor->AttachToActor(ContentActor);
+
+		PActor* SimulationActor = new PActor();
+		POBJ_DEBUGNAME_SET(SimulationActor, "SanityAcceptanceSimulation");
+		SaveWorld->AddActor(SimulationActor);
+		SimulationActor->AddComponent(new PMovementComponent());
+		PWaterSimulationComponent* Simulation = new PWaterSimulationComponent();
+		Simulation->SetInitialDepth(4.5f);
+		SimulationActor->AddComponent(Simulation);
+
+		PActor* SurfaceActor = new PActor();
+		POBJ_DEBUGNAME_SET(SurfaceActor, "SanityAcceptanceSurface");
+		SaveWorld->AddActor(SurfaceActor);
+		PWaterSurfaceComponent* Surface = new PWaterSurfaceComponent();
+		SurfaceActor->AddComponent(Surface);
+		Surface->SetSimulation(Simulation);
+
+		const BOOL32 bSaved = SaveWorld->SaveLevel(Path);
+		SaveWorld->Destroy();
+
+		PSanityLevelWorld* LoadWorld = new PSanityLevelWorld();
+		LoadWorld->Init();
+		const BOOL32 bLoaded = LoadWorld->LoadLevel(Path);
+		BOOL32 bContentOk = FALSE;
+		if (bLoaded)
+		{
+			PActor* LoadedContent = nullptr;
+			PActor* LoadedChild = nullptr;
+			PActor* LoadedSimulationActor = nullptr;
+			PActor* LoadedSurfaceActor = nullptr;
+			const TArray<PActor*> Actors = LoadWorld->GetAllActors();
+			for (UINT32 Index = 0u, Num = Actors.Num<UINT32>(); Index < Num; Index++)
+			{
+				if (!Actors[Index])
+				{
+					continue;
+				}
+				const EString& Name = Actors[Index]->GetDebugName();
+				if (Name == EString(PE_TEXT("SanityAcceptanceContent")))
+				{
+					LoadedContent = Actors[Index];
+				}
+				else if (Name == EString(PE_TEXT("SanityAcceptanceChild")))
+				{
+					LoadedChild = Actors[Index];
+				}
+				else if (Name == EString(PE_TEXT("SanityAcceptanceSimulation")))
+				{
+					LoadedSimulationActor = Actors[Index];
+				}
+				else if (Name == EString(PE_TEXT("SanityAcceptanceSurface")))
+				{
+					LoadedSurfaceActor = Actors[Index];
+				}
+			}
+
+			if (LoadedContent && LoadedChild && LoadedSimulationActor && LoadedSurfaceActor)
+			{
+				PCameraComponent* LoadedCamera = LoadedContent->FindComponent<PCameraComponent>();
+				PDirectionalLightComponent* LoadedDirectional = LoadedContent->FindComponent<PDirectionalLightComponent>();
+				PPhysicsComponent* LoadedPhysics = LoadedContent->FindComponent<PPhysicsComponent>();
+				PTriggerComponent* LoadedTrigger = LoadedContent->FindComponent<PTriggerComponent>();
+				PNavMeshComponent* LoadedNavMesh = LoadedContent->FindComponent<PNavMeshComponent>();
+				PWaterSurfaceComponent* LoadedSurface = LoadedSurfaceActor->FindComponent<PWaterSurfaceComponent>();
+				PWaterSimulationComponent* LoadedSimulation = LoadedSimulationActor->FindComponent<PWaterSimulationComponent>();
+				const FBoxShape* LoadedBox = LoadedPhysics ? dynamic_cast<const FBoxShape*>(LoadedPhysics->GetShapeForSerialization()) : nullptr;
+				const FSphereShape* LoadedSphere = LoadedTrigger ? dynamic_cast<const FSphereShape*>(LoadedTrigger->GetShape()) : nullptr;
+				bContentOk = (LoadedContent->FindComponent<PStaticMeshComponent>() != nullptr) &&
+					(LoadedContent->FindComponent<PSkeletalMeshComponent>() != nullptr) &&
+					LoadedCamera && (EMath::Abs(LoadedCamera->GetCameraViewInfo().FovAngleY - 83.f) <= 1.0e-3f) &&
+					LoadedDirectional && (EMath::Abs(LoadedDirectional->GetIlluminanceLux() - 12345.f) <= 1.0e-2f) &&
+					LoadedBox && IsVectorNearlyEqual(LoadedBox->HalfExtent, Vector3(11.f, 22.f, 33.f), 1.0e-4f) &&
+					LoadedSphere && (EMath::Abs(LoadedSphere->Raidus - 44.f) <= 1.0e-4f) &&
+					LoadedNavMesh && (EMath::Abs(LoadedNavMesh->GetBuildSettings().CellSize - 31.f) <= 1.0e-4f) &&
+					(LoadedNavMesh->GetBuildSettings().MaxCrowdAgents == 7u) &&
+					(LoadedChild->GetAttachedParentActor() == LoadedContent) &&
+					LoadedSimulation && (EMath::Abs(LoadedSimulation->GetInitialDepth() - 4.5f) <= 1.0e-4f) &&
+					LoadedSurface && LoadedSurface->GetSimulationHandle().IsValid() &&
+					(LoadedSurface->GetSimulation() == LoadedSimulation) ? TRUE : FALSE;
+			}
 		}
 		LoadWorld->Destroy();
 		EFileHelper::DeleteFile(Path);
@@ -1732,6 +1869,7 @@ namespace PigeonEngine
 		});
 
 		BOOL32 bMetadataOk = FALSE;
+		BOOL32 bShapeOk = FALSE;
 		if (NumberProperty && WeightProperty && GroundTypesProperty && EnumKeysProperty &&
 			NestedNumbersProperty && NestedWeightsProperty &&
 			NumberProperty->GetValue && WeightProperty->GetValue &&
@@ -1793,6 +1931,28 @@ namespace PigeonEngine
 			NewWeight.Value.DoubleValue = 3.5;
 			WeightsValue.MapEntries.Add(NewWeight);
 			WeightProperty->SetValue(&Source, WeightsValue);
+
+			FPropertyValue NestedShape;
+			MakePropertyShape<TArray<INT32>>(NestedShape);
+			FPropertyElement AddedNested;
+			EPropertyEditor::MakeDefaultElement(&NestedShape, AddedNested);
+			FPropertyElement AddedInner;
+			if (AddedNested.ContainerValue && AddedNested.ContainerValue->ElementShape)
+			{
+				EPropertyEditor::MakeDefaultElement(AddedNested.ContainerValue->ElementShape.get(), AddedInner);
+			}
+			bShapeOk = (AddedNested.Type == EPropertyValueType::ARRAY) &&
+				AddedNested.ContainerValue &&
+				(AddedNested.ContainerValue->ElementType == EPropertyValueType::INT32) &&
+				(AddedNested.ContainerValue->ArrayValues.Num<UINT32>() == 0u) &&
+				(AddedInner.Type == EPropertyValueType::INT32) ? TRUE : FALSE;
+			if (bShapeOk)
+			{
+				AddedInner.IntValue = 9;
+				AddedNested.ContainerValue->ArrayValues.Add(AddedInner);
+				NestedNumbersValue.ArrayValues.Add(AddedNested);
+				NestedNumbersProperty->SetValue(&Source, NestedNumbersValue);
+			}
 		}
 
 		CJsonObject Document;
@@ -1816,11 +1976,13 @@ namespace PigeonEngine
 		TArray<FLOAT> NestedWeightValues;
 		const BOOL32 bNestedWeightsFound = Target.NestedWeights.FindValue(EString(PE_TEXT("A")), NestedWeightValues) ? TRUE : FALSE;
 		const BOOL32 bNestedValuesOk =
-			(Target.NestedNumbers.Num<UINT32>() == 2u) &&
+			(Target.NestedNumbers.Num<UINT32>() == 3u) &&
 			(Target.NestedNumbers[0].Num<UINT32>() == 2u) &&
 			(Target.NestedNumbers[0][0] == 1) && (Target.NestedNumbers[0][1] == 2) &&
 			(Target.NestedNumbers[1].Num<UINT32>() == 1u) &&
 			(Target.NestedNumbers[1][0] == 3) &&
+			(Target.NestedNumbers[2].Num<UINT32>() == 1u) &&
+			(Target.NestedNumbers[2][0] == 9) &&
 			bNestedWeightsFound &&
 			(NestedWeightValues.Num<UINT32>() == 2u) &&
 			(EMath::Abs(NestedWeightValues[0] - 0.5f) <= 1.0e-5f) &&
@@ -1837,10 +1999,11 @@ namespace PigeonEngine
 			bEnumMapValues && (FlatValue == 10) && (HeightValue == 20) &&
 			bNestedValuesOk ? TRUE : FALSE;
 
-		if (!(bMetadataOk && bValuesOk))
+		if (!(bMetadataOk && bValuesOk && bShapeOk))
 		{
 			PE_LOG_ERROR(EString(PE_TEXT("container detail: metadata=")) + EString::FromInt(bMetadataOk) +
 				EString(PE_TEXT(" values=")) + EString::FromInt(bValuesOk) +
+				EString(PE_TEXT(" shape=")) + EString::FromInt(bShapeOk) +
 				EString(PE_TEXT(" sourceNumbers=")) + EString::FromInt(Source.Numbers.Num<UINT32>()) +
 				EString(PE_TEXT(" targetNumbers=")) + EString::FromInt(Target.Numbers.Num<UINT32>()) +
 				EString(PE_TEXT(" targetWeights=")) + EString::FromInt(Target.Weights.Num<UINT32>()) +
@@ -1848,7 +2011,7 @@ namespace PigeonEngine
 				EString(PE_TEXT(" B=")) + EString::FromFloat(BValue) +
 				EString(PE_TEXT(" C=")) + EString::FromFloat(CValue));
 		}
-		return (bMetadataOk && bValuesOk) ? TRUE : FALSE;
+		return (bMetadataOk && bValuesOk && bShapeOk) ? TRUE : FALSE;
 	}
 
 	// A character's physics body and movement component are constructed by InitCharacter,
@@ -2018,6 +2181,12 @@ namespace PigeonEngine
 		const BOOL32 bLevelFileIO = CheckLevelFileIO();
 		ReportSanityResult(EString(PE_TEXT("level file save and load")), bLevelFileIO);
 		if (!bLevelFileIO)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bLevelAcceptance = CheckLevelAcceptanceRoundTrip();
+		ReportSanityResult(EString(PE_TEXT("level acceptance round trip")), bLevelAcceptance);
+		if (!bLevelAcceptance)
 		{
 			FailedCount += 1u;
 		}
