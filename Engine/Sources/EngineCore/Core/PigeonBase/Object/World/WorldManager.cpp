@@ -54,6 +54,14 @@ namespace PigeonEngine
 			this->World = new PWorld();
 		}
 		this->World->Init();
+
+		// The default demo is a level asset now. A missing file is a warning, not a fallback:
+		// the world stays empty and the editor can create content or load another level.
+		const EString DefaultLevelPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("Demo.PLevel"));
+		if (!this->World->LoadLevel(DefaultLevelPath))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("World: default level missing or failed to load: ")) + DefaultLevelPath);
+		}
 	}
 
 	void EWorldManager::Uninit()
