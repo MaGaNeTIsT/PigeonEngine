@@ -1482,8 +1482,32 @@ namespace PigeonEngine
 		const BOOL32 bRedoSpawnOk = Stack.Redo();
 		const BOOL32 bRedoSpawnValue = (World->GetAllActors().Num<UINT32>() == 1u) ? TRUE : FALSE;
 
-		// Delete the recreated actor through the same command and restore it.
+		// Transform is the most common reflected edit; exercise its SetProperty path too.
 		PActor* RecreatedActor = (World->GetAllActors().Num<UINT32>() > 0u) ? World->GetAllActors()[0] : nullptr;
+		PSceneComponent* RecreatedRoot = RecreatedActor ? RecreatedActor->GetRootComponent() : nullptr;
+		BOOL32 bTransformPushed = FALSE;
+		BOOL32 bUndoTransformOk = FALSE;
+		BOOL32 bUndoTransformValue = FALSE;
+		BOOL32 bRedoTransformOk = FALSE;
+		BOOL32 bRedoTransformValue = FALSE;
+		if (RecreatedRoot)
+		{
+			FPropertyValue BeforeTransform;
+			BeforeTransform.Type = EPropertyValueType::TRANSFORM;
+			BeforeTransform.TransformValue = RecreatedRoot->GetTransform();
+			RecreatedRoot->SetComponentLocation(Vector3(7.f, 8.f, 9.f));
+			FPropertyValue AfterTransform;
+			AfterTransform.Type = EPropertyValueType::TRANSFORM;
+			AfterTransform.TransformValue = RecreatedRoot->GetTransform();
+			bTransformPushed = PushSetPropertyCommand(Stack, MakeObjectHandle(RecreatedRoot), TRUE,
+				GetClassHashCode<PSceneComponent>(), EString(PE_TEXT("Transform")), BeforeTransform, AfterTransform);
+			bUndoTransformOk = Stack.Undo();
+			bUndoTransformValue = IsVectorNearlyEqual(RecreatedRoot->GetComponentLocalLocation(), BeforeTransform.TransformValue.GetLocation_Local(), 1.0e-4f);
+			bRedoTransformOk = Stack.Redo();
+			bRedoTransformValue = IsVectorNearlyEqual(RecreatedRoot->GetComponentLocalLocation(), Vector3(7.f, 8.f, 9.f), 1.0e-4f);
+		}
+
+		// Delete the recreated actor through the same command and restore it.
 		const BOOL32 bDeleteActorPushed = RecreatedActor ? PushDeleteActorCommand(Stack, *World, RecreatedActor) : FALSE;
 		const BOOL32 bDeleteActorValue = (World->GetAllActors().Num<UINT32>() == 0u) ? TRUE : FALSE;
 		const BOOL32 bUndoDeleteActorOk = Stack.Undo();
@@ -1507,6 +1531,7 @@ namespace PigeonEngine
 			bRedoDeleteOk && bRedoDeleteValue && bUndoDeleteAgainOk && bUndoDeleteAgainValue &&
 			bUndoPropertyAgainOk && bUndoPropertyAgainValue &&
 			bUndoAddOk && bUndoAddValue && bUndoSpawnOk && bUndoSpawnValue && bRedoSpawnOk && bRedoSpawnValue &&
+			bTransformPushed && bUndoTransformOk && bUndoTransformValue && bRedoTransformOk && bRedoTransformValue &&
 			bDeleteActorPushed && bDeleteActorValue && bUndoDeleteActorOk && bUndoDeleteActorValue) ? TRUE : FALSE;
 		if (!bOk)
 		{
@@ -1520,6 +1545,7 @@ namespace PigeonEngine
 				EString(PE_TEXT(" undoAdd=")) + EString::FromInt(bUndoAddOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoAddValue) +
 				EString(PE_TEXT(" undoSpawn=")) + EString::FromInt(bUndoSpawnOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoSpawnValue) +
 				EString(PE_TEXT(" redoSpawn=")) + EString::FromInt(bRedoSpawnOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoSpawnValue) +
+				EString(PE_TEXT(" transform=")) + EString::FromInt(bTransformPushed) + EString(PE_TEXT("/")) + EString::FromInt(bUndoTransformOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoTransformValue) + EString(PE_TEXT("/")) + EString::FromInt(bRedoTransformOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoTransformValue) +
 				EString(PE_TEXT(" deleteActor=")) + EString::FromInt(bDeleteActorPushed) + EString(PE_TEXT("/")) + EString::FromInt(bDeleteActorValue) +
 				EString(PE_TEXT(" undoDeleteActor=")) + EString::FromInt(bUndoDeleteActorOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoDeleteActorValue));
 		}
