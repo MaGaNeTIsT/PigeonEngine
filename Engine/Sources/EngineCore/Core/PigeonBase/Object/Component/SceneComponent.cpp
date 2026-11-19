@@ -275,6 +275,12 @@ namespace PigeonEngine
 			return;
 		}
 		DeferredApplies.Add(static_cast<TFunction<BOOL32()>&&>(InStep));
+		// Deferred work is progress even before it dirties the render state, so the actor
+		// must keep walking this subtree until the step resolves.
+		if (PActor* OwnerActor = GetOwnerActor())
+		{
+			OwnerActor->MarkRenderTreeDirty();
+		}
 	}
 	void PSceneComponent::RunDeferredApplies()
 	{

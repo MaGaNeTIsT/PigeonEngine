@@ -205,7 +205,20 @@ namespace PigeonEngine
 	}
 	void PActorComponent::MarkRenderStateAsDirty()
 	{
+		const BOOL32 bWasDirty = RenderStateDirty;
 		RenderStateDirty = TRUE;
+		// A component that was already dirty has already woken its actor's render subtree;
+		// repeating that walk for every property write in the same frame is wasted work.
+		if (!bWasDirty)
+		{
+			if (PActor* OwnerActor = GetOwnerActor())
+			{
+				if (!OwnerActor->IsRenderTreeDirty())
+				{
+					OwnerActor->MarkRenderTreeDirty();
+				}
+			}
+		}
 	}
 	void PActorComponent::CleanMarkRenderStateDirty()
 	{

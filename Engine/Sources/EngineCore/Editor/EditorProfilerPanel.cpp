@@ -113,6 +113,7 @@ namespace PigeonEngine
 		// Deferred to the first editor update: manager initialization is not complete yet.
 		BenchmarkActorCount = static_cast<INT32>(ReadBenchmarkEnvironmentValue("PIGEON_BENCHMARK_ACTORS", static_cast<UINT32>(BenchmarkActorCount)));
 		BenchmarkFrameCount = static_cast<INT32>(ReadBenchmarkEnvironmentValue("PIGEON_BENCHMARK_FRAMES", static_cast<UINT32>(BenchmarkFrameCount)));
+		BenchmarkMovePercent = static_cast<INT32>(ReadBenchmarkEnvironmentValue("PIGEON_BENCHMARK_MOVE_PERCENT", static_cast<UINT32>(BenchmarkMovePercent)));
 		bPerformanceBenchmarkAutoStart = ShouldAutoStartPerformanceBenchmark();
 	}
 	void EEditorProfilerPanel::ShutDown()
@@ -131,6 +132,7 @@ namespace PigeonEngine
 
 		BenchmarkActorCount = static_cast<INT32>(EMath::Clamp(BenchmarkActorCount, 100, 50000));
 		BenchmarkFrameCount = static_cast<INT32>(EMath::Clamp(BenchmarkFrameCount, 10, 1200));
+		BenchmarkMovePercent = static_cast<INT32>(EMath::Clamp(BenchmarkMovePercent, 0, 100));
 		BenchmarkWorld = new FPerformanceBenchmarkWorld();
 		BenchmarkWorld->Init();
 		PE_LOG_LOG(EString(PE_TEXT("[PerformanceBenchmark] start actors=")) + EString::FromInt(BenchmarkActorCount)
@@ -225,15 +227,23 @@ namespace PigeonEngine
 		const UINT64 StartTicks = EBaseTimer::GetClockTicks();
 		const FLOAT MotionPhase = static_cast<FLOAT>(BenchmarkRunFrames % 60u) * 0.01f;
 		const UINT64 MoveStartTicks = EBaseTimer::GetClockTicks();
-		for (UINT32 Index = 0u, Num = BenchmarkActors.Num<UINT32>(); Index < Num; Index++)
+		if (BenchmarkMovePercent > 0)
 		{
-			PActor* Actor = BenchmarkActors[Index];
-			if (Actor)
+			const UINT32 MovePercent = static_cast<UINT32>(BenchmarkMovePercent);
+			for (UINT32 Index = 0u, Num = BenchmarkActors.Num<UINT32>(); Index < Num; Index++)
 			{
-				Actor->GetRootComponent()->SetComponentLocation(Vector3(
-					static_cast<FLOAT>(Index % 100u) * 2.0f + MotionPhase,
-					0.0f,
-					static_cast<FLOAT>(Index / 100u) * 2.0f));
+				if ((MovePercent < 100u) && ((Index % 100u) >= MovePercent))
+				{
+					continue;
+				}
+				PActor* Actor = BenchmarkActors[Index];
+				if (Actor)
+				{
+					Actor->GetRootComponent()->SetComponentLocation(Vector3(
+						static_cast<FLOAT>(Index % 100u) * 2.0f + MotionPhase,
+						0.0f,
+						static_cast<FLOAT>(Index / 100u) * 2.0f));
+				}
 			}
 		}
 		const DOUBLE MoveMilliseconds = EBaseTimer::TicksToSeconds(EBaseTimer::GetClockTicks() - MoveStartTicks) * 1000.0;
@@ -307,8 +317,11 @@ namespace PigeonEngine
 		ImGui::InputInt("Actors", &BenchmarkActorCount);
 		ImGui::SetNextItemWidth(160.0f);
 		ImGui::InputInt("Frames", &BenchmarkFrameCount);
+		ImGui::SetNextItemWidth(160.0f);
+		ImGui::InputInt("Move %", &BenchmarkMovePercent);
 		BenchmarkActorCount = static_cast<INT32>(EMath::Clamp(BenchmarkActorCount, 100, 50000));
 		BenchmarkFrameCount = static_cast<INT32>(EMath::Clamp(BenchmarkFrameCount, 10, 1200));
+		BenchmarkMovePercent = static_cast<INT32>(EMath::Clamp(BenchmarkMovePercent, 0, 100));
 
 		const BOOL32 bRunning = ((BenchmarkState == EBenchmarkStateType::BUILDING) ||
 			(BenchmarkState == EBenchmarkStateType::WARMUP) ||

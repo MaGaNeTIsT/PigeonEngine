@@ -168,6 +168,13 @@ namespace PigeonEngine
 
 	void PActor::TickRenderTree()
 	{
+		if (!bRenderTreeDirty)
+		{
+			return;
+		}
+		// Clear before walking: a deferred apply or a render-state send during this pass may
+		// dirty the actor again, and that work must be visible on the next frame.
+		bRenderTreeDirty = FALSE;
 		if (RootComponent)
 		{
 			RootComponent->TickRender();
@@ -179,6 +186,19 @@ namespace PigeonEngine
 			{
 				Child->TickRenderTree();
 			}
+		}
+	}
+
+	void PActor::MarkRenderTreeDirty()
+	{
+		if (bRenderTreeDirty)
+		{
+			return;
+		}
+		bRenderTreeDirty = TRUE;
+		if (AttachedParentActor)
+		{
+			AttachedParentActor->MarkRenderTreeDirty();
 		}
 	}
 
@@ -303,6 +323,10 @@ namespace PigeonEngine
 			Parent->ChildrenActors.Add(Child);
 		}
 		Child->AttachedParentActor = Parent;
+		// The actor and its whole subtree just changed scene transform; make sure the parent
+		// walk reaches it even if the child's flag was already set before the attach.
+		Child->MarkRenderTreeDirty();
+		Parent->MarkRenderTreeDirty();
 	}
 
 	TArray<PActor*> PActor::GetAllActorsAttached(BOOL8 bRecursive) const
@@ -412,6 +436,7 @@ namespace PigeonEngine
 		this->RootComponent->SetOwnerActor(this);
 		POBJ_DEBUGNAME_SET(this->RootComponent, EnsureRootDebugName(POBJ_DEBUGNAME_GET(this->RootComponent)));
 		RebuildTickOrder();
+		MarkRenderTreeDirty();
 	}
 
 	TArray<PActorComponent*> PActor::GetAllComponents() const
@@ -459,6 +484,7 @@ namespace PigeonEngine
 
 		// The component list changed (possibly from the constructor, before any world).
 		RebuildTickOrder();
+		MarkRenderTreeDirty();
 	}
 
 	Vector3 PActor::GetActorLocation() const
@@ -572,6 +598,7 @@ namespace PigeonEngine
 		}
 		this->Components.Add(NewComponent);
 		RebuildTickOrder();
+		this->MarkRenderTreeDirty();
 		if (this->GetWorld())
 		{
 			if (!NewComponent->IsInitialized())
@@ -690,6 +717,7 @@ namespace PigeonEngine
 	{
 		const BOOL32 bWasAddedToScene = IsAddedToScene();
 		PObject::BeginAddedToScene(World);
+		MarkRenderTreeDirty();
 		for (PActorComponent* Component : Components)
 		{
 			Component->OnAddedToScene(this->GetWorld());

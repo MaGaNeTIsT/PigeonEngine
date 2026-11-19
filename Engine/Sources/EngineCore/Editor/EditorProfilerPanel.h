@@ -94,6 +94,7 @@ namespace PigeonEngine
 		BOOL32						bPerformanceBenchmarkAutoStart = FALSE;
 		INT32						BenchmarkActorCount = 5000;
 		INT32						BenchmarkFrameCount = 120;
+		INT32						BenchmarkMovePercent = 100;
 		PWorld*						BenchmarkWorld = nullptr;
 		TArray<PActor*>				BenchmarkActors;
 		UINT32						BenchmarkBuildCursor = 0u;

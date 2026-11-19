@@ -26,6 +26,10 @@ namespace PigeonEngine
 		// applies, dirty sends and transform walks run here once per frame, including the
 		// subtrees of non-tickable actors.
 		void	TickRenderTree();
+		// Marks this actor's render subtree as needing a TickRenderTree walk. Propagates to
+		// attached parent actors, so a clean ancestor can skip its whole subtree.
+		void	MarkRenderTreeDirty();
+		PE_NODISCARD BOOL32 IsRenderTreeDirty() const { return bRenderTreeDirty; }
 #if ENGINE_EDITOR_ONLY
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
@@ -92,6 +96,10 @@ namespace PigeonEngine
 		PE_NODISCARD virtual EMobilityType GetMobility() const;
 
 	private:
+		// True when this actor or any attached descendant has render work pending. The flag
+		// is cleared at the start of TickRenderTree, so work added during the walk survives
+		// to the next frame.
+		BOOL32 bRenderTreeDirty = TRUE;
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;
 
