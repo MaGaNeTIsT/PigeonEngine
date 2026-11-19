@@ -7,6 +7,8 @@ namespace PigeonEngine
 	class CJsonObject;
 	class PWorld;
 	class PActor;
+	class PActorComponent;
+	class PSceneComponent;
 
 	/*
 	* Level header: the world settings a saved level restores independently of its actors.
@@ -60,6 +62,13 @@ namespace PigeonEngine
 		BOOL32 LoadWorld(PWorld& InWorld, const CJsonObject& InDocument, FLevelHeader* OutHeader = nullptr, TArray<PActor*>* OutCreatedActors = nullptr);
 		BOOL32 LoadActorsFromFile(PWorld& InWorld, const EString& InPath, TArray<PActor*>* OutCreatedActors = nullptr);
 		BOOL32 LoadWorldFromFile(PWorld& InWorld, const EString& InPath, FLevelHeader* OutHeader = nullptr, TArray<PActor*>* OutCreatedActors = nullptr);
+
+		// Component-level documents used by the editor's add/remove component commands. The
+		// parent is passed explicitly on load because a command knows it; object references
+		// inside the component are skipped by these helpers (the command stack does not carry
+		// a level-wide reference table).
+		BOOL32 SaveComponent(const PActorComponent* InComponent, const PActor* InOwner, CJsonObject& OutDocument);
+		BOOL32 LoadComponentIntoActor(PActor& InActor, const CJsonObject& InDocument, PSceneComponent* InParent, PActorComponent*& OutComponent);
 
 	}
 }

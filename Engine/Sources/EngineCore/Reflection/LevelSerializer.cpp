@@ -639,4 +639,95 @@ namespace PigeonEngine
 		return LoadWorld(InWorld, Document, OutHeader, OutCreatedActors);
 	}
 
+	BOOL32 ELevelSerializer::SaveComponent(const PActorComponent* InComponent, const PActor* InOwner, CJsonObject& OutDocument)
+	{
+		if ((!InComponent) || (!InOwner))
+		{
+			return FALSE;
+		}
+		EJsonArchiveWriter Writer(OutDocument);
+		Writer.BeginObject(PE_TEXT("Component"));
+
+		const size_t ComponentClassHash = GetClassHashCode(InComponent);
+		EString ComponentClassName(GetClassStableName(ComponentClassHash));
+		Writer.SerializeString(PE_TEXT("Class"), ComponentClassName);
+		UINT32 ComponentClassVersion = EClassPropertyRegistry::GetClassVersion(ComponentClassHash);
+		Writer.SerializeUInt32(PE_TEXT("ClassVersion"), ComponentClassVersion);
+#if ENGINE_EDITOR_ONLY
+		EString ComponentName = InComponent->GetDebugName();
+		Writer.SerializeString(PE_TEXT("Name"), ComponentName);
+#endif
+		BOOL32 bIsRoot = (InComponent == InOwner->GetRootComponent()) ? TRUE : FALSE;
+		Writer.SerializeBool(PE_TEXT("Root"), bIsRoot);
+		UINT32 ParentComponentIndex = 0u;
+		Writer.SerializeUInt32(PE_TEXT("ParentComponentIndex"), ParentComponentIndex);
+		Writer.BeginObject(PE_TEXT("Properties"));
+		EClassPropertyRegistry::SerializeObject(Writer, ComponentClassHash, const_cast<PActorComponent*>(InComponent));
+		Writer.EndObject();
+
+		Writer.EndObject();
+		return TRUE;
+	}
+
+	BOOL32 ELevelSerializer::LoadComponentIntoActor(PActor& InActor, const CJsonObject& InDocument, PSceneComponent* InParent, PActorComponent*& OutComponent)
+	{
+		OutComponent = nullptr;
+		EJsonArchiveReader Reader(InDocument);
+		Reader.BeginObject(PE_TEXT("Component"));
+
+		EString ComponentClassName;
+		Reader.SerializeString(PE_TEXT("Class"), ComponentClassName);
+		UINT32 ComponentClassVersion = 1u;
+		Reader.SerializeUInt32(PE_TEXT("ClassVersion"), ComponentClassVersion);
+		BOOL32 bIsRoot = FALSE;
+		Reader.SerializeBool(PE_TEXT("Root"), bIsRoot);
+		UINT32 ParentComponentIndex = 0u;
+		Reader.SerializeUInt32(PE_TEXT("ParentComponentIndex"), ParentComponentIndex);
+
+		PActorComponent* Component = (ComponentClassName.Length() > 0u)
+			? CreateClassObjectByStableName<PActorComponent>(*ComponentClassName)
+			: nullptr;
+		if (!Component)
+		{
+			Reader.EndObject();
+			return FALSE;
+		}
+#if ENGINE_EDITOR_ONLY
+		EString ComponentName;
+		Reader.SerializeString(PE_TEXT("Name"), ComponentName);
+		if (ComponentName.Length() > 0u)
+		{
+			Component->SetDebugName(ComponentName);
+		}
+#endif
+		Reader.BeginObject(PE_TEXT("Properties"));
+		const size_t ComponentClassHash = GetClassHashCode(Component);
+		EClassPropertyRegistry::SerializeObject(Reader, ComponentClassHash, Component);
+		if (ComponentClassVersion < EClassPropertyRegistry::GetClassVersion(ComponentClassHash))
+		{
+			if (const TFunction<void(void*, UINT32)>* Migrator = EClassPropertyRegistry::FindClassMigrator(ComponentClassHash))
+			{
+				(*Migrator)(Component, ComponentClassVersion);
+			}
+		}
+		Reader.EndObject();
+		Reader.EndObject();
+
+		PSceneComponent* SceneComponent = dynamic_cast<PSceneComponent*>(Component);
+		if (bIsRoot && SceneComponent)
+		{
+			InActor.ReplaceRootComponentForLoad(SceneComponent);
+		}
+		else
+		{
+			InActor.AddComponent(Component);
+			if (SceneComponent && InParent)
+			{
+				SceneComponent->AttachToComponent(InParent);
+			}
+		}
+		OutComponent = Component;
+		return TRUE;
+	}
+
 }

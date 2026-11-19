@@ -5,8 +5,9 @@
 #include <Config/EngineConfig.h>
 #include <typeinfo>
 #include <map>
-#include <string>
 #include <set>
+#include <string>
+#include <vector>
 
 namespace PigeonEngine
 {
@@ -106,6 +107,34 @@ namespace PigeonEngine
 				return (*(It->second.ParentHashCodes.begin()));
 			}
 			return (static_cast<size_t>(-1));
+		}
+
+		// One row per class with an on-disk name. The editor uses this to build its Create
+		// Actor / Add Component menus without a second curated class table.
+		struct ESerializableClassInfo
+		{
+			size_t		ClassHash = static_cast<size_t>(-1);
+			size_t		ParentHash = static_cast<size_t>(-1);
+			std::string	StableName;
+			BOOL32		bHasFactory = FALSE;
+		};
+
+		void GetSerializableClassInfos(std::vector<ESerializableClassInfo>& OutInfos) const
+		{
+			OutInfos.clear();
+			for (std::map<size_t, EClassTypeInfo>::const_iterator It = ClassTypeInfos.begin(); It != ClassTypeInfos.end(); It++)
+			{
+				if (It->second.StableName.empty())
+				{
+					continue;
+				}
+				ESerializableClassInfo Info;
+				Info.ClassHash = It->first;
+				Info.ParentHash = It->second.ParentHashCodes.empty() ? static_cast<size_t>(-1) : *It->second.ParentHashCodes.begin();
+				Info.StableName = It->second.StableName;
+				Info.bHasFactory = (ClassFactories.find(It->first) != ClassFactories.end()) ? TRUE : FALSE;
+				OutInfos.push_back(Info);
+			}
 		}
 
 		/// <summary>
