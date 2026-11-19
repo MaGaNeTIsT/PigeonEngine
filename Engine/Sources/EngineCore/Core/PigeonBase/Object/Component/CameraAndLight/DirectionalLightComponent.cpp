@@ -199,26 +199,6 @@ namespace PigeonEngine
 	void PDirectionalLightComponent::GenerateComponentDetail()
 	{
 		PLightComponent::GenerateComponentDetail();
-
-		if (ImGui::TreeNodeEx("Directional Light"))
-		{
-			// Perpendicular illuminance in lux. Daylight values: 100000 in direct sun, 10000 under
-			// overcast, 0.25 in full moonlight.
-			FLOAT TempIlluminance = GetIlluminanceLux();
-			if (ImGui::DragFloat("Illuminance", &TempIlluminance, 100.f, 0.f, 200000.f, "%.0f lux"))
-			{
-				SetIlluminanceLux(TempIlluminance);
-			}
-
-			// The angular diameter of the disc the light stands for - the sun's 0.53 degrees - which
-			// is the input both to the specular lobe's width and to a soft shadow's penumbra.
-			FLOAT TempSourceAngle = GetSourceAngleDegrees();
-			if (ImGui::DragFloat("Source angle", &TempSourceAngle, 0.01f, 0.f, 5.f, "%.2f deg"))
-			{
-				SetSourceAngleDegrees(TempSourceAngle);
-			}
-			ImGui::TreePop();
-		}
 	}
 #endif
 

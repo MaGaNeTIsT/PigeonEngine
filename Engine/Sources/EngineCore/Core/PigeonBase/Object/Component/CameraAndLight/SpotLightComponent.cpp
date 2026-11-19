@@ -80,21 +80,6 @@ namespace PigeonEngine
 	void PSpotLightComponent::GenerateComponentDetail()
 	{
 		PLocalLightComponent::GenerateComponentDetail();
-
-		if (ImGui::TreeNodeEx("Spot"))
-		{
-			// Half angles from the axis. They are written as a pair, because the setter is the one
-			// place that is able to keep the inner no wider than the outer.
-			FLOAT TempInner = GetSpotInnerAngleDegrees();
-			FLOAT TempOuter = GetSpotOuterAngleDegrees();
-			const BOOL8 bInnerChanged = ImGui::DragFloat("Inner angle", &TempInner, 0.1f, 0.f, 89.f, "%.2f deg");
-			const BOOL8 bOuterChanged = ImGui::DragFloat("Outer angle", &TempOuter, 0.1f, 0.f, 89.f, "%.2f deg");
-			if (bInnerChanged || bOuterChanged)
-			{
-				SetSpotConeAnglesDegrees(TempInner, TempOuter);
-			}
-			ImGui::TreePop();
-		}
 	}
 #endif
 

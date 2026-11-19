@@ -242,58 +242,6 @@ namespace PigeonEngine
 	void PSkyLightComponent::GenerateComponentDetail()
 	{
 		PSceneComponent::GenerateComponentDetail();
-
-		if (ImGui::TreeNodeEx("Sky Light"))
-		{
-			// Linear tint and the environment's mean luminance. Both are applied where the
-			// environment is consumed - the sky pass, the indirect diffuse and the prefiltered
-			// specular - and neither is baked into the coefficients or the prefiltered chain, so
-			// a drag here costs a constant buffer and no dispatch.
-			const Color3& Tint = GetLightAdjust();
-			FLOAT TempTint[3] = { Tint.r, Tint.g, Tint.b };
-			if (ImGui::ColorEdit3("Tint", TempTint))
-			{
-				SetLightAdjust(Color3(TempTint[0], TempTint[1], TempTint[2]));
-			}
-
-			// A true mean: the render side divides the cube by its own mean linear luminance
-			// before applying this value, so 5000 here is 5000 cd/m2 of environment regardless
-			// of how the cube's texels happen to be scaled.
-			FLOAT TempIntensity = GetIntensity();
-			if (ImGui::DragFloat("Mean luminance", &TempIntensity, 10.f, 0.f, 20000.f, "%.1f cd/m2"))
-			{
-				SetIntensity(TempIntensity);
-			}
-
-			// The reference the normalisation uses. It is divided out, not multiplied in: a
-			// different cube with a different mean produces the same mean luminance.
-			if (CubeMeanLinearLuminance > 0.f)
-			{
-				ImGui::Text("Cube mean linear luminance: %.4f (divided out)", CubeMeanLinearLuminance);
-			}
-			else
-			{
-				ImGui::TextUnformatted("Cube mean linear luminance: unavailable (no cube or unsupported format).");
-			}
-
-			// The prefiltered chain's base resolution. Exposed as an exponent because the mip
-			// chain has to be a power of two; the resolution is shown next to it.
-			INT32 TempExponent = static_cast<INT32>(GetPrefilterResolutionExponent());
-			if (ImGui::DragInt("Prefilter resolution exponent", &TempExponent, 1, 4, 10, "2^%d"))
-			{
-				SetPrefilterResolutionExponent(static_cast<UINT32>(TempExponent));
-			}
-			const UINT32 PrefilterExponent = GetPrefilterResolutionExponent();
-			ImGui::Text("Prefiltered cube: %u x %u, %u mips", (1u << PrefilterExponent), (1u << PrefilterExponent), (PrefilterExponent + 1u));
-
-			if (ImGui::Button("Reset"))
-			{
-				SetLightAdjust(Color3::White());
-				SetIntensity(EEngineSettings::ENGINE_SKY_LUMINANCE);
-				SetPrefilterResolutionExponent(EEngineSettings::ENGINE_SKY_PREFILTER_RESOLUTION_EXPONENT);
-			}
-			ImGui::TreePop();
-		}
 	}
 #endif
 

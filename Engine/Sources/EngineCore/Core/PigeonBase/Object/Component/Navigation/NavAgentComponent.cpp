@@ -411,33 +411,6 @@ namespace PigeonEngine
 	void PNavAgentComponent::GenerateComponentDetail()
 	{
 		PActorComponent::GenerateComponentDetail();
-
-		if (!ImGui::TreeNodeEx("Nav Agent", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			return;
-		}
-
-		ENavigationAgentSettings EditableSettings = Settings;
-		bool bSettingsChanged = false;
-		bSettingsChanged |= ImGui::DragFloat("Move Speed (cm/s)", &EditableSettings.MoveSpeed, 5.0f, 0.0f, 5000.0f, "%.0f");
-		bSettingsChanged |= ImGui::DragFloat("Turn Speed (deg/s)", &EditableSettings.TurnSpeedDegreesPerSecond, 5.0f, 0.0f, 3600.0f, "%.0f");
-		bSettingsChanged |= ImGui::DragFloat("Acceptance Radius (cm)", &EditableSettings.AcceptanceRadius, 1.0f, 1.0f, 200.0f, "%.0f");
-		bSettingsChanged |= ImGui::DragFloat("Repath Interval (s)", &EditableSettings.RepathInterval, 0.05f, 0.0f, 5.0f, "%.2f");
-		bSettingsChanged |= ImGui::DragFloat("Agent Radius (cm)", &EditableSettings.Radius, 1.0f, 5.0f, 200.0f, "%.0f");
-		bSettingsChanged |= ImGui::DragFloat("Agent Height (cm)", &EditableSettings.Height, 1.0f, 20.0f, 400.0f, "%.0f");
-		if (bSettingsChanged)
-		{
-			Settings = EditableSettings;
-		}
-
-		ImGui::Text("State: %s", (bHasPath ? "Moving" : (bHasMoveRequest ? "Waiting for navigation" : "Idle")));
-		ImGui::Text("Waypoints: %u (next %u)", CurrentPath.Num(), NextCornerIndex);
-		if (ImGui::Button("Stop"))
-		{
-			StopMovement();
-		}
-
-		ImGui::TreePop();
 	}
 
 	void PNavAgentComponent::EditorTick(FLOAT InDeltaTime)

@@ -205,49 +205,6 @@ namespace PigeonEngine
 	void PNavObstacleComponent::GenerateComponentDetail()
 	{
 		PSceneComponent::GenerateComponentDetail();
-
-		if (!ImGui::TreeNodeEx("Navigation Obstacle", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			return;
-		}
-
-		INT32 ShapeIndex = static_cast<INT32>(ShapeType);
-		if (ImGui::Combo("Shape", &ShapeIndex, "Cylinder\0Box\0"))
-		{
-			SetShapeType(static_cast<ENavigationObstacleShapeType>(ShapeIndex));
-		}
-
-		if (ShapeType == ENavigationObstacleShapeType::NAVIGATION_OBSTACLE_BOX)
-		{
-			Vector3 Extents = BoxHalfExtents;
-			if (ImGui::DragFloat3("Half Extents (cm)", &Extents.x, 1.0f, 1.0f, 5000.0f, "%.0f"))
-			{
-				SetBoxHalfExtents(Extents);
-			}
-		}
-		else
-		{
-			FLOAT Radius = CylinderRadius;
-			if (ImGui::DragFloat("Radius (cm)", &Radius, 1.0f, 1.0f, 5000.0f, "%.0f"))
-			{
-				SetCylinderRadius(Radius);
-			}
-			FLOAT Height = CylinderHeight;
-			if (ImGui::DragFloat("Height (cm)", &Height, 1.0f, 1.0f, 5000.0f, "%.0f"))
-			{
-				SetCylinderHeight(Height);
-			}
-		}
-
-		bool bFollow = (bFollowTransform != FALSE);
-		if (ImGui::Checkbox("Follow Transform", &bFollow))
-		{
-			bFollowTransform = (bFollow ? TRUE : FALSE);
-		}
-		ImGui::DragFloat("Re-register Threshold (cm)", &FollowThreshold, 0.5f, 0.0f, 100.0f, "%.1f");
-
-		ImGui::Text("State: %s", (ObstacleId != NavigationInvalidObstacleHandle) ? "Registered" : "Not registered");
-		ImGui::TreePop();
 	}
 
 	void PNavObstacleComponent::EditorTick(FLOAT InDeltaTime)
