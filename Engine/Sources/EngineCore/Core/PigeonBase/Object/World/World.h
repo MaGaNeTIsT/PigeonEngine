@@ -10,7 +10,6 @@
 
 namespace PigeonEngine
 {
-	class PScene;
 	class EGameTimer;
 	class PActorComponent;
 	class PStaticMeshComponent;
@@ -143,18 +142,6 @@ private:
 	TArray<PActor*> PendingDestroyActors;
 	TArray<PActorComponent*> PendingDestroyComponents;
 	BOOL32 bFlushingPendingDestroy = FALSE;
-#if ENGINE_EDITOR_ONLY
-	public:
-		void AddSceneToWorld(PScene* NewScene);
-		void RemoveSceneFromWorld(PScene* Scene);
-		void SetCurrentScene(PScene* Scene);
-	private:
-		// Current operating scene.(in editor)
-		PScene* CurrentScene    = nullptr;
-		// Like unreal's persistent scene.
-		PScene* PersistentScene = nullptr;
-		TArray<PScene*> Scenes;
-#endif
 
 	public:
 		class PController* GetController() const;

@@ -548,21 +548,6 @@ namespace PigeonEngine
 
 
 #if ENGINE_EDITOR_ONLY
-	void PWorld::AddSceneToWorld(PScene* NewScene)
-	{
-		Scenes.Add(NewScene);
-	}
-
-	void PWorld::RemoveSceneFromWorld(PScene* Scene)
-	{
-		Scenes.Remove(Scene);
-	}
-
-	void PWorld::SetCurrentScene(PScene* Scene)
-	{
-		CurrentScene = Scene;
-	}
-
 	void PWorld::EditorTick(FLOAT deltaTime)
 	{
 		RootActor->EditorTick(deltaTime);
