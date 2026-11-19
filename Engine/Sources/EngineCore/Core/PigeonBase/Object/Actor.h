@@ -54,6 +54,10 @@ namespace PigeonEngine
 		// Every component in insertion order, including the root (serializer/editor
 		// enumeration; the returned array is a copy).
 		PE_NODISCARD TArray<PActorComponent*> GetAllComponents() const;
+		// FALSE keeps this actor out of level files. The world owns its controller, and a
+		// character's physics setup is created by InitCharacter rather than by the factory,
+		// so both are out of the level format until their init hooks are serializable.
+		PE_NODISCARD virtual BOOL32    ShouldSerializeToLevel() const;
 
 		PE_NODISCARD virtual Vector3    GetActorLocation() const;
 		PE_NODISCARD virtual Quaternion GetActorRotation() const;

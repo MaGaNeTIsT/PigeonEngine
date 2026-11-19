@@ -334,6 +334,14 @@ namespace PigeonEngine
 		}
 	}
 
+	BOOL32 PActor::ShouldSerializeToLevel() const
+	{
+		// Only classes with an on-disk identity can be created again on load. Concrete actors
+		// are registered in SerializableClassRegistry; editor-only helpers are not.
+		const CHAR* StableName = GetClassStableName(GetClassHashCode(this));
+		return ((StableName) && (StableName[0] != '\0')) ? TRUE : FALSE;
+	}
+
 	void PActor::ReplaceRootComponentForLoad(PSceneComponent* NewRoot)
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Replacing root component with a nullptr", NewRoot != nullptr);

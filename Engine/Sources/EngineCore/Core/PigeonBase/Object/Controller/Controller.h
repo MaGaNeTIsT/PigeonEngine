@@ -28,6 +28,8 @@ namespace PigeonEngine
 	public:
 		OnMouseEvent OnMouseEvent;
 		OnKeyEvent   OnKeyEvent;
+		// Controllers are created by the world (editor or runtime), never by a level file.
+		PE_NODISCARD virtual BOOL32 ShouldSerializeToLevel() const override { return FALSE; }
 	private:
 		// Handles of the global input subscriptions taken in Init and released in Uninit.
 		// Input events are dispatched straight from the Win32 message pump, which can
