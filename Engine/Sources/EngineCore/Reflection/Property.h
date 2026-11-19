@@ -82,6 +82,9 @@ namespace PigeonEngine
 		Quaternion			QuaternionValue;
 		Color3				ColorValue;
 		ETransform			TransformValue;
+		// Enum registry key for an enum-shaped value; container properties also carry their
+		// registry keys separately for compatibility with existing callers.
+		size_t				EnumHash = 0u;
 		// Set only for ARRAY / MAP elements. Shared because FPropertyElement is copied by
 		// value through TArray and undo values, while the nested tree is read-only payload.
 		TSharedPtr<FPropertyValue> ContainerValue;
@@ -112,6 +115,12 @@ namespace PigeonEngine
 		// Container payloads; empty for scalar types.
 		TArray<FPropertyElement> ArrayValues;
 		TArray<FPropertyMapEntry> MapEntries;
+		// Shape metadata for an empty or newly added nested container. ElementShape describes
+		// one array element; KeyShape/ValueShape describe map entries. A scalar shape has only
+		// Type set.
+		TSharedPtr<FPropertyValue> ElementShape;
+		TSharedPtr<FPropertyValue> KeyShape;
+		TSharedPtr<FPropertyValue> ValueShape;
 	};
 
 	/*
@@ -348,6 +357,38 @@ namespace PigeonEngine
 		}
 	}
 
+	// Builds the type-only shape of one value. The editor uses this to initialize a nested
+	// container that has no element to copy metadata from yet.
+	template <typename TValue>
+	void MakePropertyShape(FPropertyValue& OutShape)
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		OutShape = FPropertyValue();
+		OutShape.Type = GetPropertyValueType<T>();
+		OutShape.EnumHash = GetPropertyEnumHash<T>();
+		if constexpr (TPropertyIsArray<T>::value)
+		{
+			using ElementType = typename TPropertyIsArray<T>::ElementType;
+			OutShape.ElementType = GetPropertyValueType<ElementType>();
+			OutShape.ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			OutShape.ElementShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<ElementType>(*OutShape.ElementShape);
+		}
+		else if constexpr (TPropertyIsMap<T>::value)
+		{
+			using KeyType = typename TPropertyIsMap<T>::KeyType;
+			using MapValueType = typename TPropertyIsMap<T>::ValueType;
+			OutShape.KeyType = GetPropertyValueType<KeyType>();
+			OutShape.MapValueType = GetPropertyValueType<MapValueType>();
+			OutShape.KeyEnumHash = GetPropertyEnumHash<KeyType>();
+			OutShape.MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			OutShape.KeyShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<KeyType>(*OutShape.KeyShape);
+			OutShape.ValueShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<MapValueType>(*OutShape.ValueShape);
+		}
+	}
+
 	template <typename TValue>
 	BOOL32 MakePropertyElement(const TValue& InValue, FPropertyElement& OutElement)
 	{
@@ -360,6 +401,8 @@ namespace PigeonEngine
 			OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
 			OutElement.ContainerValue->ElementType = GetPropertyValueType<ElementType>();
 			OutElement.ContainerValue->ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			OutElement.ContainerValue->ElementShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<ElementType>(*OutElement.ContainerValue->ElementShape);
 			for (UINT32 Index = 0u, Num = InValue.Num<UINT32>(); Index < Num; Index++)
 			{
 				FPropertyElement Element;
@@ -380,6 +423,10 @@ namespace PigeonEngine
 			OutElement.ContainerValue->MapValueType = GetPropertyValueType<MapValueType>();
 			OutElement.ContainerValue->KeyEnumHash = GetPropertyEnumHash<KeyType>();
 			OutElement.ContainerValue->MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			OutElement.ContainerValue->KeyShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<KeyType>(*OutElement.ContainerValue->KeyShape);
+			OutElement.ContainerValue->ValueShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<MapValueType>(*OutElement.ContainerValue->ValueShape);
 			for (typename T::TConstIterator It = InValue.Begin(); It != InValue.End(); ++It)
 			{
 				FPropertyMapEntry Entry;
@@ -465,6 +512,7 @@ namespace PigeonEngine
 		else if constexpr (std::is_enum_v<T>)
 		{
 			OutElement.Type = EPropertyValueType::ENUM;
+			OutElement.EnumHash = GetClassHashCode<T>();
 			OutElement.IntValue = static_cast<INT64>(InValue);
 			return TRUE;
 		}
@@ -655,6 +703,8 @@ namespace PigeonEngine
 					OutValue.Type = EPropertyValueType::ARRAY;
 					OutValue.ElementType = GetPropertyValueType<ElementType>();
 					OutValue.ElementEnumHash = ElementEnumHash;
+					OutValue.ElementShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+					MakePropertyShape<ElementType>(*OutValue.ElementShape);
 					const T& Values = InGetter(static_cast<const TClass*>(InContainer));
 					for (UINT32 Index = 0u, Num = Values.Num<UINT32>(); Index < Num; Index++)
 					{
@@ -696,6 +746,10 @@ namespace PigeonEngine
 					OutValue.MapValueType = GetPropertyValueType<MapValueType>();
 					OutValue.KeyEnumHash = KeyEnumHash;
 					OutValue.MapValueEnumHash = MapValueEnumHash;
+					OutValue.KeyShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+					MakePropertyShape<KeyType>(*OutValue.KeyShape);
+					OutValue.ValueShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+					MakePropertyShape<MapValueType>(*OutValue.ValueShape);
 					const T& Values = InGetter(static_cast<const TClass*>(InContainer));
 					for (typename T::TConstIterator It = Values.Begin(); It != Values.End(); ++It)
 					{

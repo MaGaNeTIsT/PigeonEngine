@@ -497,9 +497,9 @@ namespace PigeonEngine
 
 		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash, BOOL32& bOutActivated, BOOL32& bOutDeactivated);
 
-		void InitializeDefaultElement(FPropertyElement& OutElement, const EPropertyValueType InType, const size_t InEnumHash);
+		void InitializeDefaultElement(FPropertyElement& OutElement, const FPropertyValue* InShape);
 
-		BOOL32 DrawNestedArray(FPropertyValue& InOutValue)
+		BOOL32 DrawNestedArray(FPropertyValue& InOutValue, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
 		{
 			BOOL32 bChanged = FALSE;
 			for (UINT32 Index = 0u; Index < InOutValue.ArrayValues.Num<UINT32>(); Index++)
@@ -511,6 +511,8 @@ namespace PigeonEngine
 				{
 					bChanged = TRUE;
 				}
+				bOutActivated = (bOutActivated || bActivated) ? TRUE : FALSE;
+				bOutDeactivated = (bOutDeactivated || bDeactivated) ? TRUE : FALSE;
 				ImGui::SameLine();
 				if (ImGui::SmallButton("X"))
 				{
@@ -524,14 +526,14 @@ namespace PigeonEngine
 			if (ImGui::SmallButton("Add Element"))
 			{
 				FPropertyElement NewElement;
-				InitializeDefaultElement(NewElement, InOutValue.ElementType, InOutValue.ElementEnumHash);
+				InitializeDefaultElement(NewElement, InOutValue.ElementShape.get());
 				InOutValue.ArrayValues.Add(NewElement);
 				bChanged = TRUE;
 			}
 			return bChanged;
 		}
 
-		BOOL32 DrawNestedMap(FPropertyValue& InOutValue)
+		BOOL32 DrawNestedMap(FPropertyValue& InOutValue, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
 		{
 			BOOL32 bChanged = FALSE;
 			for (UINT32 Index = 0u; Index < InOutValue.MapEntries.Num<UINT32>(); Index++)
@@ -555,6 +557,8 @@ namespace PigeonEngine
 					bChanged = TRUE;
 				}
 				ImGui::PopID();
+				bOutActivated = (bOutActivated || bKeyActivated || bValueActivated) ? TRUE : FALSE;
+				bOutDeactivated = (bOutDeactivated || bKeyDeactivated || bValueDeactivated) ? TRUE : FALSE;
 				ImGui::SameLine();
 				if (ImGui::SmallButton("X"))
 				{
@@ -568,21 +572,16 @@ namespace PigeonEngine
 			if (ImGui::SmallButton("Add Entry"))
 			{
 				FPropertyMapEntry Entry;
-				if (InOutValue.KeyType == EPropertyValueType::STRING)
+				InitializeDefaultElement(Entry.Key, InOutValue.KeyShape.get());
+				InitializeDefaultElement(Entry.Value, InOutValue.ValueShape.get());
+				if (Entry.Key.Type == EPropertyValueType::STRING)
 				{
-					InitializeDefaultElement(Entry.Key, InOutValue.KeyType, InOutValue.KeyEnumHash);
 					Entry.Key.StringValue = EString(PE_TEXT("Key")) + EString::FromInt(InOutValue.MapEntries.Num<UINT32>());
 				}
-				else if (InOutValue.KeyType == EPropertyValueType::ENUM)
+				else if ((Entry.Key.Type != EPropertyValueType::ENUM) && (Entry.Key.Type != EPropertyValueType::ARRAY) && (Entry.Key.Type != EPropertyValueType::MAP))
 				{
-					InitializeDefaultElement(Entry.Key, InOutValue.KeyType, InOutValue.KeyEnumHash);
-				}
-				else
-				{
-					Entry.Key.Type = InOutValue.KeyType;
 					Entry.Key.IntValue = static_cast<INT64>(InOutValue.MapEntries.Num<UINT32>());
 				}
-				InitializeDefaultElement(Entry.Value, InOutValue.MapValueType, InOutValue.MapValueEnumHash);
 				InOutValue.MapEntries.Add(Entry);
 				bChanged = TRUE;
 			}
@@ -620,8 +619,9 @@ namespace PigeonEngine
 			}
 			case EPropertyValueType::ENUM:
 			{
+				const size_t EffectiveEnumHash = (InEnumHash != 0u) ? InEnumHash : InOutElement.EnumHash;
 				TArray<FEnumEntry> Entries;
-				EEnumRegistry::GetValues(InEnumHash, Entries);
+				EEnumRegistry::GetValues(EffectiveEnumHash, Entries);
 				if (Entries.Num<UINT32>() == 0u)
 				{
 					INT32 Value = static_cast<INT32>(InOutElement.IntValue);
@@ -635,7 +635,7 @@ namespace PigeonEngine
 					return bChanged;
 				}
 				EString CurrentName;
-				if (!EEnumRegistry::TryValueToString(InEnumHash, static_cast<INT32>(InOutElement.IntValue), CurrentName))
+				if (!EEnumRegistry::TryValueToString(EffectiveEnumHash, static_cast<INT32>(InOutElement.IntValue), CurrentName))
 				{
 					CurrentName = EString::FromInt(static_cast<UINT32>(InOutElement.IntValue));
 				}
@@ -802,7 +802,7 @@ namespace PigeonEngine
 				{
 					return FALSE;
 				}
-				return DrawNestedArray(*InOutElement.ContainerValue);
+				return DrawNestedArray(*InOutElement.ContainerValue, bOutActivated, bOutDeactivated);
 			}
 			case EPropertyValueType::MAP:
 			{
@@ -810,21 +810,32 @@ namespace PigeonEngine
 				{
 					return FALSE;
 				}
-				return DrawNestedMap(*InOutElement.ContainerValue);
+				return DrawNestedMap(*InOutElement.ContainerValue, bOutActivated, bOutDeactivated);
 			}
 			default:
 				return FALSE;
 			}
 		}
 
-		void InitializeDefaultElement(FPropertyElement& OutElement, const EPropertyValueType InType, const size_t InEnumHash)
+		void InitializeDefaultElement(FPropertyElement& OutElement, const FPropertyValue* InShape)
 		{
 			OutElement = FPropertyElement();
-			OutElement.Type = InType;
-			if (InType == EPropertyValueType::ENUM)
+			if (!InShape)
+			{
+				return;
+			}
+			OutElement.Type = InShape->Type;
+			OutElement.EnumHash = InShape->EnumHash;
+			if ((InShape->Type == EPropertyValueType::ARRAY) || (InShape->Type == EPropertyValueType::MAP))
+			{
+				OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue(*InShape));
+				OutElement.ContainerValue->ArrayValues.Empty();
+				OutElement.ContainerValue->MapEntries.Empty();
+			}
+			else if (InShape->Type == EPropertyValueType::ENUM)
 			{
 				TArray<FEnumEntry> Entries;
-				EEnumRegistry::GetValues(InEnumHash, Entries);
+				EEnumRegistry::GetValues(OutElement.EnumHash, Entries);
 				if (Entries.Num<UINT32>() > 0u)
 				{
 					OutElement.IntValue = static_cast<INT64>(Entries[0].Value);
@@ -884,7 +895,7 @@ namespace PigeonEngine
 				FPropertyValue BeforeArray;
 				InProperty.GetValue(InObject, BeforeArray);
 				FPropertyElement NewElement;
-				InitializeDefaultElement(NewElement, InProperty.ElementType, InProperty.ElementEnumHash);
+				InitializeDefaultElement(NewElement, InOutValue.ElementShape.get());
 				InOutValue.ArrayValues.Add(NewElement);
 				InProperty.SetValue(InObject, InOutValue);
 				Commit(InProperty, InObject, InClassHash, BeforeArray, InOutValue);
@@ -953,21 +964,16 @@ namespace PigeonEngine
 				FPropertyValue BeforeMap;
 				InProperty.GetValue(InObject, BeforeMap);
 				FPropertyMapEntry Entry;
-				if (InProperty.KeyType == EPropertyValueType::STRING)
+				InitializeDefaultElement(Entry.Key, InOutValue.KeyShape.get());
+				if (Entry.Key.Type == EPropertyValueType::STRING)
 				{
-					InitializeDefaultElement(Entry.Key, InProperty.KeyType, InProperty.KeyEnumHash);
 					Entry.Key.StringValue = EString(PE_TEXT("Key")) + EString::FromInt(InOutValue.MapEntries.Num<UINT32>());
 				}
-				else if (InProperty.KeyType == EPropertyValueType::ENUM)
+				else if ((Entry.Key.Type != EPropertyValueType::ENUM) && (Entry.Key.Type != EPropertyValueType::ARRAY) && (Entry.Key.Type != EPropertyValueType::MAP))
 				{
-					InitializeDefaultElement(Entry.Key, InProperty.KeyType, InProperty.KeyEnumHash);
-				}
-				else
-				{
-					Entry.Key.Type = InProperty.KeyType;
 					Entry.Key.IntValue = static_cast<INT64>(InOutValue.MapEntries.Num<UINT32>());
 				}
-				InitializeDefaultElement(Entry.Value, InProperty.MapValueType, InProperty.MapValueEnumHash);
+				InitializeDefaultElement(Entry.Value, InOutValue.ValueShape.get());
 				InOutValue.MapEntries.Add(Entry);
 				InProperty.SetValue(InObject, InOutValue);
 				Commit(InProperty, InObject, InClassHash, BeforeMap, InOutValue);
@@ -1060,6 +1066,11 @@ namespace PigeonEngine
 	void EPropertyEditor::SetPropertyCommittedCallback(const FOnPropertyCommitted& InCallback)
 	{
 		PropertyCommittedCallback = InCallback;
+	}
+
+	void EPropertyEditor::MakeDefaultElement(const FPropertyValue* InShape, FPropertyElement& OutElement)
+	{
+		InitializeDefaultElement(OutElement, InShape);
 	}
 
 	BOOL32 EPropertyEditor::DrawAssetCombo(const CHAR* InLabel, const EPropertyAssetType InAssetType, EString& InOutAssetName)
