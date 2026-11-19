@@ -20,6 +20,9 @@ namespace PigeonEngine
 
 	public:
 		const EStaticMeshAsset*     GetMeshAsset() const;
+		// Asset name for files/UI: the loaded asset's name, or the last requested name while
+		// the asynchronous load is still pending.
+		PE_NODISCARD const EString& GetMeshAssetName() const;
 		void                        SetMeshAsset(const EStaticMeshAsset* InMeshAsset);
 		/*
 		* Game thread: binds a mesh to this component without waiting for it. The asset is asked for now,
@@ -43,6 +46,9 @@ namespace PigeonEngine
 		// Render proxy functions END
 	protected:
 		const EStaticMeshAsset*     MeshAsset;
+		// Kept separately because the asset manager is asynchronous: a component saved right
+		// after RequestMeshAsset must still write the name it asked for.
+		EString                     RequestedMeshAssetName;
 	};
 
 };

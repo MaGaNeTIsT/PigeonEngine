@@ -8,10 +8,97 @@
 #include <MultiThread/Atomic.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <PigeonBase/Object/World/World.h>
+#include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
+#include <Editor/EditorLogManager.h>
 
 namespace PigeonEngine
 {
+	namespace
+	{
+		struct FSkeletalMeshAssetNames
+		{
+			EString Mesh;
+			EString Skeleton;
+		};
+
+		struct FAnimationRequest
+		{
+			EString Asset;
+			EString Clip;
+			INT32 LoopMode = static_cast<INT32>(ANIMATION_LOOP_REPEAT);
+			FLOAT PlayRate = 1.0f;
+		};
+
+		void SerializeSkeletalMeshAssetNames(EArchive& InArchive, const CHAR* InName, FSkeletalMeshAssetNames& InOutValue)
+		{
+			InArchive.BeginObject(InName);
+			InArchive.SerializeString(PE_TEXT("Mesh"), InOutValue.Mesh);
+			InArchive.SerializeString(PE_TEXT("Skeleton"), InOutValue.Skeleton);
+			InArchive.EndObject();
+		}
+
+		void SerializeAnimationRequest(EArchive& InArchive, const CHAR* InName, FAnimationRequest& InOutValue)
+		{
+			InArchive.BeginObject(InName);
+			InArchive.SerializeString(PE_TEXT("Asset"), InOutValue.Asset);
+			InArchive.SerializeString(PE_TEXT("Clip"), InOutValue.Clip);
+			SerializeEnumValue(InArchive, PE_TEXT("LoopMode"), InOutValue.LoopMode, GetClassHashCode<EAnimationLoopMode>());
+			InArchive.SerializeFloat(PE_TEXT("PlayRate"), InOutValue.PlayRate);
+			InArchive.EndObject();
+		}
+
+		void RegisterClassProperties()
+		{
+			const size_t ClassHash = GetClassHashCode<PSkeletalMeshComponent>();
+			// Mesh and skeleton are one property: RequestSkeletalMeshAssets needs both names
+			// and binds them as a pair, so separate properties would race on load order.
+			AddClassPropertyCustom<PSkeletalMeshComponent, FSkeletalMeshAssetNames>(ClassHash, PE_TEXT("MeshAssets"),
+				[](const PSkeletalMeshComponent* Component) -> FSkeletalMeshAssetNames
+				{
+					FSkeletalMeshAssetNames Names;
+					Names.Mesh = Component->GetMeshAssetName();
+					Names.Skeleton = Component->GetSkeletonAssetName();
+					return Names;
+				},
+				[](PSkeletalMeshComponent* Component, const FSkeletalMeshAssetNames& Value) -> void
+				{
+					if ((Value.Mesh.Length() > 0u) || (Value.Skeleton.Length() > 0u))
+					{
+						Component->RequestSkeletalMeshAssets(Value.Mesh, Value.Skeleton, nullptr);
+					}
+				},
+				SerializeSkeletalMeshAssetNames,
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyCustom<PSkeletalMeshComponent, FAnimationRequest>(ClassHash, PE_TEXT("Animation"),
+				[](const PSkeletalMeshComponent* Component) -> FAnimationRequest
+				{
+					FAnimationRequest Request;
+					Request.Asset = Component->GetAnimationAssetName();
+					Request.Clip = Component->GetAnimationClipName();
+					Request.LoopMode = static_cast<INT32>(Component->GetAnimationRequestedLoopMode());
+					Request.PlayRate = Component->GetAnimationPlayRate();
+					return Request;
+				},
+				[](PSkeletalMeshComponent* Component, const FAnimationRequest& Value) -> void
+				{
+					if (Value.Asset.Length() > 0u)
+					{
+						Component->RequestAnimation(Value.Asset, Value.Clip, static_cast<EAnimationLoopMode>(Value.LoopMode), Value.PlayRate);
+					}
+				},
+				SerializeAnimationRequest,
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyAccessors<PSkeletalMeshComponent, BOOL32>(ClassHash, PE_TEXT("RootMotionEnabled"),
+				[](const PSkeletalMeshComponent* Component) -> BOOL32 { return Component->IsRootMotionEnabled(); },
+				[](PSkeletalMeshComponent* Component, const BOOL32& Value) -> void { Component->SetRootMotionEnabled(Value); },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			AddClassPropertyAccessors<PSkeletalMeshComponent, INT32>(ClassHash, PE_TEXT("RootMotionBoneIndex"),
+				[](const PSkeletalMeshComponent* Component) -> INT32 { return Component->GetRootMotionBoneIndex(); },
+				[](PSkeletalMeshComponent* Component, const INT32& Value) -> void { Component->SetRootMotionBoneIndex(Value); },
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		}
+	}
 
 	// Characters whose animation Update ran since the last consume. Written and read on the
 	// game thread today; atomic so a future parallel evaluation can keep the same profiling
@@ -21,6 +108,7 @@ namespace PigeonEngine
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PSkeletalMeshComponent, PMeshComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -49,6 +137,22 @@ namespace PigeonEngine
 	const ESkinnedMeshAsset* PSkeletalMeshComponent::GetMeshAsset() const
 	{
 		return MeshAsset;
+	}
+	const EString& PSkeletalMeshComponent::GetMeshAssetName() const
+	{
+		if (MeshAsset)
+		{
+			return MeshAsset->GetAssetName();
+		}
+		return RequestedMeshAssetName;
+	}
+	const EString& PSkeletalMeshComponent::GetSkeletonAssetName() const
+	{
+		if (SkeletonAsset)
+		{
+			return SkeletonAsset->GetAssetName();
+		}
+		return RequestedSkeletonAssetName;
 	}
 	const EName& PSkeletalMeshComponent::GetRenderProxyTypeName() const
 	{
@@ -152,6 +256,8 @@ namespace PigeonEngine
 	void PSkeletalMeshComponent::RequestSkeletalMeshAssets(const EString& InMeshAssetName, const EString& InSkeletonAssetName
 		, const FAssetImportSource* InImportSource)
 	{
+		RequestedMeshAssetName = InMeshAssetName;
+		RequestedSkeletonAssetName = InSkeletonAssetName;
 		// Copied by value: the binding outlives this call.
 		FAssetImportSource ImportSource;
 		if (InImportSource)
@@ -244,6 +350,61 @@ namespace PigeonEngine
 		{
 			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
 		}
+	}
+	void PSkeletalMeshComponent::RequestAnimation(const EString& InAnimationAssetName, const EString& InClipName
+		, EAnimationLoopMode InLoopMode, FLOAT InPlayRate)
+	{
+		RequestedAnimationAssetName = InAnimationAssetName;
+		RequestedAnimationClipName = InClipName;
+		RequestedAnimationLoopMode = InLoopMode;
+		RequestedAnimationPlayRate = InPlayRate;
+		// With a named clip the request must not auto-play clip 0: the deferred step below
+		// selects the authored clip once the asset is bound.
+		RequestAnimationAsset(InAnimationAssetName, nullptr, (InClipName.Length() == 0u) ? TRUE : FALSE);
+
+		PSkeletalMeshComponent* Component = this;
+		TFunction<BOOL32()> Step = [Component, InClipName, InLoopMode, InPlayRate]() -> BOOL32
+		{
+			if (!Component->GetAnimationAsset())
+			{
+				return FALSE;
+			}
+			if (InClipName.Length() == 0u)
+			{
+				// The asset request auto-played clip 0; only the exact loop mode is left.
+				Component->SetAnimationLoopMode(InLoopMode);
+				return TRUE;
+			}
+			if (!Component->PlayAnimation(InClipName, TRUE, InPlayRate, 0.0f))
+			{
+				PE_LOG_WARN(EString(PE_TEXT("Skeletal mesh: animation clip not found: ")) + InClipName);
+				return TRUE;	// the asset is there; retrying would give the same answer
+			}
+			Component->SetAnimationLoopMode(InLoopMode);
+			return TRUE;
+		};
+		if (Step() == FALSE)
+		{
+			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
+		}
+	}
+	EString PSkeletalMeshComponent::GetAnimationAssetName() const
+	{
+		const ESkeletonAnimationAsset* AnimationAsset = GetAnimationAsset();
+		return AnimationAsset ? AnimationAsset->GetAssetName() : RequestedAnimationAssetName;
+	}
+	EString PSkeletalMeshComponent::GetAnimationClipName() const
+	{
+		const ESkeletonAnimationClip* Clip = AnimInstance ? AnimInstance->GetCurrentClip() : nullptr;
+		return Clip ? Clip->ClipName : RequestedAnimationClipName;
+	}
+	EAnimationLoopMode PSkeletalMeshComponent::GetAnimationRequestedLoopMode() const
+	{
+		return AnimInstance ? AnimInstance->GetLoopMode() : RequestedAnimationLoopMode;
+	}
+	FLOAT PSkeletalMeshComponent::GetAnimationPlayRate() const
+	{
+		return AnimInstance ? AnimInstance->GetPlayRate() : RequestedAnimationPlayRate;
 	}
 	BOOL32 PSkeletalMeshComponent::PlayAnimation(const EString& InClipName, BOOL32 bInLoop, FLOAT InPlayRate, FLOAT InFadeSeconds)
 	{

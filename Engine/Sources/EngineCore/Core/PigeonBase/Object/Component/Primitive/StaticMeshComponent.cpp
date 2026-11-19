@@ -16,8 +16,7 @@ namespace PigeonEngine
 		AddClassPropertyAccessors<PStaticMeshComponent, EString>(GetClassHashCode<PStaticMeshComponent>(), PE_TEXT("MeshAsset"),
 			[](const PStaticMeshComponent* Component) -> EString
 			{
-				const EStaticMeshAsset* MeshAsset = Component->GetMeshAsset();
-				return MeshAsset ? MeshAsset->GetAssetName() : EString(PE_TEXT(""));
+				return Component->GetMeshAssetName();
 			},
 			[](PStaticMeshComponent* Component, const EString& Value) -> void
 			{
@@ -51,6 +50,14 @@ namespace PigeonEngine
 	{
 		return MeshAsset;
 	}
+	const EString& PStaticMeshComponent::GetMeshAssetName() const
+	{
+		if (MeshAsset)
+		{
+			return MeshAsset->GetAssetName();
+		}
+		return RequestedMeshAssetName;
+	}
 	const EName& PStaticMeshComponent::GetRenderProxyTypeName() const
 	{
 		// Has to match the name RStaticMeshSceneProxy registers itself with, because that is
@@ -80,6 +87,7 @@ namespace PigeonEngine
 	}
 	void PStaticMeshComponent::RequestMeshAsset(const EString& InAssetName, const FAssetImportSource* InImportSource)
 	{
+		RequestedMeshAssetName = InAssetName;
 		// Copied by value: the binding outlives this call.
 		FAssetImportSource ImportSource;
 		if (InImportSource)

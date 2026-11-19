@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 #include "MeshComponent.h"
+#include <Animation/AnimationTypes.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 
 namespace PigeonEngine
@@ -29,8 +30,12 @@ namespace PigeonEngine
 
 	public:
 		const ESkinnedMeshAsset*        GetMeshAsset() const;
-		void                            SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset);
 		const ESkeletonAsset*           GetSkeletonAsset() const;
+		// File/UI names: the loaded asset's name, or the last requested name while the
+		// asynchronous load is pending. Saving a freshly loaded level must not lose them.
+		PE_NODISCARD const EString&     GetMeshAssetName() const;
+		PE_NODISCARD const EString&     GetSkeletonAssetName() const;
+		void                            SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset);
 		void                            SetSkeletonAsset(const ESkeletonAsset* InSkeletonAsset);
 		const ESkeletonBoneMemoryPool&  GetBoneMemoryPool() const;
 		ESkeletonBoneMemoryPool&        GetBoneMemoryPool();
@@ -78,6 +83,19 @@ namespace PigeonEngine
 		// Zero switches immediately; a positive value crossfades over that many seconds.
 		BOOL32                                      PlayAnimation(const EString& InClipName, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f, FLOAT InFadeSeconds = 0.0f);
 		BOOL32                                      PlayAnimation(INT32 InClipIndex, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f, FLOAT InFadeSeconds = 0.0f);
+		/*
+		* Request a named animation asset and, once it is bound, play the named clip with the
+		* exact loop mode. The deferred step runs from TickRender after the actor joined the
+		* scene, which is what a level loader needs: during property reading nothing is loaded.
+		*/
+		void                                        RequestAnimation(const EString& InAnimationAssetName, const EString& InClipName
+			, EAnimationLoopMode InLoopMode = ANIMATION_LOOP_REPEAT, FLOAT InPlayRate = 1.0f);
+		// Name/playback state for files and UI: live values while playing, the last requested
+		// values while the asset is still loading.
+		PE_NODISCARD EString                        GetAnimationAssetName() const;
+		PE_NODISCARD EString                        GetAnimationClipName() const;
+		PE_NODISCARD EAnimationLoopMode             GetAnimationRequestedLoopMode() const;
+		PE_NODISCARD FLOAT                          GetAnimationPlayRate() const;
 		void                                        PauseAnimation();
 		void                                        ResumeAnimation();
 		void                                        StopAnimation();
@@ -132,6 +150,13 @@ namespace PigeonEngine
 		const ESkeletonAsset*           SkeletonAsset;
 		EAnimInstance*                  AnimInstance;
 		ESkeletonBoneMemoryPool         BoneMemoryPool;
+		// Kept separately from the loaded assets because asset loading is asynchronous.
+		EString                         RequestedMeshAssetName;
+		EString                         RequestedSkeletonAssetName;
+		EString                         RequestedAnimationAssetName;
+		EString                         RequestedAnimationClipName;
+		EAnimationLoopMode              RequestedAnimationLoopMode = ANIMATION_LOOP_REPEAT;
+		FLOAT                           RequestedAnimationPlayRate = 1.0f;
 		// The EGameTimer frame animation last advanced in. An editor build walks the same
 		// component tree from World::Tick and again from World::EditorTick, so without this
 		// stamp a clip would run at twice its authored speed there.
