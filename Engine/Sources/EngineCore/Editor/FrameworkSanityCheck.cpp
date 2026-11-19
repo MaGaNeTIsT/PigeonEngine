@@ -1062,6 +1062,15 @@ namespace PigeonEngine
 		}
 		Actor->AddComponent(Agent);
 
+		PWaterSimulationComponent* Water = new PWaterSimulationComponent();
+		{
+			FWaterSimulationParameters Parameters = Water->GetSimulationParameters();
+			Parameters.Gravity = 321.f;
+			Parameters.OutlineAverage = 0.75f;
+			Water->SetSimulationParameters(Parameters);
+		}
+		Actor->AddComponent(Water);
+
 		TArray<PActor*> Actors;
 		Actors.Add(Actor);
 		CJsonObject Document;
@@ -1086,6 +1095,7 @@ namespace PigeonEngine
 			PNavMeshComponent* LoadedNavMesh = Loaded->FindComponent<PNavMeshComponent>();
 			PNavObstacleComponent* LoadedObstacle = Loaded->FindComponent<PNavObstacleComponent>();
 			PNavAgentComponent* LoadedAgent = Loaded->FindComponent<PNavAgentComponent>();
+			PWaterSimulationComponent* LoadedWater = Loaded->FindComponent<PWaterSimulationComponent>();
 
 			const BOOL32 bCameraOk = LoadedCamera &&
 				(EMath::Abs(LoadedCamera->GetCameraViewInfo().FovAngleY - 75.f) <= 1.0e-3f) &&
@@ -1152,12 +1162,16 @@ namespace PigeonEngine
 				(LoadedAgent->GetSettings().ObstacleAvoidanceType == 2u) &&
 				(LoadedAgent->GetUseCrowd() != FALSE);
 
+			const BOOL32 bWaterOk = LoadedWater &&
+				(EMath::Abs(LoadedWater->GetSimulationParameters().Gravity - 321.f) <= 1.0e-3f) &&
+				(EMath::Abs(LoadedWater->GetSimulationParameters().OutlineAverage - 0.75f) <= 1.0e-5f);
+
 #if ENGINE_EDITOR_ONLY
 			const BOOL32 bNameOk = (Loaded->GetDebugName() == EString(PE_TEXT("SanityPropertyActor"))) ? TRUE : FALSE;
 #else
 			const BOOL32 bNameOk = TRUE;
 #endif
-			bPropertiesOk = (bCameraOk && bLightOk && bPhysicsOk && bTriggerOk && bNavOk && bNameOk) ? TRUE : FALSE;
+			bPropertiesOk = (bCameraOk && bLightOk && bPhysicsOk && bTriggerOk && bNavOk && bWaterOk && bNameOk) ? TRUE : FALSE;
 			if (!bPropertiesOk)
 			{
 				PE_LOG_ERROR(EString(PE_TEXT("component properties detail: camera=")) + EString::FromInt(bCameraOk) +
@@ -1165,6 +1179,7 @@ namespace PigeonEngine
 					EString(PE_TEXT(" physics=")) + EString::FromInt(bPhysicsOk) +
 					EString(PE_TEXT(" trigger=")) + EString::FromInt(bTriggerOk) +
 					EString(PE_TEXT(" nav=")) + EString::FromInt(bNavOk) +
+					EString(PE_TEXT(" water=")) + EString::FromInt(bWaterOk) +
 					EString(PE_TEXT(" name=")) + EString::FromInt(bNameOk));
 			}
 		}

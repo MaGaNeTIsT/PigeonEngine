@@ -7,6 +7,23 @@
 namespace PigeonEngine
 {
 
+	static void AddWaterSimulationFloatProperty(const size_t& InClassHash, const CHAR* InName,
+		FLOAT FWaterSimulationParameters::* InMember)
+	{
+		AddClassPropertyAccessors<PWaterSimulationComponent, FLOAT>(InClassHash, InName,
+			[InMember](const PWaterSimulationComponent* Component) -> FLOAT
+			{
+				return (Component->GetSimulationParameters().*InMember);
+			},
+			[InMember](PWaterSimulationComponent* Component, const FLOAT& Value) -> void
+			{
+				FWaterSimulationParameters Parameters = Component->GetSimulationParameters();
+				Parameters.*InMember = Value;
+				Component->SetSimulationParameters(Parameters);
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PWaterSimulationComponent>();
@@ -77,6 +94,53 @@ namespace PigeonEngine
 				Component->SetTimeStep(Component->GetFixedTimeStep(), Component->GetMaxSubsteps(), Value);
 			},
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+
+		// The stable tunables of the SWE parameter block. The Source / Modifier / Whirlpool
+		// fields are runtime values overwritten from interaction events, so they stay out of
+		// the authoring surface and out of level files.
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("FoamFadeSpeed"), &FWaterSimulationParameters::FoamFadeSpeed);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("FoamShallowDepth"), &FWaterSimulationParameters::FoamShallowDepth);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("FoamShallowGenerate"), &FWaterSimulationParameters::FoamShallowGenerate);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("FoamWaveGenerate"), &FWaterSimulationParameters::FoamWaveGenerate);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("FluidTransportMax"), &FWaterSimulationParameters::FluidTransportMax);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("FoamAdvection"), &FWaterSimulationParameters::FoamAdvection);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("EvaporationDepth"), &FWaterSimulationParameters::EvaporationDepth);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("FluxEnergy"), &FWaterSimulationParameters::FluxEnergy);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("Gravity"), &FWaterSimulationParameters::Gravity);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("VelocityClamp"), &FWaterSimulationParameters::VelocityClamp);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("ScaleY"), &FWaterSimulationParameters::ScaleY);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("Friction"), &FWaterSimulationParameters::Friction);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("Damping"), &FWaterSimulationParameters::Damping);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("AccelerationClamp"), &FWaterSimulationParameters::AccelerationClamp);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OvershootingBlend"), &FWaterSimulationParameters::OvershootingBlend);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OvershootingLimit"), &FWaterSimulationParameters::OvershootingLimit);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("MinWater"), &FWaterSimulationParameters::MinWater);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveVelocityScale"), &FWaterSimulationParameters::WaveVelocityScale);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveCalming"), &FWaterSimulationParameters::WaveCalming);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveSurfaceHeight"), &FWaterSimulationParameters::WaveSurfaceHeight);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveBorderXNegative"), &FWaterSimulationParameters::WaveBorderXNegative);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveBorderZNegative"), &FWaterSimulationParameters::WaveBorderZNegative);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveBorderXPositive"), &FWaterSimulationParameters::WaveBorderXPositive);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveBorderZPositive"), &FWaterSimulationParameters::WaveBorderZPositive);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveLength"), &FWaterSimulationParameters::WaveLength);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveSpeed"), &FWaterSimulationParameters::WaveSpeed);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveAmplitude"), &FWaterSimulationParameters::WaveAmplitude);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveSteepness"), &FWaterSimulationParameters::WaveSteepness);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("WaveDirectionAngle"), &FWaterSimulationParameters::WaveDirectionAngle);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineStateWetHeightOffset"), &FWaterSimulationParameters::OutlineStateWetHeightOffset);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineNoWaterBlend"), &FWaterSimulationParameters::OutlineNoWaterBlend);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineThickness"), &FWaterSimulationParameters::OutlineThickness);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineSurfaceSmoothing"), &FWaterSimulationParameters::OutlineSurfaceSmoothing);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineFoamThickness"), &FWaterSimulationParameters::OutlineFoamThickness);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineFluidThickness"), &FWaterSimulationParameters::OutlineFluidThickness);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineDryingOffset"), &FWaterSimulationParameters::OutlineDryingOffset);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineDryingSpeed"), &FWaterSimulationParameters::OutlineDryingSpeed);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineBorderBlend"), &FWaterSimulationParameters::OutlineBorderBlend);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineWetnessLimit"), &FWaterSimulationParameters::OutlineWetnessLimit);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineMinWater"), &FWaterSimulationParameters::OutlineMinWater);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineFallingSpeed"), &FWaterSimulationParameters::OutlineFallingSpeed);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineMinOutline"), &FWaterSimulationParameters::OutlineMinOutline);
+		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineAverage"), &FWaterSimulationParameters::OutlineAverage);
 	}
 
 	static void RegisterClassTypes()
