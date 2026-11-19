@@ -3,6 +3,7 @@
 #include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsUtility.h"
 #include <PigeonBase/Object/Component/Physics/TriggerComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavObstacleComponent.h>
+#include <PigeonBase/Object/Component/Water/WaterSimulationTypes.h>
 #include <Animation/AnimationTypes.h>
 #include "EnumRegistry.h"
 
@@ -44,6 +45,11 @@ namespace PigeonEngine
 		RegisterEnumType<ENavigationObstacleShapeType>(PE_TEXT("ENavigationObstacleShapeType"), {
 			{ static_cast<INT32>(NAVIGATION_OBSTACLE_CYLINDER), EString(PE_TEXT("CYLINDER")) },
 			{ static_cast<INT32>(NAVIGATION_OBSTACLE_BOX),      EString(PE_TEXT("BOX")) },
+		});
+
+		RegisterEnumType<EWaterGroundType>(PE_TEXT("EWaterGroundType"), {
+			{ static_cast<INT32>(EWaterGroundType::WATER_GROUND_FLAT),       EString(PE_TEXT("FLAT")) },
+			{ static_cast<INT32>(EWaterGroundType::WATER_GROUND_HEIGHT_MAP), EString(PE_TEXT("HEIGHT_MAP")) },
 		});
 
 		RegisterEnumType<EAnimationLoopMode>(PE_TEXT("EAnimationLoopMode"), {

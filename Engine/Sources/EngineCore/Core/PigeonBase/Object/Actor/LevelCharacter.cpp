@@ -6,12 +6,51 @@
 
 #include <PhysicsConfig/PhysicsConfig.h>
 #include <PigeonBase/Object/World/World.h>
+#include <Reflection/Property.h>
 
 namespace PigeonEngine
 {
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PCharacter>();
+		AddClassPropertyAccessors<PCharacter, FLOAT>(ClassHash, PE_TEXT("CharacterHeightStanding"),
+			[](const PCharacter* Character) -> FLOAT { return Character->CharacterHeightStanding; },
+			[](PCharacter* Character, const FLOAT& Value) -> void { Character->CharacterHeightStanding = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCharacter, FLOAT>(ClassHash, PE_TEXT("CharacterRadiusStanding"),
+			[](const PCharacter* Character) -> FLOAT { return Character->CharacterRadiusStanding; },
+			[](PCharacter* Character, const FLOAT& Value) -> void { Character->CharacterRadiusStanding = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCharacter, FLOAT>(ClassHash, PE_TEXT("CharacterHeightCrouching"),
+			[](const PCharacter* Character) -> FLOAT { return Character->CharacterHeightCrouching; },
+			[](PCharacter* Character, const FLOAT& Value) -> void { Character->CharacterHeightCrouching = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCharacter, FLOAT>(ClassHash, PE_TEXT("CharacterRadiusCrouching"),
+			[](const PCharacter* Character) -> FLOAT { return Character->CharacterRadiusCrouching; },
+			[](PCharacter* Character, const FLOAT& Value) -> void { Character->CharacterRadiusCrouching = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassBoolPropertyAccessors<PCharacter>(ClassHash, PE_TEXT("ControlMovementDuringJump"),
+			[](const PCharacter* Character) -> BOOL32 { return Character->ControlMovementDuringJump; },
+			[](PCharacter* Character, const BOOL32& Value) -> void { Character->ControlMovementDuringJump = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCharacter, FLOAT>(ClassHash, PE_TEXT("CharacterSpeed"),
+			[](const PCharacter* Character) -> FLOAT { return Character->CharacterSpeed; },
+			[](PCharacter* Character, const FLOAT& Value) -> void { Character->CharacterSpeed = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCharacter, FLOAT>(ClassHash, PE_TEXT("CharacterRunSpeed"),
+			[](const PCharacter* Character) -> FLOAT { return Character->CharacterRunSpeed; },
+			[](PCharacter* Character, const FLOAT& Value) -> void { Character->CharacterRunSpeed = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PCharacter, FLOAT>(ClassHash, PE_TEXT("JumpSpeed"),
+			[](const PCharacter* Character) -> FLOAT { return Character->JumpSpeed; },
+			[](PCharacter* Character, const FLOAT& Value) -> void { Character->JumpSpeed = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PCharacter, PPawn>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

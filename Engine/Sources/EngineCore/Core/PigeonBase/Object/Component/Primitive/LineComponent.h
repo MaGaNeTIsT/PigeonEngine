@@ -9,6 +9,10 @@ namespace PigeonEngine
 	public:
 
 
+	public:
+		PE_NODISCARD const TArray<Vector3>&	GetPoints() const { return Points; }
+		void								SetPoints(const TArray<Vector3>& InPoints);
+
 	protected:
 		TArray<Vector3> Points;
 

@@ -41,13 +41,20 @@ namespace PigeonEngine
 		void	SetGroundFlat();
 		void	SetGroundHeightMap(const TArray<FLOAT>& InRelativeDepths);
 		PE_NODISCARD EWaterGroundType	GetGroundType() const noexcept { return GroundType; }
+		void	SetGroundType(const EWaterGroundType InGroundType);
+		// The depth map in the same order it was authored; empty for a flat ground.
+		PE_NODISCARD const TArray<FLOAT>&	GetGroundRelativeDepths() const;
 
 	public:
 		// Tunables and time step.
 		void	SetSimulationParameters(const FWaterSimulationParameters& InParameters);
 		PE_NODISCARD const FWaterSimulationParameters&	GetSimulationParameters() const noexcept { return SimulationParameters; }
 		void	SetWaveEnabled(const BOOL32 InIsWaveEnabled);
+		PE_NODISCARD BOOL32	GetWaveEnabled() const noexcept { return bEnableWave; }
 		void	SetTimeStep(const FLOAT InFixedTimeStep, const UINT32 InMaxSubsteps, const FLOAT InTimeScale);
+		PE_NODISCARD FLOAT	GetFixedTimeStep() const noexcept { return FixedTimeStep; }
+		PE_NODISCARD UINT32	GetMaxSubsteps() const noexcept { return MaxSubsteps; }
+		PE_NODISCARD FLOAT	GetTimeScale() const noexcept { return TimeScale; }
 
 	public:
 		// Interactions. AddImpulse is one shot; AddWhirlpool keeps running for Duration seconds.

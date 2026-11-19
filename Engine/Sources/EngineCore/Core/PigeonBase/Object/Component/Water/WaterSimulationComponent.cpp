@@ -1,14 +1,88 @@
 #include "WaterSimulationComponent.h"
 
 #include <PigeonBase/Object/World/World.h>
+#include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
 
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PWaterSimulationComponent>();
+		AddClassPropertyAccessors<PWaterSimulationComponent, Vector2Int>(ClassHash, PE_TEXT("Resolution"),
+			[](const PWaterSimulationComponent* Component) -> Vector2Int
+			{
+				return Vector2Int(static_cast<INT32>(Component->GetResolutionX()), static_cast<INT32>(Component->GetResolutionZ()));
+			},
+			[](PWaterSimulationComponent* Component, const Vector2Int& Value) -> void
+			{
+				Component->SetResolution(static_cast<UINT32>(EMath::Max(Value.x, 1)), static_cast<UINT32>(EMath::Max(Value.y, 1)));
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PWaterSimulationComponent, Vector2>(ClassHash, PE_TEXT("AreaSize"),
+			[](const PWaterSimulationComponent* Component) -> Vector2
+			{
+				return Vector2(Component->GetAreaSizeX(), Component->GetAreaSizeZ());
+			},
+			[](PWaterSimulationComponent* Component, const Vector2& Value) -> void
+			{
+				Component->SetAreaSize(Value.x, Value.y);
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PWaterSimulationComponent, FLOAT>(ClassHash, PE_TEXT("InitialDepth"),
+			[](const PWaterSimulationComponent* Component) -> FLOAT { return Component->GetInitialDepth(); },
+			[](PWaterSimulationComponent* Component, const FLOAT& Value) -> void { Component->SetInitialDepth(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassEnumPropertyAccessors<PWaterSimulationComponent, EWaterGroundType>(ClassHash, PE_TEXT("GroundType"),
+			[](const PWaterSimulationComponent* Component) -> EWaterGroundType { return Component->GetGroundType(); },
+			[](PWaterSimulationComponent* Component, const EWaterGroundType& Value) -> void { Component->SetGroundType(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PWaterSimulationComponent, TArray<FLOAT>>(ClassHash, PE_TEXT("GroundRelativeDepths"),
+			[](const PWaterSimulationComponent* Component) -> TArray<FLOAT> { return Component->GetGroundRelativeDepths(); },
+			[](PWaterSimulationComponent* Component, const TArray<FLOAT>& Value) -> void
+			{
+				if (Value.Num<UINT32>() > 0u)
+				{
+					Component->SetGroundHeightMap(Value);
+				}
+				else
+				{
+					Component->SetGroundFlat();
+				}
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassBoolPropertyAccessors<PWaterSimulationComponent>(ClassHash, PE_TEXT("WaveEnabled"),
+			[](const PWaterSimulationComponent* Component) -> BOOL32 { return Component->GetWaveEnabled(); },
+			[](PWaterSimulationComponent* Component, const BOOL32& Value) -> void { Component->SetWaveEnabled(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PWaterSimulationComponent, FLOAT>(ClassHash, PE_TEXT("FixedTimeStep"),
+			[](const PWaterSimulationComponent* Component) -> FLOAT { return Component->GetFixedTimeStep(); },
+			[](PWaterSimulationComponent* Component, const FLOAT& Value) -> void
+			{
+				Component->SetTimeStep(Value, Component->GetMaxSubsteps(), Component->GetTimeScale());
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PWaterSimulationComponent, UINT32>(ClassHash, PE_TEXT("MaxSubsteps"),
+			[](const PWaterSimulationComponent* Component) -> UINT32 { return Component->GetMaxSubsteps(); },
+			[](PWaterSimulationComponent* Component, const UINT32& Value) -> void
+			{
+				Component->SetTimeStep(Component->GetFixedTimeStep(), Value, Component->GetTimeScale());
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PWaterSimulationComponent, FLOAT>(ClassHash, PE_TEXT("TimeScale"),
+			[](const PWaterSimulationComponent* Component) -> FLOAT { return Component->GetTimeScale(); },
+			[](PWaterSimulationComponent* Component, const FLOAT& Value) -> void
+			{
+				Component->SetTimeStep(Component->GetFixedTimeStep(), Component->GetMaxSubsteps(), Value);
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PWaterSimulationComponent, PPrimitiveComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -61,6 +135,29 @@ namespace PigeonEngine
 		GroundType = EWaterGroundType::WATER_GROUND_HEIGHT_MAP;
 		GroundRevision++;
 		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_VALUES);
+	}
+
+	void PWaterSimulationComponent::SetGroundType(const EWaterGroundType InGroundType)
+	{
+		if (InGroundType == GroundType)
+		{
+			return;
+		}
+		if (InGroundType == EWaterGroundType::WATER_GROUND_FLAT)
+		{
+			SetGroundFlat();
+		}
+		else
+		{
+			const TArray<FLOAT> Depths = GroundRelativeDepths ? (*GroundRelativeDepths) : TArray<FLOAT>();
+			SetGroundHeightMap(Depths);
+		}
+	}
+
+	const TArray<FLOAT>& PWaterSimulationComponent::GetGroundRelativeDepths() const
+	{
+		static const TArray<FLOAT> EmptyDepths;
+		return GroundRelativeDepths ? (*GroundRelativeDepths) : EmptyDepths;
 	}
 
 	void PWaterSimulationComponent::SetSimulationParameters(const FWaterSimulationParameters& InParameters)
