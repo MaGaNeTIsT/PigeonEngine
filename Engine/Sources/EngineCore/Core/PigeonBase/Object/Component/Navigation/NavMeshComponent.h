@@ -55,6 +55,8 @@ namespace PigeonEngine
 		// Baked mesh to use instead of a runtime bake. Assigning one drops the current provider and
 		// republishes from the asset on the next tick.
 		PE_NODISCARD const ENavMeshAsset*	GetNavMeshAsset() const;
+		// Live asset name, or the last requested name while the asynchronous load is pending.
+		PE_NODISCARD const EString&			GetNavMeshAssetName() const;
 		void								SetNavMeshAsset(const ENavMeshAsset* InAsset);
 		/*
 		* Requests a navmesh asset by name from ENGINE_NAV_MESH_PATH. The request is one shot: a

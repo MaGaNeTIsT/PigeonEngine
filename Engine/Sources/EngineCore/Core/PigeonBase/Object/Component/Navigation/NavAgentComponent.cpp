@@ -5,6 +5,7 @@
 #include <Navigation/NavigationProviderInterface.h>
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
+#include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
@@ -13,6 +14,45 @@
 
 namespace PigeonEngine
 {
+
+	static void SerializeNavigationAgentSettings(EArchive& InArchive, const CHAR* InName, ENavigationAgentSettings& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeFloat(PE_TEXT("Radius"), InOutValue.Radius);
+		InArchive.SerializeFloat(PE_TEXT("Height"), InOutValue.Height);
+		InArchive.SerializeFloat(PE_TEXT("MoveSpeed"), InOutValue.MoveSpeed);
+		InArchive.SerializeFloat(PE_TEXT("TurnSpeedDegreesPerSecond"), InOutValue.TurnSpeedDegreesPerSecond);
+		InArchive.SerializeFloat(PE_TEXT("AcceptanceRadius"), InOutValue.AcceptanceRadius);
+		InArchive.SerializeFloat(PE_TEXT("RepathInterval"), InOutValue.RepathInterval);
+		InArchive.SerializeFloat(PE_TEXT("MaxAcceleration"), InOutValue.MaxAcceleration);
+		InArchive.SerializeFloat(PE_TEXT("CollisionQueryRange"), InOutValue.CollisionQueryRange);
+		InArchive.SerializeFloat(PE_TEXT("PathOptimizationRange"), InOutValue.PathOptimizationRange);
+		InArchive.SerializeFloat(PE_TEXT("SeparationWeight"), InOutValue.SeparationWeight);
+		UINT32 AvoidanceType = static_cast<UINT32>(InOutValue.ObstacleAvoidanceType);
+		InArchive.SerializeUInt32(PE_TEXT("ObstacleAvoidanceType"), AvoidanceType);
+		InOutValue.ObstacleAvoidanceType = static_cast<UINT8>(AvoidanceType);
+		InArchive.EndObject();
+	}
+
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PNavAgentComponent>();
+		AddClassPropertyCustom<PNavAgentComponent, ENavigationAgentSettings>(ClassHash, PE_TEXT("Settings"),
+			[](const PNavAgentComponent* Component) -> ENavigationAgentSettings { return Component->GetSettings(); },
+			[](PNavAgentComponent* Component, const ENavigationAgentSettings& Value) -> void { Component->SetSettings(Value); },
+			SerializeNavigationAgentSettings,
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavAgentComponent, BOOL32>(ClassHash, PE_TEXT("UseCrowd"),
+			[](const PNavAgentComponent* Component) -> BOOL32 { return Component->GetUseCrowd(); },
+			[](PNavAgentComponent* Component, const BOOL32& Value) -> void { Component->SetUseCrowd(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PNavAgentComponent, PActorComponent>();
+		RegisterClassProperties();
+	}
 
 	// Horizontal speed below which the actor keeps its facing. The velocity of a crowd agent that is
 	// settling on its target, or being nudged by a neighbour, is small and its direction flips from
@@ -35,11 +75,6 @@ namespace PigeonEngine
 		Euler NewEuler = CurrentEuler;
 		NewEuler.Yaw = CurrentEuler.Yaw + EMath::Clamp(YawDifference, -MaxTurn, MaxTurn);
 		InActor.SetActorRotation(MakeQuaternion(NewEuler));
-	}
-
-	static void RegisterClassTypes()
-	{
-		RegisterClassType<PNavAgentComponent, PActorComponent>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

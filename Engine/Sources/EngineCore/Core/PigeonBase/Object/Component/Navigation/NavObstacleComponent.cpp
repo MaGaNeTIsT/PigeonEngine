@@ -3,6 +3,7 @@
 #include <Editor/EditorLogManager.h>
 #include <Navigation/NavigationManager.h>
 #include <PigeonBase/Object/Actor.h>
+#include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
@@ -12,9 +13,39 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PNavObstacleComponent>();
+		AddClassEnumPropertyAccessors<PNavObstacleComponent, ENavigationObstacleShapeType>(ClassHash, PE_TEXT("ShapeType"),
+			[](const PNavObstacleComponent* Component) -> ENavigationObstacleShapeType { return Component->GetShapeType(); },
+			[](PNavObstacleComponent* Component, const ENavigationObstacleShapeType& Value) -> void { Component->SetShapeType(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavObstacleComponent, FLOAT>(ClassHash, PE_TEXT("CylinderRadius"),
+			[](const PNavObstacleComponent* Component) -> FLOAT { return Component->GetCylinderRadius(); },
+			[](PNavObstacleComponent* Component, const FLOAT& Value) -> void { Component->SetCylinderRadius(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavObstacleComponent, FLOAT>(ClassHash, PE_TEXT("CylinderHeight"),
+			[](const PNavObstacleComponent* Component) -> FLOAT { return Component->GetCylinderHeight(); },
+			[](PNavObstacleComponent* Component, const FLOAT& Value) -> void { Component->SetCylinderHeight(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavObstacleComponent, Vector3>(ClassHash, PE_TEXT("BoxHalfExtents"),
+			[](const PNavObstacleComponent* Component) -> Vector3 { return Component->GetBoxHalfExtents(); },
+			[](PNavObstacleComponent* Component, const Vector3& Value) -> void { Component->SetBoxHalfExtents(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavObstacleComponent, FLOAT>(ClassHash, PE_TEXT("FollowThreshold"),
+			[](const PNavObstacleComponent* Component) -> FLOAT { return Component->FollowThreshold; },
+			[](PNavObstacleComponent* Component, const FLOAT& Value) -> void { Component->FollowThreshold = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavObstacleComponent, BOOL32>(ClassHash, PE_TEXT("FollowTransform"),
+			[](const PNavObstacleComponent* Component) -> BOOL32 { return Component->bFollowTransform; },
+			[](PNavObstacleComponent* Component, const BOOL32& Value) -> void { Component->bFollowTransform = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PNavObstacleComponent, PSceneComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

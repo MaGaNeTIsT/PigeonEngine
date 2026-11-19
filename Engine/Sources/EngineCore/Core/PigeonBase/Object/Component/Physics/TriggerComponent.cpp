@@ -1,13 +1,60 @@
 #include "TriggerComponent.h"
+#include "ShapeSerialization.h"
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/World/World.h>
 #include <PigeonBase/Object/World/WorldTickManager.h>
+#include <Reflection/Property.h>
 
 namespace PigeonEngine
 {
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PTriggerComponent>();
+		AddClassEnumPropertyAccessors<PTriggerComponent, ETriggerBackendType>(ClassHash, PE_TEXT("Backend"),
+			[](const PTriggerComponent* Component) -> ETriggerBackendType { return Component->GetBackend(); },
+			[](PTriggerComponent* Component, const ETriggerBackendType& Value) -> void { Component->SetBackend(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassEnumPropertyAccessors<PTriggerComponent, PhysicsUtility::EMotionType>(ClassHash, PE_TEXT("SensorMotionType"),
+			[](const PTriggerComponent* Component) -> PhysicsUtility::EMotionType { return Component->SensorMotionType; },
+			[](PTriggerComponent* Component, const PhysicsUtility::EMotionType& Value) -> void { Component->SensorMotionType = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassEnumValuePropertyAccessors<PTriggerComponent>(ClassHash, PE_TEXT("SensorLayer"), GetClassHashCode<FPhysicsObjectLayer>(),
+			[](const PTriggerComponent* Component) -> INT32 { return static_cast<INT32>(Component->SensorLayer.GetValue()); },
+			[](PTriggerComponent* Component, const INT32& Value) -> void { Component->SensorLayer = FPhysicsObjectLayer(static_cast<FPhysicsObjectLayer::Type>(Value)); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("DetectStaticBodies"),
+			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bDetectStaticBodies; },
+			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bDetectStaticBodies = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("DetectCharacters"),
+			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bDetectCharacters; },
+			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bDetectCharacters = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("IgnoreOwnerActor"),
+			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bIgnoreOwnerActor; },
+			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bIgnoreOwnerActor = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PTriggerComponent, BOOL32>(ClassHash, PE_TEXT("FireStayEvents"),
+			[](const PTriggerComponent* Component) -> BOOL32 { return Component->bFireStayEvents; },
+			[](PTriggerComponent* Component, const BOOL32& Value) -> void { Component->bFireStayEvents = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PTriggerComponent, UINT32>(ClassHash, PE_TEXT("MaxOverlaps"),
+			[](const PTriggerComponent* Component) -> UINT32 { return Component->MaxOverlaps; },
+			[](PTriggerComponent* Component, const UINT32& Value) -> void { Component->MaxOverlaps = Value; },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		// The trigger owns its shape when it was assigned one; the setter keeps that
+		// ownership flag so teardown deletes it exactly once.
+		AddClassPropertyCustom<PTriggerComponent, FShape*>(ClassHash, PE_TEXT("Shape"),
+			[](const PTriggerComponent* Component) -> FShape* { return Component->GetShape(); },
+			[](PTriggerComponent* Component, FShape* const& Value) -> void { Component->SetShape(Value, TRUE); },
+			[](EArchive& InArchive, const CHAR* InName, FShape*& InOutValue) -> void { SerializePhysicsShape(InArchive, InName, InOutValue); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PTriggerComponent, PSceneComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

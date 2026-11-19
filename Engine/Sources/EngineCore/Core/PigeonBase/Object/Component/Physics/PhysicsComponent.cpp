@@ -1,4 +1,5 @@
 #include "PhysicsComponent.h"
+#include "ShapeSerialization.h"
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/World/World.h>
 #include <PigeonBase/Object/World/WorldTickManager.h>
@@ -12,16 +13,21 @@ namespace PigeonEngine
 {
 	static void RegisterClassProperties()
 	{
-		// Motion type and layer are public, but they are enums: stored as their integer
-		// value until the named-enum registry lands with the editor phase.
 		const size_t ClassHash = GetClassHashCode<PPhysicsComponent>();
-		AddClassPropertyAccessors<PPhysicsComponent, INT32>(ClassHash, PE_TEXT("MotionType"),
-			[](const PPhysicsComponent* Component) -> INT32 { return static_cast<INT32>(Component->MotionType); },
-			[](PPhysicsComponent* Component, const INT32& Value) -> void { Component->MotionType = static_cast<PhysicsUtility::EMotionType>(Value); },
+		AddClassEnumPropertyAccessors<PPhysicsComponent, PhysicsUtility::EMotionType>(ClassHash, PE_TEXT("MotionType"),
+			[](const PPhysicsComponent* Component) -> PhysicsUtility::EMotionType { return Component->MotionType; },
+			[](PPhysicsComponent* Component, const PhysicsUtility::EMotionType& Value) -> void { Component->MotionType = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyAccessors<PPhysicsComponent, INT32>(ClassHash, PE_TEXT("Layer"),
+		AddClassEnumValuePropertyAccessors<PPhysicsComponent>(ClassHash, PE_TEXT("Layer"), GetClassHashCode<FPhysicsObjectLayer>(),
 			[](const PPhysicsComponent* Component) -> INT32 { return static_cast<INT32>(Component->Layer.GetValue()); },
 			[](PPhysicsComponent* Component, const INT32& Value) -> void { Component->Layer = FPhysicsObjectLayer(static_cast<FPhysicsObjectLayer::Type>(Value)); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		// Shape parameters are the actual body geometry; without this a saved prop would
+		// reload as a bodyless component.
+		AddClassPropertyCustom<PPhysicsComponent, FShape*>(ClassHash, PE_TEXT("Shape"),
+			[](const PPhysicsComponent* Component) -> FShape* { return Component->GetShapeForSerialization(); },
+			[](PPhysicsComponent* Component, FShape* const& Value) -> void { Component->SetShapeForSerialization(Value); },
+			[](EArchive& InArchive, const CHAR* InName, FShape*& InOutValue) -> void { SerializePhysicsShape(InArchive, InName, InOutValue); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 

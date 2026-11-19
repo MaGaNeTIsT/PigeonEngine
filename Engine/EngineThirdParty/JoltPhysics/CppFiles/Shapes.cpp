@@ -72,6 +72,13 @@ namespace PigeonEngine
 		Manager->DrawCapsule(Bottom, Top, Raidus, Raidus, Color4::Green());
 	}
 
+	void FCylinerShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
+	{
+		// The debug manager has no cylinder primitive; the bounding box is enough to place
+		// the shape while editing.
+		Manager->DrawCuboid(inPosition, inRotation, Raidus * 2.f, HalfHeight * 2.f, Raidus * 2.f, Color4::Green());
+	}
+
 	void FRotatedTranslatedShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
 	{
 		return HostedShape->DrawPrimitive(Manager, inPosition + Position, inRotation * Rotation);

@@ -22,6 +22,11 @@ namespace PigeonEngine
 
 		virtual void Init() override;
 		virtual void Uninit() override;
+	public:
+		// Serialization/editor access. Same ownership contract as the protected SetShape:
+		// the component hosts the shape and deletes it on teardown.
+		PE_NODISCARD FShape* GetShapeForSerialization() const { return Shape; }
+		void SetShapeForSerialization(FShape* InShape) { SetShape(InShape); }
 	protected:
 		// Removes the physics body while the owner actor is still set; the old Destroy()
 		// cleared the owner before Uninit, making this same removal dereference null.

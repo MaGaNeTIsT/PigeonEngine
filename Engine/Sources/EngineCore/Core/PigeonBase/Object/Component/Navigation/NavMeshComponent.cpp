@@ -6,6 +6,7 @@
 #include <Navigation/NavigationManager.h>
 #include <Navigation/NavigationProviderInterface.h>
 #include <Navigation/NavigationProviderRegistry.h>
+#include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
 #include <AssetManager.h>
@@ -15,6 +16,57 @@
 
 namespace PigeonEngine
 {
+
+	static void SerializeNavMeshBuildSettings(EArchive& InArchive, const CHAR* InName, ENavMeshBuildSettings& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeFloat(PE_TEXT("CellSize"), InOutValue.CellSize);
+		InArchive.SerializeFloat(PE_TEXT("CellHeight"), InOutValue.CellHeight);
+		InArchive.SerializeFloat(PE_TEXT("AgentRadius"), InOutValue.AgentRadius);
+		InArchive.SerializeFloat(PE_TEXT("AgentHeight"), InOutValue.AgentHeight);
+		InArchive.SerializeFloat(PE_TEXT("AgentMaxClimb"), InOutValue.AgentMaxClimb);
+		InArchive.SerializeFloat(PE_TEXT("AgentMaxSlopeAngle"), InOutValue.AgentMaxSlopeAngle);
+		InArchive.SerializeFloat(PE_TEXT("MaxEdgeLength"), InOutValue.MaxEdgeLength);
+		InArchive.SerializeFloat(PE_TEXT("MaxSimplificationError"), InOutValue.MaxSimplificationError);
+		InArchive.SerializeFloat(PE_TEXT("DetailSampleDistance"), InOutValue.DetailSampleDistance);
+		InArchive.SerializeFloat(PE_TEXT("DetailSampleMaxError"), InOutValue.DetailSampleMaxError);
+		InArchive.SerializeUInt32(PE_TEXT("MinRegionArea"), InOutValue.MinRegionArea);
+		InArchive.SerializeUInt32(PE_TEXT("MergeRegionArea"), InOutValue.MergeRegionArea);
+		InArchive.SerializeUInt32(PE_TEXT("MaxVertsPerPoly"), InOutValue.MaxVertsPerPoly);
+		InArchive.SerializeUInt32(PE_TEXT("TileSizeCells"), InOutValue.TileSizeCells);
+		InArchive.SerializeUInt32(PE_TEXT("MaxLayersPerTile"), InOutValue.MaxLayersPerTile);
+		InArchive.SerializeUInt32(PE_TEXT("MaxCrowdAgents"), InOutValue.MaxCrowdAgents);
+		InArchive.SerializeBool(PE_TEXT("FlipTriangleWinding"), InOutValue.bFlipTriangleWinding);
+		InArchive.EndObject();
+	}
+
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PNavMeshComponent>();
+		AddClassPropertyAccessors<PNavMeshComponent, EString>(ClassHash, PE_TEXT("NavMeshAsset"),
+			[](const PNavMeshComponent* Component) -> EString { return Component->GetNavMeshAssetName(); },
+			[](PNavMeshComponent* Component, const EString& Value) -> void
+			{
+				if (Value.Length() > 0u)
+				{
+					Component->RequestNavMeshAsset(Value);
+				}
+			},
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavMeshComponent, Vector3>(ClassHash, PE_TEXT("BakeVolumeExtent"),
+			[](const PNavMeshComponent* Component) -> Vector3 { return Component->GetBakeVolumeExtent(); },
+			[](PNavMeshComponent* Component, const Vector3& Value) -> void { Component->SetBakeVolumeExtent(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavMeshComponent, BOOL32>(ClassHash, PE_TEXT("BuildOnBeginPlay"),
+			[](const PNavMeshComponent* Component) -> BOOL32 { return Component->GetBuildOnBeginPlay(); },
+			[](PNavMeshComponent* Component, const BOOL32& Value) -> void { Component->SetBuildOnBeginPlay(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyCustom<PNavMeshComponent, ENavMeshBuildSettings>(ClassHash, PE_TEXT("BuildSettings"),
+			[](const PNavMeshComponent* Component) -> ENavMeshBuildSettings { return Component->GetBuildSettings(); },
+			[](PNavMeshComponent* Component, const ENavMeshBuildSettings& Value) -> void { Component->SetBuildSettings(Value); },
+			SerializeNavMeshBuildSettings,
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
 
 	// How long the automatic bake waits for the asset queue to drain before it reports an
 	// incomplete mesh instead of waiting forever. Long enough for a level load, short enough
@@ -27,6 +79,7 @@ namespace PigeonEngine
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PNavMeshComponent, PNavigationComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -82,6 +135,14 @@ namespace PigeonEngine
 	const ENavMeshAsset* PNavMeshComponent::GetNavMeshAsset() const
 	{
 		return NavMeshAsset;
+	}
+	const EString& PNavMeshComponent::GetNavMeshAssetName() const
+	{
+		if (NavMeshAsset)
+		{
+			return NavMeshAsset->GetAssetName();
+		}
+		return NavMeshAssetName;
 	}
 
 	void PNavMeshComponent::SetNavMeshAsset(const ENavMeshAsset* InAsset)
