@@ -382,6 +382,313 @@ namespace PigeonEngine
 			return bChanged;
 		}
 
+		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
+		{
+			bOutActivated = FALSE;
+			bOutDeactivated = FALSE;
+			switch (InType)
+			{
+			case EPropertyValueType::BOOL:
+			{
+				BOOL32 bValue = (InOutElement.BoolValue != FALSE) ? TRUE : FALSE;
+				const BOOL32 bChanged = ImGui::Checkbox("##element", &bValue);
+				if (bChanged)
+				{
+					InOutElement.BoolValue = bValue;
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::INT32:
+			case EPropertyValueType::UINT32:
+			case EPropertyValueType::ENUM:
+			{
+				INT32 Value = static_cast<INT32>(InOutElement.IntValue);
+				const BOOL32 bChanged = ImGui::DragInt("##element", &Value, 1.0f);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.IntValue = static_cast<INT64>(Value);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::INT64:
+			case EPropertyValueType::UINT64:
+			{
+				const BOOL32 bChanged = ImGui::DragScalar("##element", ImGuiDataType_S64, &InOutElement.IntValue, 1.0);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				return bChanged;
+			}
+			case EPropertyValueType::FLOAT:
+			{
+				FLOAT Value = static_cast<FLOAT>(InOutElement.DoubleValue);
+				const BOOL32 bChanged = ImGui::DragFloat("##element", &Value, 0.01f);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.DoubleValue = static_cast<DOUBLE>(Value);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::DOUBLE:
+			{
+				const BOOL32 bChanged = ImGui::DragScalar("##element", ImGuiDataType_Double, &InOutElement.DoubleValue, 0.01);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				return bChanged;
+			}
+			case EPropertyValueType::STRING:
+			{
+				CHAR Buffer[512] = {};
+				const UINT32 Length = EMath::Min(InOutElement.StringValue.Length(), static_cast<UINT32>(sizeof(Buffer) - 1u));
+				if (Length > 0u)
+				{
+					memcpy(Buffer, *InOutElement.StringValue, Length);
+				}
+				const BOOL32 bChanged = ImGui::InputText("##element", Buffer, sizeof(Buffer));
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.StringValue = Buffer;
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::VECTOR2:
+			{
+				FLOAT Values[2] = { InOutElement.Vector2Value.x, InOutElement.Vector2Value.y };
+				const BOOL32 bChanged = ImGui::DragFloat2("##element", Values, 0.01f);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.Vector2Value = Vector2(Values[0], Values[1]);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::VECTOR2INT:
+			{
+				INT32 Values[2] = { InOutElement.Vector2IntValue.x, InOutElement.Vector2IntValue.y };
+				const BOOL32 bChanged = ImGui::DragInt2("##element", Values);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.Vector2IntValue = Vector2Int(Values[0], Values[1]);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::VECTOR3:
+			{
+				FLOAT Values[3] = { InOutElement.Vector3Value.x, InOutElement.Vector3Value.y, InOutElement.Vector3Value.z };
+				const BOOL32 bChanged = ImGui::DragFloat3("##element", Values, 0.01f);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.Vector3Value = Vector3(Values[0], Values[1], Values[2]);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::QUATERNION:
+			{
+				FLOAT Values[4] = { InOutElement.QuaternionValue.x, InOutElement.QuaternionValue.y, InOutElement.QuaternionValue.z, InOutElement.QuaternionValue.w };
+				const BOOL32 bChanged = ImGui::DragFloat4("##element", Values, 0.005f);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.QuaternionValue = Quaternion(Values[0], Values[1], Values[2], Values[3]);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::COLOR3:
+			{
+				FLOAT Values[3] = { InOutElement.ColorValue.x, InOutElement.ColorValue.y, InOutElement.ColorValue.z };
+				const BOOL32 bChanged = ImGui::DragFloat3("##element", Values, 0.005f, 0.0f, 1.0f);
+				bOutActivated = ImGui::IsItemActivated();
+				bOutDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+				if (bChanged)
+				{
+					InOutElement.ColorValue = Color3(Values[0], Values[1], Values[2]);
+				}
+				return bChanged;
+			}
+			case EPropertyValueType::TRANSFORM:
+			{
+				ETransform& Transform = InOutElement.TransformValue;
+				Vector3 Location = Transform.GetLocation_Local();
+				Quaternion Rotation = Transform.GetRotation_Local();
+				Vector3 Scaling = Transform.GetScaling_Local();
+				FLOAT LocationValues[3] = { Location.x, Location.y, Location.z };
+				FLOAT RotationValues[4] = { Rotation.x, Rotation.y, Rotation.z, Rotation.w };
+				FLOAT ScalingValues[3] = { Scaling.x, Scaling.y, Scaling.z };
+				BOOL32 bChanged = FALSE;
+				if (ImGui::DragFloat3("##elementLoc", LocationValues, 0.01f))
+				{
+					Transform.SetLocation_Local(Vector3(LocationValues[0], LocationValues[1], LocationValues[2]));
+					bChanged = TRUE;
+				}
+				bOutActivated = (bOutActivated || (ImGui::IsItemActivated() != FALSE)) ? TRUE : FALSE;
+				bOutDeactivated = (bOutDeactivated || (ImGui::IsItemDeactivatedAfterEdit() != FALSE)) ? TRUE : FALSE;
+				if (ImGui::DragFloat4("##elementRot", RotationValues, 0.005f))
+				{
+					Transform.SetRotation_Local(Quaternion(RotationValues[0], RotationValues[1], RotationValues[2], RotationValues[3]));
+					bChanged = TRUE;
+				}
+				bOutActivated = (bOutActivated || (ImGui::IsItemActivated() != FALSE)) ? TRUE : FALSE;
+				bOutDeactivated = (bOutDeactivated || (ImGui::IsItemDeactivatedAfterEdit() != FALSE)) ? TRUE : FALSE;
+				if (ImGui::DragFloat3("##elementScale", ScalingValues, 0.01f))
+				{
+					Transform.SetScaling_Local(Vector3(ScalingValues[0], ScalingValues[1], ScalingValues[2]));
+					bChanged = TRUE;
+				}
+				bOutActivated = (bOutActivated || (ImGui::IsItemActivated() != FALSE)) ? TRUE : FALSE;
+				bOutDeactivated = (bOutDeactivated || (ImGui::IsItemDeactivatedAfterEdit() != FALSE)) ? TRUE : FALSE;
+				return bChanged;
+			}
+			default:
+				return FALSE;
+			}
+		}
+
+		BOOL32 DrawArrayProperty(const FProperty& InProperty, void* InObject, const size_t& InClassHash, FPropertyValue& InOutValue)
+		{
+			BOOL32 bChanged = FALSE;
+			for (UINT32 Index = 0u; Index < InOutValue.ArrayValues.Num<UINT32>(); Index++)
+			{
+				ImGui::PushID(Index);
+				FPropertyValue BeforeElement;
+				InProperty.GetValue(InObject, BeforeElement);
+				BOOL32 bActivated = FALSE;
+				BOOL32 bDeactivated = FALSE;
+				const BOOL32 bElementChanged = DrawElementWidget(InOutValue.ArrayValues[Index], InProperty.ElementType, bActivated, bDeactivated);
+				if (bActivated)
+				{
+					StoreEditStart(InProperty, BeforeElement);
+				}
+				if (bElementChanged)
+				{
+					InProperty.SetValue(InObject, InOutValue);
+					bChanged = TRUE;
+				}
+				if (bDeactivated)
+				{
+					FPropertyValue Start;
+					if (TakeEditStart(InProperty, Start))
+					{
+						Commit(InProperty, InObject, InClassHash, Start, InOutValue);
+					}
+				}
+				else if (bElementChanged && (!bActivated))
+				{
+					// Checkbox/string-style controls commit immediately.
+					Commit(InProperty, InObject, InClassHash, BeforeElement, InOutValue);
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton("X"))
+				{
+					FPropertyValue BeforeArray;
+					InProperty.GetValue(InObject, BeforeArray);
+					InOutValue.ArrayValues.RemoveAt(Index);
+					InProperty.SetValue(InObject, InOutValue);
+					Commit(InProperty, InObject, InClassHash, BeforeArray, InOutValue);
+					bChanged = TRUE;
+					ImGui::PopID();
+					break;
+				}
+				ImGui::PopID();
+			}
+			if (ImGui::SmallButton("Add Element"))
+			{
+				FPropertyValue BeforeArray;
+				InProperty.GetValue(InObject, BeforeArray);
+				FPropertyElement NewElement;
+				NewElement.Type = InProperty.ElementType;
+				InOutValue.ArrayValues.Add(NewElement);
+				InProperty.SetValue(InObject, InOutValue);
+				Commit(InProperty, InObject, InClassHash, BeforeArray, InOutValue);
+				bChanged = TRUE;
+			}
+			return bChanged;
+		}
+
+		BOOL32 DrawMapProperty(const FProperty& InProperty, void* InObject, const size_t& InClassHash, FPropertyValue& InOutValue)
+		{
+			BOOL32 bChanged = FALSE;
+			for (UINT32 Index = 0u; Index < InOutValue.MapEntries.Num<UINT32>(); Index++)
+			{
+				ImGui::PushID(Index);
+				FPropertyMapEntry& Entry = InOutValue.MapEntries[Index];
+				FPropertyValue BeforeEntry;
+				InProperty.GetValue(InObject, BeforeEntry);
+				BOOL32 bKeyActivated = FALSE;
+				BOOL32 bKeyDeactivated = FALSE;
+				const BOOL32 bKeyChanged = DrawElementWidget(Entry.Key, InProperty.KeyType, bKeyActivated, bKeyDeactivated);
+				ImGui::SameLine();
+				BOOL32 bValueActivated = FALSE;
+				BOOL32 bValueDeactivated = FALSE;
+				const BOOL32 bValueChanged = DrawElementWidget(Entry.Value, InProperty.MapValueType, bValueActivated, bValueDeactivated);
+				if (bKeyActivated || bValueActivated)
+				{
+					StoreEditStart(InProperty, BeforeEntry);
+				}
+				if (bKeyChanged || bValueChanged)
+				{
+					InProperty.SetValue(InObject, InOutValue);
+					bChanged = TRUE;
+				}
+				if (bKeyDeactivated || bValueDeactivated)
+				{
+					FPropertyValue Start;
+					if (TakeEditStart(InProperty, Start))
+					{
+						Commit(InProperty, InObject, InClassHash, Start, InOutValue);
+					}
+				}
+				else if ((bKeyChanged || bValueChanged) && (!bKeyActivated) && (!bValueActivated))
+				{
+					Commit(InProperty, InObject, InClassHash, BeforeEntry, InOutValue);
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton("X"))
+				{
+					FPropertyValue BeforeMap;
+					InProperty.GetValue(InObject, BeforeMap);
+					InOutValue.MapEntries.RemoveAt(Index);
+					InProperty.SetValue(InObject, InOutValue);
+					Commit(InProperty, InObject, InClassHash, BeforeMap, InOutValue);
+					bChanged = TRUE;
+					ImGui::PopID();
+					break;
+				}
+				ImGui::PopID();
+			}
+			if (ImGui::SmallButton("Add Entry"))
+			{
+				FPropertyValue BeforeMap;
+				InProperty.GetValue(InObject, BeforeMap);
+				FPropertyMapEntry Entry;
+				Entry.Key.Type = InProperty.KeyType;
+				if (InProperty.KeyType == EPropertyValueType::STRING)
+				{
+					Entry.Key.StringValue = EString(PE_TEXT("Key")) + EString::FromInt(InOutValue.MapEntries.Num<UINT32>());
+				}
+				else
+				{
+					Entry.Key.IntValue = static_cast<INT64>(InOutValue.MapEntries.Num<UINT32>());
+				}
+				Entry.Value.Type = InProperty.MapValueType;
+				InOutValue.MapEntries.Add(Entry);
+				InProperty.SetValue(InObject, InOutValue);
+				Commit(InProperty, InObject, InClassHash, BeforeMap, InOutValue);
+				bChanged = TRUE;
+			}
+			return bChanged;
+		}
+
 		BOOL32 DrawProperty(const FProperty& InProperty, void* InObject, const size_t& InClassHash)
 		{
 			if ((InProperty.ValueType == EPropertyValueType::CUSTOM) ||
@@ -446,6 +753,12 @@ namespace PigeonEngine
 				break;
 			case EPropertyValueType::TRANSFORM:
 				bChanged = DrawTransformProperty(InProperty, InObject, InClassHash, Value);
+				break;
+			case EPropertyValueType::ARRAY:
+				bChanged = DrawArrayProperty(InProperty, InObject, InClassHash, Value);
+				break;
+			case EPropertyValueType::MAP:
+				bChanged = DrawMapProperty(InProperty, InObject, InClassHash, Value);
 				break;
 			default:
 				break;
