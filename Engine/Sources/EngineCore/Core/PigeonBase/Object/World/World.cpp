@@ -29,22 +29,9 @@ namespace PigeonEngine
 				return InDefaultVector;
 			}
 
-			return Vector3::Normalize(InVector);
-		}
+		return Vector3::Normalize(InVector);
+	}
 
-#if ENGINE_EDITOR_ONLY
-		BOOL32 IsClassDerivedFrom(const size_t& InClassHash, const size_t& InBaseHash)
-		{
-			for (size_t ClassHash = InClassHash; ClassHash != static_cast<size_t>(-1); ClassHash = GetClassParentHash(ClassHash))
-			{
-				if (ClassHash == InBaseHash)
-				{
-					return TRUE;
-				}
-			}
-			return FALSE;
-		}
-#endif
 	}
 
 	static void RegisterClassTypes()
@@ -839,80 +826,9 @@ namespace PigeonEngine
 		return EditorCommandStack;
 	}
 
-	void PWorld::GenerateWorldOutline()
+	PActor* PWorld::GetRootActor() const
 	{
-		if (!RootActor)
-		{
-			return;
-		}
-		ValidateSelection();
-
-		if (EditorCommandStack)
-		{
-			if (ImGui::Button("Create Actor"))
-			{
-				ImGui::OpenPopup("CreateActorPopup");
-			}
-			if (ImGui::BeginPopup("CreateActorPopup"))
-			{
-				std::vector<ERTTIManager::ESerializableClassInfo> ClassInfos;
-				ERTTIManager::GetManagerSingleton()->GetSerializableClassInfos(ClassInfos);
-				const size_t ActorBaseHash = GetClassHashCode<PActor>();
-				const size_t LevelActorHash = GetClassHashCode<PLevelActor>();
-				const size_t ControllerBaseHash = GetClassHashCode<PController>();
-				const size_t CharacterBaseHash = GetClassHashCode<PCharacter>();
-				for (UINT32 Index = 0u, Num = static_cast<UINT32>(ClassInfos.size()); Index < Num; Index++)
-				{
-					const ERTTIManager::ESerializableClassInfo& ClassInfo = ClassInfos[Index];
-					if ((!ClassInfo.bHasFactory) ||
-						(!IsClassDerivedFrom(ClassInfo.ClassHash, ActorBaseHash)) ||
-						(ClassInfo.ClassHash == LevelActorHash) ||
-						IsClassDerivedFrom(ClassInfo.ClassHash, ControllerBaseHash) ||
-						IsClassDerivedFrom(ClassInfo.ClassHash, CharacterBaseHash))
-					{
-						continue;
-					}
-					if (ImGui::MenuItem(ClassInfo.StableName.c_str()))
-					{
-						PActor* NewActor = CreateClassObjectByStableName<PActor>(ClassInfo.StableName.c_str());
-						if (NewActor)
-						{
-							POBJ_DEBUGNAME_SET(NewActor, EString(ClassInfo.StableName.c_str()));
-							AddActor(NewActor);
-							SetSelectedActor(NewActor);
-							PushSpawnActorCommand(*EditorCommandStack, *this, NewActor);
-						}
-					}
-				}
-				ImGui::EndPopup();
-			}
-			ImGui::Separator();
-		}
-
-		for (PActor* Actor : RootActor->GetAllActorsAttached())
-		{
-			Actor->GenerateWorldOutline(ImguiSelectedActor);
-		}
-
-		// Detach drop zone: dropping a dragged actor here re-homes it under the world root,
-		// i.e. back to the top level. Nothing enters the history when the drop is refused.
-		if (EditorCommandStack)
-		{
-			ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()));
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PWorldActorDrag"))
-				{
-					PActor* DraggedActor = ((Payload->Data) && (Payload->DataSize == sizeof(PActor*))) ? (*static_cast<PActor* const*>(Payload->Data)) : nullptr;
-					if (DraggedActor && (DraggedActor != RootActor))
-					{
-						PushReparentActorCommand(*EditorCommandStack, *this, DraggedActor, RootActor);
-					}
-				}
-				ImGui::EndDragDropTarget();
-			}
-			ImGui::TextDisabled("Drag an actor onto another to attach; drop here to detach.");
-		}
+		return RootActor;
 	}
 
 	void PWorld::GenerateDetail()

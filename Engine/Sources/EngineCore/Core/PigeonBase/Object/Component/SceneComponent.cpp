@@ -8,7 +8,6 @@
 
 #if ENGINE_EDITOR_ONLY
 #include <Editor/PropertyEditor.h>
-#include <Editor/WorldEditorCommand.h>
 #include <imgui.h>
 #endif
 
@@ -625,59 +624,6 @@ namespace PigeonEngine
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
 #if ENGINE_EDITOR_ONLY
-	void PSceneComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
-	{
-		BOOL8 bSelectedComponent = WorldCurrentSelectedComponent == this;
-
-		const ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenComponents.Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_DefaultOpen;
-		ImGui::PushID((void*)this);
-		const BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("##node", TreeNodeFlag);
-		ImGui::SameLine();
-		const BOOL8 bSelected = ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedComponent);
-
-		// Hierarchy editing: the drag carries this component, a drop re-parents it below
-		// this node. The command helper refuses roots and cross-actor links (child-actor
-		// roots render in this tree but are managed by actor attach), so no guard is needed
-		// here beyond passing the pair along.
-		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-		{
-			PSceneComponent* DraggedComponent = this;
-			ImGui::TextUnformatted(*(POBJ_DEBUGNAME_GET(this)));
-			ImGui::SetDragDropPayload("PSceneComponentDrag", &DraggedComponent, sizeof(PSceneComponent*));
-			ImGui::EndDragDropSource();
-		}
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PSceneComponentDrag"))
-			{
-				PSceneComponent* DraggedComponent = ((Payload->Data) && (Payload->DataSize == sizeof(PSceneComponent*))) ? (*static_cast<PSceneComponent* const*>(Payload->Data)) : nullptr;
-				PWorld* OwnerWorld = GetOwnerActor() ? GetOwnerActor()->GetWorld() : nullptr;
-				if (DraggedComponent && OwnerWorld && OwnerWorld->GetEditorCommandStack())
-				{
-					PushReparentComponentCommand(*OwnerWorld->GetEditorCommandStack(), *OwnerWorld, DraggedComponent, this);
-				}
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		ImGui::PopID();
-
-		if (bTreeNodeExpand)
-		{
-			// child actors
-			for (PSceneComponent* Component : ChildrenComponents)
-			{
-				Component->GenerateComponentOutline(WorldCurrentSelectedComponent);
-			}
-			ImGui::TreePop();
-		}
-
-		if (bSelected)
-		{
-			this->GetOwnerActor()->GetWorld()->SetSelectedComponent(this);
-		}
-	}
-
 	void PSceneComponent::GenerateComponentDetail()
 	{
 		// Transform and Mobility come from the reflected property grid; only the reset helper

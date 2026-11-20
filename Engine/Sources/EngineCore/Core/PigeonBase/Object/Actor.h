@@ -168,7 +168,6 @@ protected:
 		// Imgui
 #if ENGINE_EDITOR_ONLY
 	public:
-		virtual void GenerateWorldOutline(const PActor* WorldCurrentSelectedActor);
 		virtual void GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent);
 #endif
 

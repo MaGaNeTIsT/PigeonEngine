@@ -10,24 +10,12 @@
 #if ENGINE_EDITOR_ONLY
 #include <Editor/PropertyEditor.h>
 #include <Editor/WorldEditorCommand.h>
+#include <Editor/WorldOutlinePanel.h>
 #include <imgui.h>
 #endif
 
 namespace PigeonEngine
 {
-#if ENGINE_EDITOR_ONLY
-	static BOOL32 IsClassDerivedFrom(const size_t& InClassHash, const size_t& InBaseHash)
-	{
-		for (size_t ClassHash = InClassHash; ClassHash != static_cast<size_t>(-1); ClassHash = GetClassParentHash(ClassHash))
-		{
-			if (ClassHash == InBaseHash)
-			{
-				return TRUE;
-			}
-		}
-		return FALSE;
-	}
-#endif
 
 	static void RegisterClassTypes()
 	{
@@ -760,138 +748,6 @@ namespace PigeonEngine
 
 #if ENGINE_EDITOR_ONLY
 
-	void PActor::GenerateWorldOutline(const PActor* WorldCurrentSelectedActor)
-	{
-#if ENGINE_EDITOR_ONLY
-		static PActor* RenameActor = nullptr;
-		static CHAR RenameBuffer[256] = {};
-#endif
-		BOOL8 bSelectedActor	= WorldCurrentSelectedActor == this;
-		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenActors.Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
-
-		ImGui::PushID((void*)this);
-		BOOL8 bTreeNodeExpand	= ImGui::TreeNodeEx("##node", TreeNodeFlag);
-		ImGui::SameLine();
-		BOOL8 bSelected		= ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
-
-		// Hierarchy editing: dragging this row carries the actor, dropping a dragged actor
-		// here re-parents it below this one (KEEP_WORLD, undoable through the command stack).
-		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-		{
-			PActor* DraggedActor = this;
-			ImGui::TextUnformatted(*(POBJ_DEBUGNAME_GET(this)));
-			ImGui::SetDragDropPayload("PWorldActorDrag", &DraggedActor, sizeof(PActor*));
-			ImGui::EndDragDropSource();
-		}
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PWorldActorDrag"))
-			{
-				PActor* DraggedActor = ((Payload->Data) && (Payload->DataSize == sizeof(PActor*))) ? (*static_cast<PActor* const*>(Payload->Data)) : nullptr;
-				PWorld* OwnerWorld = GetWorld();
-				if (DraggedActor && OwnerWorld && OwnerWorld->GetEditorCommandStack())
-				{
-					PushReparentActorCommand(*OwnerWorld->GetEditorCommandStack(), *OwnerWorld, DraggedActor, this);
-				}
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		if (ImGui::BeginPopupContextItem("##ActorContext"))
-		{
-			if (ImGui::MenuItem("Rename"))
-			{
-				RenameActor = this;
-				const EString& ActorName = POBJ_DEBUGNAME_GET(this);
-				const UINT32 NameLength = EMath::Min(ActorName.Length(), static_cast<UINT32>(sizeof(RenameBuffer) - 1u));
-				memset(RenameBuffer, 0, sizeof(RenameBuffer));
-				if (NameLength > 0u)
-				{
-					memcpy(RenameBuffer, *ActorName, NameLength);
-				}
-			}
-			PWorld* OwnerWorld = GetWorld();
-			FWorldEditorCommandStack* Commands = OwnerWorld ? OwnerWorld->GetEditorCommandStack() : nullptr;
-			if (Commands && ImGui::MenuItem("Delete"))
-			{
-				PushDeleteActorCommand(*Commands, *OwnerWorld, this);
-				ImGui::EndPopup();
-				ImGui::PopID();
-				return;
-			}
-			if (Commands && ImGui::BeginMenu("Add Component"))
-			{
-				std::vector<ERTTIManager::ESerializableClassInfo> ClassInfos;
-				ERTTIManager::GetManagerSingleton()->GetSerializableClassInfos(ClassInfos);
-				const size_t ComponentBaseHash = GetClassHashCode<PActorComponent>();
-				const size_t MovementComponentHash = GetClassHashCode<PMovementComponent>();
-				const size_t CharacterInputComponentHash = GetClassHashCode<PCharacterInputComponent>();
-				for (UINT32 Index = 0u, Num = static_cast<UINT32>(ClassInfos.size()); Index < Num; Index++)
-				{
-					const ERTTIManager::ESerializableClassInfo& ClassInfo = ClassInfos[Index];
-					if ((!ClassInfo.bHasFactory) ||
-						(!IsClassDerivedFrom(ClassInfo.ClassHash, ComponentBaseHash)) ||
-						(ClassInfo.ClassHash == MovementComponentHash) ||
-						(ClassInfo.ClassHash == CharacterInputComponentHash))
-					{
-						continue;
-					}
-					if (ImGui::MenuItem(ClassInfo.StableName.c_str()))
-					{
-						PActorComponent* NewComponent = CreateClassObjectByStableName<PActorComponent>(ClassInfo.StableName.c_str());
-						if (NewComponent)
-						{
-							POBJ_DEBUGNAME_SET(NewComponent, EString(ClassInfo.StableName.c_str()));
-							AddComponent(NewComponent);
-							OwnerWorld->SetSelectedComponent(NewComponent);
-							PushAddComponentCommand(*Commands, *OwnerWorld, this, NewComponent);
-						}
-					}
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndPopup();
-		}
-		ImGui::PopID();
-
-		if (RenameActor == this)
-		{
-			ImGui::SetNextItemWidth(220.0f);
-			ImGui::InputText("##ActorRename", RenameBuffer, sizeof(RenameBuffer));
-			if (ImGui::IsItemDeactivatedAfterEdit() || ImGui::IsKeyPressed(ImGuiKey_Enter))
-			{
-				POBJ_DEBUGNAME_SET(this, EString(RenameBuffer));
-				RenameActor = nullptr;
-			}
-			else if (ImGui::IsKeyPressed(ImGuiKey_Escape))
-			{
-				RenameActor = nullptr;
-			}
-		}
-
-		if (bTreeNodeExpand)
-		{
-			// Snapshot: a context menu inside a child can delete it (and its subtree) while
-			// this loop is still running, which mutates ChildrenActors.
-			const TArray<PActor*> ChildSnapshot = ChildrenActors;
-			for (PActor* Element : ChildSnapshot)
-			{
-				// Contains only compares pointer values, so it is safe to ask after the child
-				// was destroyed and unlinked.
-				if (ChildrenActors.Contains(Element))
-				{
-					Element->GenerateWorldOutline(WorldCurrentSelectedActor);
-				}
-			}
-			ImGui::TreePop();
-		}
-
-		if (bSelected)
-		{
-			this->GetWorld()->SetSelectedActor(this);
-		}
-	}
-
 	void PActor::GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent)
 	{
 #if ENGINE_EDITOR_ONLY
@@ -931,7 +787,7 @@ namespace PigeonEngine
 			}
 			if (bTreeNodeExpand)
 			{
-				RootComponent->GenerateComponentOutline(WorldCurrentSelectedComponent);
+				EWorldOutlinePanel::GenerateComponentTree(RootComponent, GetWorld());
 				ImGui::TreePop();
 			}
 		}

@@ -5,6 +5,7 @@
 #include <Editor/EditorLogManager.h>
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
+#include <Editor/WorldOutlinePanel.h>
 #endif
 
 namespace PigeonEngine
@@ -813,7 +814,7 @@ namespace PigeonEngine
 		ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
 		ImGui::Begin("World Outline");
-		this->GetWorld()->GenerateWorldOutline();
+		EWorldOutlinePanel::GenerateOutline(this->GetWorld());
 		ImGui::End();
 
 		// ---- Details panel ----

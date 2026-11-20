@@ -258,11 +258,6 @@ namespace PigeonEngine
 
 
 #if ENGINE_EDITOR_ONLY
-	void PActorComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
-	{
-
-	}
-
 	void PActorComponent::GenerateComponentDetail()
 	{
 #if ENGINE_EDITOR_ONLY

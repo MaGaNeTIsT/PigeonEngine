@@ -130,7 +130,6 @@ namespace PigeonEngine
 
 #if ENGINE_EDITOR_ONLY
 	public:
-		virtual void GenerateComponentOutline(const class PActorComponent* WorldCurrentSelectedComponent) override;
 		virtual void GenerateComponentDetail() override;
 		virtual void OnSelectedByImGui() override;
 #endif

@@ -456,10 +456,6 @@ namespace PigeonEngine
 	// Render proxy functions END
 
 #if ENGINE_EDITOR_ONLY
-	void PBezierGrassComponent::GenerateComponentOutline(const class PActorComponent* WorldCurrentSelectedComponent)
-	{
-		PPrimitiveComponent::GenerateComponentOutline(WorldCurrentSelectedComponent);
-	}
 	void PBezierGrassComponent::GenerateComponentDetail()
 	{
 		PPrimitiveComponent::GenerateComponentDetail();

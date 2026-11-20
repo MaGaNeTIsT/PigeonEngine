@@ -203,7 +203,7 @@ private:
 		PE_NODISCARD PActor* GetSelectedActor() const;
 		PE_NODISCARD PActorComponent* GetSelectedComponent() const;
 	public:
-		void GenerateWorldOutline();
+		PE_NODISCARD PActor* GetRootActor() const;
 		void GenerateDetail();
 		// The editor installs its command stack here so the outline/details panels can record
 		// their mutations. Null in a world that is not being edited.
