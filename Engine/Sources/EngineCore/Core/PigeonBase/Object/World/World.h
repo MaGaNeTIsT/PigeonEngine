@@ -17,7 +17,6 @@ namespace PigeonEngine
 	class PSkeletalMeshComponent;
 	class RSceneInterface;
 	class PLevelActor;
-	class FWorldEditorCommandStack;
 	enum EWorldType : UINT8
 	{
 		EWT_GAME,
@@ -196,34 +195,12 @@ private:
 		// IMGUI
 	public:
 		void EditorTick(FLOAT deltaTime) override;
-		void SetSelectedActor(PActor* Selected);
-		void SetSelectedComponent(PActorComponent* Selected);
-		// Resolve through the registry so a selection whose object was destroyed reads as
-		// null immediately, not one frame later.
-		PE_NODISCARD PActor* GetSelectedActor() const;
-		PE_NODISCARD PActorComponent* GetSelectedComponent() const;
 	public:
 		PE_NODISCARD PActor* GetRootActor() const;
 		// The editor module registers the fly-camera controller factory before main, from a
 		// static initializer; the world creates whatever controller it returns instead of a
 		// concrete editor type. Static because no world exists at registration time.
 		static void SetEditorControllerFactory(const TFunction<class PController*()>& InFactory);
-		// The editor installs its command stack here so the outline/details panels can record
-		// their mutations. Null in a world that is not being edited.
-		void SetEditorCommandStack(FWorldEditorCommandStack* InCommands);
-		PE_NODISCARD FWorldEditorCommandStack* GetEditorCommandStack() const;
-	private:
-		FWorldEditorCommandStack* EditorCommandStack = nullptr;
-	private:
-		// Drops the ImGui selection when the selected actor or component no longer
-		// belongs to this world (a destroyed object leaves the registry at mark time), so
-		// the panels never dereference freed objects.
-		void ValidateSelection();
-	private:
-		FObjectHandle ImguiSelectedActorHandle;
-		FObjectHandle ImguiSelectedComponentHandle;
-		PActor* ImguiSelectedActor = nullptr;
-		PActorComponent* ImguiSelectedComponent = nullptr;
 	private:
 		class PController* EditorController = nullptr;
 #endif

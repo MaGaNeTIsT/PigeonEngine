@@ -2,6 +2,7 @@
 
 #if ENGINE_EDITOR_ONLY
 
+#include <Editor/EditorWorldContext.h>
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <PigeonBase/Object/Controller/Controller.h>
@@ -137,7 +138,7 @@ namespace PigeonEngine
 				}
 				PActor::AttachActorToActor(Child, Parent, EAttachmentRuleType::KEEP_RELATIVE, InLocal);
 			}
-			InContext.World->SetSelectedActor(Child);
+			EEditorWorldContext::SetSelectedActor(InContext.World,Child);
 			return TRUE;
 		}
 
@@ -191,7 +192,7 @@ namespace PigeonEngine
 				return FALSE;
 			}
 			PSceneComponent::AttachComponentToComponent(Component, Parent, EAttachmentRuleType::KEEP_RELATIVE, InLocal);
-			InContext.World->SetSelectedComponent(Component);
+			EEditorWorldContext::SetSelectedComponent(InContext.World,Component);
 			return TRUE;
 		}
 
@@ -231,7 +232,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Root);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
-				InContext.World->SetSelectedActor(Root);
+				EEditorWorldContext::SetSelectedActor(InContext.World,Root);
 				return TRUE;
 			}
 			virtual EString GetLabel() const override { return Label; }
@@ -261,7 +262,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Root);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
-				InContext.World->SetSelectedActor(Root);
+				EEditorWorldContext::SetSelectedActor(InContext.World,Root);
 				return TRUE;
 			}
 			virtual BOOL32 Redo(FWorldEditorCommandContext& InContext) override
@@ -323,7 +324,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Component);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
-				InContext.World->SetSelectedComponent(Component);
+				EEditorWorldContext::SetSelectedComponent(InContext.World,Component);
 				return TRUE;
 			}
 			virtual EString GetLabel() const override { return Label; }
@@ -364,7 +365,7 @@ namespace PigeonEngine
 				}
 				CurrentHandle = MakeObjectHandle(Component);
 				InContext.AddRemap(OriginalHandle, CurrentHandle);
-				InContext.World->SetSelectedComponent(Component);
+				EEditorWorldContext::SetSelectedComponent(InContext.World,Component);
 				return TRUE;
 			}
 			virtual BOOL32 Redo(FWorldEditorCommandContext& InContext) override

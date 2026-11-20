@@ -14,6 +14,7 @@
 #include <Editor/EditorCustomization.h>
 #include <Editor/PropertyEditor.h>
 #include <Editor/WorldEditorCommand.h>
+#include <Editor/EditorWorldContext.h>
 #include <Editor/WorldOutlinePanel.h>
 
 namespace PigeonEngine
@@ -37,7 +38,7 @@ namespace PigeonEngine
 					if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PSceneComponentDrag"))
 					{
 						PSceneComponent* DraggedComponent = ((Payload->Data) && (Payload->DataSize == sizeof(PSceneComponent*))) ? (*static_cast<PSceneComponent* const*>(Payload->Data)) : nullptr;
-						FWorldEditorCommandStack* Commands = World ? World->GetEditorCommandStack() : nullptr;
+						FWorldEditorCommandStack* Commands = World ? EEditorWorldContext::GetEditorCommandStack(World) : nullptr;
 						if (DraggedComponent && Commands)
 						{
 							PushReparentComponentCommand(*Commands, *World, DraggedComponent, Actor->GetRootComponent());
@@ -66,12 +67,12 @@ namespace PigeonEngine
 					continue;
 				}
 				ImGui::PushID(Component);
-				const BOOL32 bSelected = (World && (Component == World->GetSelectedComponent())) ? TRUE : FALSE;
+				const BOOL32 bSelected = (World && (Component == EEditorWorldContext::GetSelectedComponent(World))) ? TRUE : FALSE;
 				if (ImGui::Selectable(*POBJ_DEBUGNAME_GET(Component), bSelected))
 				{
 					if (World)
 					{
-						World->SetSelectedComponent(Component);
+						EEditorWorldContext::SetSelectedComponent(World, Component);
 					}
 				}
 				ImGui::PopID();
@@ -250,7 +251,7 @@ namespace PigeonEngine
 			{
 				return;
 			}
-			PActor* SelectedActor = InWorld->GetSelectedActor();
+			PActor* SelectedActor = EEditorWorldContext::GetSelectedActor(InWorld);
 			if (!SelectedActor)
 			{
 				return;
@@ -273,14 +274,14 @@ namespace PigeonEngine
 			}
 			EEditorCustomization::DrawActorDetails(SelectedActor, InWorld);
 
-			PActorComponent* SelectedComponent = InWorld->GetSelectedComponent();
+			PActorComponent* SelectedComponent = EEditorWorldContext::GetSelectedComponent(InWorld);
 			if (!SelectedComponent)
 			{
 				return;
 			}
 			EEditorCustomization::DrawComponentDetails(SelectedComponent, InWorld);
 
-			FWorldEditorCommandStack* Commands = InWorld->GetEditorCommandStack();
+			FWorldEditorCommandStack* Commands = EEditorWorldContext::GetEditorCommandStack(InWorld);
 			if (Commands &&
 				(SelectedComponent != SelectedActor->GetRootComponent()) &&
 				(SelectedActor->GetWorld() == InWorld))

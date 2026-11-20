@@ -12,10 +12,7 @@
 #include "PigeonBase/Object/Actor/LevelCharacter.h"
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
-#if ENGINE_EDITOR_ONLY
-#include <Editor/WorldEditorCommand.h>
-#include <imgui.h>
-#endif
+
 
 
 namespace PigeonEngine
@@ -196,8 +193,6 @@ namespace PigeonEngine
 		FlushPendingDestroy();
 #if ENGINE_EDITOR_ONLY
 		EditorController = nullptr;
-		// The whole world is going away; nothing can stay selected in it.
-		SetSelectedActor(nullptr);
 #endif
 		Controller = nullptr;
 		if(RootActor)
@@ -319,12 +314,6 @@ namespace PigeonEngine
 			ComponentById.Remove(Component->GetUniqueID());
 			OnComponentRemoved.Broadcast(Component);
 		}
-#if ENGINE_EDITOR_ONLY
-		if (ImguiSelectedComponent == Component)
-		{
-			SetSelectedComponent(nullptr);
-		}
-#endif
 	}
 
 	void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
@@ -427,10 +416,6 @@ namespace PigeonEngine
 			SetGravitySettings(LoadedGravitySettings);
 		}
 
-#if ENGINE_EDITOR_ONLY
-		ImguiSelectedActor = nullptr;
-		ImguiSelectedComponent = nullptr;
-#endif
 		PE_LOG_LOG(EString(PE_TEXT("Level loaded: ")) + InPath + EString(PE_TEXT(", actors ")) + EString::FromInt(CreatedActors.Num<UINT32>()));
 		return TRUE;
 	}
@@ -502,12 +487,6 @@ namespace PigeonEngine
 			ActorById.Remove(Actor->GetUniqueID());
 			OnActorRemoved.Broadcast(Actor);
 		}
-#if ENGINE_EDITOR_ONLY
-		if (ImguiSelectedActor == Actor)
-		{
-			SetSelectedActor(nullptr);
-		}
-#endif
 	}
 
 	void PWorld::DestroyActor(PActor* Actor)
@@ -753,97 +732,6 @@ namespace PigeonEngine
 		Camera->SetViewport(0.f, 0.f, static_cast<FLOAT>(InWidth), static_cast<FLOAT>(InHeight));
 	}
 #if ENGINE_EDITOR_ONLY
-
-	void PWorld::SetSelectedActor(PActor* Selected)
-	{
-		this->ImguiSelectedActor = Selected;
-		this->ImguiSelectedActorHandle = MakeObjectHandle(Selected);
-		if (!this->ImguiSelectedActor)
-		{
-			this->SetSelectedComponent(nullptr);
-			return;
-		}
-
-		PSceneComponent* Root = this->ImguiSelectedActor->GetRootComponent();
-		PActorComponent* DefaultComp = Root;
-
-		// If root has exactly one child component, auto-select it so properties
-		// like Materials are immediately visible without an extra click.
-		if (Root)
-		{
-			TArray<PSceneComponent*> Children = Root->GetChildrenComponents();
-			if (Children.Num() == 1)
-			{
-				DefaultComp = Children[0];
-			}
-		}
-
-		this->SetSelectedComponent(DefaultComp);
-	}
-	void PWorld::SetSelectedComponent(PActorComponent* Selected)
-	{
-		this->ImguiSelectedComponent = Selected;
-		this->ImguiSelectedComponentHandle = MakeObjectHandle(Selected);
-	}
-
-	PActor* PWorld::GetSelectedActor() const
-	{
-		return ImguiSelectedActorHandle.IsValid() ? ResolveActor(ImguiSelectedActorHandle) : nullptr;
-	}
-
-	PActorComponent* PWorld::GetSelectedComponent() const
-	{
-		return ImguiSelectedComponentHandle.IsValid() ? ResolveComponent(ImguiSelectedComponentHandle) : nullptr;
-	}
-
-	void PWorld::ValidateSelection()
-	{
-		// Handles, not raw pointers, are the authority: a destroyed object leaves the
-		// registries at mark time, so resolution fails before its memory is freed.
-		if (ImguiSelectedActorHandle.IsValid())
-		{
-			PActor* ResolvedActor = ResolveActor(ImguiSelectedActorHandle);
-			if (!ResolvedActor)
-			{
-				SetSelectedActor(nullptr);
-			}
-			else
-			{
-				ImguiSelectedActor = ResolvedActor;
-			}
-		}
-		else if (ImguiSelectedActor)
-		{
-			SetSelectedActor(nullptr);
-		}
-
-		if (ImguiSelectedComponentHandle.IsValid())
-		{
-			PActorComponent* ResolvedComponent = ResolveComponent(ImguiSelectedComponentHandle);
-			if (!ResolvedComponent)
-			{
-				SetSelectedComponent(nullptr);
-			}
-			else
-			{
-				ImguiSelectedComponent = ResolvedComponent;
-			}
-		}
-		else if (ImguiSelectedComponent)
-		{
-			SetSelectedComponent(nullptr);
-		}
-	}
-
-	void PWorld::SetEditorCommandStack(FWorldEditorCommandStack* InCommands)
-	{
-		EditorCommandStack = InCommands;
-	}
-
-	FWorldEditorCommandStack* PWorld::GetEditorCommandStack() const
-	{
-		return EditorCommandStack;
-	}
 
 	PActor* PWorld::GetRootActor() const
 	{

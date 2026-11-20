@@ -14,6 +14,7 @@
 #include <PigeonBase/Object/Component/Character/MovementComponent.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Editor/WorldEditorCommand.h>
+#include <Editor/EditorWorldContext.h>
 
 namespace PigeonEngine
 {
@@ -37,7 +38,7 @@ namespace PigeonEngine
 
 		void GenerateActorNode(PActor* Actor, PWorld* World)
 		{
-			BOOL8 bSelectedActor	= World->GetSelectedActor() == Actor;
+			BOOL8 bSelectedActor	= EEditorWorldContext::GetSelectedActor(World) == Actor;
 			ImGuiTreeNodeFlags TreeNodeFlag = (Actor->GetAllActorsAttached().Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 
 			ImGui::PushID((void*)Actor);
@@ -59,9 +60,9 @@ namespace PigeonEngine
 				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PWorldActorDrag"))
 				{
 					PActor* DraggedActor = ((Payload->Data) && (Payload->DataSize == sizeof(PActor*))) ? (*static_cast<PActor* const*>(Payload->Data)) : nullptr;
-					if (DraggedActor && World->GetEditorCommandStack())
+					if (DraggedActor && EEditorWorldContext::GetEditorCommandStack(World))
 					{
-						PushReparentActorCommand(*World->GetEditorCommandStack(), *World, DraggedActor, Actor);
+						PushReparentActorCommand(*EEditorWorldContext::GetEditorCommandStack(World), *World, DraggedActor, Actor);
 					}
 				}
 				ImGui::EndDragDropTarget();
@@ -80,7 +81,7 @@ namespace PigeonEngine
 						memcpy(g_RenameBuffer, *ActorName, NameLength);
 					}
 				}
-				FWorldEditorCommandStack* Commands = World->GetEditorCommandStack();
+				FWorldEditorCommandStack* Commands = EEditorWorldContext::GetEditorCommandStack(World);
 				if (Commands && ImGui::MenuItem("Delete"))
 				{
 					PushDeleteActorCommand(*Commands, *World, Actor);
@@ -112,7 +113,7 @@ namespace PigeonEngine
 							{
 								POBJ_DEBUGNAME_SET(NewComponent, EString(ClassInfo.StableName.c_str()));
 								Actor->AddComponent(NewComponent);
-								World->SetSelectedComponent(NewComponent);
+								EEditorWorldContext::SetSelectedComponent(World, NewComponent);
 								PushAddComponentCommand(*Commands, *World, Actor, NewComponent);
 							}
 						}
@@ -157,13 +158,13 @@ namespace PigeonEngine
 
 			if (bSelected)
 			{
-				World->SetSelectedActor(Actor);
+				EEditorWorldContext::SetSelectedActor(World, Actor);
 			}
 		}
 
 		void GenerateComponentNode(PSceneComponent* Component, PWorld* World)
 		{
-			BOOL8 bSelectedComponent = World->GetSelectedComponent() == Component;
+			BOOL8 bSelectedComponent = EEditorWorldContext::GetSelectedComponent(World) == Component;
 			const TArray<PSceneComponent*> Children = Component->GetChildrenComponents();
 
 			const ImGuiTreeNodeFlags TreeNodeFlag = (Children.Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_DefaultOpen;
@@ -188,9 +189,9 @@ namespace PigeonEngine
 				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PSceneComponentDrag"))
 				{
 					PSceneComponent* DraggedComponent = ((Payload->Data) && (Payload->DataSize == sizeof(PSceneComponent*))) ? (*static_cast<PSceneComponent* const*>(Payload->Data)) : nullptr;
-					if (DraggedComponent && World->GetEditorCommandStack())
+					if (DraggedComponent && EEditorWorldContext::GetEditorCommandStack(World))
 					{
-						PushReparentComponentCommand(*World->GetEditorCommandStack(), *World, DraggedComponent, Component);
+						PushReparentComponentCommand(*EEditorWorldContext::GetEditorCommandStack(World), *World, DraggedComponent, Component);
 					}
 				}
 				ImGui::EndDragDropTarget();
@@ -209,7 +210,7 @@ namespace PigeonEngine
 
 			if (bSelected)
 			{
-				World->SetSelectedComponent(Component);
+				EEditorWorldContext::SetSelectedComponent(World, Component);
 			}
 		}
 	}
@@ -227,7 +228,7 @@ namespace PigeonEngine
 			{
 				return;
 			}
-			FWorldEditorCommandStack* Commands = InWorld->GetEditorCommandStack();
+			FWorldEditorCommandStack* Commands = EEditorWorldContext::GetEditorCommandStack(InWorld);
 
 			if (Commands)
 			{
@@ -261,7 +262,7 @@ namespace PigeonEngine
 							{
 								POBJ_DEBUGNAME_SET(NewActor, EString(ClassInfo.StableName.c_str()));
 								InWorld->AddActor(NewActor);
-								InWorld->SetSelectedActor(NewActor);
+								EEditorWorldContext::SetSelectedActor(InWorld, NewActor);
 								PushSpawnActorCommand(*Commands, *InWorld, NewActor);
 							}
 						}

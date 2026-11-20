@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include <Editor/WorldOutlinePanel.h>
 #include <Editor/WorldDetailsPanel.h>
+#include <Editor/EditorWorldContext.h>
 #endif
 
 namespace PigeonEngine
@@ -179,8 +180,7 @@ namespace PigeonEngine
 		case ELevelRequestType::NEW:
 			this->World->ClearLevelActors();
 #if ENGINE_EDITOR_ONLY
-			this->World->SetSelectedActor(nullptr);
-			this->World->SetSelectedComponent(nullptr);
+			EEditorWorldContext::ClearSelection(this->World);
 #endif
 			this->World->SetUpVector(Vector3::YVector());
 			this->World->SetGravitySettings(FWorldGravitySettings());

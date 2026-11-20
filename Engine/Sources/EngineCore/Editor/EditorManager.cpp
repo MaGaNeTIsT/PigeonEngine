@@ -14,6 +14,7 @@
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #include "PropertyEditor.h"
 #include "WorldDetailsPanel.h"
+#include "EditorWorldContext.h"
 #include <RenderProxy/RenderSingletonObject.h>
 #include "Navigation/NavigationManager.h"
 #include <imgui.h>
@@ -219,12 +220,12 @@ namespace PigeonEngine
 			);
 			if (ClickedActor)
 			{
-				World->SetSelectedActor(ClickedActor);
-				SelectedComponent = dynamic_cast<PSceneComponent*>(World->GetSelectedComponent());
+				EEditorWorldContext::SetSelectedActor(World, ClickedActor);
+				SelectedComponent = dynamic_cast<PSceneComponent*>(EEditorWorldContext::GetSelectedComponent(World));
 			}
 			else
 			{
-				World->SetSelectedActor(nullptr);
+				EEditorWorldContext::SetSelectedActor(World, nullptr);
 				SelectedComponent = nullptr;
 			}
 		}
@@ -279,7 +280,7 @@ namespace PigeonEngine
 		WorldCommands.GetContext().World = MenuWorld;
 		if (MenuWorld)
 		{
-			MenuWorld->SetEditorCommandStack(&WorldCommands);
+			EEditorWorldContext::SetEditorCommandStack(MenuWorld, &WorldCommands);
 		}
 		if (WorldManager->GetLevelRevision() != LastLevelRevision)
 		{
@@ -361,7 +362,7 @@ namespace PigeonEngine
 		// Selection is owned by the world. Mirror the resolved component for the gizmo, so a
 		// destroyed object reads as null immediately and the two selections cannot diverge.
 		PWorld* CurrentWorld = WorldManager->GetWorld();
-		SelectedComponent = CurrentWorld ? dynamic_cast<PSceneComponent*>(CurrentWorld->GetSelectedComponent()) : nullptr;
+		SelectedComponent = CurrentWorld ? dynamic_cast<PSceneComponent*>(EEditorWorldContext::GetSelectedComponent(CurrentWorld)) : nullptr;
 		if (!SelectedComponent)
 		{
 			bDragging = FALSE;
@@ -395,7 +396,7 @@ namespace PigeonEngine
 		// A Details/Outline action can destroy the selected component while those panels are
 		// drawing. Re-read the world selection before the gizmo and bounds passes use the
 		// pointer; the old snapshot would be freed memory.
-		SelectedComponent = CurrentWorld ? dynamic_cast<PSceneComponent*>(CurrentWorld->GetSelectedComponent()) : nullptr;
+		SelectedComponent = CurrentWorld ? dynamic_cast<PSceneComponent*>(EEditorWorldContext::GetSelectedComponent(CurrentWorld)) : nullptr;
 		if (!SelectedComponent)
 		{
 			bDragging = FALSE;

@@ -29,6 +29,7 @@
 #include <Reflection/Property.h>
 #include <Reflection/JsonArchive.h>
 #include <Editor/EditorCustomization.h>
+#include <Editor/EditorWorldContext.h>
 #include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
@@ -2116,6 +2117,50 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	static BOOL32 CheckEditorWorldContextSelection()
+	{
+		PSanityLevelWorld* World = new PSanityLevelWorld();
+		World->Init();
+
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityContextActor");
+		World->AddActor(Actor);
+		PSceneComponent* Child = new PSceneComponent();
+		POBJ_DEBUGNAME_SET(Child, "SanityContextChild");
+		Actor->AddComponent(Child);
+
+		// Selection round trip; selecting the actor auto-selects the root's single child.
+		EEditorWorldContext::SetSelectedActor(World, Actor);
+		const BOOL32 bActorSelected = (EEditorWorldContext::GetSelectedActor(World) == Actor) ? TRUE : FALSE;
+		const BOOL32 bChildAutoSelected = (EEditorWorldContext::GetSelectedComponent(World) == Child) ? TRUE : FALSE;
+
+		// Handle authority: destroying the selected object makes the reads resolve to null
+		// through the registry, with no runtime lifecycle hook involved.
+		World->DestroyActor(Actor);
+		World->FlushPendingDestroy();
+		const BOOL32 bClearedByResolution = ((EEditorWorldContext::GetSelectedActor(World) == nullptr) && (EEditorWorldContext::GetSelectedComponent(World) == nullptr)) ? TRUE : FALSE;
+
+		// The command stack the panels record into round trips per world.
+		FWorldEditorCommandStack Stack;
+		Stack.GetContext().World = World;
+		EEditorWorldContext::SetEditorCommandStack(World, &Stack);
+		const BOOL32 bStackRoundTrip = (EEditorWorldContext::GetEditorCommandStack(World) == &Stack) ? TRUE : FALSE;
+		EEditorWorldContext::SetEditorCommandStack(World, nullptr);
+
+		Stack.Clear();
+		World->Destroy();
+
+		const BOOL32 bOk = (bActorSelected && bChildAutoSelected && bClearedByResolution && bStackRoundTrip) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("editor world context detail: actor=")) + EString::FromInt(bActorSelected) +
+				EString(PE_TEXT(" childAuto=")) + EString::FromInt(bChildAutoSelected) +
+				EString(PE_TEXT(" clearedByResolution=")) + EString::FromInt(bClearedByResolution) +
+				EString(PE_TEXT(" stack=")) + EString::FromInt(bStackRoundTrip));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckWorldEditorCommands()
 	{
 #if ENGINE_DEBUG_MODE
@@ -3209,6 +3254,8 @@ namespace PigeonEngine
 		ReportSanityResult(EString(PE_TEXT("attachment reparent commands")), bAttachmentReparent);
 		const BOOL32 bEditorCustomization = CheckEditorCustomizationRegistry();
 		ReportSanityResult(EString(PE_TEXT("editor customization registry")), bEditorCustomization);
+		const BOOL32 bEditorWorldContext = CheckEditorWorldContextSelection();
+		ReportSanityResult(EString(PE_TEXT("editor world context selection")), bEditorWorldContext);
 		if (!bWorldEditorCommands)
 		{
 			FailedCount += 1u;
