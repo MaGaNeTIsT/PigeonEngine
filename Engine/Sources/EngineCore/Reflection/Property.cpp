@@ -10,6 +10,126 @@ namespace PigeonEngine
 			return Properties;
 		}
 
+		TArray<FStructDescriptor>& GetStructDescriptors()
+		{
+			static TArray<FStructDescriptor> Descriptors;
+			return Descriptors;
+		}
+
+		void ClonePropertyElement(const FPropertyElement& InElement, FPropertyElement& OutElement);
+
+		void ClonePropertyValueInternal(const FPropertyValue& InValue, FPropertyValue& OutValue)
+		{
+			OutValue = FPropertyValue();
+			static_cast<FPropertyElement&>(OutValue) = static_cast<const FPropertyElement&>(InValue);
+			if (InValue.ContainerValue)
+			{
+				OutValue.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
+				ClonePropertyValueInternal(*InValue.ContainerValue, *OutValue.ContainerValue);
+			}
+			OutValue.ElementType = InValue.ElementType;
+			OutValue.KeyType = InValue.KeyType;
+			OutValue.MapValueType = InValue.MapValueType;
+			OutValue.ElementEnumHash = InValue.ElementEnumHash;
+			OutValue.KeyEnumHash = InValue.KeyEnumHash;
+			OutValue.MapValueEnumHash = InValue.MapValueEnumHash;
+			OutValue.ElementStructHash = InValue.ElementStructHash;
+			OutValue.KeyStructHash = InValue.KeyStructHash;
+			OutValue.MapValueStructHash = InValue.MapValueStructHash;
+			OutValue.ElementShape = InValue.ElementShape ? TSharedPtr<FPropertyValue>(new FPropertyValue()) : nullptr;
+			if (OutValue.ElementShape)
+			{
+				ClonePropertyValueInternal(*InValue.ElementShape, *OutValue.ElementShape);
+			}
+			OutValue.KeyShape = InValue.KeyShape ? TSharedPtr<FPropertyValue>(new FPropertyValue()) : nullptr;
+			if (OutValue.KeyShape)
+			{
+				ClonePropertyValueInternal(*InValue.KeyShape, *OutValue.KeyShape);
+			}
+			OutValue.ValueShape = InValue.ValueShape ? TSharedPtr<FPropertyValue>(new FPropertyValue()) : nullptr;
+			if (OutValue.ValueShape)
+			{
+				ClonePropertyValueInternal(*InValue.ValueShape, *OutValue.ValueShape);
+			}
+			for (UINT32 Index = 0u, Num = InValue.ArrayValues.Num<UINT32>(); Index < Num; Index++)
+			{
+				FPropertyElement Element;
+				ClonePropertyElement(InValue.ArrayValues[Index], Element);
+				OutValue.ArrayValues.Add(Element);
+			}
+			for (UINT32 Index = 0u, Num = InValue.MapEntries.Num<UINT32>(); Index < Num; Index++)
+			{
+				FPropertyMapEntry Entry;
+				ClonePropertyElement(InValue.MapEntries[Index].Key, Entry.Key);
+				ClonePropertyElement(InValue.MapEntries[Index].Value, Entry.Value);
+				OutValue.MapEntries.Add(Entry);
+			}
+			for (UINT32 Index = 0u, Num = InValue.StructFields.Num<UINT32>(); Index < Num; Index++)
+			{
+				if (!InValue.StructFields[Index])
+				{
+					OutValue.StructFields.Add(nullptr);
+					continue;
+				}
+				TSharedPtr<FPropertyValue> Field(new FPropertyValue());
+				ClonePropertyValueInternal(*InValue.StructFields[Index], *Field);
+				OutValue.StructFields.Add(Field);
+			}
+		}
+
+		void ClonePropertyElement(const FPropertyElement& InElement, FPropertyElement& OutElement)
+		{
+			OutElement = InElement;
+			if (InElement.ContainerValue)
+			{
+				OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
+				ClonePropertyValueInternal(*InElement.ContainerValue, *OutElement.ContainerValue);
+			}
+		}
+	}
+
+	void ClonePropertyValue(const FPropertyValue& InValue, FPropertyValue& OutValue)
+	{
+		ClonePropertyValueInternal(InValue, OutValue);
+	}
+
+	void EStructPropertyRegistry::AddField(const size_t& InStructHash, const EString& InStructName, const FProperty& InField)
+	{
+		TArray<FStructDescriptor>& Descriptors = GetStructDescriptors();
+		for (UINT32 Index = 0u, Num = Descriptors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (Descriptors[Index].StructHash == InStructHash)
+			{
+				if (Descriptors[Index].Name.Length() == 0u)
+				{
+					Descriptors[Index].Name = InStructName;
+				}
+				Descriptors[Index].Fields.Add(InField);
+				return;
+			}
+		}
+		FStructDescriptor Descriptor;
+		Descriptor.Name = InStructName;
+		Descriptor.StructHash = InStructHash;
+		Descriptor.Fields.Add(InField);
+		Descriptors.Add(Descriptor);
+	}
+
+	const FStructDescriptor* EStructPropertyRegistry::Find(const size_t& InStructHash)
+	{
+		const TArray<FStructDescriptor>& Descriptors = GetStructDescriptors();
+		for (UINT32 Index = 0u, Num = Descriptors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (Descriptors[Index].StructHash == InStructHash)
+			{
+				return &Descriptors[Index];
+			}
+		}
+		return nullptr;
+	}
+
+	namespace
+	{
 		TMap<size_t, UINT32>& GetClassVersions()
 		{
 			static TMap<size_t, UINT32> Versions;

@@ -10,7 +10,7 @@ namespace PigeonEngine
 {
 
 	// Property behaviour flags. Serialization skips TRANSIENT and EDITOR_ONLY; the edit
-	// flags are consumed by the reflection-driven Details panel (Phase 3D).
+	// flags are consumed by the reflection-driven Details panel.
 	enum class EPropertyFlagsType : UINT32
 	{
 		NONE = 0u,
@@ -20,6 +20,9 @@ namespace PigeonEngine
 		// Editable in the Details panel but absent from the file. Used for a view onto data
 		// whose serialized form is a custom property (for example a mesh/skeleton pair).
 		EDITOR_ONLY = (1u << 3),
+		// Apply an edit when the widget releases it instead of once per frame. Used for
+		// values whose setter is expensive or has side effects, such as an animation rate.
+		COMMIT_ONLY = (1u << 4),
 	};
 
 	// What the value looks like to an editor. CUSTOM means the component's hand-written
@@ -44,6 +47,7 @@ namespace PigeonEngine
 		TRANSFORM,
 		ARRAY,
 		MAP,
+		STRUCT,
 		CUSTOM,
 	};
 
@@ -85,6 +89,8 @@ namespace PigeonEngine
 		// Enum registry key for an enum-shaped value; container properties also carry their
 		// registry keys separately for compatibility with existing callers.
 		size_t				EnumHash = 0u;
+		// Struct registry key for a STRUCT element.
+		size_t				StructHash = 0u;
 		// Set only for ARRAY / MAP elements. Shared because FPropertyElement is copied by
 		// value through TArray and undo values, while the nested tree is read-only payload.
 		TSharedPtr<FPropertyValue> ContainerValue;
@@ -112,6 +118,13 @@ namespace PigeonEngine
 		size_t ElementEnumHash = 0u;
 		size_t KeyEnumHash = 0u;
 		size_t MapValueEnumHash = 0u;
+		// Struct registry keys for struct-typed container elements.
+		size_t ElementStructHash = 0u;
+		size_t KeyStructHash = 0u;
+		size_t MapValueStructHash = 0u;
+		// Field values for a STRUCT value. Each field is itself a full FPropertyValue so
+		// nested structs and containers recurse through the same representation.
+		TArray<TSharedPtr<FPropertyValue>> StructFields;
 		// Container payloads; empty for scalar types.
 		TArray<FPropertyElement> ArrayValues;
 		TArray<FPropertyMapEntry> MapEntries;
@@ -145,6 +158,11 @@ namespace PigeonEngine
 		size_t ElementEnumHash = 0u;
 		size_t KeyEnumHash = 0u;
 		size_t MapValueEnumHash = 0u;
+		// Struct registry keys for struct-typed values and container elements.
+		size_t StructHash = 0u;
+		size_t ElementStructHash = 0u;
+		size_t KeyStructHash = 0u;
+		size_t MapValueStructHash = 0u;
 		// For STRING properties that name an asset: which asset family the picker lists.
 		// NONE means the regular text field is used.
 		EPropertyAssetType AssetType = EPropertyAssetType::NONE;
@@ -156,6 +174,25 @@ namespace PigeonEngine
 		TFunction<void(const void*, FPropertyValue&)> GetValue;
 		TFunction<void(void*, const FPropertyValue&)> SetValue;
 	};
+
+	// Editor metadata for one reflected struct. Fields reuse FProperty so nested structs,
+	// containers, enum names and asset pickers all use the same metadata shape.
+	struct FStructDescriptor
+	{
+		EString Name;
+		size_t StructHash = 0u;
+		TArray<FProperty> Fields;
+	};
+
+	class EStructPropertyRegistry final
+	{
+	public:
+		static void AddField(const size_t& InStructHash, const EString& InStructName, const FProperty& InField);
+		PE_NODISCARD static const FStructDescriptor* Find(const size_t& InStructHash);
+	};
+
+	// Copies a property value tree, including nested containers, struct fields and shapes.
+	void ClonePropertyValue(const FPropertyValue& InValue, FPropertyValue& OutValue);
 
 	/*
 	* Per-class property tables, keyed by the runtime class hash (typeid hash - never
@@ -357,6 +394,78 @@ namespace PigeonEngine
 		}
 	}
 
+	template <typename TValue>
+	size_t GetPropertyStructHash()
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		if constexpr (TPropertyIsArray<T>::value || TPropertyIsMap<T>::value)
+		{
+			return 0u;
+		}
+		else
+		{
+			const size_t StructHash = GetClassHashCode<T>();
+			return (EStructPropertyRegistry::Find(StructHash) != nullptr) ? StructHash : 0u;
+		}
+	}
+
+	template <typename TValue>
+	EPropertyValueType ResolvePropertyValueType()
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		const EPropertyValueType Type = GetPropertyValueType<T>();
+		if ((Type == EPropertyValueType::CUSTOM) && (GetPropertyStructHash<T>() != 0u))
+		{
+			return EPropertyValueType::STRUCT;
+		}
+		return Type;
+	}
+
+	template <typename TValue>
+	BOOL32 MakeStructFields(const TValue& InValue, const size_t InStructHash, FPropertyValue& OutValue)
+	{
+		const FStructDescriptor* Descriptor = EStructPropertyRegistry::Find(InStructHash);
+		if (!Descriptor)
+		{
+			return FALSE;
+		}
+		OutValue = FPropertyValue();
+		OutValue.Type = EPropertyValueType::STRUCT;
+		OutValue.StructHash = InStructHash;
+		for (UINT32 Index = 0u, Num = Descriptor->Fields.Num<UINT32>(); Index < Num; Index++)
+		{
+			const FProperty& Field = Descriptor->Fields[Index];
+			if (!Field.GetValue)
+			{
+				OutValue.StructFields.Add(nullptr);
+				continue;
+			}
+			TSharedPtr<FPropertyValue> FieldValue(new FPropertyValue());
+			Field.GetValue(&InValue, *FieldValue);
+			OutValue.StructFields.Add(FieldValue);
+		}
+		return TRUE;
+	}
+
+	template <typename TValue>
+	BOOL32 ReadStructFields(const FPropertyValue& InValue, TValue& OutValue)
+	{
+		const FStructDescriptor* Descriptor = EStructPropertyRegistry::Find(InValue.StructHash);
+		if (!Descriptor)
+		{
+			return FALSE;
+		}
+		for (UINT32 Index = 0u, Num = Descriptor->Fields.Num<UINT32>(); Index < Num; Index++)
+		{
+			const FProperty& Field = Descriptor->Fields[Index];
+			if ((Field.SetValue) && (Index < InValue.StructFields.Num<UINT32>()) && InValue.StructFields[Index])
+			{
+				Field.SetValue(&OutValue, *InValue.StructFields[Index]);
+			}
+		}
+		return TRUE;
+	}
+
 	// Builds the type-only shape of one value. The editor uses this to initialize a nested
 	// container that has no element to copy metadata from yet.
 	template <typename TValue>
@@ -364,13 +473,15 @@ namespace PigeonEngine
 	{
 		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
 		OutShape = FPropertyValue();
-		OutShape.Type = GetPropertyValueType<T>();
+		OutShape.Type = ResolvePropertyValueType<T>();
 		OutShape.EnumHash = GetPropertyEnumHash<T>();
+		OutShape.StructHash = GetPropertyStructHash<T>();
 		if constexpr (TPropertyIsArray<T>::value)
 		{
 			using ElementType = typename TPropertyIsArray<T>::ElementType;
-			OutShape.ElementType = GetPropertyValueType<ElementType>();
+			OutShape.ElementType = ResolvePropertyValueType<ElementType>();
 			OutShape.ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			OutShape.ElementStructHash = GetPropertyStructHash<ElementType>();
 			OutShape.ElementShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
 			MakePropertyShape<ElementType>(*OutShape.ElementShape);
 		}
@@ -378,14 +489,24 @@ namespace PigeonEngine
 		{
 			using KeyType = typename TPropertyIsMap<T>::KeyType;
 			using MapValueType = typename TPropertyIsMap<T>::ValueType;
-			OutShape.KeyType = GetPropertyValueType<KeyType>();
-			OutShape.MapValueType = GetPropertyValueType<MapValueType>();
+			OutShape.KeyType = ResolvePropertyValueType<KeyType>();
+			OutShape.MapValueType = ResolvePropertyValueType<MapValueType>();
 			OutShape.KeyEnumHash = GetPropertyEnumHash<KeyType>();
 			OutShape.MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			OutShape.KeyStructHash = GetPropertyStructHash<KeyType>();
+			OutShape.MapValueStructHash = GetPropertyStructHash<MapValueType>();
 			OutShape.KeyShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
 			MakePropertyShape<KeyType>(*OutShape.KeyShape);
 			OutShape.ValueShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
 			MakePropertyShape<MapValueType>(*OutShape.ValueShape);
+		}
+		else if constexpr (std::is_class_v<T>)
+		{
+			if (OutShape.Type == EPropertyValueType::STRUCT)
+			{
+				T DefaultValue{};
+				MakeStructFields(DefaultValue, OutShape.StructHash, OutShape);
+			}
 		}
 	}
 
@@ -399,8 +520,9 @@ namespace PigeonEngine
 			using ElementType = typename TPropertyIsArray<T>::ElementType;
 			OutElement.Type = EPropertyValueType::ARRAY;
 			OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
-			OutElement.ContainerValue->ElementType = GetPropertyValueType<ElementType>();
+			OutElement.ContainerValue->ElementType = ResolvePropertyValueType<ElementType>();
 			OutElement.ContainerValue->ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			OutElement.ContainerValue->ElementStructHash = GetPropertyStructHash<ElementType>();
 			OutElement.ContainerValue->ElementShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
 			MakePropertyShape<ElementType>(*OutElement.ContainerValue->ElementShape);
 			for (UINT32 Index = 0u, Num = InValue.Num<UINT32>(); Index < Num; Index++)
@@ -419,10 +541,12 @@ namespace PigeonEngine
 			using MapValueType = typename TPropertyIsMap<T>::ValueType;
 			OutElement.Type = EPropertyValueType::MAP;
 			OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
-			OutElement.ContainerValue->KeyType = GetPropertyValueType<KeyType>();
-			OutElement.ContainerValue->MapValueType = GetPropertyValueType<MapValueType>();
+			OutElement.ContainerValue->KeyType = ResolvePropertyValueType<KeyType>();
+			OutElement.ContainerValue->MapValueType = ResolvePropertyValueType<MapValueType>();
 			OutElement.ContainerValue->KeyEnumHash = GetPropertyEnumHash<KeyType>();
 			OutElement.ContainerValue->MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			OutElement.ContainerValue->KeyStructHash = GetPropertyStructHash<KeyType>();
+			OutElement.ContainerValue->MapValueStructHash = GetPropertyStructHash<MapValueType>();
 			OutElement.ContainerValue->KeyShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
 			MakePropertyShape<KeyType>(*OutElement.ContainerValue->KeyShape);
 			OutElement.ContainerValue->ValueShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
@@ -518,6 +642,15 @@ namespace PigeonEngine
 		}
 		else
 		{
+			const size_t StructHash = GetPropertyStructHash<T>();
+			if ((StructHash != 0u) && (EStructPropertyRegistry::Find(StructHash) != nullptr))
+			{
+				OutElement.Type = EPropertyValueType::STRUCT;
+				OutElement.StructHash = StructHash;
+				OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
+				MakeStructFields(InValue, StructHash, *OutElement.ContainerValue);
+				return TRUE;
+			}
 			OutElement.Type = EPropertyValueType::CUSTOM;
 			return FALSE;
 		}
@@ -633,7 +766,143 @@ namespace PigeonEngine
 		}
 		else
 		{
+			const size_t StructHash = GetPropertyStructHash<T>();
+			if ((StructHash != 0u) && (InElement.ContainerValue))
+			{
+				return ReadStructFields(*InElement.ContainerValue, OutValue);
+			}
 			return FALSE;
+		}
+	}
+
+	/*
+	* Root-value forms. Array/Map GetValue lambdas historically store their payload directly
+	* on FPropertyValue; struct fields use their own tree. These helpers keep both root and
+	* nested representations consistent for struct-aware property accessors.
+	*/
+	template <typename TValue>
+	BOOL32 MakePropertyValue(const TValue& InValue, FPropertyValue& OutValue)
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		OutValue = FPropertyValue();
+		if constexpr (TPropertyIsArray<T>::value)
+		{
+			using ElementType = typename TPropertyIsArray<T>::ElementType;
+			OutValue.Type = EPropertyValueType::ARRAY;
+			OutValue.ElementType = ResolvePropertyValueType<ElementType>();
+			OutValue.ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			OutValue.ElementStructHash = GetPropertyStructHash<ElementType>();
+			OutValue.ElementShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<ElementType>(*OutValue.ElementShape);
+			for (UINT32 Index = 0u, Num = InValue.Num<UINT32>(); Index < Num; Index++)
+			{
+				FPropertyElement Element;
+				if (MakePropertyElement(InValue[Index], Element))
+				{
+					OutValue.ArrayValues.Add(Element);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (TPropertyIsMap<T>::value)
+		{
+			using KeyType = typename TPropertyIsMap<T>::KeyType;
+			using MapValueType = typename TPropertyIsMap<T>::ValueType;
+			OutValue.Type = EPropertyValueType::MAP;
+			OutValue.KeyType = ResolvePropertyValueType<KeyType>();
+			OutValue.MapValueType = ResolvePropertyValueType<MapValueType>();
+			OutValue.KeyEnumHash = GetPropertyEnumHash<KeyType>();
+			OutValue.MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			OutValue.KeyStructHash = GetPropertyStructHash<KeyType>();
+			OutValue.MapValueStructHash = GetPropertyStructHash<MapValueType>();
+			OutValue.KeyShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<KeyType>(*OutValue.KeyShape);
+			OutValue.ValueShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
+			MakePropertyShape<MapValueType>(*OutValue.ValueShape);
+			for (typename T::TConstIterator It = InValue.Begin(); It != InValue.End(); ++It)
+			{
+				FPropertyMapEntry Entry;
+				if (MakePropertyElement(It->first, Entry.Key) && MakePropertyElement(It->second, Entry.Value))
+				{
+					OutValue.MapEntries.Add(Entry);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (std::is_class_v<T>)
+		{
+			const size_t StructHash = GetPropertyStructHash<T>();
+			if (StructHash != 0u)
+			{
+				return MakeStructFields(InValue, StructHash, OutValue);
+			}
+			FPropertyElement Element;
+			if (!MakePropertyElement(InValue, Element))
+			{
+				return FALSE;
+			}
+			static_cast<FPropertyElement&>(OutValue) = Element;
+			return TRUE;
+		}
+		else
+		{
+			FPropertyElement Element;
+			if (!MakePropertyElement(InValue, Element))
+			{
+				return FALSE;
+			}
+			static_cast<FPropertyElement&>(OutValue) = Element;
+			return TRUE;
+		}
+	}
+
+	template <typename TValue>
+	BOOL32 ReadPropertyValue(const FPropertyValue& InValue, TValue& OutValue)
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		if constexpr (TPropertyIsArray<T>::value)
+		{
+			using ElementType = typename TPropertyIsArray<T>::ElementType;
+			OutValue.Empty();
+			for (UINT32 Index = 0u, Num = InValue.ArrayValues.Num<UINT32>(); Index < Num; Index++)
+			{
+				ElementType Element = ElementType();
+				if (ReadPropertyElement(InValue.ArrayValues[Index], Element))
+				{
+					OutValue.Add(Element);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (TPropertyIsMap<T>::value)
+		{
+			using KeyType = typename TPropertyIsMap<T>::KeyType;
+			using MapValueType = typename TPropertyIsMap<T>::ValueType;
+			OutValue.Empty();
+			for (UINT32 Index = 0u, Num = InValue.MapEntries.Num<UINT32>(); Index < Num; Index++)
+			{
+				KeyType Key = KeyType();
+				MapValueType Value = MapValueType();
+				if (ReadPropertyElement(InValue.MapEntries[Index].Key, Key) &&
+					ReadPropertyElement(InValue.MapEntries[Index].Value, Value))
+				{
+					OutValue.Add(Key, Value);
+				}
+			}
+			return TRUE;
+		}
+		else if constexpr (std::is_class_v<T>)
+		{
+			const size_t StructHash = GetPropertyStructHash<T>();
+			if (StructHash != 0u)
+			{
+				return ReadStructFields(InValue, OutValue);
+			}
+			return ReadPropertyElement(InValue, OutValue);
+		}
+		else
+		{
+			return ReadPropertyElement(InValue, OutValue);
 		}
 	}
 
@@ -649,7 +918,7 @@ namespace PigeonEngine
 		EPropertyValueType ValueType = InValueType;
 		if (ValueType == EPropertyValueType::NONE)
 		{
-			ValueType = GetPropertyValueType<TValue>();
+			ValueType = ResolvePropertyValueType<TValue>();
 		}
 
 		FProperty Property;
@@ -657,11 +926,13 @@ namespace PigeonEngine
 		Property.Flags = InFlags;
 		Property.ValueType = ValueType;
 		Property.AssetType = InAssetType;
+		Property.StructHash = GetPropertyStructHash<T>();
 		if constexpr (TPropertyIsArray<T>::value)
 		{
 			using ElementType = typename TPropertyIsArray<T>::ElementType;
-			Property.ElementType = GetPropertyValueType<ElementType>();
+			Property.ElementType = ResolvePropertyValueType<ElementType>();
 			Property.ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			Property.ElementStructHash = GetPropertyStructHash<ElementType>();
 			if (Property.ElementType == EPropertyValueType::CUSTOM)
 			{
 				Property.ValueType = EPropertyValueType::CUSTOM;
@@ -671,10 +942,12 @@ namespace PigeonEngine
 		{
 			using KeyType = typename TPropertyIsMap<T>::KeyType;
 			using MapValueType = typename TPropertyIsMap<T>::ValueType;
-			Property.KeyType = GetPropertyValueType<KeyType>();
-			Property.MapValueType = GetPropertyValueType<MapValueType>();
+			Property.KeyType = ResolvePropertyValueType<KeyType>();
+			Property.MapValueType = ResolvePropertyValueType<MapValueType>();
 			Property.KeyEnumHash = GetPropertyEnumHash<KeyType>();
 			Property.MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			Property.KeyStructHash = GetPropertyStructHash<KeyType>();
+			Property.MapValueStructHash = GetPropertyStructHash<MapValueType>();
 			if ((Property.KeyType == EPropertyValueType::CUSTOM) || (Property.MapValueType == EPropertyValueType::CUSTOM))
 			{
 				Property.ValueType = EPropertyValueType::CUSTOM;
@@ -693,87 +966,37 @@ namespace PigeonEngine
 
 		if constexpr (TPropertyIsArray<T>::value)
 		{
-			using ElementType = typename TPropertyIsArray<T>::ElementType;
 			if (Property.ValueType == EPropertyValueType::ARRAY)
 			{
-				const size_t ElementEnumHash = Property.ElementEnumHash;
-				Property.GetValue = [InGetter, ElementEnumHash](const void* InContainer, FPropertyValue& OutValue) -> void
+				Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
 				{
-					OutValue = FPropertyValue();
-					OutValue.Type = EPropertyValueType::ARRAY;
-					OutValue.ElementType = GetPropertyValueType<ElementType>();
-					OutValue.ElementEnumHash = ElementEnumHash;
-					OutValue.ElementShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
-					MakePropertyShape<ElementType>(*OutValue.ElementShape);
-					const T& Values = InGetter(static_cast<const TClass*>(InContainer));
-					for (UINT32 Index = 0u, Num = Values.Num<UINT32>(); Index < Num; Index++)
-					{
-						FPropertyElement Element;
-						if (MakePropertyElement(Values[Index], Element))
-						{
-							OutValue.ArrayValues.Add(Element);
-						}
-					}
+					MakePropertyValue(InGetter(static_cast<const TClass*>(InContainer)), OutValue);
 				};
 				Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
 				{
 					T Values;
-					for (UINT32 Index = 0u, Num = InValue.ArrayValues.Num<UINT32>(); Index < Num; Index++)
+					if (ReadPropertyValue(InValue, Values))
 					{
-						ElementType Element = ElementType();
-						if (ReadPropertyElement(InValue.ArrayValues[Index], Element))
-						{
-							Values.Add(Element);
-						}
+						InSetter(static_cast<TClass*>(InContainer), Values);
 					}
-					InSetter(static_cast<TClass*>(InContainer), Values);
 				};
 			}
 		}
 		else if constexpr (TPropertyIsMap<T>::value)
 		{
-			using KeyType = typename TPropertyIsMap<T>::KeyType;
-			using MapValueType = typename TPropertyIsMap<T>::ValueType;
 			if (Property.ValueType == EPropertyValueType::MAP)
 			{
-				const size_t KeyEnumHash = Property.KeyEnumHash;
-				const size_t MapValueEnumHash = Property.MapValueEnumHash;
-				Property.GetValue = [InGetter, KeyEnumHash, MapValueEnumHash](const void* InContainer, FPropertyValue& OutValue) -> void
+				Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
 				{
-					OutValue = FPropertyValue();
-					OutValue.Type = EPropertyValueType::MAP;
-					OutValue.KeyType = GetPropertyValueType<KeyType>();
-					OutValue.MapValueType = GetPropertyValueType<MapValueType>();
-					OutValue.KeyEnumHash = KeyEnumHash;
-					OutValue.MapValueEnumHash = MapValueEnumHash;
-					OutValue.KeyShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
-					MakePropertyShape<KeyType>(*OutValue.KeyShape);
-					OutValue.ValueShape = TSharedPtr<FPropertyValue>(new FPropertyValue());
-					MakePropertyShape<MapValueType>(*OutValue.ValueShape);
-					const T& Values = InGetter(static_cast<const TClass*>(InContainer));
-					for (typename T::TConstIterator It = Values.Begin(); It != Values.End(); ++It)
-					{
-						FPropertyMapEntry Entry;
-						if (MakePropertyElement(It->first, Entry.Key) && MakePropertyElement(It->second, Entry.Value))
-						{
-							OutValue.MapEntries.Add(Entry);
-						}
-					}
+					MakePropertyValue(InGetter(static_cast<const TClass*>(InContainer)), OutValue);
 				};
 				Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
 				{
 					T Values;
-					for (UINT32 Index = 0u, Num = InValue.MapEntries.Num<UINT32>(); Index < Num; Index++)
+					if (ReadPropertyValue(InValue, Values))
 					{
-						KeyType Key = KeyType();
-						MapValueType Value = MapValueType();
-						if (ReadPropertyElement(InValue.MapEntries[Index].Key, Key) &&
-							ReadPropertyElement(InValue.MapEntries[Index].Value, Value))
-						{
-							Values.Add(Key, Value);
-						}
+						InSetter(static_cast<TClass*>(InContainer), Values);
 					}
-					InSetter(static_cast<TClass*>(InContainer), Values);
 				};
 			}
 		}
@@ -948,6 +1171,28 @@ namespace PigeonEngine
 				InSetter(static_cast<TClass*>(InContainer), InValue.TransformValue);
 			};
 		}
+		else if constexpr (std::is_class_v<T>)
+		{
+			if ((Property.ValueType == EPropertyValueType::STRUCT) && (Property.StructHash != 0u))
+			{
+				Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+				{
+					MakePropertyValue(InGetter(static_cast<const TClass*>(InContainer)), OutValue);
+				};
+				Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+				{
+					T Value;
+					if (ReadPropertyValue(InValue, Value))
+					{
+						InSetter(static_cast<TClass*>(InContainer), Value);
+					}
+				};
+			}
+			else
+			{
+				Property.ValueType = EPropertyValueType::CUSTOM;
+			}
+		}
 		else
 		{
 			Property.ValueType = EPropertyValueType::CUSTOM;
@@ -1013,6 +1258,242 @@ namespace PigeonEngine
 				InSetter(Object, Value);
 			}
 		};
+		EClassPropertyRegistry::AddProperty(InClassHash, Property);
+	}
+
+	template <typename TValue>
+	void FillStructFieldMetadata(FProperty& OutProperty)
+	{
+		using T = std::remove_cv_t<std::remove_reference_t<TValue>>;
+		OutProperty.ValueType = ResolvePropertyValueType<T>();
+		OutProperty.EnumHash = GetPropertyEnumHash<T>();
+		OutProperty.StructHash = GetPropertyStructHash<T>();
+		if constexpr (TPropertyIsArray<T>::value)
+		{
+			using ElementType = typename TPropertyIsArray<T>::ElementType;
+			OutProperty.ElementType = ResolvePropertyValueType<ElementType>();
+			OutProperty.ElementEnumHash = GetPropertyEnumHash<ElementType>();
+			OutProperty.ElementStructHash = GetPropertyStructHash<ElementType>();
+		}
+		else if constexpr (TPropertyIsMap<T>::value)
+		{
+			using KeyType = typename TPropertyIsMap<T>::KeyType;
+			using MapValueType = typename TPropertyIsMap<T>::ValueType;
+			OutProperty.KeyType = ResolvePropertyValueType<KeyType>();
+			OutProperty.MapValueType = ResolvePropertyValueType<MapValueType>();
+			OutProperty.KeyEnumHash = GetPropertyEnumHash<KeyType>();
+			OutProperty.MapValueEnumHash = GetPropertyEnumHash<MapValueType>();
+			OutProperty.KeyStructHash = GetPropertyStructHash<KeyType>();
+			OutProperty.MapValueStructHash = GetPropertyStructHash<MapValueType>();
+		}
+	}
+
+	template <typename TStruct, typename TValue>
+	void AddStructProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		const TFunction<TValue(const TStruct*)>& InGetter,
+		const TFunction<void(TStruct*, const TValue&)>& InSetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		FProperty Field;
+		Field.Name = InName;
+		Field.Flags = InFlags;
+		FillStructFieldMetadata<TValue>(Field);
+		if (Field.ValueType != EPropertyValueType::CUSTOM)
+		{
+			Field.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				MakePropertyValue(InGetter(static_cast<const TStruct*>(InContainer)), OutValue);
+			};
+			Field.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				TValue Value;
+				if (ReadPropertyValue(InValue, Value))
+				{
+					InSetter(static_cast<TStruct*>(InContainer), Value);
+				}
+			};
+		}
+		EStructPropertyRegistry::AddField(InStructHash, InStructName, Field);
+	}
+
+	template <typename TStruct, typename TValue>
+	void AddStructProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		TValue TStruct::* InMember,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		AddStructProperty<TStruct, TValue>(InStructHash, InStructName, InName,
+			[InMember](const TStruct* InObject) -> TValue { return InObject->*InMember; },
+			[InMember](TStruct* InObject, const TValue& InValue) -> void { InObject->*InMember = InValue; },
+			InFlags);
+	}
+
+	// BOOL32 is an alias of INT32 at the C++ level, so bool fields register through this
+	// overload and the editor knows to draw a checkbox.
+	template <typename TStruct>
+	void AddStructBoolProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		const TFunction<BOOL32(const TStruct*)>& InGetter,
+		const TFunction<void(TStruct*, const BOOL32&)>& InSetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		FProperty Field;
+		Field.Name = InName;
+		Field.Flags = InFlags;
+		FillStructFieldMetadata<BOOL32>(Field);
+		Field.ValueType = EPropertyValueType::BOOL;
+		Field.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+		{
+			MakePropertyValue(InGetter(static_cast<const TStruct*>(InContainer)), OutValue);
+		};
+		Field.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+		{
+			BOOL32 Value = FALSE;
+			if (ReadPropertyValue(InValue, Value))
+			{
+				InSetter(static_cast<TStruct*>(InContainer), Value);
+			}
+		};
+		EStructPropertyRegistry::AddField(InStructHash, InStructName, Field);
+	}
+
+	template <typename TStruct>
+	void AddStructBoolProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		BOOL32 TStruct::* InMember,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		AddStructBoolProperty<TStruct>(InStructHash, InStructName, InName,
+			[InMember](const TStruct* InObject) -> BOOL32 { return InObject->*InMember; },
+			[InMember](TStruct* InObject, const BOOL32& InValue) -> void { InObject->*InMember = InValue; },
+			InFlags);
+	}
+
+	template <typename TStruct, typename TEnum>
+	void AddStructEnumProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		const TFunction<TEnum(const TStruct*)>& InGetter,
+		const TFunction<void(TStruct*, const TEnum&)>& InSetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		static_assert(std::is_enum_v<TEnum>, "AddStructEnumProperty requires an enum value.");
+		AddStructProperty<TStruct, TEnum>(InStructHash, InStructName, InName, InGetter, InSetter, InFlags);
+	}
+
+	template <typename TStruct, typename TEnum>
+	void AddStructEnumProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		TEnum TStruct::* InMember,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		AddStructEnumProperty<TStruct, TEnum>(InStructHash, InStructName, InName,
+			[InMember](const TStruct* InObject) -> TEnum { return InObject->*InMember; },
+			[InMember](TStruct* InObject, const TEnum& InValue) -> void { InObject->*InMember = InValue; },
+			InFlags);
+	}
+
+	template <typename TStruct>
+	void AddStructAssetProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		const TFunction<EString(const TStruct*)>& InGetter,
+		const TFunction<void(TStruct*, const EString&)>& InSetter,
+		const EPropertyAssetType& InAssetType,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		FProperty Field;
+		Field.Name = InName;
+		Field.Flags = InFlags;
+		Field.ValueType = EPropertyValueType::STRING;
+		Field.AssetType = InAssetType;
+		Field.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+		{
+			MakePropertyValue(InGetter(static_cast<const TStruct*>(InContainer)), OutValue);
+		};
+		Field.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+		{
+			EString Value;
+			if (ReadPropertyValue(InValue, Value))
+			{
+				InSetter(static_cast<TStruct*>(InContainer), Value);
+			}
+		};
+		EStructPropertyRegistry::AddField(InStructHash, InStructName, Field);
+	}
+
+	template <typename TStruct>
+	void AddStructAssetProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		EString TStruct::* InMember,
+		const EPropertyAssetType& InAssetType,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE))
+	{
+		AddStructAssetProperty<TStruct>(InStructHash, InStructName, InName,
+			[InMember](const TStruct* InObject) -> EString { return InObject->*InMember; },
+			[InMember](TStruct* InObject, const EString& InValue) -> void { InObject->*InMember = InValue; },
+			InAssetType, InFlags);
+	}
+
+	template <typename TStruct, typename TValue>
+	void AddStructReadOnlyProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		const TFunction<TValue(const TStruct*)>& InGetter,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::VISIBLE_ANYWHERE))
+	{
+		FProperty Field;
+		Field.Name = InName;
+		Field.Flags = InFlags;
+		FillStructFieldMetadata<TValue>(Field);
+		if (Field.ValueType != EPropertyValueType::CUSTOM)
+		{
+			Field.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				MakePropertyValue(InGetter(static_cast<const TStruct*>(InContainer)), OutValue);
+			};
+		}
+		EStructPropertyRegistry::AddField(InStructHash, InStructName, Field);
+	}
+
+	template <typename TStruct, typename TValue>
+	void AddStructReadOnlyProperty(const size_t& InStructHash, const EString& InStructName, const CHAR* InName,
+		TValue TStruct::* InMember,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::VISIBLE_ANYWHERE))
+	{
+		AddStructReadOnlyProperty<TStruct, TValue>(InStructHash, InStructName, InName,
+			[InMember](const TStruct* InObject) -> TValue { return InObject->*InMember; },
+			InFlags);
+	}
+
+	// Register a property with a hand-written serializer while still exposing a reflected
+	// value tree to the editor. The serializer stays authoritative for the file layout;
+	// fields are read and written through the same accessors as the Details panel.
+	template <typename TClass, typename TValue>
+	void AddClassPropertyStructCustom(const size_t& InClassHash, const CHAR* InName,
+		const TFunction<TValue(const TClass*)>& InGetter,
+		const TFunction<void(TClass*, const TValue&)>& InSetter,
+		const TFunction<void(EArchive&, const CHAR*, TValue&)>& InSerializeValue,
+		const UINT32& InFlags = static_cast<UINT32>(EPropertyFlagsType::NONE))
+	{
+		FProperty Property;
+		Property.Name = InName;
+		Property.Flags = InFlags;
+		FillStructFieldMetadata<TValue>(Property);
+		Property.Serialize = [InName = EString(InName), InGetter, InSetter, InSerializeValue](EArchive& InArchive, void* InContainer) -> void
+		{
+			TClass* Object = static_cast<TClass*>(InContainer);
+			TValue Value = InGetter(Object);
+			InSerializeValue(InArchive, *InName, Value);
+			if (!InArchive.IsSaving())
+			{
+				InSetter(Object, Value);
+			}
+		};
+		if (Property.ValueType != EPropertyValueType::CUSTOM)
+		{
+			Property.GetValue = [InGetter](const void* InContainer, FPropertyValue& OutValue) -> void
+			{
+				MakePropertyValue(InGetter(static_cast<const TClass*>(InContainer)), OutValue);
+			};
+			Property.SetValue = [InSetter](void* InContainer, const FPropertyValue& InValue) -> void
+			{
+				TValue Value;
+				if (ReadPropertyValue(InValue, Value))
+				{
+					InSetter(static_cast<TClass*>(InContainer), Value);
+				}
+			};
+		}
 		EClassPropertyRegistry::AddProperty(InClassHash, Property);
 	}
 
