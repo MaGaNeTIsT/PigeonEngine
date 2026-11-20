@@ -99,6 +99,10 @@ namespace PigeonEngine
 		BOOL32	LoadNavMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ENavMeshAsset*& OutAsset);
 		BOOL32	RequireLoadNavMeshAsset(const EString& InLoadPath, const EString& InLoadName
 			, const ENavMeshAsset*& OutAsset, EAssetLoadCompleteType InOnLoadComplete = nullptr);
+		// Reads the current bytes from disk and swaps the cached object. Running components can
+		// still hold the old object, so it is retired instead of released immediately.
+		BOOL32	ReloadNavMeshAsset(const EString& InLoadPath, const EString& InLoadName
+			, const ENavMeshAsset*& OutAsset, EString& OutError);
 		// Writes a new asset and publishes it. Refuses to overwrite, so the caller has to delete or
 		// rename first; that is what keeps an accidental bake from destroying the shipped mesh.
 		BOOL32	CreateNavMeshAsset(const EString& InAssetName, const FNavMeshAssetSettings& InSettings

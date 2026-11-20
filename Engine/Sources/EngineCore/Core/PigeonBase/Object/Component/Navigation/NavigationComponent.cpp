@@ -87,8 +87,15 @@ namespace PigeonEngine
 		if (LastBuildStats.PolygonCount > 0u)
 		{
 			ImGui::Text("Polygons: %u  Tiles: %u", LastBuildStats.PolygonCount, LastBuildStats.TileCount);
-			ImGui::Text("Triangles: %u (%u walkable)", LastBuildStats.TriangleCount, LastBuildStats.WalkableTriangleCount);
-			ImGui::Text("Bake: %.2f ms", LastBuildStats.Milliseconds);
+			if ((LastBuildStats.TriangleCount > 0u) || (LastBuildStats.Milliseconds > 0.0f))
+			{
+				ImGui::Text("Triangles: %u (%u walkable)", LastBuildStats.TriangleCount, LastBuildStats.WalkableTriangleCount);
+				ImGui::Text("Bake: %.2f ms", LastBuildStats.Milliseconds);
+			}
+			else
+			{
+				ImGui::TextDisabled("Imported from navmesh asset.");
+			}
 		}
 		else
 		{

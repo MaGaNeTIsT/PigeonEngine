@@ -243,19 +243,27 @@ namespace PigeonEngine
 		NavMeshAssetName = InAssetName;
 		bAssetRequestIssued = FALSE;
 		bAssetLoadFailed = FALSE;
+		const UINT32 RequestGeneration = ++AssetRequestGeneration;
 		if (InAssetName.Length() <= 0u)
 		{
 			return;
 		}
 
+		const EString AssetName = InAssetName;
 		const EString AssetPath(EBaseSettings::ENGINE_NAV_MESH_PATH);
-		const EString FullPathName = MakeAssetFullPathName(AssetPath, InAssetName);
+		const EString FullPathName = MakeAssetFullPathName(AssetPath, AssetName);
 		const EString RequestKey = MakeAssetLoadRequestKey(PE_TEXT("NavMesh"), FullPathName);
 		PNavMeshComponent* Component = this;
-		TFunction<BOOL32()> Step = [Component, AssetPath, FullPathName, RequestKey]() -> BOOL32
+		TFunction<BOOL32()> Step = [Component, AssetPath, AssetName, FullPathName, RequestKey, RequestGeneration]() -> BOOL32
 		{
+			// A newer request owns the component state now. The old step must not assign an
+			// asset, mark a failure, or consume the new request's bAssetRequestIssued flag.
+			if (Component->AssetRequestGeneration != RequestGeneration)
+			{
+				return TRUE;
+			}
 			// Cache only, no disk access: this runs every frame until the request settles.
-			const ENavMeshAsset* CachedAsset = ENavMeshAssetManager::GetManagerSingleton()->FindNavMeshAsset(AssetPath, Component->NavMeshAssetName);
+			const ENavMeshAsset* CachedAsset = ENavMeshAssetManager::GetManagerSingleton()->FindNavMeshAsset(AssetPath, AssetName);
 			if (!!CachedAsset)
 			{
 				Component->SetNavMeshAsset(CachedAsset);
@@ -267,12 +275,20 @@ namespace PigeonEngine
 			{
 				Component->bAssetRequestIssued = TRUE;
 				const ENavMeshAsset* LoadedAsset = nullptr;
-				ENavMeshAssetManager::GetManagerSingleton()->RequireLoadNavMeshAsset(AssetPath, Component->NavMeshAssetName, LoadedAsset);
+				if (ENavMeshAssetManager::GetManagerSingleton()->RequireLoadNavMeshAsset(AssetPath, AssetName, LoadedAsset) && LoadedAsset)
+				{
+					Component->SetNavMeshAsset(LoadedAsset);
+					return TRUE;
+				}
 				return FALSE;
 			}
 			if (EAssetLoadManager::GetManagerSingleton()->IsRequestPending(RequestKey))
 			{
 				return FALSE;
+			}
+			if (Component->AssetRequestGeneration != RequestGeneration)
+			{
+				return TRUE;
 			}
 			// The request finished without producing an asset: the file is missing or was rejected.
 			// Report it once and let the bake path take over.
@@ -294,6 +310,7 @@ namespace PigeonEngine
 		NavMeshAssetName = EString();
 		bAssetRequestIssued = FALSE;
 		bAssetLoadFailed = FALSE;
+		AssetRequestGeneration++;
 		SetNavMeshAsset(nullptr);
 	}
 
@@ -415,6 +432,10 @@ namespace PigeonEngine
 		OutStats.PolygonCount = AssetSettings.PolygonCount;
 		OutStats.TileCount = AssetSettings.TileCount;
 		PublishProvider(Provider, OutStats);
+		PE_LOG_LOG(EString(PE_TEXT("Navigation: imported navmesh asset '")) + NavMeshAsset->GetAssetFullPathName()
+			+ EString(PE_TEXT("' (")) + EString::FromInt(AssetSettings.PolygonCount)
+			+ EString(PE_TEXT(" polygons, ")) + EString::FromInt(AssetSettings.TileCount)
+			+ EString(PE_TEXT(" tiles).")));
 		return TRUE;
 	}
 
@@ -588,6 +609,39 @@ namespace PigeonEngine
 		return Provider;
 	}
 
+	BOOL32 PNavMeshComponent::ReloadNavMeshAsset(EString& OutError)
+	{
+		OutError = EString();
+		if (NavMeshAssetName.Length() <= 0u)
+		{
+			OutError = EString(PE_TEXT("No navmesh asset name is assigned."));
+			return FALSE;
+		}
+
+		AssetRequestGeneration++;
+		bAssetRequestIssued = FALSE;
+		const ENavMeshAsset* ReloadedAsset = nullptr;
+		if (!ENavMeshAssetManager::GetManagerSingleton()->ReloadNavMeshAsset(
+			EString(EBaseSettings::ENGINE_NAV_MESH_PATH), NavMeshAssetName, ReloadedAsset, OutError))
+		{
+			bAssetLoadFailed = TRUE;
+			return FALSE;
+		}
+
+		bAssetLoadFailed = FALSE;
+		SetNavMeshAsset(ReloadedAsset);
+
+		ENavigationBuildStats Stats;
+		if (!BuildFromAsset(Stats))
+		{
+			bHasBuilt = FALSE;
+			OutError = EString(PE_TEXT("Reloaded navmesh asset has no usable data; the world bake will run instead."));
+			return FALSE;
+		}
+		bHasBuilt = TRUE;
+		return TRUE;
+	}
+
 	BOOL32 PNavMeshComponent::SaveBakeAsAsset(const EString& InAssetName, EString& OutError)
 	{
 		OutError = EString();
@@ -653,6 +707,22 @@ namespace PigeonEngine
 		}
 
 		ImGui::TextDisabled("Build settings are editable in the Details grid above.");
+		if ((!!NavMeshAsset) && (NavMeshAsset->GetAssetName() == NavMeshAssetName))
+		{
+			ImGui::TextDisabled("Asset loaded: %s", *NavMeshAssetName);
+		}
+		else if (bAssetLoadFailed)
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Asset '%s' failed to load; using the world bake.", *NavMeshAssetName);
+		}
+		else if (NavMeshAssetName.Length() > 0u)
+		{
+			ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "Loading asset '%s'...", *NavMeshAssetName);
+		}
+		else
+		{
+			ImGui::TextDisabled("No navmesh asset assigned; using the world bake.");
+		}
 		ImGui::Separator();
 		const ENavigationBuildStateType BuildState = ENavigationManager::GetManagerSingleton()->GetBuildState(GetUniqueID());
 		if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
@@ -666,6 +736,25 @@ namespace PigeonEngine
 		if (ImGui::Button("Rebuild From World"))
 		{
 			RequestBuildNavigation();
+		}
+		ImGui::SameLine();
+		const BOOL32 bCanReload = (NavMeshAssetName.Length() > 0u) ? TRUE : FALSE;
+		if (!bCanReload)
+		{
+			ImGui::BeginDisabled();
+		}
+		if (ImGui::Button("Reload Asset"))
+		{
+			LastAssetError = EString();
+			EString ReloadError;
+			if (!ReloadNavMeshAsset(ReloadError))
+			{
+				LastAssetError = ReloadError;
+			}
+		}
+		if (!bCanReload)
+		{
+			ImGui::EndDisabled();
 		}
 
 		ImGui::InputText("New Asset Name", AssetNameBuffer, sizeof(AssetNameBuffer));

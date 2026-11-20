@@ -437,6 +437,63 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
+	BOOL32 ENavMeshAssetManager::ReloadNavMeshAsset(const EString& InLoadPath, const EString& InLoadName
+		, const ENavMeshAsset*& OutAsset, EString& OutError)
+	{
+		OutAsset = nullptr;
+		OutError = EString();
+		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
+
+		EString LoadError;
+		ENavMeshData* LoadedResource = LoadNavMeshResource(InLoadPath, InLoadName, LoadError);
+		if ((!LoadedResource) || (!LoadedResource->IsResourceValid()))
+		{
+			delete LoadedResource;
+			OutError = (LoadError.Length() > 0u)
+				? LoadError
+				: (EString(PE_TEXT("Failed to load navigation mesh asset from disk: ")) + FullPathName);
+			return FALSE;
+		}
+
+		ENavMeshAsset* FreshAsset = new ENavMeshAsset(InLoadPath, InLoadName
+#if ENGINE_EDITOR_ONLY
+			, InLoadName
+#endif
+		);
+		if (!(FreshAsset->StorageResourceInternal([LoadedResource]() -> ENavMeshData*
+			{
+				return LoadedResource;
+			})))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to build reloaded navigation mesh asset: ")) + FullPathName;
+			return FALSE;
+		}
+		if (!(FreshAsset->InitResource()))
+		{
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Reloaded navigation mesh asset has no valid resource: ")) + FullPathName;
+			return FALSE;
+		}
+
+		// Swap only after the fresh object is complete. The old object leaves the cache but
+		// stays alive until shutdown because a component or provider may still reference it.
+		ENavMeshAsset* OldAsset = NavMeshAssetManager.Detach(FullPathName);
+		if (NavMeshAssetManager.Add(FullPathName, FreshAsset, FALSE) == 0u)
+		{
+			if (OldAsset && (NavMeshAssetManager.Add(FullPathName, OldAsset, FALSE) == 0u))
+			{
+				NavMeshAssetManager.RetireDetached(OldAsset);
+			}
+			delete FreshAsset;
+			OutError = EString(PE_TEXT("Failed to publish reloaded navigation mesh asset: ")) + FullPathName;
+			return FALSE;
+		}
+		NavMeshAssetManager.RetireDetached(OldAsset);
+		OutAsset = FreshAsset;
+		return TRUE;
+	}
+
 	BOOL32 ENavMeshAssetManager::CreateNavMeshAsset(const EString& InAssetName, const FNavMeshAssetSettings& InSettings
 		, const TArray<UINT8>& InBlob, const EString& InSavePath
 		, const ENavMeshAsset*& OutAsset, EString& OutError)
@@ -471,10 +528,15 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
+		// The file may have just replaced a deleted asset with the same name. Reload from disk
+		// instead of Load, which would hand back the old cached object.
 		const ENavMeshAsset* LoadedAsset = nullptr;
-		if ((!LoadNavMeshAsset(InSavePath, InAssetName, LoadedAsset)) || (!LoadedAsset))
+		EString ReloadError;
+		if ((!ReloadNavMeshAsset(InSavePath, InAssetName, LoadedAsset, ReloadError)) || (!LoadedAsset))
 		{
-			OutError = EString(PE_TEXT("Saved navigation mesh asset could not be loaded back: ")) + FullPathName;
+			OutError = (ReloadError.Length() > 0u)
+				? ReloadError
+				: (EString(PE_TEXT("Saved navigation mesh asset could not be loaded back: ")) + FullPathName);
 			return FALSE;
 		}
 		OutAsset = LoadedAsset;

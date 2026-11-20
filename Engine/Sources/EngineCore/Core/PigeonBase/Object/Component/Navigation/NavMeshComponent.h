@@ -103,6 +103,8 @@ namespace PigeonEngine
 		BOOL32					bAssetRequestIssued = FALSE;
 		// Set once a requested asset failed to load, so the component stops waiting for it.
 		BOOL32					bAssetLoadFailed = FALSE;
+		// Drops deferred steps from an older request when the asset name changes or reloads.
+		UINT32					AssetRequestGeneration = 0u;
 		// Set when the last queued bake reported failure, so the retry policy can react without
 		// re-requesting blindly.
 		BOOL32					bBakeFailed = FALSE;
@@ -117,6 +119,9 @@ namespace PigeonEngine
 		// an explicit editor action and has to publish exactly the bytes the file holds, so it does
 		// not go through the worker.
 		BOOL32						SaveBakeAsAsset(const EString& InAssetName, EString& OutError);
+		// Re-reads the current asset from disk and publishes it immediately. Used by the
+		// Details panel after an external bake/replace, without restarting the editor.
+		BOOL32						ReloadNavMeshAsset(EString& OutError);
 		ERecastNavigationProvider*	BakeProviderSynchronously(ENavigationBuildStats& OutStats);
 
 	private:
