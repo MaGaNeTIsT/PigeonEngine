@@ -772,7 +772,30 @@ namespace PigeonEngine
 		ImGui::PushID((void*)this);
 		BOOL8 bTreeNodeExpand	= ImGui::TreeNodeEx("##node", TreeNodeFlag);
 		ImGui::SameLine();
-		BOOL8 bSelected			= ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
+		BOOL8 bSelected		= ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
+
+		// Hierarchy editing: dragging this row carries the actor, dropping a dragged actor
+		// here re-parents it below this one (KEEP_WORLD, undoable through the command stack).
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+		{
+			PActor* DraggedActor = this;
+			ImGui::TextUnformatted(*(POBJ_DEBUGNAME_GET(this)));
+			ImGui::SetDragDropPayload("PWorldActorDrag", &DraggedActor, sizeof(PActor*));
+			ImGui::EndDragDropSource();
+		}
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PWorldActorDrag"))
+			{
+				PActor* DraggedActor = ((Payload->Data) && (Payload->DataSize == sizeof(PActor*))) ? (*static_cast<PActor* const*>(Payload->Data)) : nullptr;
+				PWorld* OwnerWorld = GetWorld();
+				if (DraggedActor && OwnerWorld && OwnerWorld->GetEditorCommandStack())
+				{
+					PushReparentActorCommand(*OwnerWorld->GetEditorCommandStack(), *OwnerWorld, DraggedActor, this);
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
 
 		if (ImGui::BeginPopupContextItem("##ActorContext"))
 		{
@@ -892,6 +915,20 @@ namespace PigeonEngine
 		if(RootComponent)
 		{
 			BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_DefaultOpen);
+			// Dropping a component on the header re-homes it directly under this actor's root.
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PSceneComponentDrag"))
+				{
+					PSceneComponent* DraggedComponent = ((Payload->Data) && (Payload->DataSize == sizeof(PSceneComponent*))) ? (*static_cast<PSceneComponent* const*>(Payload->Data)) : nullptr;
+					PWorld* OwnerWorld = GetWorld();
+					if (DraggedComponent && OwnerWorld && OwnerWorld->GetEditorCommandStack())
+					{
+						PushReparentComponentCommand(*OwnerWorld->GetEditorCommandStack(), *OwnerWorld, DraggedComponent, RootComponent);
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
 			if (bTreeNodeExpand)
 			{
 				RootComponent->GenerateComponentOutline(WorldCurrentSelectedComponent);

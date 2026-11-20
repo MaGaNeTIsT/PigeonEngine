@@ -1918,6 +1918,173 @@ namespace PigeonEngine
 	// Command stack end to end on a disposable world: spawn/undo/redo, add/delete component,
 	// a property edit and the handle remap that lets an older property command address a
 	// component recreated by a structural undo.
+	static BOOL32 CheckWorldAttachmentReparent()
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		PSanityLevelWorld* World = new PSanityLevelWorld();
+		World->Init();
+		FWorldEditorCommandStack Stack;
+		Stack.GetContext().World = World;
+
+		// Three top-level actors. The first added actor's parent is the world root, which
+		// is exactly what the editor's detach drop zone targets.
+		PActor* ActorA = new PActor();
+		POBJ_DEBUGNAME_SET(ActorA, "SanityReparentA");
+		ActorA->SetActorLocation(Vector3(-40.f, 10.f, 25.f));
+		ActorA->SetActorRotation(MakeQuaternion(Euler(20.f, 35.f, -10.f)));
+		World->AddActor(ActorA);
+		PActor* WorldRoot = ActorA->GetAttachedParentActor();
+		const BOOL32 bWorldRootValid = (WorldRoot != nullptr) ? TRUE : FALSE;
+
+		PActor* ActorB = new PActor();
+		POBJ_DEBUGNAME_SET(ActorB, "SanityReparentB");
+		ActorB->SetActorLocation(Vector3(100.f, 50.f, 0.f));
+		World->AddActor(ActorB);
+
+		PActor* ActorC = new PActor();
+		POBJ_DEBUGNAME_SET(ActorC, "SanityReparentC");
+		ActorC->SetActorLocation(Vector3(0.f, -60.f, 40.f));
+		World->AddActor(ActorC);
+
+		const Vector3 BWorldBefore = ActorB->GetActorWorldLocation();
+		const ETransform BLocalBefore = ActorB->GetActorTransform();
+
+		// Actor reparent under a rotated host: KEEP_WORLD must hold the world transform.
+		const BOOL32 bAttachPushed = PushReparentActorCommand(Stack, *World, ActorB, ActorA);
+		const BOOL32 bAttachParent = (ActorB->GetAttachedParentActor() == ActorA) ? TRUE : FALSE;
+		const BOOL32 bAttachWorldKept = IsVectorNearlyEqual(ActorB->GetActorWorldLocation(), BWorldBefore, 1.0e-3f);
+
+		// Re-parenting onto the current parent is a no-op and must not enter the history.
+		const UINT64 RevisionBeforeNoop = Stack.GetHistoryRevision();
+		const BOOL32 bNoopRefused = (!PushReparentActorCommand(Stack, *World, ActorB, ActorA)) ? TRUE : FALSE;
+		const BOOL32 bNoopRevision = (Stack.GetHistoryRevision() == RevisionBeforeNoop) ? TRUE : FALSE;
+
+		// Attaching an ancestor below its own descendant is refused without a command.
+		const BOOL32 bCycleRefused = (!PushReparentActorCommand(Stack, *World, ActorA, ActorB)) ? TRUE : FALSE;
+
+		// Component reparent inside A: the leaf moves under the host, KEEP_WORLD holds it.
+		PSceneComponent* HostComponent = new PSceneComponent();
+		POBJ_DEBUGNAME_SET(HostComponent, "SanityReparentHost");
+		ActorA->AddComponent(HostComponent);
+		HostComponent->SetComponentLocation(Vector3(0.f, 0.f, 10.f));
+
+		PSceneComponent* LeafComponent = new PSceneComponent();
+		POBJ_DEBUGNAME_SET(LeafComponent, "SanityReparentLeaf");
+		ActorA->AddComponent(LeafComponent);
+		LeafComponent->SetComponentLocation(Vector3(30.f, 0.f, 0.f));
+
+		const Vector3 LeafWorldBefore = LeafComponent->GetComponentWorldLocation();
+		const ETransform LeafLocalBefore = LeafComponent->GetTransform();
+
+		const BOOL32 bComponentPushed = PushReparentComponentCommand(Stack, *World, LeafComponent, HostComponent);
+		const BOOL32 bComponentParent = (LeafComponent->GetParentComponent() == HostComponent) ? TRUE : FALSE;
+		const BOOL32 bComponentWorldKept = IsVectorNearlyEqual(LeafComponent->GetComponentWorldLocation(), LeafWorldBefore, 1.0e-3f);
+
+		// Refusals never reach the history: cross-actor links and structural roots.
+		const BOOL32 bCrossActorRefused = (!PushReparentComponentCommand(Stack, *World, LeafComponent, ActorC->GetRootComponent())) ? TRUE : FALSE;
+		const BOOL32 bRootRefused = (!PushReparentComponentCommand(Stack, *World, ActorA->GetRootComponent(), HostComponent)) ? TRUE : FALSE;
+
+		// Undo the component reparent, then the actor one: links and locals return exactly.
+		const BOOL32 bUndoComponent = Stack.Undo();
+		const BOOL32 bUndoComponentParent = (LeafComponent->GetParentComponent() == ActorA->GetRootComponent()) ? TRUE : FALSE;
+		const BOOL32 bUndoComponentLocal = AreMatricesNearlyEqual(LeafComponent->GetTransform().ToMatrix(), LeafLocalBefore.ToMatrix(), 1.0e-3f);
+		const BOOL32 bUndoActor = Stack.Undo();
+		const BOOL32 bUndoActorParent = (ActorB->GetAttachedParentActor() == WorldRoot) ? TRUE : FALSE;
+		const BOOL32 bUndoActorLocal = AreMatricesNearlyEqual(ActorB->GetActorTransform().ToMatrix(), BLocalBefore.ToMatrix(), 1.0e-3f);
+
+		// Redo both: the hierarchy and the world placement come back.
+		const BOOL32 bRedoActor = Stack.Redo();
+		const BOOL32 bRedoActorParent = (ActorB->GetAttachedParentActor() == ActorA) ? TRUE : FALSE;
+		const BOOL32 bRedoActorWorld = IsVectorNearlyEqual(ActorB->GetActorWorldLocation(), BWorldBefore, 1.0e-3f);
+		const BOOL32 bRedoComponent = Stack.Redo();
+		const BOOL32 bRedoComponentParent = (LeafComponent->GetParentComponent() == HostComponent) ? TRUE : FALSE;
+
+		// The reparented structure survives the level format: save all three actors,
+		// reload them, and find B attached under the loaded A.
+		TArray<PActor*> SavedActors;
+		SavedActors.Add(ActorA);
+		SavedActors.Add(ActorB);
+		SavedActors.Add(ActorC);
+		CJsonObject RoundTripDocument;
+		const BOOL32 bRoundTripSaved = ELevelSerializer::SaveActors(SavedActors, RoundTripDocument);
+		// Destroy the attached child before the parent: the parent's RemovedFromScene
+		// cascades over its children and ends their world membership, so a parent-first
+		// order would leave the child outside the world while it is still alive.
+		World->DestroyActor(ActorB);
+		World->DestroyActor(ActorA);
+		World->DestroyActor(ActorC);
+		World->FlushPendingDestroy();
+		TArray<PActor*> LoadedActors;
+		const BOOL32 bRoundTripLoaded = (bRoundTripSaved && ELevelSerializer::LoadActors(*World, RoundTripDocument, &LoadedActors)) ? TRUE : FALSE;
+		PActor* LoadedA = nullptr;
+		PActor* LoadedB = nullptr;
+		for (UINT32 Index = 0u, Num = LoadedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (!LoadedActors[Index])
+			{
+				continue;
+			}
+			const EString& LoadedName = POBJ_DEBUGNAME_GET(LoadedActors[Index]);
+			if (LoadedName == EString(PE_TEXT("SanityReparentA")))
+			{
+				LoadedA = LoadedActors[Index];
+			}
+			else if (LoadedName == EString(PE_TEXT("SanityReparentB")))
+			{
+				LoadedB = LoadedActors[Index];
+			}
+		}
+		const BOOL32 bRoundTripHierarchy = (LoadedA && LoadedB && (LoadedB->GetAttachedParentActor() == LoadedA)) ? TRUE : FALSE;
+
+		// Same child-first rule for the loaded subtree (LoadedB hangs under LoadedA).
+		if (LoadedB)
+		{
+			World->DestroyActor(LoadedB);
+		}
+		for (UINT32 Index = 0u, Num = LoadedActors.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (LoadedActors[Index])
+			{
+				World->DestroyActor(LoadedActors[Index]);
+			}
+		}
+		World->FlushPendingDestroy();
+		Stack.Clear();
+		World->Destroy();
+#if ENGINE_DEBUG_MODE
+		if (EObjectBase::GetAliveObjectCount() != AliveBefore)
+		{
+			return FALSE;
+		}
+#endif
+		const BOOL32 bOk = (bWorldRootValid && bAttachPushed && bAttachParent && bAttachWorldKept &&
+			bNoopRefused && bNoopRevision && bCycleRefused &&
+			bComponentPushed && bComponentParent && bComponentWorldKept &&
+			bCrossActorRefused && bRootRefused &&
+			bUndoComponent && bUndoComponentParent && bUndoComponentLocal &&
+			bUndoActor && bUndoActorParent && bUndoActorLocal &&
+			bRedoActor && bRedoActorParent && bRedoActorWorld &&
+			bRedoComponent && bRedoComponentParent &&
+			bRoundTripSaved && bRoundTripLoaded && bRoundTripHierarchy) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("attachment reparent detail: root=")) + EString::FromInt(bWorldRootValid) +
+				EString(PE_TEXT(" attach=")) + EString::FromInt(bAttachPushed) + EString::FromInt(bAttachParent) + EString::FromInt(bAttachWorldKept) +
+				EString(PE_TEXT(" noop=")) + EString::FromInt(bNoopRefused) + EString::FromInt(bNoopRevision) +
+				EString(PE_TEXT(" cycle=")) + EString::FromInt(bCycleRefused) +
+				EString(PE_TEXT(" component=")) + EString::FromInt(bComponentPushed) + EString::FromInt(bComponentParent) + EString::FromInt(bComponentWorldKept) +
+				EString(PE_TEXT(" refused=")) + EString::FromInt(bCrossActorRefused) + EString::FromInt(bRootRefused) +
+				EString(PE_TEXT(" undoComp=")) + EString::FromInt(bUndoComponent) + EString::FromInt(bUndoComponentParent) + EString::FromInt(bUndoComponentLocal) +
+				EString(PE_TEXT(" undoActor=")) + EString::FromInt(bUndoActor) + EString::FromInt(bUndoActorParent) + EString::FromInt(bUndoActorLocal) +
+				EString(PE_TEXT(" redoActor=")) + EString::FromInt(bRedoActor) + EString::FromInt(bRedoActorParent) + EString::FromInt(bRedoActorWorld) +
+				EString(PE_TEXT(" redoComp=")) + EString::FromInt(bRedoComponent) + EString::FromInt(bRedoComponentParent) +
+				EString(PE_TEXT(" roundTrip=")) + EString::FromInt(bRoundTripSaved) + EString::FromInt(bRoundTripLoaded) + EString::FromInt(bRoundTripHierarchy));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckWorldEditorCommands()
 	{
 #if ENGINE_DEBUG_MODE
@@ -3007,6 +3174,8 @@ namespace PigeonEngine
 		}
 		const BOOL32 bWorldEditorCommands = CheckWorldEditorCommands();
 		ReportSanityResult(EString(PE_TEXT("world editor command stack")), bWorldEditorCommands);
+		const BOOL32 bAttachmentReparent = CheckWorldAttachmentReparent();
+		ReportSanityResult(EString(PE_TEXT("attachment reparent commands")), bAttachmentReparent);
 		if (!bWorldEditorCommands)
 		{
 			FailedCount += 1u;

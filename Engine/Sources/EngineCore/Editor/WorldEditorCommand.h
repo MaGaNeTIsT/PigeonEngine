@@ -10,6 +10,7 @@ namespace PigeonEngine
 {
 	class PActor;
 	class PActorComponent;
+	class PSceneComponent;
 	class PWorld;
 
 	/*
@@ -75,5 +76,12 @@ namespace PigeonEngine
 	BOOL32 PushDeleteComponentCommand(FWorldEditorCommandStack& InStack, PWorld& InWorld, PActorComponent* InComponent);
 	BOOL32 PushSetPropertyCommand(FWorldEditorCommandStack& InStack, const FObjectHandle& InObjectHandle, const BOOL32& bInIsComponent,
 		const size_t& InClassHash, const EString& InPropertyName, const FPropertyValue& InBefore, const FPropertyValue& InAfter);
+	// Re-homes an actor under InNewParentActor (the world root detaches it back to the top
+	// level) or a scene component under InNewParentComponent (same actor only; the level
+	// format stores component parents per actor). Both apply the attach with KEEP_WORLD and
+	// record the undo/redo through the command stack; refused drops return FALSE without
+	// touching the history.
+	BOOL32 PushReparentActorCommand(FWorldEditorCommandStack& InStack, PWorld& InWorld, PActor* InActor, PActor* InNewParentActor);
+	BOOL32 PushReparentComponentCommand(FWorldEditorCommandStack& InStack, PWorld& InWorld, PSceneComponent* InComponent, PSceneComponent* InNewParentComponent);
 }
 #endif

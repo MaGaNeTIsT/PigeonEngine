@@ -83,7 +83,127 @@ namespace PigeonEngine
 			return Root;
 		}
 
-		class FSpawnActorCommand final : public IWorldEditorCommand
+		// Reparents keep the object alive - only the hierarchy link and the local transform
+	// change - so the command stores both sides of the link plus the local transforms, and
+	// Undo/Redo replay the attach with KEEP_RELATIVE for exact round trips.
+	class FReparentActorCommand final : public IWorldEditorCommand
+	{
+	public:
+		FReparentActorCommand(const FObjectHandle& InChildHandle, const FObjectHandle& InOldParentHandle, const BOOL32& bInOldParentIsWorldRoot,
+			const FObjectHandle& InNewParentHandle, const BOOL32& bInNewParentIsWorldRoot, const ETransform& InOldLocal, const ETransform& InNewLocal,
+			const EString& InLabel)
+			: ChildHandle(InChildHandle), OldParentHandle(InOldParentHandle), bOldParentIsWorldRoot(bInOldParentIsWorldRoot),
+			NewParentHandle(InNewParentHandle), bNewParentIsWorldRoot(bInNewParentIsWorldRoot),
+			OldLocal(InOldLocal), NewLocal(InNewLocal), Label(InLabel)
+		{
+		}
+
+		virtual BOOL32 Undo(FWorldEditorCommandContext& InContext) override
+		{
+			return Apply(InContext, OldParentHandle, bOldParentIsWorldRoot, OldLocal);
+		}
+		virtual BOOL32 Redo(FWorldEditorCommandContext& InContext) override
+		{
+			return Apply(InContext, NewParentHandle, bNewParentIsWorldRoot, NewLocal);
+		}
+		virtual EString GetLabel() const override { return Label; }
+
+	private:
+		BOOL32 Apply(FWorldEditorCommandContext& InContext, const FObjectHandle& InParentHandle, const BOOL32& bParentIsWorldRoot, const ETransform& InLocal)
+		{
+			if (!InContext.World)
+			{
+				return FALSE;
+			}
+			PActor* Child = InContext.World->ResolveActor(InContext.Resolve(ChildHandle));
+			if (!Child)
+			{
+				return FALSE;
+			}
+			if (bParentIsWorldRoot)
+			{
+				// The world root is deliberately excluded from the actor registry, so its
+				// handle never resolves; re-homing through AddActor is the supported way back
+				// to the top level (PActor::DetachFromParentActor uses the same path, and the
+				// scene-add inside is idempotent for an actor that is already in the world).
+				InContext.World->AddActor(Child, EAttachmentRuleType::KEEP_RELATIVE, InLocal);
+			}
+			else
+			{
+				PActor* Parent = InContext.World->ResolveActor(InContext.Resolve(InParentHandle));
+				if ((!Parent) || (Child == Parent))
+				{
+					return FALSE;
+				}
+				PActor::AttachActorToActor(Child, Parent, EAttachmentRuleType::KEEP_RELATIVE, InLocal);
+			}
+			InContext.World->SetSelectedActor(Child);
+			return TRUE;
+		}
+
+		FObjectHandle ChildHandle;
+		FObjectHandle OldParentHandle;
+		BOOL32 bOldParentIsWorldRoot = FALSE;
+		FObjectHandle NewParentHandle;
+		BOOL32 bNewParentIsWorldRoot = FALSE;
+		ETransform OldLocal;
+		ETransform NewLocal;
+		EString Label;
+	};
+
+	class FReparentComponentCommand final : public IWorldEditorCommand
+	{
+	public:
+		FReparentComponentCommand(const FObjectHandle& InComponentHandle, const FObjectHandle& InOldParentHandle, const FObjectHandle& InNewParentHandle,
+			const ETransform& InOldLocal, const ETransform& InNewLocal, const EString& InLabel)
+			: ComponentHandle(InComponentHandle), OldParentHandle(InOldParentHandle), NewParentHandle(InNewParentHandle),
+			OldLocal(InOldLocal), NewLocal(InNewLocal), Label(InLabel)
+		{
+		}
+
+		virtual BOOL32 Undo(FWorldEditorCommandContext& InContext) override
+		{
+			return Apply(InContext, OldParentHandle, OldLocal);
+		}
+		virtual BOOL32 Redo(FWorldEditorCommandContext& InContext) override
+		{
+			return Apply(InContext, NewParentHandle, NewLocal);
+		}
+		virtual EString GetLabel() const override { return Label; }
+
+	private:
+		BOOL32 Apply(FWorldEditorCommandContext& InContext, const FObjectHandle& InParentHandle, const ETransform& InLocal)
+		{
+			if (!InContext.World)
+			{
+				return FALSE;
+			}
+			PSceneComponent* Component = InContext.World->ResolveComponent<PSceneComponent>(InContext.Resolve(ComponentHandle));
+			PSceneComponent* Parent = InContext.World->ResolveComponent<PSceneComponent>(InContext.Resolve(InParentHandle));
+			if ((!Component) || (!Parent) || (Component == Parent))
+			{
+				return FALSE;
+			}
+			// The component stays owned by one actor while this command sits in the history;
+			// a cross-actor link is not representable in the level format, so refuse it.
+			if (Component->GetOwnerActor() != Parent->GetOwnerActor())
+			{
+				return FALSE;
+			}
+			PSceneComponent::AttachComponentToComponent(Component, Parent, EAttachmentRuleType::KEEP_RELATIVE, InLocal);
+			InContext.World->SetSelectedComponent(Component);
+			return TRUE;
+		}
+
+		FObjectHandle ComponentHandle;
+		FObjectHandle OldParentHandle;
+		FObjectHandle NewParentHandle;
+		ETransform OldLocal;
+		ETransform NewLocal;
+		EString Label;
+	};
+
+	class FSpawnActorCommand final : public IWorldEditorCommand
 		{
 		public:
 			FSpawnActorCommand(const CJsonObject& InDocument, const FObjectHandle& InParentHandle, const FObjectHandle& InOriginalHandle, const EString& InLabel)
@@ -536,6 +656,88 @@ namespace PigeonEngine
 			MakeObjectHandle(InComponent), EString(PE_TEXT("Remove Component"))));
 		InWorld.DestroyComponent(InComponent);
 		InWorld.FlushPendingDestroy();
+		return TRUE;
+	}
+
+	BOOL32 PushReparentActorCommand(FWorldEditorCommandStack& InStack, PWorld& InWorld, PActor* InActor, PActor* InNewParentActor)
+	{
+		// The world root (and any actor not yet added to a world) has no attached parent;
+		// refusing those also keeps the root from being dragged around.
+		if ((!InActor) || (!InNewParentActor) || (InActor == InNewParentActor) || (!InActor->GetAttachedParentActor()))
+		{
+			return FALSE;
+		}
+		PActor* OldParent = InActor->GetAttachedParentActor();
+		if (OldParent == InNewParentActor)
+		{
+			return FALSE;
+		}
+		// Refuse the cycle up front instead of relying on the attach warning: a refused
+		// drag must not leave an empty command in the history.
+		for (const PActor* Ancestor = InNewParentActor; Ancestor; Ancestor = Ancestor->GetAttachedParentActor())
+		{
+			if (Ancestor == InActor)
+			{
+				PE_LOG_WARN(EString(PE_TEXT("Reparent actor: refused, the new parent is a descendant of the actor.")));
+				return FALSE;
+			}
+		}
+		const FObjectHandle ChildHandle = MakeObjectHandle(InActor);
+		const FObjectHandle OldParentHandle = MakeObjectHandle(OldParent);
+		// The world root is excluded from the actor registry, so a parent that does not
+		// resolve through its own handle is the root (top level); the command re-homes
+		// through AddActor on that side instead of a registry lookup.
+		const BOOL32 bOldParentIsWorldRoot = (InWorld.ResolveActor(OldParentHandle) != OldParent) ? TRUE : FALSE;
+		const ETransform OldLocal = InActor->GetActorTransform();
+		// KEEP_WORLD is the editing default: the dragged actor stays where it visually is.
+		PActor::AttachActorToActor(InActor, InNewParentActor, EAttachmentRuleType::KEEP_WORLD);
+		const FObjectHandle NewParentHandle = MakeObjectHandle(InActor->GetAttachedParentActor());
+		const BOOL32 bNewParentIsWorldRoot = (InWorld.ResolveActor(NewParentHandle) != InActor->GetAttachedParentActor()) ? TRUE : FALSE;
+		const ETransform NewLocal = InActor->GetActorTransform();
+		InStack.PushExecuted(new FReparentActorCommand(ChildHandle, OldParentHandle, bOldParentIsWorldRoot,
+			NewParentHandle, bNewParentIsWorldRoot, OldLocal, NewLocal, EString(PE_TEXT("Reparent Actor"))));
+		return TRUE;
+	}
+
+	BOOL32 PushReparentComponentCommand(FWorldEditorCommandStack& InStack, PWorld& InWorld, PSceneComponent* InComponent, PSceneComponent* InNewParentComponent)
+	{
+		if ((!InComponent) || (!InNewParentComponent) || (InComponent == InNewParentComponent))
+		{
+			return FALSE;
+		}
+		PActor* Owner = InComponent->GetOwnerActor();
+		if ((!Owner) || (Owner != InNewParentComponent->GetOwnerActor()))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Reparent component: refused, cross-actor component attach is not part of the level format.")));
+			return FALSE;
+		}
+		// The root is the actor's structural anchor; it moves only through actor attach.
+		if (InComponent == Owner->GetRootComponent())
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Reparent component: refused, the root component is managed by the actor.")));
+			return FALSE;
+		}
+		PSceneComponent* OldParent = InComponent->GetParentComponent();
+		if ((!OldParent) || (OldParent == InNewParentComponent))
+		{
+			return FALSE;
+		}
+		for (const PSceneComponent* Ancestor = InNewParentComponent; Ancestor; Ancestor = Ancestor->GetParentComponent())
+		{
+			if (Ancestor == InComponent)
+			{
+				PE_LOG_WARN(EString(PE_TEXT("Reparent component: refused, the new parent is a descendant of the component.")));
+				return FALSE;
+			}
+		}
+		const FObjectHandle ComponentHandle = MakeObjectHandle(InComponent);
+		const FObjectHandle OldParentHandle = MakeObjectHandle(OldParent);
+		const ETransform OldLocal = InComponent->GetTransform();
+		PSceneComponent::AttachComponentToComponent(InComponent, InNewParentComponent, EAttachmentRuleType::KEEP_WORLD);
+		const FObjectHandle NewParentHandle = MakeObjectHandle(InComponent->GetParentComponent());
+		const ETransform NewLocal = InComponent->GetTransform();
+		InStack.PushExecuted(new FReparentComponentCommand(ComponentHandle, OldParentHandle, NewParentHandle,
+			OldLocal, NewLocal, EString(PE_TEXT("Reparent Component"))));
 		return TRUE;
 	}
 

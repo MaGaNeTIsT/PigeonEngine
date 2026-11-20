@@ -879,6 +879,26 @@ namespace PigeonEngine
 		{
 			Actor->GenerateWorldOutline(ImguiSelectedActor);
 		}
+
+		// Detach drop zone: dropping a dragged actor here re-homes it under the world root,
+		// i.e. back to the top level. Nothing enters the history when the drop is refused.
+		if (EditorCommandStack)
+		{
+			ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PWorldActorDrag"))
+				{
+					PActor* DraggedActor = ((Payload->Data) && (Payload->DataSize == sizeof(PActor*))) ? (*static_cast<PActor* const*>(Payload->Data)) : nullptr;
+					if (DraggedActor && (DraggedActor != RootActor))
+					{
+						PushReparentActorCommand(*EditorCommandStack, *this, DraggedActor, RootActor);
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::TextDisabled("Drag an actor onto another to attach; drop here to detach.");
+		}
 	}
 
 	void PWorld::GenerateDetail()
