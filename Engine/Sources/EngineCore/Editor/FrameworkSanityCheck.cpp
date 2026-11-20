@@ -578,7 +578,7 @@ namespace PigeonEngine
 	}
 
 	// Component that records its tick into a shared log, so the sanity check can assert
-	// the (group, priority, registration) order the actor ticks in.
+	// the (priority, registration) order the scheduler runs entries in.
 	class PSanityTickOrderComponent : public PActorComponent
 	{
 	public:
@@ -600,6 +600,111 @@ namespace PigeonEngine
 
 	private:
 		TArray<UINT32>* TickLog = nullptr;
+		UINT32 Tag = 0u;
+	};
+
+	// Actor/component pair for the scheduler domains. Every callback appends a distinct tag
+	// to its own log so cross-actor order, domain isolation, and tickable toggles are visible.
+	class PSanitySchedulerActor : public PActor
+	{
+	public:
+		PSanitySchedulerActor(TArray<UINT32>* InUserLog, TArray<UINT32>* InEditorLog, const UINT32 InTag)
+			: UserLog(InUserLog), EditorLog(InEditorLog), Tag(InTag)
+		{
+			SetIsTickable(TRUE);
+			POBJ_DEBUGNAME_SET(this, "SanitySchedulerActor");
+		}
+
+	protected:
+		void UserTick(FLOAT deltaTime) override
+		{
+			(void)deltaTime;
+			if (UserLog)
+			{
+				UserLog->Add(Tag);
+			}
+		}
+#if ENGINE_EDITOR_ONLY
+	public:
+		void EditorTick(FLOAT deltaTime) override
+		{
+			(void)deltaTime;
+			if (EditorLog)
+			{
+				EditorLog->Add(Tag);
+			}
+		}
+#endif
+
+	private:
+		TArray<UINT32>* UserLog = nullptr;
+		TArray<UINT32>* EditorLog = nullptr;
+		UINT32 Tag = 0u;
+	};
+
+	class PSanitySchedulerComponent : public PActorComponent
+	{
+	public:
+		PSanitySchedulerComponent(TArray<UINT32>* InTickLog, TArray<UINT32>* InFixedLog,
+			TArray<UINT32>* InPostPhysicsLog, TArray<UINT32>* InEditorLog, const UINT32 InTag)
+			: TickLog(InTickLog), FixedLog(InFixedLog), PostPhysicsLog(InPostPhysicsLog)
+			, EditorLog(InEditorLog), Tag(InTag)
+		{
+			SetIsTickable(TRUE);
+			POBJ_DEBUGNAME_SET(this, "SanitySchedulerComponent");
+		}
+
+		void Tick(FLOAT deltaTime) override
+		{
+			(void)deltaTime;
+			if (TickLog)
+			{
+				TickLog->Add(Tag);
+			}
+		}
+
+		void FixedTick(FLOAT deltaTime) override
+		{
+			(void)deltaTime;
+			if (FixedLog)
+			{
+				FixedLog->Add(Tag);
+			}
+		}
+
+	protected:
+		void HandlePostPhysicsTick(FLOAT deltaTime) override
+		{
+			(void)deltaTime;
+			if (PostPhysicsLog)
+			{
+				PostPhysicsLog->Add(Tag);
+			}
+		}
+
+		void BeginAddedToScene(PWorld* World) override
+		{
+			PActorComponent::BeginAddedToScene(World);
+			RegisterPostPhysicsTick();
+		}
+
+#if ENGINE_EDITOR_ONLY
+	public:
+		void EditorTick(FLOAT deltaTime) override
+		{
+			(void)deltaTime;
+			if (EditorLog)
+			{
+				EditorLog->Add(Tag);
+			}
+		}
+#endif
+
+	private:
+		TArray<UINT32>* TickLog = nullptr;
+		TArray<UINT32>* FixedLog = nullptr;
+		TArray<UINT32>* PostPhysicsLog = nullptr;
+		TArray<UINT32>* EditorLog = nullptr;
 		UINT32 Tag = 0u;
 	};
 
@@ -710,14 +815,14 @@ namespace PigeonEngine
 		// non-tickable here, while its tickable components still run in cached order.
 		InWorld->AddActor(Actor);
 
-		// Registration order 1, 2, 3 with different bands and priorities. Expected tick
-		// order: PRE_PHYSICS (2), gameplay priority -1 (3), gameplay priority 5 (1).
+		// Registration order 1, 2, 3 with different priorities. Expected tick order:
+		// priority -10 (2), priority -1 (3), priority 5 (1).
 		PSanityTickOrderComponent* GamePlayLate = new PSanityTickOrderComponent(&TickLog, 1u);
 		GamePlayLate->SetTickPriority(5);
 		Actor->AddComponent(GamePlayLate);
-		PSanityTickOrderComponent* PrePhysics = new PSanityTickOrderComponent(&TickLog, 2u);
-		PrePhysics->SetTickGroup(ETickGroupType::PRE_PHYSICS);
-		Actor->AddComponent(PrePhysics);
+		PSanityTickOrderComponent* EarlyComponent = new PSanityTickOrderComponent(&TickLog, 2u);
+		EarlyComponent->SetTickPriority(-10);
+		Actor->AddComponent(EarlyComponent);
 		PSanityTickOrderComponent* GamePlayEarly = new PSanityTickOrderComponent(&TickLog, 3u);
 		GamePlayEarly->SetTickPriority(-1);
 		Actor->AddComponent(GamePlayEarly);
@@ -756,6 +861,131 @@ namespace PigeonEngine
 #endif
 		return (bFindWorks && bListWorks && bBaseLookupWorks && bActorNotTickable && bOrderMatches &&
 			bDisableTickableWorks && bEnableTickableWorks) ? TRUE : FALSE;
+	}
+
+	// Exercises the per-world scheduler directly: global priority order across actors,
+	// actor UserTick placement, fixed/post-physics/editor domains, tickability toggles,
+	// component destruction, and two-world isolation.
+	static BOOL32 CheckWorldTickScheduler()
+	{
+#if ENGINE_DEBUG_MODE
+		const UINT64 AliveBefore = EObjectBase::GetAliveObjectCount();
+#endif
+		TArray<UINT32> UserLog;
+		TArray<UINT32> FixedLog;
+		TArray<UINT32> PostPhysicsLog;
+		TArray<UINT32> EditorLog;
+		TArray<UINT32> OtherUserLog;
+		TArray<UINT32> OtherEditorLog;
+
+		PSanityLevelWorld* WorldA = new PSanityLevelWorld();
+		WorldA->Init();
+		PSanityLevelWorld* WorldB = new PSanityLevelWorld();
+		WorldB->Init();
+
+		PSanitySchedulerActor* ActorA = new PSanitySchedulerActor(&UserLog, &EditorLog, 100u);
+		POBJ_DEBUGNAME_SET(ActorA, "SanitySchedulerActorA");
+		WorldA->AddActor(ActorA);
+		PSanitySchedulerActor* ActorB = new PSanitySchedulerActor(&OtherUserLog, &OtherEditorLog, 200u);
+		ActorB->SetIsTickable(FALSE);
+		POBJ_DEBUGNAME_SET(ActorB, "SanitySchedulerActorB");
+		WorldA->AddActor(ActorB);
+
+		PSanitySchedulerComponent* Early = new PSanitySchedulerComponent(&UserLog, &FixedLog, &PostPhysicsLog, &EditorLog, 1u);
+		Early->SetTickPriority(-10);
+		ActorA->AddComponent(Early);
+		PSanitySchedulerComponent* Default = new PSanitySchedulerComponent(&UserLog, &FixedLog, &PostPhysicsLog, &EditorLog, 2u);
+		Default->SetTickPriority(0);
+		ActorA->AddComponent(Default);
+		PSanitySchedulerComponent* Middle = new PSanitySchedulerComponent(&UserLog, &FixedLog, &PostPhysicsLog, &EditorLog, 3u);
+		Middle->SetTickPriority(-5);
+		ActorB->AddComponent(Middle);
+
+		PSanitySchedulerActor* OtherActor = new PSanitySchedulerActor(nullptr, nullptr, 0u);
+		OtherActor->SetIsTickable(TRUE);
+		POBJ_DEBUGNAME_SET(OtherActor, "SanitySchedulerOtherActor");
+		WorldB->AddActor(OtherActor);
+		PSanitySchedulerComponent* OtherComponent = new PSanitySchedulerComponent(&OtherUserLog, &FixedLog, &PostPhysicsLog, &EditorLog, 9u);
+		OtherActor->AddComponent(OtherComponent);
+
+		WorldA->Tick(1.0f / 60.0f);
+		WorldA->FixedTick(1.0f / 60.0f);
+		WorldA->PostPhysicsTick(1.0f / 60.0f);
+		WorldA->EditorTick(1.0f / 60.0f);
+
+		const BOOL32 bCrossActorOrderOk =
+			(UserLog.Num<UINT32>() == 4u) &&
+			(UserLog[0] == 1u) && (UserLog[1] == 3u) && (UserLog[2] == 2u) && (UserLog[3] == 100u) ? TRUE : FALSE;
+		const BOOL32 bActorUserAfterComponents = (UserLog[3] == 100u) ? TRUE : FALSE;
+		const BOOL32 bFixedOk =
+			(FixedLog.Num<UINT32>() == 3u) &&
+			(FixedLog[0] == 1u) && (FixedLog[1] == 3u) && (FixedLog[2] == 2u) ? TRUE : FALSE;
+		const BOOL32 bPostPhysicsOk =
+			(PostPhysicsLog.Num<UINT32>() == 3u) &&
+			(PostPhysicsLog[0] == 1u) && (PostPhysicsLog[1] == 3u) && (PostPhysicsLog[2] == 2u) ? TRUE : FALSE;
+		const BOOL32 bEditorOk =
+			(EditorLog.Num<UINT32>() == 4u) &&
+			(EditorLog[0] == 1u) && (EditorLog[1] == 3u) && (EditorLog[2] == 2u) && (EditorLog[3] == 100u) ? TRUE : FALSE;
+		const BOOL32 bWorldIsolationOk = (OtherUserLog.Num<UINT32>() == 0u) ? TRUE : FALSE;
+
+		WorldB->Tick(1.0f / 60.0f);
+		const BOOL32 bOtherWorldTicks = (OtherUserLog.Find(9u) != -1) ? TRUE : FALSE;
+
+		// Priority is an INT32 that can be changed after registration; the scheduler must
+		// rebuild on the next tick without re-registering the entries.
+		UserLog.Empty();
+		Early->SetTickPriority(5);
+		Default->SetTickPriority(-20);
+		WorldA->Tick(1.0f / 60.0f);
+		const BOOL32 bPriorityUpdateOk =
+			(UserLog.Num<UINT32>() == 4u) &&
+			(UserLog[0] == 2u) && (UserLog[1] == 3u) && (UserLog[2] == 100u) && (UserLog[3] == 1u) ? TRUE : FALSE;
+		Early->SetTickPriority(-10);
+		Default->SetTickPriority(0);
+
+		UserLog.Empty();
+		EditorLog.Empty();
+		ActorA->SetIsTickable(FALSE);
+		WorldA->Tick(1.0f / 60.0f);
+		WorldA->EditorTick(1.0f / 60.0f);
+		const BOOL32 bActorToggleOk =
+			(UserLog.Num<UINT32>() == 3u) && (UserLog[0] == 1u) && (UserLog[1] == 3u) && (UserLog[2] == 2u) &&
+			(EditorLog.Num<UINT32>() == 3u) ? TRUE : FALSE;
+		ActorA->SetIsTickable(TRUE);
+
+		WorldA->DestroyComponent(Middle);
+		WorldA->FlushPendingDestroy();
+		UserLog.Empty();
+		WorldA->Tick(1.0f / 60.0f);
+		const BOOL32 bComponentDestroyOk =
+			(UserLog.Num<UINT32>() == 3u) &&
+			(UserLog[0] == 1u) && (UserLog[1] == 2u) && (UserLog[2] == 100u) ? TRUE : FALSE;
+
+		WorldA->Destroy();
+		WorldB->Destroy();
+#if ENGINE_DEBUG_MODE
+		const BOOL32 bAliveOk = (EObjectBase::GetAliveObjectCount() == AliveBefore) ? TRUE : FALSE;
+#else
+		const BOOL32 bAliveOk = TRUE;
+#endif
+		const BOOL32 bOk = (bCrossActorOrderOk && bActorUserAfterComponents && bFixedOk && bPostPhysicsOk &&
+			bEditorOk && bWorldIsolationOk && bOtherWorldTicks && bPriorityUpdateOk &&
+			bActorToggleOk && bComponentDestroyOk && bAliveOk) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("tick scheduler detail: order=")) + EString::FromInt(bCrossActorOrderOk) +
+				EString(PE_TEXT(" userAfter=")) + EString::FromInt(bActorUserAfterComponents) +
+				EString(PE_TEXT(" fixed=")) + EString::FromInt(bFixedOk) +
+				EString(PE_TEXT(" post=")) + EString::FromInt(bPostPhysicsOk) +
+				EString(PE_TEXT(" editor=")) + EString::FromInt(bEditorOk) +
+				EString(PE_TEXT(" isolation=")) + EString::FromInt(bWorldIsolationOk) +
+				EString(PE_TEXT(" other=")) + EString::FromInt(bOtherWorldTicks) +
+				EString(PE_TEXT(" priority=")) + EString::FromInt(bPriorityUpdateOk) +
+				EString(PE_TEXT(" toggle=")) + EString::FromInt(bActorToggleOk) +
+				EString(PE_TEXT(" destroy=")) + EString::FromInt(bComponentDestroyOk) +
+				EString(PE_TEXT(" alive=")) + EString::FromInt(bAliveOk));
+		}
+		return bOk;
 	}
 
 	static BOOL32 CheckWorldLifecycleEvents(PWorld* InWorld)
@@ -2706,6 +2936,12 @@ namespace PigeonEngine
 		const BOOL32 bComponentLookupAndTickOrder = CheckComponentLookupAndTickOrder(InWorld);
 		ReportSanityResult(EString(PE_TEXT("component lookup and tick order")), bComponentLookupAndTickOrder);
 		if (!bComponentLookupAndTickOrder)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bWorldTickScheduler = CheckWorldTickScheduler();
+		ReportSanityResult(EString(PE_TEXT("world tick scheduler domains and isolation")), bWorldTickScheduler);
+		if (!bWorldTickScheduler)
 		{
 			FailedCount += 1u;
 		}
