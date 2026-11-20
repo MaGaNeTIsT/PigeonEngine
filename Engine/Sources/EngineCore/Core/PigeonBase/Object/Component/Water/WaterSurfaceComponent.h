@@ -37,6 +37,7 @@ namespace PigeonEngine
 		void	SetWaterMaxHeight(const FLOAT InMaxHeight);
 		PE_NODISCARD FLOAT	GetWaterHeightScale() const noexcept { return WaterHeightScale; }
 		PE_NODISCARD FLOAT	GetWaterMaxHeight() const noexcept { return WaterMaxHeight; }
+		PE_NODISCARD virtual EString GetMaterialProgramName() const override;
 
 	public:
 		virtual const EName&	GetRenderProxyTypeName() const override;

@@ -25,6 +25,9 @@ namespace PigeonEngine
 		// names are scanned from the asset family directory and refreshed periodically, so a
 		// newly imported or baked asset appears without restarting the editor.
 		BOOL32 DrawAssetCombo(const CHAR* InLabel, const EPropertyAssetType InAssetType, EString& InOutAssetName);
+		// Returns the current catalog for an asset family. Used by the material picker and by
+		// editor-side checks that need to verify a source list without opening the combo.
+		void CollectAssetNames(const EPropertyAssetType InAssetType, TArray<EString>& OutNames);
 		// Creates an empty element that matches a container shape. Used by the nested array/map
 		// Add buttons and by the container round-trip checks.
 		void MakeDefaultElement(const FPropertyValue* InShape, FPropertyElement& OutElement);

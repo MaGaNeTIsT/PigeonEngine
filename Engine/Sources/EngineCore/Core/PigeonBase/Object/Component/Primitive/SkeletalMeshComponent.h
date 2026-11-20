@@ -148,6 +148,8 @@ namespace PigeonEngine
 		// Root motion END
 
 	protected:
+		// Material requests need the vertex axis of this concrete mesh layout.
+		virtual BOOL32 ResolveMaterialVertexAxis(EShaderVertexFactoryType& OutVertexFactory, EShaderVertexProfile& OutProfile) const override;
 		const ESkinnedMeshAsset*        MeshAsset;
 		const ESkeletonAsset*           SkeletonAsset;
 		EAnimInstance*                  AnimInstance;

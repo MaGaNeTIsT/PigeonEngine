@@ -660,6 +660,44 @@ namespace PigeonEngine
 		return (bCleanSkipWorks && bDirtyWakeWorks && bDeferredWakeWorks && bDeferredCleanSkipWorks) ? TRUE : FALSE;
 	}
 
+	// The Material picker must list authoring material sources, not compiled shader/stage
+	// artifacts. Engine materials and project-folder materials are both valid identifiers.
+	static BOOL32 CheckMaterialSourceCatalog()
+	{
+		TArray<EString> Names;
+		EPropertyEditor::CollectAssetNames(EPropertyAssetType::MATERIAL, Names);
+		BOOL32 bHasEngineMaterial = FALSE;
+		BOOL32 bHasProjectMaterial = FALSE;
+		BOOL32 bHasCompiledArtifact = FALSE;
+		for (UINT32 Index = 0u, Num = Names.Num<UINT32>(); Index < Num; Index++)
+		{
+			const EString& Name = Names[Index];
+			if (Name == EString(PE_TEXT("M_EngineFallback")))
+			{
+				bHasEngineMaterial = TRUE;
+			}
+			if (Name == EString(PE_TEXT("Projects/Demo/M_DemoUnlit")))
+			{
+				bHasProjectMaterial = TRUE;
+			}
+			if (Name.Left(3u) == EString(PE_TEXT("PS_")) || Name.Left(3u) == EString(PE_TEXT("VS_")) ||
+				Name.Left(3u) == EString(PE_TEXT("CS_")))
+			{
+				bHasCompiledArtifact = TRUE;
+			}
+		}
+		if ((!bHasEngineMaterial) || (!bHasProjectMaterial) || bHasCompiledArtifact)
+		{
+			EString CatalogDebug;
+			for (UINT32 Index = 0u, Num = Names.Num<UINT32>(); Index < Num; Index++)
+			{
+				CatalogDebug += EString(PE_TEXT("[")) + Names[Index] + EString(PE_TEXT("]"));
+			}
+			PE_LOG_ERROR(EString(PE_TEXT("material source catalog detail: ")) + CatalogDebug);
+		}
+		return (bHasEngineMaterial && bHasProjectMaterial && (!bHasCompiledArtifact)) ? TRUE : FALSE;
+	}
+
 	static BOOL32 CheckComponentLookupAndTickOrder(PWorld* InWorld)
 	{
 #if ENGINE_DEBUG_MODE
@@ -1520,6 +1558,11 @@ namespace PigeonEngine
 		POBJ_DEBUGNAME_SET(ContentActor, "SanityAcceptanceContent");
 		SaveWorld->AddActor(ContentActor);
 		PStaticMeshComponent* StaticMesh = new PStaticMeshComponent();
+		FMaterialSlotReference MaterialReference;
+		MaterialReference.MaterialName = EString(PE_TEXT("M_EngineFallback"));
+		MaterialReference.ShaderName = EString(PE_TEXT("M_EngineFallback"));
+		MaterialReference.ProgramName = EString(PE_TEXT("BasePass"));
+		StaticMesh->SetMaterialSlotReference(0u, MaterialReference);
 		ContentActor->AddComponent(StaticMesh);
 		PSkeletalMeshComponent* SkeletalMesh = new PSkeletalMeshComponent();
 		ContentActor->AddComponent(SkeletalMesh);
@@ -1616,10 +1659,15 @@ namespace PigeonEngine
 				PNavMeshComponent* LoadedNavMesh = LoadedContent->FindComponent<PNavMeshComponent>();
 				PWaterSurfaceComponent* LoadedSurface = LoadedSurfaceActor->FindComponent<PWaterSurfaceComponent>();
 				PWaterSimulationComponent* LoadedSimulation = LoadedSimulationActor->FindComponent<PWaterSimulationComponent>();
+				PStaticMeshComponent* LoadedStaticMesh = LoadedContent->FindComponent<PStaticMeshComponent>();
 				const FBoxShape* LoadedBox = LoadedPhysics ? dynamic_cast<const FBoxShape*>(LoadedPhysics->GetShapeForSerialization()) : nullptr;
 				const FSphereShape* LoadedSphere = LoadedTrigger ? dynamic_cast<const FSphereShape*>(LoadedTrigger->GetShape()) : nullptr;
 				bContentOk = (LoadedContent->FindComponent<PStaticMeshComponent>() != nullptr) &&
 					(LoadedContent->FindComponent<PSkeletalMeshComponent>() != nullptr) &&
+					LoadedStaticMesh &&
+					(LoadedStaticMesh->GetMaterialSlotReference(0u).MaterialName == EString(PE_TEXT("M_EngineFallback"))) &&
+					(LoadedStaticMesh->GetMaterialSlotReference(0u).ShaderName == EString(PE_TEXT("M_EngineFallback"))) &&
+					(LoadedStaticMesh->GetMaterialSlotReference(0u).ProgramName == EString(PE_TEXT("BasePass"))) &&
 					LoadedCamera && (EMath::Abs(LoadedCamera->GetCameraViewInfo().FovAngleY - 83.f) <= 1.0e-3f) &&
 					LoadedDirectional && (EMath::Abs(LoadedDirectional->GetIlluminanceLux() - 12345.f) <= 1.0e-2f) &&
 					LoadedBox && IsVectorNearlyEqual(LoadedBox->HalfExtent, Vector3(11.f, 22.f, 33.f), 1.0e-4f) &&
@@ -2282,6 +2330,12 @@ namespace PigeonEngine
 		const BOOL32 bContainerProperties = CheckContainerPropertySerialization();
 		ReportSanityResult(EString(PE_TEXT("container property serialization")), bContainerProperties);
 		if (!bContainerProperties)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bMaterialCatalog = CheckMaterialSourceCatalog();
+		ReportSanityResult(EString(PE_TEXT("material source catalog")), bMaterialCatalog);
+		if (!bMaterialCatalog)
 		{
 			FailedCount += 1u;
 		}

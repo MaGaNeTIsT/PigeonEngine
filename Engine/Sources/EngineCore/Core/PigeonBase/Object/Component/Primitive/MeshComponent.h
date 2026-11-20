@@ -7,6 +7,20 @@ namespace PigeonEngine
 {
 
 	class EAssetBase;
+	enum class EShaderVertexFactoryType : UINT8;
+	struct EShaderVertexProfile;
+
+	/*
+	* Stable material slot reference. MaterialName is the source identifier accepted by
+	* EShaderJobBuilder::ResolveMaterialJson, ShaderName is the assembly/PAsset key and
+	* ProgramName selects the program the material is authored for.
+	*/
+	struct FMaterialSlotReference
+	{
+		EString MaterialName;
+		EString ShaderName;
+		EString ProgramName;
+	};
 
 	/*
 	* What the mesh primitives share: the material slots every mesh asset drives one per
@@ -32,6 +46,19 @@ namespace PigeonEngine
 		// Grows or shrinks the slot array. New slots start empty; the caller assigns into them.
 		void    SetMaterialSlotsNum(UINT32 InNum);
 	public:
+		// Stable authoring references. The instance shadows are rebuilt asynchronously from
+		// these after a mesh or material asset becomes available.
+		PE_NODISCARD const TArray<FMaterialSlotReference>& GetMaterialSlotReferences() const;
+		PE_NODISCARD const FMaterialSlotReference& GetMaterialSlotReference(UINT32 InSlotIdx) const;
+		void SetMaterialSlotReferences(const TArray<FMaterialSlotReference>& InReferences);
+		void SetMaterialSlotReference(UINT32 InSlotIdx, const FMaterialSlotReference& InReference);
+		void ClearMaterialSlotReference(UINT32 InSlotIdx);
+		// Re-issues every non-empty reference after a mesh asset becomes available.
+		void RefreshMaterialSlotReferences();
+		// Pass/program a material slot is authored for. Static and skeletal meshes use the
+		// primary BasePass; a water surface overrides it with WaterSurface.
+		PE_NODISCARD virtual EString GetMaterialProgramName() const;
+	public:
 		// The mesh asset as the render tier sees it. The report carries only this generic
 		// handle: a subclass keeps its own typed pointer for its own use, and the shared part
 		// of the report needs no typed access.
@@ -43,8 +70,19 @@ namespace PigeonEngine
 		// this, calls the base first and then adds its own.
 		virtual void    CollectRenderAssets(FPrimitiveRenderAssetReport& InOutReport) const override;
 	protected:
+		// Fills the vertex axis from the concrete mesh resource. A subclass returns FALSE while
+		// its mesh asset is not loaded yet, so the deferred material request retries.
+		virtual BOOL32 ResolveMaterialVertexAxis(EShaderVertexFactoryType& OutVertexFactory, EShaderVertexProfile& OutProfile) const;
+		void EnsureMaterialSlotReferenceNum(UINT32 InNum);
+	private:
+		void RequestMaterialSlot(UINT32 InSlotIdx);
+		BOOL32 TryResolveMaterialSlot(UINT32 InSlotIdx);
+		FMaterialSlotReference MakeMaterialSlotReference(const EString& InMaterialName) const;
+	private:
 		const EAssetBase*               MeshAssetBase = nullptr;
 		TArray<const EShaderInstance*>  MaterialSlots;
+		TArray<FMaterialSlotReference>  MaterialSlotReferences;
+		TArray<UINT32>                  MaterialSlotRequestGenerations;
 
 		// Render proxy functions START
 	public:
@@ -56,6 +94,10 @@ namespace PigeonEngine
 		virtual void    MarkRenderStateAsDirty() override;
 		virtual void    CleanMarkRenderStateDirty() override;
 		// Render proxy functions END
+#if ENGINE_EDITOR_ONLY
+	public:
+		virtual void    GenerateComponentDetail() override;
+#endif
 	};
 
 };

@@ -1,6 +1,7 @@
 #include "StaticMeshComponent.h"
 #include <Asset/AssetLoadManager.h>
 #include <MeshAsset/MeshAsset.h>
+#include <ShaderAsset/ShaderJobBuilder.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 #include <Reflection/Property.h>
@@ -72,24 +73,42 @@ namespace PigeonEngine
 	}
 	void PStaticMeshComponent::SetMeshAsset(const EStaticMeshAsset* InMeshAsset)
 	{
-		MeshAsset = InMeshAsset;
-		SetMeshAssetBase(InMeshAsset);
-		if (!!InMeshAsset)
-		{
-			const EStaticMesh* Mesh = InMeshAsset->GetStoragedResource();
+	MeshAsset = InMeshAsset;
+	if (!!InMeshAsset)
+	{
+		const EStaticMesh* Mesh = InMeshAsset->GetStoragedResource();
 #if ENGINE_EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Static mesh asset does not contain mesh resource."), (!!Mesh));
-			if (Mesh)
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Static mesh asset does not contain mesh resource."), (!!Mesh));
+		if (Mesh)
 #endif
-			{
-				SetLocalBound(Mesh->GetBoundAABB());
-				SetMaterialSlotsNum(Mesh->GetSubmeshPart().Num<UINT32>());
-			}
+		{
+			SetLocalBound(Mesh->GetBoundAABB());
+			SetMaterialSlotsNum(Mesh->GetSubmeshPart().Num<UINT32>());
 		}
-		// A different mesh is an asset level change: the render side re-resolves the geometry and
-		// the pass slots rather than only rewriting values.
-		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS);
 	}
+	// Publish the base only after the slot count is ready, then re-resolve authoring
+	// material references against the new vertex axis.
+	SetMeshAssetBase(InMeshAsset);
+	RefreshMaterialSlotReferences();
+	// A different mesh is an asset level change: the render side re-resolves the geometry and
+	// the pass slots rather than only rewriting values.
+	MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS);
+}
+
+BOOL32 PStaticMeshComponent::ResolveMaterialVertexAxis(EShaderVertexFactoryType& OutVertexFactory, EShaderVertexProfile& OutProfile) const
+{
+	if (!MeshAsset)
+	{
+		return FALSE;
+	}
+	const EStaticMesh* Mesh = MeshAsset->GetStoragedResource();
+	if (!Mesh)
+	{
+		return FALSE;
+	}
+	return EShaderJobBuilder::ResolveVertexAxis(Mesh, OutVertexFactory, OutProfile);
+}
+
 	void PStaticMeshComponent::RequestMeshAsset(const EString& InAssetName, const FAssetImportSource* InImportSource)
 	{
 		RequestedMeshAssetName = InAssetName;

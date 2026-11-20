@@ -2,12 +2,56 @@
 #include <RenderProxy/MeshSceneProxy.h>
 #include <Renderer/ScenePass.h>
 #include <ShaderAsset/ShaderInstance.h>
+#include <ShaderAsset/ShaderJobBuilder.h>
+#include <Shader/EngineShaderInstanceCache.h>
+#include <Reflection/Property.h>
+
+#if ENGINE_EDITOR_ONLY
+#include <imgui.h>
+#include <Editor/PropertyEditor.h>
+#endif
 
 namespace PigeonEngine
 {
+	static void SerializeMaterialSlotReferences(EArchive& InArchive, const CHAR* InName, TArray<FMaterialSlotReference>& InOutReferences)
+	{
+		UINT32 Count = InOutReferences.Num<UINT32>();
+		InArchive.BeginArray(InName, Count);
+		if (!InArchive.IsSaving())
+		{
+			InOutReferences.Empty();
+		}
+		for (UINT32 Index = 0u; Index < Count; Index++)
+		{
+			const EString IndexKey = EString::FromInt(Index);
+			InArchive.BeginObject(*IndexKey);
+			FMaterialSlotReference Reference = InArchive.IsSaving() ? InOutReferences[Index] : FMaterialSlotReference();
+			InArchive.SerializeString(PE_TEXT("MaterialName"), Reference.MaterialName);
+			InArchive.SerializeString(PE_TEXT("ShaderName"), Reference.ShaderName);
+			InArchive.SerializeString(PE_TEXT("ProgramName"), Reference.ProgramName);
+			if (!InArchive.IsSaving())
+			{
+				InOutReferences.Add(Reference);
+			}
+			InArchive.EndObject();
+		}
+		InArchive.EndArray();
+	}
+
+	static void RegisterClassProperties()
+	{
+		const size_t ClassHash = GetClassHashCode<PMeshComponent>();
+		AddClassPropertyCustom<PMeshComponent, TArray<FMaterialSlotReference>>(ClassHash, PE_TEXT("MaterialSlots"),
+			[](const PMeshComponent* Component) -> TArray<FMaterialSlotReference> { return Component->GetMaterialSlotReferences(); },
+			[](PMeshComponent* Component, const TArray<FMaterialSlotReference>& Value) -> void { Component->SetMaterialSlotReferences(Value); },
+			SerializeMaterialSlotReferences,
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PMeshComponent, PPrimitiveComponent>();
+		RegisterClassProperties();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -18,6 +62,214 @@ namespace PigeonEngine
 	}
 	PMeshComponent::~PMeshComponent()
 	{
+	}
+
+	const TArray<FMaterialSlotReference>& PMeshComponent::GetMaterialSlotReferences() const
+	{
+		return MaterialSlotReferences;
+	}
+
+	const FMaterialSlotReference& PMeshComponent::GetMaterialSlotReference(UINT32 InSlotIdx) const
+	{
+		static const FMaterialSlotReference EmptyReference;
+		if (InSlotIdx < MaterialSlotReferences.Num<UINT32>())
+		{
+			return MaterialSlotReferences[InSlotIdx];
+		}
+		return EmptyReference;
+	}
+
+	void PMeshComponent::EnsureMaterialSlotReferenceNum(UINT32 InNum)
+	{
+		const UINT32 OldNum = MaterialSlotReferences.Num<UINT32>();
+		if (MaterialSlotReferences.Num<UINT32>() < InNum)
+		{
+			MaterialSlotReferences.SetNum(InNum);
+		}
+		if (MaterialSlotRequestGenerations.Num<UINT32>() < InNum)
+		{
+			MaterialSlotRequestGenerations.SetNum(InNum);
+		}
+		for (UINT32 Index = OldNum; Index < InNum; Index++)
+		{
+			MaterialSlotRequestGenerations[Index] = 0u;
+		}
+	}
+
+	FMaterialSlotReference PMeshComponent::MakeMaterialSlotReference(const EString& InMaterialName) const
+	{
+		FMaterialSlotReference Reference;
+		Reference.MaterialName = InMaterialName;
+		if (InMaterialName.Length() == 0u)
+		{
+			return Reference;
+		}
+		const INT32 Separator = InMaterialName.RightFind(EString(PE_TEXT("/")));
+		Reference.ShaderName = (Separator >= 0)
+			? InMaterialName.Right(InMaterialName.Length() - static_cast<UINT32>(Separator) - 1u)
+			: InMaterialName;
+		Reference.ProgramName = GetMaterialProgramName();
+		return Reference;
+	}
+
+	void PMeshComponent::SetMaterialSlotReferences(const TArray<FMaterialSlotReference>& InReferences)
+	{
+		const UINT32 OldNum = MaterialSlotReferences.Num<UINT32>();
+		for (UINT32 Index = 0u; Index < OldNum; Index++)
+		{
+			if (MaterialSlotReferences[Index].MaterialName.Length() > 0u)
+			{
+				SetMaterialInstance(Index, nullptr);
+			}
+		}
+		MaterialSlotReferences.SetNum(InReferences.Num<UINT32>());
+		MaterialSlotRequestGenerations.SetNum(InReferences.Num<UINT32>());
+		for (UINT32 Index = 0u, Num = InReferences.Num<UINT32>(); Index < Num; Index++)
+		{
+			FMaterialSlotReference Reference = InReferences[Index];
+			if (Reference.MaterialName.Length() > 0u)
+			{
+				if (Reference.ShaderName.Length() == 0u)
+				{
+					Reference.ShaderName = MakeMaterialSlotReference(Reference.MaterialName).ShaderName;
+				}
+				if (Reference.ProgramName.Length() == 0u)
+				{
+					Reference.ProgramName = GetMaterialProgramName();
+				}
+			}
+			MaterialSlotReferences[Index] = Reference;
+			MaterialSlotRequestGenerations[Index] = 0u;
+			if (Reference.MaterialName.Length() > 0u)
+			{
+				RequestMaterialSlot(Index);
+			}
+		}
+	}
+
+	void PMeshComponent::SetMaterialSlotReference(UINT32 InSlotIdx, const FMaterialSlotReference& InReference)
+	{
+		EnsureMaterialSlotReferenceNum(InSlotIdx + 1u);
+		FMaterialSlotReference Reference = InReference;
+		if (Reference.MaterialName.Length() > 0u)
+		{
+			if (Reference.ShaderName.Length() == 0u)
+			{
+				const FMaterialSlotReference Derived = MakeMaterialSlotReference(Reference.MaterialName);
+				Reference.ShaderName = Derived.ShaderName;
+			}
+			if (Reference.ProgramName.Length() == 0u)
+			{
+				Reference.ProgramName = GetMaterialProgramName();
+			}
+		}
+		MaterialSlotReferences[InSlotIdx] = Reference;
+		RequestMaterialSlot(InSlotIdx);
+	}
+
+	void PMeshComponent::ClearMaterialSlotReference(UINT32 InSlotIdx)
+	{
+		if (InSlotIdx >= MaterialSlotReferences.Num<UINT32>())
+		{
+			return;
+		}
+		MaterialSlotReferences[InSlotIdx] = FMaterialSlotReference();
+		if (InSlotIdx < MaterialSlotRequestGenerations.Num<UINT32>())
+		{
+			MaterialSlotRequestGenerations[InSlotIdx]++;
+		}
+		SetMaterialInstance(InSlotIdx, nullptr);
+	}
+
+	void PMeshComponent::RefreshMaterialSlotReferences()
+	{
+		for (UINT32 Index = 0u, Num = MaterialSlotReferences.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (MaterialSlotReferences[Index].MaterialName.Length() > 0u)
+			{
+				RequestMaterialSlot(Index);
+			}
+		}
+	}
+
+	void PMeshComponent::RequestMaterialSlot(UINT32 InSlotIdx)
+	{
+		if (InSlotIdx >= MaterialSlotReferences.Num<UINT32>())
+		{
+			return;
+		}
+		const UINT32 RequestGeneration = ++MaterialSlotRequestGenerations[InSlotIdx];
+		SetMaterialInstance(InSlotIdx, nullptr);
+		if (MaterialSlotReferences[InSlotIdx].MaterialName.Length() == 0u)
+		{
+			return;
+		}
+		TFunction<BOOL32()> Step = [this, InSlotIdx, RequestGeneration]() -> BOOL32
+		{
+			if ((InSlotIdx >= MaterialSlotRequestGenerations.Num<UINT32>()) ||
+				(MaterialSlotRequestGenerations[InSlotIdx] != RequestGeneration))
+			{
+				return TRUE;
+			}
+			return TryResolveMaterialSlot(InSlotIdx);
+		};
+		if (Step() == FALSE)
+		{
+			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
+		}
+	}
+
+	BOOL32 PMeshComponent::TryResolveMaterialSlot(UINT32 InSlotIdx)
+	{
+		if (InSlotIdx >= MaterialSlotReferences.Num<UINT32>())
+		{
+			return TRUE;
+		}
+		const FMaterialSlotReference& Reference = MaterialSlotReferences[InSlotIdx];
+		if (Reference.MaterialName.Length() == 0u)
+		{
+			return TRUE;
+		}
+		// The mesh load will call RefreshMaterialSlotReferences after its vertex axis is
+		// available; until then this is not an error and must not keep a deferred step alive.
+		if (!GetMeshAssetBase())
+		{
+			return TRUE;
+		}
+		EShaderVertexFactoryType VertexFactory = EShaderVertexFactoryType::ENGINE_MESH;
+		EShaderVertexProfile Profile;
+		if (ResolveMaterialVertexAxis(VertexFactory, Profile) == FALSE)
+		{
+			return FALSE;
+		}
+		EShaderAssemblyRequest Request;
+		Request.ShaderName = EName(Reference.ShaderName);
+		Request.MaterialName = Reference.MaterialName;
+		Request.ProgramName = EName(Reference.ProgramName);
+		Request.VertexFactory = VertexFactory;
+		Request.Profile = Profile;
+		const EShaderInstance* Instance = REngineShaderInstanceCache::GetManagerSingleton()->RequireMaterialInstance(Request);
+		if (!Instance)
+		{
+			return FALSE;
+		}
+		SetMaterialInstance(InSlotIdx, Instance);
+		return TRUE;
+	}
+
+	EString PMeshComponent::GetMaterialProgramName() const
+	{
+		const FRenderPassDesc& PrimaryPassDescription = FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_BASE);
+		return (PrimaryPassDescription.PassName != nullptr)
+			? EString(PrimaryPassDescription.PassName)
+			: EString(PE_TEXT("BasePass"));
+	}
+
+	BOOL32 PMeshComponent::ResolveMaterialVertexAxis(EShaderVertexFactoryType& OutVertexFactory, EShaderVertexProfile& OutProfile) const
+	{
+		(void)OutVertexFactory;
+		(void)OutProfile;
+		return FALSE;
 	}
 
 	const EShaderInstance* PMeshComponent::GetMaterialInstance(UINT32 InSlotIdx) const
@@ -67,6 +319,48 @@ namespace PigeonEngine
 	{
 		MeshAssetBase = InMeshAsset;
 	}
+
+#if ENGINE_EDITOR_ONLY
+	void PMeshComponent::GenerateComponentDetail()
+	{
+		PPrimitiveComponent::GenerateComponentDetail();
+
+		UINT32 SlotCount = GetMaterialSlotCount();
+		if (MaterialSlotReferences.Num<UINT32>() > SlotCount)
+		{
+			SlotCount = MaterialSlotReferences.Num<UINT32>();
+		}
+		if (SlotCount == 0u)
+		{
+			ImGui::TextDisabled("No material slots.");
+			return;
+		}
+		if (!ImGui::TreeNodeEx("Material Slots", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			return;
+		}
+		for (UINT32 SlotIndex = 0u; SlotIndex < SlotCount; SlotIndex++)
+		{
+			ImGui::PushID(SlotIndex);
+			ImGui::Text("Slot %u", static_cast<unsigned int>(SlotIndex));
+			ImGui::SameLine();
+			EString MaterialName = GetMaterialSlotReference(SlotIndex).MaterialName;
+			if (EPropertyEditor::DrawAssetCombo("##Material", EPropertyAssetType::MATERIAL, MaterialName))
+			{
+				FMaterialSlotReference Reference;
+				Reference.MaterialName = MaterialName;
+				SetMaterialSlotReference(SlotIndex, Reference);
+			}
+			if ((MaterialName.Length() > 0u) && (GetMaterialInstance(SlotIndex) == nullptr))
+			{
+				ImGui::SameLine();
+				ImGui::TextDisabled("(pending)");
+			}
+			ImGui::PopID();
+		}
+		ImGui::TreePop();
+	}
+#endif
 	void PMeshComponent::CollectRenderAssets(FPrimitiveRenderAssetReport& InOutReport) const
 	{
 		InOutReport.SetMeshAsset(MeshAssetBase);

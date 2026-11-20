@@ -41,9 +41,86 @@ namespace PigeonEngine
 			case EPropertyAssetType::NAV_MESH:
 				return EBaseSettings::ENGINE_NAV_MESH_PATH;
 			case EPropertyAssetType::MATERIAL:
-				return EBaseSettings::ENGINE_SHADER_BUILD_DIRECTORY;
+				return EBaseSettings::ENGINE_SHADER_SOURCE_DIRECTORY;
 			default:
 				return nullptr;
+			}
+		}
+
+		EString GetLeafName(const EString& InPath)
+		{
+			const INT32 Separator = InPath.RightFind(EString(PE_TEXT("/")));
+			return (Separator >= 0)
+				? InPath.Right(InPath.Length() - static_cast<UINT32>(Separator) - 1u)
+				: InPath;
+		}
+
+		EString GetParentPath(const EString& InPath)
+		{
+			const INT32 Separator = InPath.RightFind(EString(PE_TEXT("/")));
+			return (Separator > 0) ? InPath.Left(static_cast<UINT32>(Separator)) : EString();
+		}
+
+		void CollectMaterialSourceNamesFromDirectory(const EString& InDirectory, const EString& InSourceRoot, TArray<EString>& OutNames)
+		{
+			TArray<EString> Folders;
+			TArray<EString> Files;
+			if (!EFileHelper::ScanDirectory(InDirectory, Folders, Files, TRUE))
+			{
+				return;
+			}
+			for (UINT32 Index = 0u, Num = Files.Num<UINT32>(); Index < Num; Index++)
+			{
+				const EString& File = Files[Index];
+				if (EPath::GetExtension(File) != EString(PE_TEXT("json")))
+				{
+					continue;
+				}
+				EString FileText;
+				const BOOL32 bRead = EFileHelper::ReadFileAsString(File, FileText);
+				const BOOL32 bHasMarker = (bRead && FileText.Contains(EString(PE_TEXT("PEMaterial")))) ? TRUE : FALSE;
+				if (InDirectory.Contains(EString(PE_TEXT("Materials"))) && (EPath::GetExtension(File) == EString(PE_TEXT("json"))))
+				{
+				}
+				if (!bHasMarker)
+				{
+					continue;
+				}
+				const EString NormalizedFile = File.Replace(EString(PE_TEXT("\\")), EString(PE_TEXT("/")));
+				if (NormalizedFile.Left(InSourceRoot.Length()) != InSourceRoot)
+				{
+					continue;
+				}
+				const EString RelativePath = NormalizedFile.Right(NormalizedFile.Length() - InSourceRoot.Length());
+				if (RelativePath.Length() <= 5u)
+				{
+					continue;
+				}
+				const EString RelativeStem = RelativePath.Left(RelativePath.Length() - 5u);
+				EString MaterialName;
+				const EString TemplatesPrefix(PE_TEXT("Materials/Templates/"));
+				const EString MaterialsPrefix(PE_TEXT("Materials/"));
+				if (RelativeStem.Left(TemplatesPrefix.Length()) == TemplatesPrefix)
+				{
+					MaterialName = GetLeafName(RelativeStem);
+				}
+				else if (RelativeStem.Left(MaterialsPrefix.Length()) == MaterialsPrefix)
+				{
+					MaterialName = GetLeafName(RelativeStem);
+				}
+				else
+				{
+					// Project materials live in their own folder and are named by that folder.
+					MaterialName = GetParentPath(RelativeStem);
+				}
+				if ((MaterialName.Length() > 0u) && (!OutNames.Contains(MaterialName)))
+				{
+					OutNames.Add(MaterialName);
+				}
+			}
+			for (UINT32 Index = 0u, Num = Folders.Num<UINT32>(); Index < Num; Index++)
+			{
+				CollectMaterialSourceNamesFromDirectory(Folders[Index], InSourceRoot, OutNames);
 			}
 		}
 
@@ -58,7 +135,7 @@ namespace PigeonEngine
 			for (UINT32 Index = 0u, Num = Files.Num<UINT32>(); Index < Num; Index++)
 			{
 				const EString& File = Files[Index];
-				if (EPath::GetExtension(File) != EString(PE_TEXT(".PAsset")))
+				if (EPath::GetExtension(File) != EString(PE_TEXT("PAsset")))
 				{
 					continue;
 				}
@@ -91,7 +168,20 @@ namespace PigeonEngine
 			{
 				return;
 			}
-			CollectAssetNamesFromDirectory(EString(AssetDirectory), InOutCache.Names);
+			if (InOutCache.Type == EPropertyAssetType::MATERIAL)
+			{
+				EString SourceRoot(AssetDirectory);
+				SourceRoot = SourceRoot.Replace(EString(PE_TEXT("\\")), EString(PE_TEXT("/")));
+				if ((SourceRoot.Length() > 0u) && (SourceRoot.Right(1u) != EString(PE_TEXT("/"))))
+				{
+					SourceRoot += EString(PE_TEXT("/"));
+				}
+				CollectMaterialSourceNamesFromDirectory(SourceRoot, SourceRoot, InOutCache.Names);
+			}
+			else
+			{
+				CollectAssetNamesFromDirectory(EString(AssetDirectory), InOutCache.Names);
+			}
 			InOutCache.Names.Sort([](const EString& InLeft, const EString& InRight) -> BOOL32
 			{
 				return ((InLeft < InRight) != FALSE) ? TRUE : FALSE;
@@ -1071,6 +1161,18 @@ namespace PigeonEngine
 	void EPropertyEditor::MakeDefaultElement(const FPropertyValue* InShape, FPropertyElement& OutElement)
 	{
 		InitializeDefaultElement(OutElement, InShape);
+	}
+
+	void EPropertyEditor::CollectAssetNames(const EPropertyAssetType InAssetType, TArray<EString>& OutNames)
+	{
+		OutNames.Empty();
+		if (InAssetType == EPropertyAssetType::NONE)
+		{
+			return;
+		}
+		FAssetNameCache& Cache = FindAssetNameCache(InAssetType);
+		RefreshAssetNames(Cache);
+		OutNames = Cache.Names;
 	}
 
 	BOOL32 EPropertyEditor::DrawAssetCombo(const CHAR* InLabel, const EPropertyAssetType InAssetType, EString& InOutAssetName)

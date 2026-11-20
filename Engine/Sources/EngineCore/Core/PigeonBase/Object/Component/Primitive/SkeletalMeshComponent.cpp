@@ -5,6 +5,7 @@
 #include <Base/Timer/Timer.h>
 #include <Development/Profiler.h>
 #include <MeshAsset/MeshAsset.h>
+#include <ShaderAsset/ShaderJobBuilder.h>
 #include <MultiThread/Atomic.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <PigeonBase/Object/World/World.h>
@@ -235,24 +236,42 @@ namespace PigeonEngine
 	}
 	void PSkeletalMeshComponent::SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset)
 	{
-		MeshAsset = InMeshAsset;
-		SetMeshAssetBase(InMeshAsset);
-		if (!!InMeshAsset)
-		{
-			const ESkinnedMesh* Mesh = InMeshAsset->GetStoragedResource();
+	MeshAsset = InMeshAsset;
+	if (!!InMeshAsset)
+	{
+		const ESkinnedMesh* Mesh = InMeshAsset->GetStoragedResource();
 #if ENGINE_EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skinned mesh asset does not contain mesh resource."), (!!Mesh));
-			if (Mesh)
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skinned mesh asset does not contain mesh resource."), (!!Mesh));
+		if (Mesh)
 #endif
-			{
-				SetLocalBound(Mesh->GetBoundAABB());
-				SetMaterialSlotsNum(Mesh->GetSubmeshPart().Num<UINT32>());
-			}
+		{
+			SetLocalBound(Mesh->GetBoundAABB());
+			SetMaterialSlotsNum(Mesh->GetSubmeshPart().Num<UINT32>());
 		}
-		// A different mesh is an asset level change: the render side re-resolves the geometry and
-		// the pass slots rather than only rewriting values.
-		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS);
 	}
+	// Publish the base only after the slot count is ready, then re-resolve authoring
+	// material references against the new vertex axis.
+	SetMeshAssetBase(InMeshAsset);
+	RefreshMaterialSlotReferences();
+	// A different mesh is an asset level change: the render side re-resolves the geometry and
+	// the pass slots rather than only rewriting values.
+	MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS);
+}
+
+BOOL32 PSkeletalMeshComponent::ResolveMaterialVertexAxis(EShaderVertexFactoryType& OutVertexFactory, EShaderVertexProfile& OutProfile) const
+{
+	if (!MeshAsset)
+	{
+		return FALSE;
+	}
+	const ESkinnedMesh* Mesh = MeshAsset->GetStoragedResource();
+	if (!Mesh)
+	{
+		return FALSE;
+	}
+	return EShaderJobBuilder::ResolveVertexAxis(Mesh, OutVertexFactory, OutProfile);
+}
+
 	const ESkeletonAsset* PSkeletalMeshComponent::GetSkeletonAsset() const
 	{
 		return SkeletonAsset;

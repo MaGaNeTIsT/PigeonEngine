@@ -99,6 +99,14 @@ namespace PigeonEngine
 		return ProxyTypeName;
 	}
 
+	EString PWaterSurfaceComponent::GetMaterialProgramName() const
+	{
+		const FRenderPassDesc& WaterPassDescription = FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_WATER_SURFACE);
+		return (WaterPassDescription.PassName != nullptr)
+			? EString(WaterPassDescription.PassName)
+			: EString(PE_TEXT("WaterSurface"));
+	}
+
 	void PWaterSurfaceComponent::CollectRenderAssets(FPrimitiveRenderAssetReport& InOutReport) const
 	{
 		PStaticMeshComponent::CollectRenderAssets(InOutReport);

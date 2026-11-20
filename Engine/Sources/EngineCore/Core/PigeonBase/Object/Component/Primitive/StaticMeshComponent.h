@@ -48,6 +48,8 @@ namespace PigeonEngine
 		virtual void    SendUpdateRenderState() override;
 		// Render proxy functions END
 	protected:
+		// Material requests need the vertex axis of this concrete mesh layout.
+		virtual BOOL32 ResolveMaterialVertexAxis(EShaderVertexFactoryType& OutVertexFactory, EShaderVertexProfile& OutProfile) const override;
 		const EStaticMeshAsset*     MeshAsset;
 		// Kept separately because the asset manager is asynchronous: a component saved right
 		// after RequestMeshAsset must still write the name it asked for.
