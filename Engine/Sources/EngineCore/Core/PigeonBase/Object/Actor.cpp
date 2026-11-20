@@ -140,18 +140,21 @@ namespace PigeonEngine
 
 	void PActor::Tick(FLOAT deltaTime)
 	{
+		// Components have their own tick flags and are scheduled independently of the actor's
+		// UserTick switch. A level-loaded PActor is not automatically tickable, but its
+		// navigation and movement components still have to run.
+		// (group, priority, registration) order, fixed when the component list changed.
+		// Only tickable components are in this list, so no per-component test is needed.
+		for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
+		{
+			TickableOrder[Index]->Tick(deltaTime);
+		}
 		if (IsTickable())
 		{
-			// (group, priority, registration) order, fixed when the component list changed.
-			// Only tickable components are in this list, so no per-component test is needed.
-			for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
-			{
-				TickableOrder[Index]->Tick(deltaTime);
-			}
 			UserTick(deltaTime);
 		}
-		// Children tick on their own tickable flag: a non-tickable parent no longer freezes
-		// its subtree, and render updates run in TickRenderTree regardless.
+		// Children tick on their own state: a non-tickable parent no longer freezes its
+		// subtree, and render updates run in TickRenderTree regardless.
 		// By index rather than by reference: a tick may spawn actors - a scene builder does exactly
 		// that - and appending to ChildrenActors reallocates the array, so a range over it would keep
 		// a reference into the buffer the reallocation freed. An index into the live array cannot
@@ -204,12 +207,10 @@ namespace PigeonEngine
 
 	void PActor::FixedTick(FLOAT deltaTime)
 	{
-		if (IsTickable())
+		// Fixed and variable ticks use the same independent component schedule.
+		for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
 		{
-			for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
-			{
-				TickableOrder[Index]->FixedTick(deltaTime);
-			}
+			TickableOrder[Index]->FixedTick(deltaTime);
 		}
 		// Same reason as Tick: a fixed tick may spawn actors too, so the list is walked by index.
 		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
@@ -225,12 +226,11 @@ namespace PigeonEngine
 #if ENGINE_EDITOR_ONLY
 	void PActor::EditorTick(FLOAT deltaTime)
 	{
-		if(IsTickable())
+		// Editor-only component work (navigation debug lines, previews) follows the same
+		// independent schedule as gameplay ticks.
+		for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
 		{
-			for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
-			{
-				TickableOrder[Index]->EditorTick(deltaTime);
-			}
+			TickableOrder[Index]->EditorTick(deltaTime);
 		}
 		// Same reason as Tick: the editor tick is the one a scene builder runs inside, so this is
 		// exactly the loop that can be reallocated under itself.

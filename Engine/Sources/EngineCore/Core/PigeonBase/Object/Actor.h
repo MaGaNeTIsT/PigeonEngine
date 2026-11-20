@@ -131,7 +131,8 @@ protected:
 		// Registration order is the tie-breaker, so the order is stable across runs.
 		TArray<PActorComponent*> TickOrder;
 		// The tickable subset of TickOrder. Tick/FixedTick walk this list directly instead
-		// of testing every component every frame.
+		// of testing every component every frame. It is independent of the actor's own
+		// UserTick switch.
 		TArray<PActorComponent*> TickableOrder;
 	public:
 		// Re-sorts the cached tick order after a component changed its tick group or
