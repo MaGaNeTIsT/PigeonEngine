@@ -4,10 +4,6 @@
 #include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
 
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#endif
-
 namespace PigeonEngine
 {
 
@@ -55,9 +51,20 @@ namespace PigeonEngine
 		InArchive.EndObject();
 	}
 
+	static void RegisterCascadeShadowStruct()
+	{
+		const size_t StructHash = GetClassHashCode<ECascadeShadowData>();
+		const EString StructName(PE_TEXT("ECascadeShadowData"));
+		const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
+		AddStructBoolProperty(StructHash, StructName, PE_TEXT("IsUseShadow"), &ECascadeShadowData::IsUseShadow, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Layers"), &ECascadeShadowData::Layers, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Borders"), &ECascadeShadowData::Borders, EditFlags);
+	}
+
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PDirectionalLightComponent>();
+		RegisterCascadeShadowStruct();
 		AddClassPropertyAccessors<PDirectionalLightComponent, FLOAT>(ClassHash, PE_TEXT("IlluminanceLux"),
 			[](const PDirectionalLightComponent* Component) -> FLOAT { return Component->GetIlluminanceLux(); },
 			[](PDirectionalLightComponent* Component, const FLOAT& Value) -> void { Component->SetIlluminanceLux(Value); },
@@ -66,7 +73,7 @@ namespace PigeonEngine
 			[](const PDirectionalLightComponent* Component) -> FLOAT { return Component->GetSourceAngleDegrees(); },
 			[](PDirectionalLightComponent* Component, const FLOAT& Value) -> void { Component->SetSourceAngleDegrees(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-		AddClassPropertyCustom<PDirectionalLightComponent, ECascadeShadowData>(ClassHash, PE_TEXT("CascadeShadowData"),
+		AddClassPropertyStructCustom<PDirectionalLightComponent, ECascadeShadowData>(ClassHash, PE_TEXT("CascadeShadowData"),
 			[](const PDirectionalLightComponent* Component) -> ECascadeShadowData
 			{
 				const ECascadeShadowData* Data = Component->GetCascadeShadowData();
@@ -149,7 +156,23 @@ namespace PigeonEngine
 		{
 			CascadeShadowData = new ECascadeShadowData();
 		}
-		*CascadeShadowData = InData;
+		// A cascade ladder has one fewer overlap border than slices. The editor can add a
+		// layer or remove a border independently, so repair the pairing here before the
+		// render side indexes Borders for every slice boundary.
+		ECascadeShadowData Normalized = InData;
+		if (Normalized.IsUseShadow)
+		{
+			const UINT32 ExpectedBorderNum = (Normalized.Layers.Num<UINT32>() > 0u) ? (Normalized.Layers.Num<UINT32>() - 1u) : 0u;
+			while (Normalized.Borders.Num<UINT32>() > ExpectedBorderNum)
+			{
+				Normalized.Borders.RemoveAt(Normalized.Borders.Num<UINT32>() - 1u);
+			}
+			while (Normalized.Borders.Num<UINT32>() < ExpectedBorderNum)
+			{
+				Normalized.Borders.Add(0.0f);
+			}
+		}
+		*CascadeShadowData = Normalized;
 		MarkAsDirty(PLightUpdateState::LIGHT_UPDATE_STATE_CASCADE);
 	}
 

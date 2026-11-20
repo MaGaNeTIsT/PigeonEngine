@@ -9,7 +9,6 @@
 
 #if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
-#include <imgui.h>
 #endif
 
 namespace PigeonEngine
@@ -34,10 +33,34 @@ namespace PigeonEngine
 		InArchive.EndObject();
 	}
 
+	static void RegisterNavigationAgentSettingsStruct()
+	{
+		const size_t StructHash = GetClassHashCode<ENavigationAgentSettings>();
+		const EString StructName(PE_TEXT("ENavigationAgentSettings"));
+		const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Radius"), &ENavigationAgentSettings::Radius, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Height"), &ENavigationAgentSettings::Height, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("MoveSpeed"), &ENavigationAgentSettings::MoveSpeed, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("TurnSpeedDegreesPerSecond"), &ENavigationAgentSettings::TurnSpeedDegreesPerSecond, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("AcceptanceRadius"), &ENavigationAgentSettings::AcceptanceRadius, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("RepathInterval"), &ENavigationAgentSettings::RepathInterval, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("MaxAcceleration"), &ENavigationAgentSettings::MaxAcceleration, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("CollisionQueryRange"), &ENavigationAgentSettings::CollisionQueryRange, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("PathOptimizationRange"), &ENavigationAgentSettings::PathOptimizationRange, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("SeparationWeight"), &ENavigationAgentSettings::SeparationWeight, EditFlags);
+		// The serialized avoidance preset is a UINT8 index, not a C++ enum. Expose it as an
+		// unsigned field so the generic editor can still present and change it.
+		AddStructProperty<ENavigationAgentSettings, UINT32>(StructHash, StructName, PE_TEXT("ObstacleAvoidanceType"),
+			[](const ENavigationAgentSettings* Value) -> UINT32 { return static_cast<UINT32>(Value->ObstacleAvoidanceType); },
+			[](ENavigationAgentSettings* Value, const UINT32& InValue) -> void { Value->ObstacleAvoidanceType = static_cast<UINT8>(InValue); },
+			EditFlags);
+	}
+
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PNavAgentComponent>();
-		AddClassPropertyCustom<PNavAgentComponent, ENavigationAgentSettings>(ClassHash, PE_TEXT("Settings"),
+		RegisterNavigationAgentSettingsStruct();
+		AddClassPropertyStructCustom<PNavAgentComponent, ENavigationAgentSettings>(ClassHash, PE_TEXT("Settings"),
 			[](const PNavAgentComponent* Component) -> ENavigationAgentSettings { return Component->GetSettings(); },
 			[](PNavAgentComponent* Component, const ENavigationAgentSettings& Value) -> void { Component->SetSettings(Value); },
 			SerializeNavigationAgentSettings,

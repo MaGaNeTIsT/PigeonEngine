@@ -6,11 +6,6 @@
 #include <Shader/EngineShaderInstanceCache.h>
 #include <Reflection/Property.h>
 
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#include <Editor/PropertyEditor.h>
-#endif
-
 namespace PigeonEngine
 {
 	static void SerializeMaterialSlotReferences(EArchive& InArchive, const CHAR* InName, TArray<FMaterialSlotReference>& InOutReferences)
@@ -38,10 +33,34 @@ namespace PigeonEngine
 		InArchive.EndArray();
 	}
 
+	static void RegisterMaterialSlotStruct()
+	{
+		const size_t StructHash = GetClassHashCode<FMaterialSlotReference>();
+		const EString StructName(PE_TEXT("FMaterialSlotReference"));
+		const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
+		// Picking a different material invalidates the derived shader/program names. Clear
+		// them through the field setter so SetMaterialSlotReferences recomputes the triple
+		// from the new material instead of keeping the previous material's shader.
+		AddStructAssetProperty<FMaterialSlotReference>(StructHash, StructName, PE_TEXT("MaterialName"),
+			[](const FMaterialSlotReference* Reference) -> EString { return Reference->MaterialName; },
+			[](FMaterialSlotReference* Reference, const EString& Value) -> void
+			{
+				Reference->MaterialName = Value;
+				Reference->ShaderName = EString();
+				Reference->ProgramName = EString();
+			},
+			EPropertyAssetType::MATERIAL, EditFlags);
+		// The shader and program are derived from the material and the mesh, so they are
+		// shown but never edited directly.
+		AddStructReadOnlyProperty(StructHash, StructName, PE_TEXT("ShaderName"), &FMaterialSlotReference::ShaderName);
+		AddStructReadOnlyProperty(StructHash, StructName, PE_TEXT("ProgramName"), &FMaterialSlotReference::ProgramName);
+	}
+
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PMeshComponent>();
-		AddClassPropertyCustom<PMeshComponent, TArray<FMaterialSlotReference>>(ClassHash, PE_TEXT("MaterialSlots"),
+		RegisterMaterialSlotStruct();
+		AddClassPropertyStructCustom<PMeshComponent, TArray<FMaterialSlotReference>>(ClassHash, PE_TEXT("MaterialSlots"),
 			[](const PMeshComponent* Component) -> TArray<FMaterialSlotReference> { return Component->GetMaterialSlotReferences(); },
 			[](PMeshComponent* Component, const TArray<FMaterialSlotReference>& Value) -> void { Component->SetMaterialSlotReferences(Value); },
 			SerializeMaterialSlotReferences,
@@ -320,47 +339,6 @@ namespace PigeonEngine
 		MeshAssetBase = InMeshAsset;
 	}
 
-#if ENGINE_EDITOR_ONLY
-	void PMeshComponent::GenerateComponentDetail()
-	{
-		PPrimitiveComponent::GenerateComponentDetail();
-
-		UINT32 SlotCount = GetMaterialSlotCount();
-		if (MaterialSlotReferences.Num<UINT32>() > SlotCount)
-		{
-			SlotCount = MaterialSlotReferences.Num<UINT32>();
-		}
-		if (SlotCount == 0u)
-		{
-			ImGui::TextDisabled("No material slots.");
-			return;
-		}
-		if (!ImGui::TreeNodeEx("Material Slots", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			return;
-		}
-		for (UINT32 SlotIndex = 0u; SlotIndex < SlotCount; SlotIndex++)
-		{
-			ImGui::PushID(SlotIndex);
-			ImGui::Text("Slot %u", static_cast<unsigned int>(SlotIndex));
-			ImGui::SameLine();
-			EString MaterialName = GetMaterialSlotReference(SlotIndex).MaterialName;
-			if (EPropertyEditor::DrawAssetCombo("##Material", EPropertyAssetType::MATERIAL, MaterialName))
-			{
-				FMaterialSlotReference Reference;
-				Reference.MaterialName = MaterialName;
-				SetMaterialSlotReference(SlotIndex, Reference);
-			}
-			if ((MaterialName.Length() > 0u) && (GetMaterialInstance(SlotIndex) == nullptr))
-			{
-				ImGui::SameLine();
-				ImGui::TextDisabled("(pending)");
-			}
-			ImGui::PopID();
-		}
-		ImGui::TreePop();
-	}
-#endif
 	void PMeshComponent::CollectRenderAssets(FPrimitiveRenderAssetReport& InOutReport) const
 	{
 		InOutReport.SetMeshAsset(MeshAssetBase);

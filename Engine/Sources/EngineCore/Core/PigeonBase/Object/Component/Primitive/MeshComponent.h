@@ -94,10 +94,6 @@ namespace PigeonEngine
 		virtual void    MarkRenderStateAsDirty() override;
 		virtual void    CleanMarkRenderStateDirty() override;
 		// Render proxy functions END
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void    GenerateComponentDetail() override;
-#endif
 	};
 
 };

@@ -49,9 +49,29 @@ namespace PigeonEngine
 			InArchive.EndObject();
 		}
 
+		void RegisterAnimationRequestStruct()
+		{
+			const size_t StructHash = GetClassHashCode<FAnimationRequest>();
+			const EString StructName(PE_TEXT("FAnimationRequest"));
+			const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
+			AddStructAssetProperty(StructHash, StructName, PE_TEXT("Asset"), &FAnimationRequest::Asset, EPropertyAssetType::ANIMATION, EditFlags);
+			// Typing a clip name should request once, not once per character.
+			AddStructProperty(StructHash, StructName, PE_TEXT("Clip"), &FAnimationRequest::Clip,
+				EditFlags | static_cast<UINT32>(EPropertyFlagsType::COMMIT_ONLY));
+			AddStructEnumProperty<FAnimationRequest, EAnimationLoopMode>(StructHash, StructName, PE_TEXT("LoopMode"),
+				[](const FAnimationRequest* Value) -> EAnimationLoopMode { return static_cast<EAnimationLoopMode>(Value->LoopMode); },
+				[](FAnimationRequest* Value, const EAnimationLoopMode& InValue) -> void { Value->LoopMode = static_cast<INT32>(InValue); },
+				EditFlags);
+			// Changing the play rate calls into the animation instance; apply it on release
+			// rather than every frame of a drag.
+			AddStructProperty(StructHash, StructName, PE_TEXT("PlayRate"), &FAnimationRequest::PlayRate,
+				EditFlags | static_cast<UINT32>(EPropertyFlagsType::COMMIT_ONLY));
+		}
+
 		void RegisterClassProperties()
 		{
 			const size_t ClassHash = GetClassHashCode<PSkeletalMeshComponent>();
+			RegisterAnimationRequestStruct();
 			// Mesh and skeleton are one property: RequestSkeletalMeshAssets needs both names
 			// and binds them as a pair, so separate properties would race on load order.
 			AddClassPropertyCustom<PSkeletalMeshComponent, FSkeletalMeshAssetNames>(ClassHash, PE_TEXT("MeshAssets"),
@@ -71,7 +91,7 @@ namespace PigeonEngine
 				},
 				SerializeSkeletalMeshAssetNames,
 				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
-			AddClassPropertyCustom<PSkeletalMeshComponent, FAnimationRequest>(ClassHash, PE_TEXT("Animation"),
+			AddClassPropertyStructCustom<PSkeletalMeshComponent, FAnimationRequest>(ClassHash, PE_TEXT("Animation"),
 				[](const PSkeletalMeshComponent* Component) -> FAnimationRequest
 				{
 					FAnimationRequest Request;
