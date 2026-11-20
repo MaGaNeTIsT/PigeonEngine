@@ -2,7 +2,6 @@
 #include "ShapeSerialization.h"
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/World/World.h>
-#include <PigeonBase/Object/World/WorldTickManager.h>
 #include <Reflection/Property.h>
 
 namespace PigeonEngine

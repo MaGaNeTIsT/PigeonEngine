@@ -1,7 +1,6 @@
 #include "./ActorComponent.h"
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/World/World.h>
-#include <PigeonBase/Object/World/WorldTickManager.h>
 #if ENGINE_EDITOR_ONLY
 #include <Editor/PropertyEditor.h>
 #endif
@@ -58,6 +57,7 @@ namespace PigeonEngine
 		if (World)
 		{
 			World->RegisterComponent(this);
+			RegisterTickDomains();
 		}
 	}
 
@@ -66,11 +66,56 @@ namespace PigeonEngine
 		// The world pointer is still set here (PObject::RemovedFromScene clears it at the
 		// end of the chain), so the registry entry can be dropped while the component is
 		// still addressable. Subclass overrides chain to this one.
+		UnregisterTickDomains();
+		UnregisterPostPhysicsTick();
 		if (PWorld* World = GetWorld())
 		{
 			World->UnregisterComponent(this);
 		}
 		PObject::RemovedFromScene();
+	}
+
+	void PActorComponent::RegisterTickDomains()
+	{
+		if (!IsTickable())
+		{
+			return;
+		}
+		PWorld* World = GetWorld();
+		if (!World)
+		{
+			return;
+		}
+		FWorldTickScheduler& Scheduler = World->GetTickScheduler();
+		if (!VariableTickHandle.IsValid())
+		{
+			VariableTickHandle = Scheduler.RegisterComponent(*this, ETickDomain::VARIABLE, GetTickPriority());
+		}
+		if (!FixedTickHandle.IsValid())
+		{
+			FixedTickHandle = Scheduler.RegisterComponent(*this, ETickDomain::FIXED, GetTickPriority());
+		}
+#if ENGINE_EDITOR_ONLY
+		if (!EditorTickHandle.IsValid())
+		{
+			EditorTickHandle = Scheduler.RegisterComponent(*this, ETickDomain::EDITOR, GetTickPriority());
+		}
+#endif
+	}
+
+	void PActorComponent::UnregisterTickDomains()
+	{
+		PWorld* World = GetWorld();
+		if (!World)
+		{
+			return;
+		}
+		FWorldTickScheduler& Scheduler = World->GetTickScheduler();
+		Scheduler.Unregister(VariableTickHandle);
+		Scheduler.Unregister(FixedTickHandle);
+#if ENGINE_EDITOR_ONLY
+		Scheduler.Unregister(EditorTickHandle);
+#endif
 	}
 
 	void PActorComponent::SetOwnerActor(PActor* NewOwner)
@@ -86,35 +131,26 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		PWorld* World = GetWorld();
-		const ObjectIdentityType ComponentID = GetUniqueID();
-		// The handler only holds the world and the ID: if this component is destroyed
-		// (or pending destruction), the lookup fails and the tick is a no-op, so no raw
-		// pointer outlives the component.
-		PostPhysicsTickHandler = TFunction<void(FLOAT)>([World, ComponentID](FLOAT deltaTime) -> void
-		{
-			if (!World)
-			{
-				return;
-			}
-			const PActorComponent* FoundComponent = World->GetComponentByUniqueID(ComponentID, TRUE);
-			PActorComponent* MutableComponent = const_cast<PActorComponent*>(FoundComponent);
-			if (MutableComponent && (!MutableComponent->IsPendingDestroy()))
-			{
-				MutableComponent->HandlePostPhysicsTick(deltaTime);
-			}
-		});
-		EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
-		bPostPhysicsTickRegistered = TRUE;
+		PostPhysicsTickHandle = GetWorld()->GetTickScheduler().RegisterComponent(
+			*this, ETickDomain::POST_PHYSICS, GetTickPriority());
+		bPostPhysicsTickRegistered = PostPhysicsTickHandle.IsValid();
 	}
 
 	void PActorComponent::UnregisterPostPhysicsTick()
 	{
-		if (bPostPhysicsTickRegistered)
+		if (!bPostPhysicsTickRegistered)
 		{
-			EWorldTickManager::GetManagerSingleton()->UnregisterPostPhysicsTick(PostPhysicsTickHandler);
-			bPostPhysicsTickRegistered = FALSE;
+			return;
 		}
+		if (PWorld* World = GetWorld())
+		{
+			World->GetTickScheduler().Unregister(PostPhysicsTickHandle);
+		}
+		else
+		{
+			PostPhysicsTickHandle.Reset();
+		}
+		bPostPhysicsTickRegistered = FALSE;
 	}
 
 	void PActorComponent::HandlePostPhysicsTick(FLOAT deltaTime)
@@ -143,28 +179,31 @@ namespace PigeonEngine
 	void PActorComponent::SetIsTickable(const BOOL32& bTickable)
 	{
 		PObject::SetIsTickable(bTickable);
-		if (PActor* OwnerActor = GetOwnerActor())
+		if (bTickable)
 		{
-			OwnerActor->RefreshTickOrder();
+			RegisterTickDomains();
 		}
-	}
-
-	void PActorComponent::SetTickGroup(const ETickGroupType& InGroup)
-	{
-		PObject::SetTickGroup(InGroup);
-		if (PActor* OwnerActor = GetOwnerActor())
+		else
 		{
-			OwnerActor->RefreshTickOrder();
+			UnregisterTickDomains();
 		}
 	}
 
 	void PActorComponent::SetTickPriority(const INT32& InPriority)
 	{
 		PObject::SetTickPriority(InPriority);
-		if (PActor* OwnerActor = GetOwnerActor())
+		PWorld* World = GetWorld();
+		if (!World)
 		{
-			OwnerActor->RefreshTickOrder();
+			return;
 		}
+		FWorldTickScheduler& Scheduler = World->GetTickScheduler();
+		Scheduler.SetPriority(VariableTickHandle, InPriority);
+		Scheduler.SetPriority(FixedTickHandle, InPriority);
+		Scheduler.SetPriority(PostPhysicsTickHandle, InPriority);
+#if ENGINE_EDITOR_ONLY
+		Scheduler.SetPriority(EditorTickHandle, InPriority);
+#endif
 	}
 
 	void PActorComponent::Uninit()

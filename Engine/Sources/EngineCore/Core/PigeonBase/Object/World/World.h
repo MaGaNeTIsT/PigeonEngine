@@ -7,6 +7,7 @@
 #include <EngineCommon.h>
 #include <PigeonBase/Object/Object.h>
 #include <PigeonBase/Object/Actor.h>
+#include "WorldTickScheduler.h"
 
 namespace PigeonEngine
 {
@@ -58,6 +59,8 @@ namespace PigeonEngine
 		void	Uninit() override;
 		void	Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime);
+		// Runs the world's post-physics component domain after the engine physics step.
+		void	PostPhysicsTick(FLOAT deltaTime);
 
 	protected:
 		// Destroys the root actor (which cascades through the whole actor tree) and drops
@@ -74,6 +77,10 @@ namespace PigeonEngine
 		// the gameplay tick. Tick still calls both in order.
 		void                                TickRenderTree();
 		void                                TickGameplay(FLOAT deltaTime);
+		// Per-world gameplay tick schedule. Actor and component lifecycle hooks register
+		// themselves; the world only dispatches domains.
+		PE_NODISCARD FWorldTickScheduler&   GetTickScheduler();
+		PE_NODISCARD const FWorldTickScheduler& GetTickScheduler() const;
 		PE_NODISCARD const PActor*          GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
 	// Handle resolution: looks the object up in the registries and validates its
@@ -133,6 +140,7 @@ namespace PigeonEngine
 	FOnWorldComponentAdded		OnComponentAdded;
 	FOnWorldComponentRemoved	OnComponentRemoved;
 private:
+	FWorldTickScheduler TickScheduler;
 	PActor* RootActor = nullptr;
 	// Flat registry of every actor added to this world (root excluded), maintained by
 	// AddActor/RemoveActor/UnregisterActor. Insertion order, so iteration is

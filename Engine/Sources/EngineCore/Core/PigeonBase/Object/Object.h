@@ -23,17 +23,6 @@ namespace PigeonEngine
 		DESTROYED,
 	};
 
-	// Ordered tick bands. Lexicographic (group, priority, registration order) is the
-	// full order an actor's components tick in - build that into the actor's cached tick
-	// list, so the order is identical across runs.
-	enum class ETickGroupType : UINT8
-	{
-		PRE_PHYSICS = 0,
-		PHYSICS,
-		GAME_PLAY,
-		POST_PHYSICS,
-	};
-
 	class PObject : public EObjectBase
 	{
 	public:
@@ -55,15 +44,11 @@ namespace PigeonEngine
 		// queue flushes, but tick and lookup paths treat it as already gone.
 		void MarkPendingDestroy();
 		BOOL32 IsPendingDestroy() const;
-		// Tick band and priority. Within an actor, components tick in (group, priority,
-		// registration) order; both default to the gameplay band at priority 0.
-		virtual void SetTickGroup(const ETickGroupType& InGroup);
-		PE_NODISCARD ETickGroupType GetTickGroup() const;
+		// Priority orders entries inside the scheduler domain. Lower values run first.
 		virtual void SetTickPriority(const INT32& InPriority);
 		PE_NODISCARD INT32 GetTickPriority() const;
 	private:
 		BOOL32 bCanTick = FALSE;
-		ETickGroupType TickGroup = ETickGroupType::GAME_PLAY;
 		INT32 TickPriority = 0;
 		// Scene membership is orthogonal to the destroy phase, so it stays a plain flag:
 		// an object can be DESTROYING while still "in scene" until RemovedFromScene ran.

@@ -4,7 +4,6 @@
 #include "../../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/CharacterVirtual.h"
 #include "../../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/CharacterBase.h"
 #include "PigeonBase/Object/World/World.h"
-#include "PigeonBase/Object/World/WorldTickManager.h"
 #include "Base/Math/Math.h"
 
 namespace PigeonEngine

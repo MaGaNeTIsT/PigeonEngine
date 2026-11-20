@@ -161,7 +161,9 @@ PigeonEngine::PMovementComponent* PigeonEngine::PCharacter::GetMovementComponent
 #if ENGINE_EDITOR_ONLY
 void PigeonEngine::PCharacter::EditorTick(FLOAT deltaTime)
 {
-	if ((Character->GetShape() != nullptr)
+	(void)deltaTime;
+	if ((Character != nullptr)
+		&& (Character->GetShape() != nullptr)
 		&& (FPhysicsCommonSettings::GetSingleton()->bDrawCollision != FALSE))
 	{
 		RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();

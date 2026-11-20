@@ -3,21 +3,21 @@
 #include <CoreMinimal.h>
 
 #include "Component.h"
+#include <PigeonBase/Object/World/WorldTickScheduler.h>
 
 namespace PigeonEngine
 {
 
 	class PActor;
+	class FWorldTickScheduler;
 	class PActorComponent : public PComponent
 	{
+		friend class FWorldTickScheduler;
 	public:
 		virtual void Init() override;
 		virtual void Uninit() override;
-		// A component's tickable flag changes the owner actor's cached tickable list.
+		// Tick flags and priority update the world scheduler entry immediately.
 		virtual void SetIsTickable(const BOOL32& bTickable) override;
-		// Setting either re-sorts the owner actor's cached tick order, so changing them
-		// after AddComponent takes effect immediately.
-		virtual void SetTickGroup(const ETickGroupType& InGroup) override;
 		virtual void SetTickPriority(const INT32& InPriority) override;
 	public:
 		virtual BOOL32 ContainTransform() const;
@@ -37,6 +37,12 @@ namespace PigeonEngine
 		void    SetOwnerActor(PActor* NewOwner);
 	private:
 		PActor* Owner = nullptr;
+		FTickHandle VariableTickHandle;
+		FTickHandle FixedTickHandle;
+		FTickHandle PostPhysicsTickHandle;
+#if ENGINE_EDITOR_ONLY
+		FTickHandle EditorTickHandle;
+#endif
 
 	protected:
 		// Final destroy step, after Uninit: by now a subclass has finished every teardown
@@ -48,16 +54,15 @@ namespace PigeonEngine
 		void BeginAddedToScene(PWorld* World) override;
 		void RemovedFromScene() override;
 
-		// Post-physics tick. The base registers one handler on EWorldTickManager that
-		// re-resolves this component by ID every fixed tick - the pattern the physics,
-		// movement and trigger components each used to copy - and dispatches to the
-		// virtual hook. Subclasses register from BeginAddedToScene, unregister from
-		// RemovedFromScene, and override HandlePostPhysicsTick.
+		// Post-physics dispatch. The base registers a scheduler entry in the owning world;
+		// subclasses call this from BeginAddedToScene, unregister from RemovedFromScene, and
+		// override HandlePostPhysicsTick.
 		void RegisterPostPhysicsTick();
 		void UnregisterPostPhysicsTick();
 		virtual void HandlePostPhysicsTick(FLOAT deltaTime);
 	private:
-		TFunction<void(FLOAT)> PostPhysicsTickHandler;
+		void RegisterTickDomains();
+		void UnregisterTickDomains();
 		BOOL32 bPostPhysicsTickRegistered = FALSE;
 
 		// Render proxy functions START

@@ -76,6 +76,9 @@ namespace PigeonEngine
 			RootActor = nullptr;
 		}
 
+		// The scheduler must exist before the root and default controller join the scene,
+		// because their BeginAddedToScene hooks register their first entries.
+		TickScheduler.Initialize(*this);
 		this->RootActor = CreateRootActor();
 		this->RootActor->SetActorScale(Vector3(1,1,1));
 		this->RootActor->SetIsTickable(TRUE);
@@ -122,16 +125,23 @@ namespace PigeonEngine
 		if (RootActor)
 		{
 			PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_GAMEPLAY);
-			RootActor->Tick(deltaTime);
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_TICK_SCHEDULER);
+			TickScheduler.Tick(ETickDomain::VARIABLE, deltaTime);
 		}
 	}
 
 	void PWorld::FixedTick(FLOAT deltaTime)
 	{
-		if (RootActor)
-		{
-			RootActor->FixedTick(deltaTime);
-		}
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_FIXED_TICK);
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_FIXED_SCHEDULER);
+		TickScheduler.Tick(ETickDomain::FIXED, deltaTime);
+	}
+
+	void PWorld::PostPhysicsTick(FLOAT deltaTime)
+	{
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_POST_PHYSICS_TICK);
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_POST_PHYSICS_SCHEDULER);
+		TickScheduler.Tick(ETickDomain::POST_PHYSICS, deltaTime);
 	}
 
 	PActor* PWorld::CreateRootActor()
@@ -185,7 +195,20 @@ namespace PigeonEngine
 			RootActor->Destroy();
 			RootActor = nullptr;
 		}
+		// Every actor/component unregistered through RemovedFromScene by now. Clearing the
+		// scheduler is the final safety net and drops the owner sequence tables.
+		TickScheduler.Shutdown();
 		// AllActors.Clear();
+	}
+
+	FWorldTickScheduler& PWorld::GetTickScheduler()
+	{
+		return TickScheduler;
+	}
+
+	const FWorldTickScheduler& PWorld::GetTickScheduler() const
+	{
+		return TickScheduler;
 	}
 
 	TArray<PActor*> PWorld::GetAllActors() const
@@ -578,7 +601,12 @@ namespace PigeonEngine
 #if ENGINE_EDITOR_ONLY
 	void PWorld::EditorTick(FLOAT deltaTime)
 	{
-		RootActor->EditorTick(deltaTime);
+		if (RootActor)
+		{
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_EDITOR_TICK);
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_WORLD_EDITOR_SCHEDULER);
+			TickScheduler.Tick(ETickDomain::EDITOR, deltaTime);
+		}
 	}
 
 #endif

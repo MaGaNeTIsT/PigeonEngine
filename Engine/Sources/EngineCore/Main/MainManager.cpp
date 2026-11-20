@@ -1,7 +1,6 @@
 #include "MainManager.h"
 #include "RenderThread.h"
 #include "GameThreadCommandQueue.h"
-#include "PigeonBase/Object/World/WorldTickManager.h"
 #include <CoreMinimal.h>
 #include <Config/EngineConfig.h>
 #include <RenderDevice/DeviceD3D11.h>
@@ -86,33 +85,7 @@ namespace PigeonEngine
 		ClassFactoryRegisterManager = EClassFactoryRegisterManager::GetManagerSingleton();
 
 		WorldManager = EWorldManager::GetManagerSingleton();
-		WorldTickManager = EWorldTickManager::GetManagerSingleton();
 		NavigationManager = ENavigationManager::GetManagerSingleton();
-		PrePhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
-		{
-			if (WorldManager && WorldManager->GetWorld())
-			{
-				WorldManager->GetWorld()->FixedTick(InDeltaTime);
-			}
-			if (PhysicsManager)
-			{
-				PhysicsManager->PrePhysicsUpdate(InDeltaTime);
-			}
-		});
-		PhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
-		{
-			if (PhysicsManager)
-			{
-				PhysicsManager->FixedUpdate(InDeltaTime);
-			}
-		});
-		PostPhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
-		{
-			if (PhysicsManager)
-			{
-				PhysicsManager->PostPhysicsUpdate(InDeltaTime);
-			}
-		});
 
 		MessageManager = EMessageManager::GetManagerSingleton();
 	}
@@ -243,7 +216,6 @@ namespace PigeonEngine
 #endif
 
 		WindowTimer.Init();
-		WorldTickManager->Initialize();
 		WorldManager->Initialize();
 		NavigationManager->Initialize();
 
@@ -266,7 +238,6 @@ namespace PigeonEngine
 		// After the world: the components that published navigation data are gone by now, and
 		// whatever is left is released here rather than during world teardown.
 		NavigationManager->ShutDown();
-		WorldTickManager->ShutDown();
 
 #if ENGINE_EDITOR_ONLY
 		EditorManager->ShutDown();
@@ -413,10 +384,6 @@ namespace PigeonEngine
 		RenderScene->Init();
 
 		GameTimer->Reset();
-		WorldTickManager->Init();
-		WorldTickManager->RegisterPrePhysicsTick(PrePhysicsFixedTickHandler);
-		WorldTickManager->RegisterPhysicsTick(PhysicsFixedTickHandler);
-		WorldTickManager->RegisterPostPhysicsTick(PostPhysicsFixedTickHandler);
 
 		//need Init before world manager.
 		PhysicsManager->Init();
@@ -440,12 +407,8 @@ namespace PigeonEngine
 			RenderThread->WaitForRenderIdle();
 		}
 
-		WorldTickManager->UnregisterPrePhysicsTick(PrePhysicsFixedTickHandler);
-		WorldTickManager->UnregisterPhysicsTick(PhysicsFixedTickHandler);
-		WorldTickManager->UnregisterPostPhysicsTick(PostPhysicsFixedTickHandler);
 		PhysicsManager->Uninit();
 		WorldManager->Uninit();
-		WorldTickManager->Uninit();
 		RenderScene->Uninit();
 
 		if (GameTimer)
@@ -582,7 +545,26 @@ namespace PigeonEngine
 	}
 	void EMainManager::FixedUpdate()
 	{
-		WorldTickManager->Tick(static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::EEngineSettings::ENGINE_FIXED_UPDATE_FRAME));
+		const FLOAT FixedDeltaTime = static_cast<FLOAT>(static_cast<DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::EEngineSettings::ENGINE_FIXED_UPDATE_FRAME));
+		PWorld* World = (WorldManager) ? WorldManager->GetWorld() : nullptr;
+		if (World)
+		{
+			// Component fixed ticks run before the physics step; the input component relies
+			// on this to have the character velocity ready for CharacterVirtual.
+			World->FixedTick(FixedDeltaTime);
+		}
+		if (PhysicsManager)
+		{
+			PhysicsManager->PrePhysicsUpdate(FixedDeltaTime);
+			PhysicsManager->FixedUpdate(FixedDeltaTime);
+			PhysicsManager->PostPhysicsUpdate(FixedDeltaTime);
+		}
+		if (World)
+		{
+			// Physics has finished dispatching activation/contact events here. Movement,
+			// rigid-body and trigger components sync their transforms in this domain.
+			World->PostPhysicsTick(FixedDeltaTime);
+		}
 	}
 	void EMainManager::Draw()
 	{

@@ -44,16 +44,6 @@ namespace PigeonEngine
 		return bPendingDestroy;
 	}
 
-	void PObject::SetTickGroup(const ETickGroupType& InGroup)
-	{
-		TickGroup = InGroup;
-	}
-
-	ETickGroupType PObject::GetTickGroup() const
-	{
-		return TickGroup;
-	}
-
 	void PObject::SetTickPriority(const INT32& InPriority)
 	{
 		TickPriority = InPriority;

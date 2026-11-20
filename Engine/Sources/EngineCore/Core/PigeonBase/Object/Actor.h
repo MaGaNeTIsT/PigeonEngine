@@ -4,6 +4,7 @@
 #include "Base/DataStructure/Container/Set.h"
 #include "Object.h"
 #include "EngineCommon.h"
+#include <PigeonBase/Object/World/WorldTickScheduler.h>
 
 
 namespace PigeonEngine
@@ -20,8 +21,10 @@ namespace PigeonEngine
 	public:
 		void    Init() override;
 		void    Uninit() override;
+		// Actor self tick only. Components and child actors have their own scheduler entries.
 		void	Tick(FLOAT deltaTime) override;
-		void	FixedTick(FLOAT deltaTime);
+		virtual void SetIsTickable(const BOOL32& bTickable) override;
+		virtual void SetTickPriority(const INT32& InPriority) override;
 		// Render update pass, independent of tickability: every scene component's deferred
 		// applies, dirty sends and transform walks run here once per frame, including the
 		// subtrees of non-tickable actors.
@@ -123,23 +126,16 @@ protected:
 protected:
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 	private:
+		void RegisterSelfTickDomains();
+		void UnregisterSelfTickDomains();
 		// contains all actor components, including RootComponent. Insertion order, so
 		// tick and iteration order is deterministic (the old TSet iterated in pointer
 		// order, which changed with the allocator).
 		TArray<PActorComponent*> Components;
-		// Components sorted by (tick group, priority), rebuilt whenever the list changes.
-		// Registration order is the tie-breaker, so the order is stable across runs.
-		TArray<PActorComponent*> TickOrder;
-		// The tickable subset of TickOrder. Tick/FixedTick walk this list directly instead
-		// of testing every component every frame. It is independent of the actor's own
-		// UserTick switch.
-		TArray<PActorComponent*> TickableOrder;
-	public:
-		// Re-sorts the cached tick order after a component changed its tick group or
-		// priority. Called by PActorComponent::SetTickGroup/SetTickPriority.
-		void RefreshTickOrder();
-	private:
-		void RebuildTickOrder();
+		FTickHandle VariableTickHandle;
+#if ENGINE_EDITOR_ONLY
+		FTickHandle EditorTickHandle;
+#endif
 
 	public:
 

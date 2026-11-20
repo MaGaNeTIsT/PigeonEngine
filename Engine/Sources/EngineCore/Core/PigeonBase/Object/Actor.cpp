@@ -109,64 +109,76 @@ namespace PigeonEngine
 		PObject::Uninit();
 	}
 
-	void PActor::RefreshTickOrder()
-	{
-		RebuildTickOrder();
-	}
-
-	void PActor::RebuildTickOrder()
-	{
-		TickOrder = Components;
-		// Stable: equal (group, priority) keys keep registration order, which is the
-		// tie-breaker that makes the tick order identical across runs.
-		TickOrder.StableSort([](const PActorComponent* InA, const PActorComponent* InB) -> BOOL32
-		{
-			if (InA->GetTickGroup() != InB->GetTickGroup())
-			{
-				return (InA->GetTickGroup() < InB->GetTickGroup()) ? TRUE : FALSE;
-			}
-			return (InA->GetTickPriority() < InB->GetTickPriority()) ? TRUE : FALSE;
-		});
-		TickableOrder.Empty();
-		for (UINT32 Index = 0u, Num = TickOrder.Num<UINT32>(); Index < Num; Index++)
-		{
-			PActorComponent* Component = TickOrder[Index];
-			if (Component && Component->IsTickable())
-			{
-				TickableOrder.Add(Component);
-			}
-		}
-	}
-
 	void PActor::Tick(FLOAT deltaTime)
 	{
-		// Components have their own tick flags and are scheduled independently of the actor's
-		// UserTick switch. A level-loaded PActor is not automatically tickable, but its
-		// navigation and movement components still have to run.
-		// (group, priority, registration) order, fixed when the component list changed.
-		// Only tickable components are in this list, so no per-component test is needed.
-		for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
-		{
-			TickableOrder[Index]->Tick(deltaTime);
-		}
+		// The scheduler owns component and child-actor entries. This entry is only the
+		// actor's own user logic, and the actor flag gates it without affecting components.
 		if (IsTickable())
 		{
 			UserTick(deltaTime);
 		}
-		// Children tick on their own state: a non-tickable parent no longer freezes its
-		// subtree, and render updates run in TickRenderTree regardless.
-		// By index rather than by reference: a tick may spawn actors - a scene builder does exactly
-		// that - and appending to ChildrenActors reallocates the array, so a range over it would keep
-		// a reference into the buffer the reallocation freed. An index into the live array cannot
-		// dangle, and re-reading the count lets an actor spawned during this tick be ticked by it.
-		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
+	}
+
+	void PActor::SetIsTickable(const BOOL32& bTickable)
+	{
+		PObject::SetIsTickable(bTickable);
+		if (bTickable)
 		{
-			PActor* Child = ChildrenActors[ChildIndex];
-			if (Child)
-			{
-				Child->Tick(deltaTime);
-			}
+			RegisterSelfTickDomains();
 		}
+		else
+		{
+			UnregisterSelfTickDomains();
+		}
+	}
+
+	void PActor::SetTickPriority(const INT32& InPriority)
+	{
+		PObject::SetTickPriority(InPriority);
+		PWorld* World = GetWorld();
+		if (!World)
+		{
+			return;
+		}
+		FWorldTickScheduler& Scheduler = World->GetTickScheduler();
+		Scheduler.SetPriority(VariableTickHandle, InPriority);
+#if ENGINE_EDITOR_ONLY
+		Scheduler.SetPriority(EditorTickHandle, InPriority);
+#endif
+	}
+
+	void PActor::RegisterSelfTickDomains()
+	{
+		PWorld* World = GetWorld();
+		if ((!World) || (!IsTickable()))
+		{
+			return;
+		}
+		FWorldTickScheduler& Scheduler = World->GetTickScheduler();
+		if (!VariableTickHandle.IsValid())
+		{
+			VariableTickHandle = Scheduler.RegisterActor(*this, ETickDomain::VARIABLE, GetTickPriority());
+		}
+#if ENGINE_EDITOR_ONLY
+		if (!EditorTickHandle.IsValid())
+		{
+			EditorTickHandle = Scheduler.RegisterActor(*this, ETickDomain::EDITOR, GetTickPriority());
+		}
+#endif
+	}
+
+	void PActor::UnregisterSelfTickDomains()
+	{
+		PWorld* World = GetWorld();
+		if (!World)
+		{
+			return;
+		}
+		FWorldTickScheduler& Scheduler = World->GetTickScheduler();
+		Scheduler.Unregister(VariableTickHandle);
+#if ENGINE_EDITOR_ONLY
+		Scheduler.Unregister(EditorTickHandle);
+#endif
 	}
 
 	void PActor::TickRenderTree()
@@ -205,43 +217,12 @@ namespace PigeonEngine
 		}
 	}
 
-	void PActor::FixedTick(FLOAT deltaTime)
-	{
-		// Fixed and variable ticks use the same independent component schedule.
-		for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
-		{
-			TickableOrder[Index]->FixedTick(deltaTime);
-		}
-		// Same reason as Tick: a fixed tick may spawn actors too, so the list is walked by index.
-		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
-		{
-			PActor* Child = ChildrenActors[ChildIndex];
-			if (Child)
-			{
-				Child->FixedTick(deltaTime);
-			}
-		}
-	}
-
 #if ENGINE_EDITOR_ONLY
 	void PActor::EditorTick(FLOAT deltaTime)
 	{
-		// Editor-only component work (navigation debug lines, previews) follows the same
-		// independent schedule as gameplay ticks.
-		for (UINT32 Index = 0u, Num = TickableOrder.Num<UINT32>(); Index < Num; Index++)
-		{
-			TickableOrder[Index]->EditorTick(deltaTime);
-		}
-		// Same reason as Tick: the editor tick is the one a scene builder runs inside, so this is
-		// exactly the loop that can be reallocated under itself.
-		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
-		{
-			PActor* Child = ChildrenActors[ChildIndex];
-			if (Child)
-			{
-				Child->EditorTick(deltaTime);
-			}
-		}
+		// Actor self editor logic only. Component and child-actor editor entries are
+		// scheduled independently; subclasses keep their existing overrides.
+		(void)deltaTime;
 	}
 #endif
 
@@ -435,7 +416,6 @@ namespace PigeonEngine
 		this->RootComponent = NewRoot;
 		this->RootComponent->SetOwnerActor(this);
 		POBJ_DEBUGNAME_SET(this->RootComponent, EnsureRootDebugName(POBJ_DEBUGNAME_GET(this->RootComponent)));
-		RebuildTickOrder();
 		MarkRenderTreeDirty();
 	}
 
@@ -483,7 +463,6 @@ namespace PigeonEngine
 		}
 
 		// The component list changed (possibly from the constructor, before any world).
-		RebuildTickOrder();
 		MarkRenderTreeDirty();
 	}
 
@@ -597,7 +576,6 @@ namespace PigeonEngine
 			AttachComponentToActor(SceneComp, this, RelativeTransform);
 		}
 		this->Components.Add(NewComponent);
-		RebuildTickOrder();
 		this->MarkRenderTreeDirty();
 		if (this->GetWorld())
 		{
@@ -657,7 +635,6 @@ namespace PigeonEngine
 		// The component's OnPreDelete calls this as its final destroy step, so the list
 		// never keeps a pointer to memory that is about to go away.
 		Components.Remove(Component);
-		RebuildTickOrder();
 	}
 
 	void PActor::ClearComponents()
@@ -688,8 +665,6 @@ namespace PigeonEngine
 			RootComponent = nullptr;
 		}
 		Components.Empty();
-		TickOrder.Empty();
-		TickableOrder.Empty();
 	}
 
 	EBoundAABB PActor::GetBounds() const
@@ -722,6 +697,7 @@ namespace PigeonEngine
 		{
 			Component->OnAddedToScene(this->GetWorld());
 		}
+		RegisterSelfTickDomains();
 		for (PActor* Child : ChildrenActors)
 		{
 			Child->BeginAddedToScene(this->GetWorld());
@@ -734,6 +710,9 @@ namespace PigeonEngine
 
 	void PActor::RemovedFromScene()
 	{
+		// Unregister before the early-return: a repeated removal may still have a live
+		// scheduler handle even though the scene membership flag is already clear.
+		UnregisterSelfTickDomains();
 		// The world pointer is still set at entry (PObject::RemovedFromScene clears it at
 		// the end of this chain), so this is the one spot every destroy path funnels
 		// through where the world's actor registry can be cleaned - including direct
