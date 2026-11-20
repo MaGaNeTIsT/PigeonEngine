@@ -111,22 +111,24 @@ namespace PigeonEngine
 
 #if ENGINE_EDITOR_ONLY
 	public:
-		virtual void	GenerateComponentDetail() override;
 		virtual void	EditorTick(FLOAT InDeltaTime) override;
 
-	private:
 		// Bakes from the world on this thread, exports the result and writes a new asset. Saving is
 		// an explicit editor action and has to publish exactly the bytes the file holds, so it does
-		// not go through the worker.
+		// not go through the worker. Both actions record their failure into the last-asset error,
+		// so the editor panel only needs the getters below.
 		BOOL32						SaveBakeAsAsset(const EString& InAssetName, EString& OutError);
-		// Re-reads the current asset from disk and publishes it immediately. Used by the
-		// Details panel after an external bake/replace, without restarting the editor.
+		// Re-reads the current asset from disk and publishes it immediately. Used by the editor
+		// panel after an external bake/replace, without restarting the editor.
 		BOOL32						ReloadNavMeshAsset(EString& OutError);
 		ERecastNavigationProvider*	BakeProviderSynchronously(ENavigationBuildStats& OutStats);
 
+		// The single queued asset request failed to load; the component fell back to the world bake.
+		PE_NODISCARD BOOL32			HasNavMeshAssetFailedToLoad() const;
+		// The last error recorded by SaveBakeAsAsset/ReloadNavMeshAsset; both clear it at entry.
+		PE_NODISCARD const EString&	GetLastNavMeshAssetError() const;
+
 	private:
-		// InputText needs a mutable buffer; it is seeded with a sane default in the constructor.
-		CHAR	AssetNameBuffer[128] = {};
 		EString	LastAssetError;
 #endif
 	};

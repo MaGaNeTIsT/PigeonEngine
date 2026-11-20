@@ -8,10 +8,10 @@
 namespace PigeonEngine
 {
 	/*
-	* Reflection-driven property grid used by the World Details panel and by the per-component
-	* GenerateComponentDetail implementations. Reflection supplies the value type and the
-	* getter/setter pair; this module only maps that to ImGui widgets. Components with a
-	* CUSTOM property (physics shapes, water parameters, ...) keep their hand-written panel.
+	* Reflection-driven property grid used by the World Details panel and by the per-class
+	* details editors registered with EEditorCustomization. Reflection supplies the value type
+	* and the getter/setter pair; this module only maps that to ImGui widgets. Components with
+	* a CUSTOM property (physics shapes, water parameters, ...) keep their hand-written panel.
 	*/
 	namespace EPropertyEditor
 	{

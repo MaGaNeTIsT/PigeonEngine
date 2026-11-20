@@ -165,12 +165,6 @@ protected:
 		PActor* AttachedParentActor = nullptr;
 		TArray<PActor*> ChildrenActors;
 
-		// Imgui
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent);
-#endif
-
 	};
 
 	template <typename TComponent>

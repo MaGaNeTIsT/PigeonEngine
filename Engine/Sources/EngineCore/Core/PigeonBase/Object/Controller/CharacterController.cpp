@@ -6,10 +6,6 @@
 #include "PigeonBase/Object/Component/Character/CharacterInputComponent.h"
 #include "PigeonBase/Object/Component/Character/MovementComponent.h"
 
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#endif
-
 namespace PigeonEngine
 {
 	void PCharacterController::BeginAddedToScene(PWorld* World)

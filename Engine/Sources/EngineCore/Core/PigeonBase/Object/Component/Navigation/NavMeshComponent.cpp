@@ -11,7 +11,6 @@
 #if ENGINE_EDITOR_ONLY
 #include <AssetManager.h>
 #include <RenderProxy/RenderSingletonObject.h>
-#include <imgui.h>
 #endif
 
 namespace PigeonEngine
@@ -612,9 +611,11 @@ namespace PigeonEngine
 	BOOL32 PNavMeshComponent::ReloadNavMeshAsset(EString& OutError)
 	{
 		OutError = EString();
+		LastAssetError = EString();
 		if (NavMeshAssetName.Length() <= 0u)
 		{
 			OutError = EString(PE_TEXT("No navmesh asset name is assigned."));
+			LastAssetError = OutError;
 			return FALSE;
 		}
 
@@ -625,6 +626,7 @@ namespace PigeonEngine
 			EString(EBaseSettings::ENGINE_NAV_MESH_PATH), NavMeshAssetName, ReloadedAsset, OutError))
 		{
 			bAssetLoadFailed = TRUE;
+			LastAssetError = OutError;
 			return FALSE;
 		}
 
@@ -636,6 +638,7 @@ namespace PigeonEngine
 		{
 			bHasBuilt = FALSE;
 			OutError = EString(PE_TEXT("Reloaded navmesh asset has no usable data; the world bake will run instead."));
+			LastAssetError = OutError;
 			return FALSE;
 		}
 		bHasBuilt = TRUE;
@@ -645,9 +648,11 @@ namespace PigeonEngine
 	BOOL32 PNavMeshComponent::SaveBakeAsAsset(const EString& InAssetName, EString& OutError)
 	{
 		OutError = EString();
+		LastAssetError = EString();
 		if (InAssetName.Length() <= 0u)
 		{
 			OutError = EString(PE_TEXT("Enter a name for the navmesh asset first."));
+			LastAssetError = OutError;
 			return FALSE;
 		}
 
@@ -658,6 +663,7 @@ namespace PigeonEngine
 		if (!Provider)
 		{
 			OutError = EString(PE_TEXT("Bake produced no navmesh; nothing to save."));
+			LastAssetError = OutError;
 			return FALSE;
 		}
 
@@ -666,6 +672,7 @@ namespace PigeonEngine
 		{
 			delete Provider;
 			OutError = EString(PE_TEXT("Baked navmesh could not be exported."));
+			LastAssetError = OutError;
 			return FALSE;
 		}
 
@@ -681,6 +688,7 @@ namespace PigeonEngine
 			InAssetName, Settings, Blob, EString(EBaseSettings::ENGINE_NAV_MESH_PATH), SavedAsset, OutError))
 		{
 			delete Provider;
+			LastAssetError = OutError;
 			return FALSE;
 		}
 
@@ -697,91 +705,14 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void PNavMeshComponent::GenerateComponentDetail()
+	BOOL32 PNavMeshComponent::HasNavMeshAssetFailedToLoad() const
 	{
-		PNavigationComponent::GenerateComponentDetail();
+		return bAssetLoadFailed;
+	}
 
-		if (!ImGui::TreeNodeEx("NavMesh Bake", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			return;
-		}
-
-		ImGui::TextDisabled("Build settings are editable in the Details grid above.");
-		if ((!!NavMeshAsset) && (NavMeshAsset->GetAssetName() == NavMeshAssetName))
-		{
-			ImGui::TextDisabled("Asset loaded: %s", *NavMeshAssetName);
-		}
-		else if (bAssetLoadFailed)
-		{
-			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Asset '%s' failed to load; using the world bake.", *NavMeshAssetName);
-		}
-		else if (NavMeshAssetName.Length() > 0u)
-		{
-			ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "Loading asset '%s'...", *NavMeshAssetName);
-		}
-		else
-		{
-			ImGui::TextDisabled("No navmesh asset assigned; using the world bake.");
-		}
-		ImGui::Separator();
-		const ENavigationBuildStateType BuildState = ENavigationManager::GetManagerSingleton()->GetBuildState(GetUniqueID());
-		if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
-		{
-			ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "Baking on the worker...");
-		}
-		else if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_FAILED)
-		{
-			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Last bake produced no navmesh.");
-		}
-		if (ImGui::Button("Rebuild From World"))
-		{
-			RequestBuildNavigation();
-		}
-		ImGui::SameLine();
-		const BOOL32 bCanReload = (NavMeshAssetName.Length() > 0u) ? TRUE : FALSE;
-		if (!bCanReload)
-		{
-			ImGui::BeginDisabled();
-		}
-		if (ImGui::Button("Reload Asset"))
-		{
-			LastAssetError = EString();
-			EString ReloadError;
-			if (!ReloadNavMeshAsset(ReloadError))
-			{
-				LastAssetError = ReloadError;
-			}
-		}
-		if (!bCanReload)
-		{
-			ImGui::EndDisabled();
-		}
-
-		ImGui::InputText("New Asset Name", AssetNameBuffer, sizeof(AssetNameBuffer));
-		const BOOL32 bCanSave = (AssetNameBuffer[0] != '\0') ? TRUE : FALSE;
-		if (!bCanSave)
-		{
-			ImGui::BeginDisabled();
-		}
-		if (ImGui::Button("Bake & Save As Asset"))
-		{
-			LastAssetError = EString();
-			EString SaveError;
-			if (!SaveBakeAsAsset(EString(AssetNameBuffer), SaveError))
-			{
-				LastAssetError = SaveError;
-			}
-		}
-		if (!bCanSave)
-		{
-			ImGui::EndDisabled();
-		}
-		if (LastAssetError.Length() > 0u)
-		{
-			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", *LastAssetError);
-		}
-
-		ImGui::TreePop();
+	const EString& PNavMeshComponent::GetLastNavMeshAssetError() const
+	{
+		return LastAssetError;
 	}
 
 	void PNavMeshComponent::EditorTick(FLOAT InDeltaTime)

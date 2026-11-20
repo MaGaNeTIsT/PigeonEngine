@@ -6,6 +6,7 @@
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #include <Editor/WorldOutlinePanel.h>
+#include <Editor/WorldDetailsPanel.h>
 #endif
 
 namespace PigeonEngine
@@ -821,7 +822,7 @@ namespace PigeonEngine
 		ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(10, 440), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Details");
-		this->GetWorld()->GenerateDetail();
+		EWorldDetailsPanel::GenerateDetails(this->GetWorld());
 		ImGui::End();
 	}
 #endif

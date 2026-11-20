@@ -6,10 +6,6 @@
 #include <Renderer/RenderInterface.h>
 #include <Reflection/Property.h>
 
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#endif
-
 namespace PigeonEngine
 {
 
@@ -247,12 +243,5 @@ namespace PigeonEngine
 		PSceneComponent::CleanMarkRenderStateDirty();
 	}
 	// Render proxy functions END
-
-#if ENGINE_EDITOR_ONLY
-	void PSkyLightComponent::GenerateComponentDetail()
-	{
-		PSceneComponent::GenerateComponentDetail();
-	}
-#endif
 
 };

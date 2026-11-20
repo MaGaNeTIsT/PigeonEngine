@@ -7,7 +7,6 @@
 
 #if ENGINE_EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
-#include <imgui.h>
 #endif
 
 namespace PigeonEngine
@@ -202,11 +201,6 @@ namespace PigeonEngine
 	}
 
 #if ENGINE_EDITOR_ONLY
-	void PNavObstacleComponent::GenerateComponentDetail()
-	{
-		PSceneComponent::GenerateComponentDetail();
-	}
-
 	void PNavObstacleComponent::EditorTick(FLOAT InDeltaTime)
 	{
 		PSceneComponent::EditorTick(InDeltaTime);

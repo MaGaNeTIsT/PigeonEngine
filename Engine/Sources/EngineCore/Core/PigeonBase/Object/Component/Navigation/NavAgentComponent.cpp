@@ -431,11 +431,6 @@ namespace PigeonEngine
 	}
 
 #if ENGINE_EDITOR_ONLY
-	void PNavAgentComponent::GenerateComponentDetail()
-	{
-		PActorComponent::GenerateComponentDetail();
-	}
-
 	void PNavAgentComponent::EditorTick(FLOAT InDeltaTime)
 	{
 		PActorComponent::EditorTick(InDeltaTime);

@@ -4,9 +4,6 @@
 #include <Navigation/NavigationManager.h>
 #include <Navigation/NavigationProviderInterface.h>
 
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#endif
 
 namespace PigeonEngine
 {
@@ -62,52 +59,8 @@ namespace PigeonEngine
 	void PNavigationComponent::RemovedFromScene()
 	{
 		ENavigationManager::GetManagerSingleton()->UnregisterProvider(GetUniqueID());
-		PSceneComponent::RemovedFromScene();
-	}
+	PSceneComponent::RemovedFromScene();
+}
 
-#if ENGINE_EDITOR_ONLY
-	void PNavigationComponent::GenerateComponentDetail()
-	{
-		PSceneComponent::GenerateComponentDetail();
-
-		if (!ImGui::TreeNodeEx("Navigation", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			return;
-		}
-
-		ImGui::Text("Backend: %s", *GetProviderName().ToString());
-		bool bShowNavigation = (bDebugDrawEnabled != FALSE);
-		if (ImGui::Checkbox("Include In Overlay", &bShowNavigation))
-		{
-			// Through the setter: it forwards the flag to the manager, so the overlay drops this
-			// provider's lines in the same frame instead of waiting for the next build.
-			SetDebugDrawEnabled((bShowNavigation ? TRUE : FALSE));
-		}
-
-		if (LastBuildStats.PolygonCount > 0u)
-		{
-			ImGui::Text("Polygons: %u  Tiles: %u", LastBuildStats.PolygonCount, LastBuildStats.TileCount);
-			if ((LastBuildStats.TriangleCount > 0u) || (LastBuildStats.Milliseconds > 0.0f))
-			{
-				ImGui::Text("Triangles: %u (%u walkable)", LastBuildStats.TriangleCount, LastBuildStats.WalkableTriangleCount);
-				ImGui::Text("Bake: %.2f ms", LastBuildStats.Milliseconds);
-			}
-			else
-			{
-				ImGui::TextDisabled("Imported from navmesh asset.");
-			}
-		}
-		else
-		{
-			ImGui::TextDisabled("Not built yet.");
-		}
-		if (LastBuildStats.SkippedMeshCount > 0u)
-		{
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "Skipped meshes: %u", LastBuildStats.SkippedMeshCount);
-		}
-
-		ImGui::TreePop();
-	}
-#endif
 
 }  // namespace PigeonEngine

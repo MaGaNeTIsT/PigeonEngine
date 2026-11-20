@@ -761,10 +761,6 @@ namespace PigeonEngine
 	{
 		this->ImguiSelectedComponent = Selected;
 		this->ImguiSelectedComponentHandle = MakeObjectHandle(Selected);
-		if (this->ImguiSelectedComponent)
-		{
-			this->ImguiSelectedComponent->OnSelectedByImGui();
-		}
 	}
 
 	PActor* PWorld::GetSelectedActor() const
@@ -829,32 +825,6 @@ namespace PigeonEngine
 	PActor* PWorld::GetRootActor() const
 	{
 		return RootActor;
-	}
-
-	void PWorld::GenerateDetail()
-	{
-		ValidateSelection();
-		if (!ImguiSelectedActor)
-		{
-			return;
-		}
-
-		ImguiSelectedActor->GenerateDetails(ImguiSelectedComponent);
-		if (!ImguiSelectedComponent)
-		{
-			return;
-		}
-		ImguiSelectedComponent->GenerateComponentDetail();
-		if (EditorCommandStack &&
-			(ImguiSelectedComponent != ImguiSelectedActor->GetRootComponent()) &&
-			(ImguiSelectedActor->GetWorld() == this))
-		{
-			ImGui::Separator();
-			if (ImGui::Button("Remove Component"))
-			{
-				PushDeleteComponentCommand(*EditorCommandStack, *this, ImguiSelectedComponent);
-			}
-		}
 	}
 #endif
 };

@@ -3,10 +3,6 @@
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#endif
-
 namespace PigeonEngine
 {
 
@@ -454,104 +450,5 @@ namespace PigeonEngine
 		PPrimitiveComponent::CleanMarkRenderStateDirty();
 	}
 	// Render proxy functions END
-
-#if ENGINE_EDITOR_ONLY
-	void PBezierGrassComponent::GenerateComponentDetail()
-	{
-		PPrimitiveComponent::GenerateComponentDetail();
-
-#if 0
-		const BOOL8 bBezierGrassExpand = ImGui::TreeNodeEx("BezierGrass");
-		if (bBezierGrassExpand)
-		{
-			if (ImGui::TreeNodeEx("Property"))
-			{
-				FLOAT TempLOD = Property.LOD;
-				FLOAT TempLeafWidth = Property.LeafWidth;
-				FLOAT TempRootColor[3] = { Property.RootColor.r, Property.RootColor.g, Property.RootColor.b };
-				FLOAT TempTipColor[3] = {Property.TipColor.r, Property.TipColor.g, Property.TipColor.b};
-				FLOAT TempBentBezierT = Property.BentBezierT;
-				FLOAT TempRoughness = Property.Roughness;
-				FLOAT TempMetallic = Property.Metallic;
-
-				const FLOAT LODMin = 0.f, LODMax = (FLOAT)BEZIER_GRASS_MAX_LOD_INDEX;
-				const BOOL8 bChangedWireframe = ImGui::Button("ToggleWireframe");
-				const BOOL8 bChangedLOD = ImGui::SliderScalar(TEXT("LOD"), ImGuiDataType_Float, &TempLOD, &LODMin, &LODMax, "%.3f");
-				const FLOAT LeafWidthMin = 0.01f, LeafWidthMax = 50.0f;
-				const BOOL8 bChangedLeafWidth = ImGui::SliderScalar(TEXT("LeafWidth"), ImGuiDataType_Float, &TempLeafWidth, &LeafWidthMin, &LeafWidthMax, "%.3f");
-				const BOOL8 bChangedTipColor = ImGui::ColorEdit3(TEXT("TipColor"), TempTipColor);
-				const BOOL8 bChangedRootColor = ImGui::ColorEdit3(TEXT("RootColor"), TempRootColor);
-				const FLOAT BentBezierTMin = 0.2f, BentBezierTMax = 0.8f;
-				const BOOL8 bChangedBentBezierT = ImGui::SliderScalar(TEXT("BentBezierT"), ImGuiDataType_Float, &TempBentBezierT, &BentBezierTMin, &BentBezierTMax, "%.3f");
-				const FLOAT RoughnessMin = 0.0f, RoughnessMax = 1.0f;
-				const BOOL8 bChangedRoughness = ImGui::SliderScalar(TEXT("Roughness"), ImGuiDataType_Float, &TempRoughness, &RoughnessMin, &RoughnessMax, "%.3f");
-				const FLOAT MetallicMin = 0.0f, MetallicMax = 1.0f;
-				const BOOL8 bChangedMetallic = ImGui::SliderScalar(TEXT("Metallic"), ImGuiDataType_Float, &TempMetallic, &MetallicMin, &MetallicMax, "%.3f");
-				if (bChangedWireframe || bChangedLOD || bChangedLeafWidth || bChangedTipColor || bChangedRootColor || bChangedBentBezierT || bChangedRoughness || bChangedMetallic)
-				{
-					if (bChangedWireframe)
-					{
-						bWireframe = bWireframe ^ 0x1u;
-					}
-					SetProperty(bWireframe, TempLOD, TempLeafWidth, Color4(TempRootColor[0], TempRootColor[1], TempRootColor[2]), Color4(TempTipColor[0], TempTipColor[1], TempTipColor[2]), TempBentBezierT, TempRoughness, TempMetallic);
-				}
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("LayerType"))
-			{
-				FLOAT TempHeight[3] = { LayerTypeData.Height.x, LayerTypeData.Height.y, LayerTypeData.Height.z };
-				FLOAT TempWidth[3] = { LayerTypeData.Width.x, LayerTypeData.Width.y, LayerTypeData.Width.z };
-				BOOL8 bChanged = FALSE;
-				bChanged |= ImGui::DragFloat3("Height(Base,Min,Max)", TempHeight, 0.1f);
-				bChanged |= ImGui::DragFloat3("Width(Base,Min,Max)", TempWidth, 0.01f);
-				if (bChanged)
-				{
-					LayerTypeData.Height = Vector3(TempHeight[0], TempHeight[1], TempHeight[2]);
-					LayerTypeData.Width = Vector3(TempWidth[0], TempWidth[1], TempWidth[2]);
-					SetLayerTypeData(LayerTypeData);
-				}
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("Tile"))
-			{
-				FLOAT TempAnchor[2] = { TileAnchor.x, TileAnchor.y };
-				FLOAT TempSize[2] = { TileSize.x, TileSize.y };
-				INT32 TempNumTiles[2] = { (INT32)NumTilesX, (INT32)NumTilesZ };
-				BOOL8 bChanged = FALSE;
-				bChanged |= ImGui::DragFloat2("TileAnchor", TempAnchor, 1.0f);
-				bChanged |= ImGui::DragFloat2("TileSize", TempSize, 1.0f);
-				bChanged |= ImGui::DragInt2("NumTiles(X,Z)", TempNumTiles, 1.0f, 1, 16);
-				if (bChanged)
-				{
-					SetTileParams(Vector2(TempAnchor[0], TempAnchor[1]), Vector2(TempSize[0], TempSize[1]), TempNumTiles[0], TempNumTiles[1]);
-				}
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("Wind"))
-			{
-				FLOAT TempDir[3] = { WindDirection.x, WindDirection.y, WindDirection.z };
-				FLOAT TempStrength = WindStrength;
-				BOOL8 bChanged = FALSE;
-				bChanged |= ImGui::DragFloat3("Direction", TempDir, 0.01f);
-				bChanged |= ImGui::DragFloat("Strength", &TempStrength, 0.1f, 0.0f, 10.0f);
-				if (bChanged)
-				{
-					SetWindParams(Vector3(TempDir[0], TempDir[1], TempDir[2]), TempStrength);
-				}
-				ImGui::TreePop();
-			}
-
-			ImGui::TreePop();
-		}
-#endif
-	}
-	void PBezierGrassComponent::OnSelectedByImGui()
-	{
-		PPrimitiveComponent::OnSelectedByImGui();
-	}
-#endif
 
 }

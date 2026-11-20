@@ -13,6 +13,7 @@
 #include "PigeonBase/Object/Component/ActorComponent.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #include "PropertyEditor.h"
+#include "WorldDetailsPanel.h"
 #include <RenderProxy/RenderSingletonObject.h>
 #include "Navigation/NavigationManager.h"
 #include <imgui.h>
@@ -125,6 +126,10 @@ namespace PigeonEngine
 		AssetManager->EditorInit();
 		WorldManager->EditorInit();
 		ImportManager->EditorInit();
+
+		// One registration point for the per-class details editors: everything registered
+		// here draws on top of the reflection grid for its class chain.
+		EWorldDetailsPanel::RegisterBuiltinCustomEditors();
 
 		// One registration point for every reflected edit: the Details panel applies the value
 		// and hands the before/after pair here, which records the undo command.

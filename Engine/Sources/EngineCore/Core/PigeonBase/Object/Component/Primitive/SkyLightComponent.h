@@ -128,12 +128,6 @@ namespace PigeonEngine
 		UINT8							UpdateState;
 		// Render proxy functions END
 
-	// ImGui
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void	GenerateComponentDetail() override;
-#endif
-
 		CLASS_VIRTUAL_NOCOPY_BODY(PSkyLightComponent)
 	};
 

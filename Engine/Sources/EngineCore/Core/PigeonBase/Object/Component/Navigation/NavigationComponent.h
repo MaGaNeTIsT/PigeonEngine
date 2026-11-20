@@ -51,11 +51,6 @@ namespace PigeonEngine
 	protected:
 		ENavigationBuildStats	LastBuildStats;
 		BOOL32					bDebugDrawEnabled = TRUE;
-
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void	GenerateComponentDetail() override;
-#endif
 	};
 
 }  // namespace PigeonEngine

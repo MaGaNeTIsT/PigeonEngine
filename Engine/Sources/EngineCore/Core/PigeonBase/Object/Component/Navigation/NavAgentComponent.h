@@ -91,7 +91,6 @@ namespace PigeonEngine
 
 #if ENGINE_EDITOR_ONLY
 	public:
-		virtual void	GenerateComponentDetail() override;
 		virtual void	EditorTick(FLOAT InDeltaTime) override;
 #endif
 	};

@@ -4,7 +4,6 @@
 
 #if ENGINE_EDITOR_ONLY
 #include <RenderProxy/StaticMeshSceneProxy.h>
-#include <imgui.h>
 #endif
 
 namespace PigeonEngine
@@ -205,16 +204,5 @@ namespace PigeonEngine
 		bMaterialDirty = FALSE;
 	}
 	// Render proxy functions END
-
-#if ENGINE_EDITOR_ONLY
-	void PPrimitiveComponent::GenerateComponentDetail()
-	{
-		PSceneComponent::GenerateComponentDetail();
-		// The material slot panel is intentionally absent: the old material helper panel
-		// was deleted together with the material asset system, and the reflection driven
-		// replacement of this UI lands in a later phase. So today an editor build shows
-		// the primitive component without any material slot editing section.
-	}
-#endif // ENGINE_EDITOR_ONLY
 
 };

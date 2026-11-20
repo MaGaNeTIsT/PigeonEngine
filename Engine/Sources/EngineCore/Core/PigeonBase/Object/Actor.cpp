@@ -7,12 +7,6 @@
 #include "World/World.h"
 #include <Editor/EditorLogManager.h>
 
-#if ENGINE_EDITOR_ONLY
-#include <Editor/PropertyEditor.h>
-#include <Editor/WorldEditorCommand.h>
-#include <Editor/WorldOutlinePanel.h>
-#include <imgui.h>
-#endif
 
 namespace PigeonEngine
 {
@@ -746,77 +740,5 @@ namespace PigeonEngine
 		return this->RootComponent;
 	}
 
-#if ENGINE_EDITOR_ONLY
-
-	void PActor::GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent)
-	{
-#if ENGINE_EDITOR_ONLY
-		CHAR NameBuffer[256] = {};
-		{
-			const EString& ActorDebugName = POBJ_DEBUGNAME_GET(this);
-			const UINT32 NameLength = EMath::Min(ActorDebugName.Length(), static_cast<UINT32>(sizeof(NameBuffer) - 1u));
-			if (NameLength > 0u)
-			{
-				memcpy(NameBuffer, *ActorDebugName, NameLength);
-			}
-		}
-		if (ImGui::InputText("##ActorName", NameBuffer, sizeof(NameBuffer)))
-		{
-			POBJ_DEBUGNAME_SET(this, EString(NameBuffer));
-		}
-		// Actor-level reflected properties (character settings, future gameplay fields).
-		EPropertyEditor::DrawProperties(this, GetClassHashCode(this));
-		ImGui::Separator();
-#endif
-		if(RootComponent)
-		{
-			BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_DefaultOpen);
-			// Dropping a component on the header re-homes it directly under this actor's root.
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("PSceneComponentDrag"))
-				{
-					PSceneComponent* DraggedComponent = ((Payload->Data) && (Payload->DataSize == sizeof(PSceneComponent*))) ? (*static_cast<PSceneComponent* const*>(Payload->Data)) : nullptr;
-					PWorld* OwnerWorld = GetWorld();
-					if (DraggedComponent && OwnerWorld && OwnerWorld->GetEditorCommandStack())
-					{
-						PushReparentComponentCommand(*OwnerWorld->GetEditorCommandStack(), *OwnerWorld, DraggedComponent, RootComponent);
-					}
-				}
-				ImGui::EndDragDropTarget();
-			}
-			if (bTreeNodeExpand)
-			{
-				EWorldOutlinePanel::GenerateComponentTree(RootComponent, GetWorld());
-				ImGui::TreePop();
-			}
-		}
-
-		// Non-scene components (physics, navigation, input, ...) are not part of the scene
-		// component tree, so they get their own list. The insertion order is the actor's
-		// component order.
-		ImGui::Separator();
-		ImGui::TextUnformatted("Other Components");
-		const TArray<PActorComponent*> AllComponents = GetAllComponents();
-		for (UINT32 Index = 0u, Num = AllComponents.Num<UINT32>(); Index < Num; Index++)
-		{
-			PActorComponent* Component = AllComponents[Index];
-			if ((!Component) || (dynamic_cast<PSceneComponent*>(Component) != nullptr))
-			{
-				continue;
-			}
-			ImGui::PushID(Component);
-			const BOOL32 bSelected = (Component == WorldCurrentSelectedComponent) ? TRUE : FALSE;
-			if (ImGui::Selectable(*POBJ_DEBUGNAME_GET(Component), bSelected))
-			{
-				if (GetWorld())
-				{
-					GetWorld()->SetSelectedComponent(Component);
-				}
-			}
-			ImGui::PopID();
-		}
-	}
-#endif
 
 };

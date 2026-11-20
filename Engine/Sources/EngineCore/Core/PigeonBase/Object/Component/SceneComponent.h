@@ -212,12 +212,6 @@ namespace PigeonEngine
 		BOOL32          bRenderStateCreated = FALSE;
 		// Render proxy functions END
 
-		// ImGui
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void GenerateComponentDetail();
-		virtual void OnSelectedByImGui();
-#endif
 	};
 
 };

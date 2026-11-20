@@ -28,6 +28,7 @@
 #include "Development/Message/Message.h"
 #include <Reflection/Property.h>
 #include <Reflection/JsonArchive.h>
+#include <Editor/EditorCustomization.h>
 #include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
@@ -2084,6 +2085,37 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	static BOOL32 CheckEditorCustomizationRegistry()
+	{
+		// The builtin registrations come from EEditorManager::EditorInit, which has already
+		// run by the time the sanity checks execute. A class counts every registration on
+		// its inheritance chain, mirroring the old virtual chain where each override called
+		// its base before drawing its own extras.
+		const BOOL32 bActorEditorCounted = (EEditorCustomization::CountActorEditorsForClass(GetClassHashCode<PActor>()) >= 1u) ? TRUE : FALSE;
+
+		// PNavMeshComponent's chain composes PSceneComponent + PNavigationComponent +
+		// PNavMeshComponent; the exact three-block layout the old override chain produced.
+		const BOOL32 bNavMeshChainCounted = (EEditorCustomization::CountComponentEditorsForClass(GetClassHashCode<PNavMeshComponent>()) == 3u) ? TRUE : FALSE;
+
+		// A class with no builtin registration anywhere on its chain counts zero - its
+		// details are the bare reflection grid - and picks up editors when one registers.
+		const UINT32 NavAgentEditorsBefore = EEditorCustomization::CountComponentEditorsForClass(GetClassHashCode<PNavAgentComponent>());
+		const BOOL32 bNavAgentClean = (NavAgentEditorsBefore == 0u) ? TRUE : FALSE;
+		EEditorCustomization::RegisterComponentCustomEditor<PNavAgentComponent>(
+			[](PActorComponent* /*InComponent*/, PWorld* /*InWorld*/) -> void {});
+		const BOOL32 bNavAgentRegistered = (EEditorCustomization::CountComponentEditorsForClass(GetClassHashCode<PNavAgentComponent>()) == (NavAgentEditorsBefore + 1u)) ? TRUE : FALSE;
+
+		const BOOL32 bOk = (bActorEditorCounted && bNavMeshChainCounted && bNavAgentClean && bNavAgentRegistered) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("editor customization detail: actor=")) + EString::FromInt(bActorEditorCounted) +
+				EString(PE_TEXT(" navMeshChain=")) + EString::FromInt(bNavMeshChainCounted) +
+				EString(PE_TEXT(" navAgentClean=")) + EString::FromInt(bNavAgentClean) +
+				EString(PE_TEXT(" navAgentRegistered=")) + EString::FromInt(bNavAgentRegistered));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckWorldEditorCommands()
 	{
 #if ENGINE_DEBUG_MODE
@@ -3175,6 +3207,8 @@ namespace PigeonEngine
 		ReportSanityResult(EString(PE_TEXT("world editor command stack")), bWorldEditorCommands);
 		const BOOL32 bAttachmentReparent = CheckWorldAttachmentReparent();
 		ReportSanityResult(EString(PE_TEXT("attachment reparent commands")), bAttachmentReparent);
+		const BOOL32 bEditorCustomization = CheckEditorCustomizationRegistry();
+		ReportSanityResult(EString(PE_TEXT("editor customization registry")), bEditorCustomization);
 		if (!bWorldEditorCommands)
 		{
 			FailedCount += 1u;

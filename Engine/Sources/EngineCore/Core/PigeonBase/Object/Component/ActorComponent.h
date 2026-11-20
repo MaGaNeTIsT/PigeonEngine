@@ -80,11 +80,5 @@ namespace PigeonEngine
 		BOOL32	RenderStateDirty = FALSE;
 		// Render proxy functions END
 
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void GenerateComponentDetail();
-		virtual void OnSelectedByImGui();
-#endif
-
 	};
 }

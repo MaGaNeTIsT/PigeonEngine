@@ -148,7 +148,7 @@ namespace PigeonEngine
 		EString Name;
 		UINT32 Flags = static_cast<UINT32>(EPropertyFlagsType::NONE);
 		// How the Details panel should present the value. CUSTOM falls back to the
-		// component's own GenerateComponentDetail.
+		// class's own registered details editor.
 		EPropertyValueType ValueType = EPropertyValueType::NONE;
 		// ARRAY element / MAP key and value types. Nested containers are CUSTOM.
 		EPropertyValueType ElementType = EPropertyValueType::NONE;

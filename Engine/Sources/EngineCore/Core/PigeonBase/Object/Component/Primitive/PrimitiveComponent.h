@@ -106,19 +106,12 @@ namespace PigeonEngine
 		virtual void    CleanMaterialDirty();
 		// Render proxy functions END
 
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void    GenerateComponentDetail() override;
-#endif
 	protected:
 		BOOL32                              bMaterialDirty;
 		BOOL32                              bCastShadow;
 		BOOL32                              bReceiveShadow;
 		// Level geometry by default; runtime spawned primitives switch it off.
 		BOOL32                              bAffectsNavigation = TRUE;
-#if ENGINE_EDITOR_ONLY
-		BOOL8                               bEmitShaderDebug = FALSE;
-#endif
 
 	};
 

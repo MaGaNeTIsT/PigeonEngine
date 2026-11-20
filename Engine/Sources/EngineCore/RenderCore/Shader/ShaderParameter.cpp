@@ -4,9 +4,6 @@
 #include <RHI/IRCommandList.h>
 #include <Main/MainManager.h>
 #include <TextureAsset/TextureAsset.h>
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#endif
 
 namespace PigeonEngine
 {

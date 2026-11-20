@@ -218,11 +218,4 @@ namespace PigeonEngine
 	}
 	// Render proxy functions END
 
-#if ENGINE_EDITOR_ONLY
-	void PDirectionalLightComponent::GenerateComponentDetail()
-	{
-		PLightComponent::GenerateComponentDetail();
-	}
-#endif
-
 };

@@ -128,12 +128,6 @@ namespace PigeonEngine
 		UINT8                   UpdateState;
 		// Render proxy functions END
 
-#if ENGINE_EDITOR_ONLY
-	public:
-		virtual void GenerateComponentDetail() override;
-		virtual void OnSelectedByImGui() override;
-#endif
-
 	private:
 		friend class RBezierGrassSceneProxy;
 		friend class RScene;

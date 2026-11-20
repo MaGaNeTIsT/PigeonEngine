@@ -4,10 +4,6 @@
 #include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
 
-#if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#endif
-
 namespace PigeonEngine
 {
 
@@ -233,16 +229,5 @@ namespace PigeonEngine
 		}
 	}
 	// Render proxy functions END
-
-#if ENGINE_EDITOR_ONLY
-	void PLightComponent::GenerateComponentDetail()
-	{
-		PSceneComponent::GenerateComponentDetail();
-	}
-	void PLocalLightComponent::GenerateComponentDetail()
-	{
-		PLightComponent::GenerateComponentDetail();
-	}
-#endif
 
 }   // namespace PigeonEngine
