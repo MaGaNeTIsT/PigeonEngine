@@ -706,9 +706,8 @@ namespace PigeonEngine
 		TArray<UINT32> TickLog;
 		PActor* Actor = new PActor();
 		POBJ_DEBUGNAME_SET(Actor, "SanityLookupActor");
-		// A component only ticks when its own actor is tickable; the tick order this
-		// scenario asserts lives inside PActor::Tick.
-		Actor->SetIsTickable(TRUE);
+		// Component ticks are independent of the actor's UserTick switch: the actor stays
+		// non-tickable here, while its tickable components still run in cached order.
 		InWorld->AddActor(Actor);
 
 		// Registration order 1, 2, 3 with different bands and priorities. Expected tick
@@ -730,6 +729,7 @@ namespace PigeonEngine
 		const BOOL32 bBaseLookupWorks = (Actor->FindComponent<PSceneComponent>() == Actor->GetRootComponent()) ? TRUE : FALSE;
 
 		InWorld->Tick(1.f / 60.f);
+		const BOOL32 bActorNotTickable = (Actor->IsTickable() == FALSE) ? TRUE : FALSE;
 		const BOOL32 bOrderMatches =
 			((TickLog.Num<UINT32>() == 3u) && (TickLog[0] == 2u) && (TickLog[1] == 3u) && (TickLog[2] == 1u)) ? TRUE : FALSE;
 
@@ -754,7 +754,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 #endif
-		return (bFindWorks && bListWorks && bBaseLookupWorks && bOrderMatches &&
+		return (bFindWorks && bListWorks && bBaseLookupWorks && bActorNotTickable && bOrderMatches &&
 			bDisableTickableWorks && bEnableTickableWorks) ? TRUE : FALSE;
 	}
 
@@ -2019,6 +2019,62 @@ namespace PigeonEngine
 		TMap<EString, TArray<FLOAT>> NestedWeights;
 	};
 
+	// Re-baking an asset under the same name must read the new file, not the object the manager
+	// cached before the bake. The test uses a scratch asset because the real demo asset is
+	// generated locally and must not be touched.
+	static BOOL32 CheckNavMeshAssetCacheReload()
+	{
+		const EString AssetName(PE_TEXT("Sanity_NavMeshReload"));
+		const EString AssetPath(EBaseSettings::ENGINE_NAV_MESH_PATH);
+		const EString FullPathName = MakeAssetFullPathName(AssetPath, AssetName);
+		EFileHelper::DeleteFile(FullPathName);
+
+		TArray<UINT8> FirstBlob;
+		FirstBlob.Add(1u);
+		FirstBlob.Add(2u);
+		FNavMeshAssetSettings FirstSettings;
+		FirstSettings.ProviderName = EString(PE_TEXT("RecastNavMesh"));
+		FirstSettings.PolygonCount = 1u;
+		FirstSettings.TileCount = 1u;
+		const ENavMeshAsset* FirstAsset = nullptr;
+		EString Error;
+		const BOOL32 bFirstSaved = ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
+			AssetName, FirstSettings, FirstBlob, AssetPath, FirstAsset, Error);
+
+		EFileHelper::DeleteFile(FullPathName);
+		TArray<UINT8> SecondBlob;
+		SecondBlob.Add(3u);
+		SecondBlob.Add(4u);
+		SecondBlob.Add(5u);
+		FNavMeshAssetSettings SecondSettings = FirstSettings;
+		SecondSettings.PolygonCount = 2u;
+		SecondSettings.TileCount = 3u;
+		const ENavMeshAsset* SecondAsset = nullptr;
+		const BOOL32 bSecondSaved = ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
+			AssetName, SecondSettings, SecondBlob, AssetPath, SecondAsset, Error);
+
+		const ENavMeshData* SecondData = SecondAsset ? SecondAsset->GetStoragedResource() : nullptr;
+		const BOOL32 bReloaded = (bFirstSaved && bSecondSaved && FirstAsset && SecondAsset &&
+			(FirstAsset != SecondAsset) &&
+			SecondData &&
+			(SecondData->GetSettings().PolygonCount == 2u) &&
+			(SecondData->GetSettings().TileCount == 3u) &&
+			(SecondData->GetBlob().Num<UINT32>() == 3u) &&
+			(SecondData->GetBlob()[0] == 3u) &&
+			(SecondData->GetBlob()[2] == 5u)) ? TRUE : FALSE;
+
+		EFileHelper::DeleteFile(FullPathName);
+		if (!bReloaded)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh reload detail: firstSaved=")) + EString::FromInt(bFirstSaved) +
+				EString(PE_TEXT(" secondSaved=")) + EString::FromInt(bSecondSaved) +
+				EString(PE_TEXT(" first=")) + EString::FromInt(FirstAsset ? 1 : 0) +
+				EString(PE_TEXT(" second=")) + EString::FromInt(SecondAsset ? 1 : 0) +
+				EString(PE_TEXT(" error=")) + Error);
+		}
+		return bReloaded;
+	}
+
 	static BOOL32 CheckContainerPropertySerialization()
 	{
 		static BOOL32 bPropertiesRegistered = FALSE;
@@ -2746,6 +2802,12 @@ namespace PigeonEngine
 		const BOOL32 bMaterialCatalog = CheckMaterialSourceCatalog();
 		ReportSanityResult(EString(PE_TEXT("material source catalog")), bMaterialCatalog);
 		if (!bMaterialCatalog)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshCacheReload = CheckNavMeshAssetCacheReload();
+		ReportSanityResult(EString(PE_TEXT("navmesh asset cache reload")), bNavMeshCacheReload);
+		if (!bNavMeshCacheReload)
 		{
 			FailedCount += 1u;
 		}
