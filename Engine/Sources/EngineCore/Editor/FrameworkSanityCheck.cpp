@@ -1881,6 +1881,131 @@ namespace PigeonEngine
 		return (bHitOk && bDragOk) ? TRUE : FALSE;
 	}
 
+	// Plain C++ structs used by the struct-property scenarios. The nested struct, the array
+	// of structs and the map of structs each exercise a different value-tree shape without
+	// registering a new OCA class.
+	struct FSanityStructNested
+	{
+		INT32 Count = 0;
+		EString Label;
+	};
+
+	struct FSanityStructData
+	{
+		INT32 Integer = 0;
+		BOOL32 bFlag = FALSE;
+		EString AssetName;
+		EWaterGroundType GroundType = EWaterGroundType::WATER_GROUND_FLAT;
+		FSanityStructNested Nested;
+		TArray<FSanityStructNested> Items;
+		TMap<EString, FSanityStructNested> NamedItems;
+	};
+
+	static void SerializeSanityStructNested(EArchive& InArchive, const CHAR* InName, FSanityStructNested& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeInt32(PE_TEXT("Count"), InOutValue.Count);
+		InArchive.SerializeString(PE_TEXT("Label"), InOutValue.Label);
+		InArchive.EndObject();
+	}
+
+	static void SerializeSanityStructData(EArchive& InArchive, const CHAR* InName, FSanityStructData& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		InArchive.SerializeInt32(PE_TEXT("Integer"), InOutValue.Integer);
+		InArchive.SerializeBool(PE_TEXT("Flag"), InOutValue.bFlag);
+		InArchive.SerializeString(PE_TEXT("AssetName"), InOutValue.AssetName);
+		INT32 GroundType = static_cast<INT32>(InOutValue.GroundType);
+		SerializeEnumValue(InArchive, PE_TEXT("GroundType"), GroundType, GetClassHashCode<EWaterGroundType>());
+		InOutValue.GroundType = static_cast<EWaterGroundType>(GroundType);
+		SerializeSanityStructNested(InArchive, PE_TEXT("Nested"), InOutValue.Nested);
+
+		UINT32 ItemCount = InOutValue.Items.Num<UINT32>();
+		InArchive.BeginArray(PE_TEXT("Items"), ItemCount);
+		if (!InArchive.IsSaving())
+		{
+			InOutValue.Items.Empty();
+		}
+		for (UINT32 Index = 0u; Index < ItemCount; Index++)
+		{
+			const EString IndexKey = EString::FromInt(Index);
+			FSanityStructNested Item = InArchive.IsSaving() ? InOutValue.Items[Index] : FSanityStructNested();
+			SerializeSanityStructNested(InArchive, *IndexKey, Item);
+			if (!InArchive.IsSaving())
+			{
+				InOutValue.Items.Add(Item);
+			}
+		}
+		InArchive.EndArray();
+
+		UINT32 NamedItemCount = InOutValue.NamedItems.Num<UINT32>();
+		InArchive.BeginArray(PE_TEXT("NamedItems"), NamedItemCount);
+		if (!InArchive.IsSaving())
+		{
+			InOutValue.NamedItems.Empty();
+		}
+		for (UINT32 Index = 0u; Index < NamedItemCount; Index++)
+		{
+			const EString IndexKey = EString::FromInt(Index);
+			InArchive.BeginObject(*IndexKey);
+			EString Key;
+			FSanityStructNested Value;
+			if (InArchive.IsSaving())
+			{
+				typename TMap<EString, FSanityStructNested>::TConstIterator It = InOutValue.NamedItems.Begin();
+				for (UINT32 Advance = 0u; Advance < Index; Advance++)
+				{
+					++It;
+				}
+				Key = It->first;
+				Value = It->second;
+			}
+			InArchive.SerializeString(PE_TEXT("Key"), Key);
+			SerializeSanityStructNested(InArchive, PE_TEXT("Value"), Value);
+			if (!InArchive.IsSaving())
+			{
+				InOutValue.NamedItems.Add(Key, Value);
+			}
+			InArchive.EndObject();
+		}
+		InArchive.EndArray();
+		InArchive.EndObject();
+	}
+
+	// Registers the test structs once. The class property keeps a hand-written serializer,
+	// which is the same shape every migrated component property uses.
+	static void RegisterSanityStructProperties()
+	{
+		static BOOL32 bRegistered = FALSE;
+		if (bRegistered)
+		{
+			return;
+		}
+		bRegistered = TRUE;
+		const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
+		const size_t NestedHash = GetClassHashCode<FSanityStructNested>();
+		const EString NestedName(PE_TEXT("FSanityStructNested"));
+		AddStructProperty(NestedHash, NestedName, PE_TEXT("Count"), &FSanityStructNested::Count, EditFlags);
+		AddStructProperty(NestedHash, NestedName, PE_TEXT("Label"), &FSanityStructNested::Label, EditFlags);
+
+		const size_t DataHash = GetClassHashCode<FSanityStructData>();
+		const EString DataName(PE_TEXT("FSanityStructData"));
+		AddStructProperty(DataHash, DataName, PE_TEXT("Integer"), &FSanityStructData::Integer, EditFlags);
+		AddStructBoolProperty(DataHash, DataName, PE_TEXT("Flag"), &FSanityStructData::bFlag, EditFlags);
+		AddStructAssetProperty(DataHash, DataName, PE_TEXT("AssetName"), &FSanityStructData::AssetName,
+			EPropertyAssetType::MATERIAL, EditFlags);
+		AddStructEnumProperty(DataHash, DataName, PE_TEXT("GroundType"), &FSanityStructData::GroundType, EditFlags);
+		AddStructProperty(DataHash, DataName, PE_TEXT("Nested"), &FSanityStructData::Nested, EditFlags);
+		AddStructProperty(DataHash, DataName, PE_TEXT("Items"), &FSanityStructData::Items, EditFlags);
+		AddStructProperty(DataHash, DataName, PE_TEXT("NamedItems"), &FSanityStructData::NamedItems, EditFlags);
+
+		const size_t ClassHash = GetClassHashCode<FSanityStructData>();
+		AddClassPropertyStructCustom<FSanityStructData, FSanityStructData>(ClassHash, PE_TEXT("Data"),
+			[](const FSanityStructData* Data) -> FSanityStructData { return *Data; },
+			[](FSanityStructData* Data, const FSanityStructData& Value) -> void { *Data = Value; },
+			SerializeSanityStructData, EditFlags);
+	}
+
 	// A plain C++ class used only by the container-property scenario: it exercises the
 	// TArray/TMap serialization and the editor value metadata without polluting the OCA class
 	// registry.
@@ -2133,6 +2258,279 @@ namespace PigeonEngine
 		return (bMetadataOk && bValuesOk && bShapeOk) ? TRUE : FALSE;
 	}
 
+	static const FProperty* FindReflectedProperty(const size_t& InClassHash, const EString& InName)
+	{
+		const FProperty* Found = nullptr;
+		EClassPropertyRegistry::ForEachProperty(InClassHash, [&InName, &Found](const FProperty& Property) -> void
+		{
+			if (Property.Name == InName)
+			{
+				Found = &Property;
+			}
+		});
+		return Found;
+	}
+
+	static const FProperty* FindStructField(const FStructDescriptor& InDescriptor, const EString& InName)
+	{
+		for (UINT32 Index = 0u, Num = InDescriptor.Fields.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (InDescriptor.Fields[Index].Name == InName)
+			{
+				return &InDescriptor.Fields[Index];
+			}
+		}
+		return nullptr;
+	}
+
+	// Exercises the struct value tree end to end: descriptor metadata, scalar/bool/enum/asset
+	// fields, nested structs, arrays and maps of structs, custom-serializer round trip, shape
+	// isolation for newly added elements, and the unchanged CUSTOM fallback.
+	static BOOL32 CheckStructProperties()
+	{
+		RegisterSanityStructProperties();
+		const size_t ClassHash = GetClassHashCode<FSanityStructData>();
+		const size_t StructHash = GetClassHashCode<FSanityStructData>();
+		const size_t NestedHash = GetClassHashCode<FSanityStructNested>();
+		const FStructDescriptor* Descriptor = EStructPropertyRegistry::Find(StructHash);
+		const FStructDescriptor* NestedDescriptor = EStructPropertyRegistry::Find(NestedHash);
+		const FProperty* DataProperty = FindReflectedProperty(ClassHash, EString(PE_TEXT("Data")));
+
+		BOOL32 bMetadataOk = (Descriptor && NestedDescriptor && DataProperty &&
+			(Descriptor->Fields.Num<UINT32>() == 7u) &&
+			(NestedDescriptor->Fields.Num<UINT32>() == 2u) &&
+			(DataProperty->ValueType == EPropertyValueType::STRUCT) &&
+			(DataProperty->StructHash == StructHash) &&
+			DataProperty->GetValue && DataProperty->SetValue) ? TRUE : FALSE;
+		if (bMetadataOk)
+		{
+			const FProperty* IntegerField = FindStructField(*Descriptor, EString(PE_TEXT("Integer")));
+			const FProperty* FlagField = FindStructField(*Descriptor, EString(PE_TEXT("Flag")));
+			const FProperty* AssetField = FindStructField(*Descriptor, EString(PE_TEXT("AssetName")));
+			const FProperty* GroundField = FindStructField(*Descriptor, EString(PE_TEXT("GroundType")));
+			const FProperty* NestedField = FindStructField(*Descriptor, EString(PE_TEXT("Nested")));
+			const FProperty* ItemsField = FindStructField(*Descriptor, EString(PE_TEXT("Items")));
+			const FProperty* NamedField = FindStructField(*Descriptor, EString(PE_TEXT("NamedItems")));
+			bMetadataOk = (IntegerField && IntegerField->ValueType == EPropertyValueType::INT32 &&
+				FlagField && FlagField->ValueType == EPropertyValueType::BOOL &&
+				AssetField && AssetField->ValueType == EPropertyValueType::STRING && AssetField->AssetType == EPropertyAssetType::MATERIAL &&
+				GroundField && GroundField->ValueType == EPropertyValueType::ENUM && GroundField->EnumHash == GetClassHashCode<EWaterGroundType>() &&
+				NestedField && NestedField->ValueType == EPropertyValueType::STRUCT && NestedField->StructHash == NestedHash &&
+				ItemsField && ItemsField->ValueType == EPropertyValueType::ARRAY && ItemsField->ElementType == EPropertyValueType::STRUCT &&
+				ItemsField->ElementStructHash == NestedHash &&
+				NamedField && NamedField->ValueType == EPropertyValueType::MAP && NamedField->KeyType == EPropertyValueType::STRING &&
+				NamedField->MapValueType == EPropertyValueType::STRUCT && NamedField->MapValueStructHash == NestedHash) ? TRUE : FALSE;
+		}
+
+		FSanityStructData Source;
+		Source.Integer = 42;
+		Source.bFlag = TRUE;
+		Source.AssetName = EString(PE_TEXT("M_EngineFallback"));
+		Source.GroundType = EWaterGroundType::WATER_GROUND_HEIGHT_MAP;
+		Source.Nested.Count = 7;
+		Source.Nested.Label = EString(PE_TEXT("Nested"));
+		Source.Items.Add(FSanityStructNested{ 1, EString(PE_TEXT("First")) });
+		Source.Items.Add(FSanityStructNested{ 2, EString(PE_TEXT("Second")) });
+		Source.NamedItems.Add(EString(PE_TEXT("A")), FSanityStructNested{ 3, EString(PE_TEXT("Named")) });
+
+		BOOL32 bValueOk = FALSE;
+		BOOL32 bSetOk = FALSE;
+		BOOL32 bShapeOk = FALSE;
+		BOOL32 bRoundTripOk = FALSE;
+		if (DataProperty && DataProperty->GetValue && DataProperty->SetValue)
+		{
+			FPropertyValue Value;
+			DataProperty->GetValue(&Source, Value);
+			bValueOk = (Value.Type == EPropertyValueType::STRUCT) &&
+				(Value.StructHash == StructHash) &&
+				(Value.StructFields.Num<UINT32>() == 7u) &&
+				Value.StructFields[0] && (Value.StructFields[0]->Type == EPropertyValueType::INT32) && (Value.StructFields[0]->IntValue == 42) &&
+				Value.StructFields[1] && (Value.StructFields[1]->Type == EPropertyValueType::BOOL) && (Value.StructFields[1]->BoolValue != FALSE) &&
+				Value.StructFields[2] && (Value.StructFields[2]->Type == EPropertyValueType::STRING) &&
+				(Value.StructFields[2]->StringValue == EString(PE_TEXT("M_EngineFallback"))) &&
+				Value.StructFields[3] && (Value.StructFields[3]->Type == EPropertyValueType::ENUM) &&
+				(Value.StructFields[3]->EnumHash == GetClassHashCode<EWaterGroundType>()) &&
+				Value.StructFields[4] && (Value.StructFields[4]->Type == EPropertyValueType::STRUCT) &&
+				(Value.StructFields[4]->StructFields.Num<UINT32>() == 2u) &&
+				Value.StructFields[4]->StructFields[0]->IntValue == 7 &&
+				Value.StructFields[5] && (Value.StructFields[5]->Type == EPropertyValueType::ARRAY) &&
+				(Value.StructFields[5]->ElementType == EPropertyValueType::STRUCT) &&
+				(Value.StructFields[5]->ElementStructHash == NestedHash) &&
+				(Value.StructFields[5]->ArrayValues.Num<UINT32>() == 2u) &&
+				Value.StructFields[5]->ArrayValues[0].ContainerValue &&
+				(Value.StructFields[5]->ArrayValues[0].ContainerValue->StructFields[0]->IntValue == 1) &&
+				Value.StructFields[6] && (Value.StructFields[6]->Type == EPropertyValueType::MAP) &&
+				(Value.StructFields[6]->KeyType == EPropertyValueType::STRING) &&
+				(Value.StructFields[6]->MapValueType == EPropertyValueType::STRUCT) &&
+				(Value.StructFields[6]->MapValueStructHash == NestedHash) &&
+				(Value.StructFields[6]->MapEntries.Num<UINT32>() == 1u) &&
+				Value.StructFields[6]->MapEntries[0].Value.ContainerValue &&
+				(Value.StructFields[6]->MapEntries[0].Value.ContainerValue->StructFields[0]->IntValue == 3) ? TRUE : FALSE;
+
+			// Modify a scalar, a nested field, an array element and a map value, then read the
+			// value tree back into the C++ struct.
+			Value.StructFields[0]->IntValue = 99;
+			Value.StructFields[4]->StructFields[0]->IntValue = 77;
+			Value.StructFields[5]->ArrayValues[0].ContainerValue->StructFields[1]->StringValue = EString(PE_TEXT("Changed"));
+			Value.StructFields[6]->MapEntries[0].Value.ContainerValue->StructFields[0]->IntValue = 55;
+			DataProperty->SetValue(&Source, Value);
+			bSetOk = (Source.Integer == 99) &&
+				(Source.Nested.Count == 77) &&
+				(Source.Items.Num<UINT32>() == 2u) &&
+				(Source.Items[0].Label == EString(PE_TEXT("Changed"))) &&
+				(Source.Items[1].Label == EString(PE_TEXT("Second"))) ? TRUE : FALSE;
+			FSanityStructNested NamedValue;
+			bSetOk = bSetOk && (Source.NamedItems.FindValue(EString(PE_TEXT("A")), NamedValue) ? (NamedValue.Count == 55) : FALSE);
+
+			// Two elements made from the same shape must own independent field trees, and
+			// editing one must not affect the other or the shape itself.
+			FPropertyValue Shape;
+			MakePropertyShape<FSanityStructData>(Shape);
+			FPropertyElement First;
+			FPropertyElement Second;
+			EPropertyEditor::MakeDefaultElement(&Shape, First);
+			EPropertyEditor::MakeDefaultElement(&Shape, Second);
+			bShapeOk = (First.Type == EPropertyValueType::STRUCT) && First.ContainerValue &&
+				(Second.Type == EPropertyValueType::STRUCT) && Second.ContainerValue &&
+				(First.ContainerValue->StructFields.Num<UINT32>() == 7u) &&
+				(Second.ContainerValue->StructFields.Num<UINT32>() == 7u) ? TRUE : FALSE;
+			if (bShapeOk)
+			{
+				First.ContainerValue->StructFields[0]->IntValue = 123;
+				bShapeOk = (Second.ContainerValue->StructFields[0]->IntValue == 0) &&
+					(Shape.StructFields[0]->IntValue == 0) ? TRUE : FALSE;
+			}
+
+			CJsonObject Document;
+			EJsonArchiveWriter Writer(Document);
+			EClassPropertyRegistry::SerializeObject(Writer, ClassHash, &Source);
+			FSanityStructData Target;
+			EJsonArchiveReader Reader(Document);
+			EClassPropertyRegistry::SerializeObject(Reader, ClassHash, &Target);
+			FSanityStructNested TargetNamed;
+			bRoundTripOk = (Target.Integer == 99) &&
+				(Target.bFlag != FALSE) &&
+				(Target.AssetName == EString(PE_TEXT("M_EngineFallback"))) &&
+				(Target.GroundType == EWaterGroundType::WATER_GROUND_HEIGHT_MAP) &&
+				(Target.Nested.Count == 77) &&
+				(Target.Nested.Label == EString(PE_TEXT("Nested"))) &&
+				(Target.Items.Num<UINT32>() == 2u) &&
+				(Target.Items[0].Label == EString(PE_TEXT("Changed"))) &&
+				(Target.Items[1].Count == 2) &&
+				(Target.NamedItems.FindValue(EString(PE_TEXT("A")), TargetNamed) ? (TargetNamed.Count == 55) : FALSE) ? TRUE : FALSE;
+		}
+
+		// A property still registered through AddClassPropertyCustom has no reflected value
+		// accessors and must remain a CUSTOM entry the generated panel skips.
+		const size_t SkeletalHash = GetClassHashCode<PSkeletalMeshComponent>();
+		const FProperty* MeshAssetsProperty = FindReflectedProperty(SkeletalHash, EString(PE_TEXT("MeshAssets")));
+		BOOL32 bCustomFallbackOk = (MeshAssetsProperty &&
+			(MeshAssetsProperty->ValueType == EPropertyValueType::CUSTOM) &&
+			(!MeshAssetsProperty->GetValue) && (!MeshAssetsProperty->SetValue)) ? TRUE : FALSE;
+		PSkeletalMeshComponent* Skeletal = new PSkeletalMeshComponent();
+		FPropertyValue EmptyValue;
+		bCustomFallbackOk = bCustomFallbackOk &&
+			(!EClassPropertyRegistry::SetPropertyValue(SkeletalHash, Skeletal, EString(PE_TEXT("MeshAssets")), EmptyValue)) ? TRUE : FALSE;
+		Skeletal->Destroy();
+
+		// Metadata of the migrated properties: the file format stays custom, while the same
+		// registration now exposes a STRUCT/struct-container value tree.
+		const FProperty* NavSettings = FindReflectedProperty(GetClassHashCode<PNavAgentComponent>(), EString(PE_TEXT("Settings")));
+		const FProperty* CascadeData = FindReflectedProperty(GetClassHashCode<PDirectionalLightComponent>(), EString(PE_TEXT("CascadeShadowData")));
+		const FProperty* Animation = FindReflectedProperty(SkeletalHash, EString(PE_TEXT("Animation")));
+		const FProperty* MaterialSlots = FindReflectedProperty(GetClassHashCode<PMeshComponent>(), EString(PE_TEXT("MaterialSlots")));
+		const FStructDescriptor* NavDescriptor = EStructPropertyRegistry::Find(GetClassHashCode<ENavigationAgentSettings>());
+		const FStructDescriptor* CascadeDescriptor = EStructPropertyRegistry::Find(GetClassHashCode<ECascadeShadowData>());
+		const FStructDescriptor* AnimationDescriptor = Animation ? EStructPropertyRegistry::Find(Animation->StructHash) : nullptr;
+		const FStructDescriptor* MaterialDescriptor = EStructPropertyRegistry::Find(GetClassHashCode<FMaterialSlotReference>());
+		BOOL32 bMigratedMetadataOk = (NavSettings && NavSettings->ValueType == EPropertyValueType::STRUCT &&
+			NavDescriptor && NavDescriptor->Fields.Num<UINT32>() == 11u &&
+			CascadeData && CascadeData->ValueType == EPropertyValueType::STRUCT &&
+			CascadeDescriptor && CascadeDescriptor->Fields.Num<UINT32>() == 3u &&
+			Animation && Animation->ValueType == EPropertyValueType::STRUCT &&
+			AnimationDescriptor && AnimationDescriptor->Fields.Num<UINT32>() == 4u &&
+			MaterialSlots && MaterialSlots->ValueType == EPropertyValueType::ARRAY &&
+			(MaterialSlots->ElementType == EPropertyValueType::STRUCT) &&
+			(MaterialSlots->ElementStructHash == GetClassHashCode<FMaterialSlotReference>()) &&
+			MaterialDescriptor && MaterialDescriptor->Fields.Num<UINT32>() == 3u) ? TRUE : FALSE;
+		if (bMigratedMetadataOk)
+		{
+			const FProperty* AnimationAsset = FindStructField(*AnimationDescriptor, EString(PE_TEXT("Asset")));
+			const FProperty* AnimationPlayRate = FindStructField(*AnimationDescriptor, EString(PE_TEXT("PlayRate")));
+			const FProperty* MaterialName = FindStructField(*MaterialDescriptor, EString(PE_TEXT("MaterialName")));
+			const FProperty* ShaderName = FindStructField(*MaterialDescriptor, EString(PE_TEXT("ShaderName")));
+			bMigratedMetadataOk = (AnimationAsset && AnimationAsset->AssetType == EPropertyAssetType::ANIMATION &&
+				AnimationPlayRate && ((AnimationPlayRate->Flags & static_cast<UINT32>(EPropertyFlagsType::COMMIT_ONLY)) != 0u) &&
+				MaterialName && MaterialName->AssetType == EPropertyAssetType::MATERIAL &&
+				ShaderName && (!ShaderName->SetValue)) ? TRUE : FALSE;
+		}
+
+		const BOOL32 bOk = (bMetadataOk && bValueOk && bSetOk && bShapeOk && bRoundTripOk &&
+			bCustomFallbackOk && bMigratedMetadataOk) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("struct properties detail: metadata=")) + EString::FromInt(bMetadataOk) +
+				EString(PE_TEXT(" value=")) + EString::FromInt(bValueOk) +
+				EString(PE_TEXT(" set=")) + EString::FromInt(bSetOk) +
+				EString(PE_TEXT(" shape=")) + EString::FromInt(bShapeOk) +
+				EString(PE_TEXT(" roundtrip=")) + EString::FromInt(bRoundTripOk) +
+				EString(PE_TEXT(" custom=")) + EString::FromInt(bCustomFallbackOk) +
+				EString(PE_TEXT(" migrated=")) + EString::FromInt(bMigratedMetadataOk));
+		}
+		return bOk;
+	}
+
+	// Undo/redo of a struct array property through the same command path the Details panel
+	// uses. Material slots are the migrated property with the richest setter side effects.
+	static BOOL32 CheckStructPropertyUndo(PWorld* InWorld)
+	{
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityStructUndoActor");
+		InWorld->AddActor(Actor);
+		PStaticMeshComponent* Mesh = new PStaticMeshComponent();
+		Actor->AddComponent(Mesh);
+
+		FMaterialSlotReference Reference;
+		Reference.MaterialName = EString(PE_TEXT("M_EngineFallback"));
+		Reference.ShaderName = EString(PE_TEXT("M_EngineFallback"));
+		Reference.ProgramName = EString(PE_TEXT("BasePass"));
+		Mesh->SetMaterialSlotReference(0u, Reference);
+
+		const size_t ClassHash = GetClassHashCode(Mesh);
+		const FProperty* MaterialSlots = FindReflectedProperty(ClassHash, EString(PE_TEXT("MaterialSlots")));
+		BOOL32 bUndoOk = FALSE;
+		BOOL32 bRedoOk = FALSE;
+		BOOL32 bValueOk = FALSE;
+		if (MaterialSlots && MaterialSlots->GetValue && MaterialSlots->SetValue)
+		{
+			FPropertyValue Before;
+			MaterialSlots->GetValue(Mesh, Before);
+			FPropertyValue After;
+			ClonePropertyValue(Before, After);
+			if ((After.ArrayValues.Num<UINT32>() == 1u) &&
+				After.ArrayValues[0].ContainerValue &&
+				(After.ArrayValues[0].ContainerValue->StructFields.Num<UINT32>() >= 1u))
+			{
+				After.ArrayValues[0].ContainerValue->StructFields[0]->StringValue = EString(PE_TEXT("Projects/Demo/M_DemoUnlit"));
+				MaterialSlots->SetValue(Mesh, After);
+				FWorldEditorCommandStack Stack;
+				Stack.GetContext().World = InWorld;
+				const BOOL32 bPushed = PushSetPropertyCommand(Stack, MakeObjectHandle(Mesh), TRUE, ClassHash,
+					EString(PE_TEXT("MaterialSlots")), Before, After);
+				bValueOk = (Mesh->GetMaterialSlotReferences().Num<UINT32>() == 1u) &&
+					(Mesh->GetMaterialSlotReferences()[0].MaterialName == EString(PE_TEXT("Projects/Demo/M_DemoUnlit"))) ? TRUE : FALSE;
+				bUndoOk = Stack.Undo() && (Mesh->GetMaterialSlotReferences()[0].MaterialName == EString(PE_TEXT("M_EngineFallback"))) ? TRUE : FALSE;
+				bRedoOk = Stack.Redo() && (Mesh->GetMaterialSlotReferences()[0].MaterialName == EString(PE_TEXT("Projects/Demo/M_DemoUnlit"))) ? TRUE : FALSE;
+				bUndoOk = bUndoOk && bPushed ? TRUE : FALSE;
+				Stack.Clear();
+			}
+		}
+
+		InWorld->DestroyActor(Actor);
+		InWorld->FlushPendingDestroy();
+		return (bValueOk && bUndoOk && bRedoOk) ? TRUE : FALSE;
+	}
+
 	// A character's physics body and movement component are constructed by InitCharacter,
 	// not by the class factory. Loading one must therefore run PostDeserialize after the
 	// serialized properties and components are installed, and the movement component must
@@ -2330,6 +2728,18 @@ namespace PigeonEngine
 		const BOOL32 bContainerProperties = CheckContainerPropertySerialization();
 		ReportSanityResult(EString(PE_TEXT("container property serialization")), bContainerProperties);
 		if (!bContainerProperties)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bStructProperties = CheckStructProperties();
+		ReportSanityResult(EString(PE_TEXT("struct property serialization and metadata")), bStructProperties);
+		if (!bStructProperties)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bStructPropertyUndo = CheckStructPropertyUndo(InWorld);
+		ReportSanityResult(EString(PE_TEXT("struct property undo and redo")), bStructPropertyUndo);
+		if (!bStructPropertyUndo)
 		{
 			FailedCount += 1u;
 		}
