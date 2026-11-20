@@ -3,7 +3,7 @@
 #include "NavigationComponent.h"
 
 #include <NavMeshAsset/NavMeshAsset.h>
-#include <RecastNavigation/Headers/RecastNavigationProvider.h>
+#include <Navigation/RecastNavigationProvider.h>
 
 namespace PigeonEngine
 {

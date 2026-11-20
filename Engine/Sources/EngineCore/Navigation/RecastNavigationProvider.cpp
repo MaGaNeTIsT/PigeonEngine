@@ -1,4 +1,4 @@
-#include <RecastNavigation/Headers/RecastNavigationProvider.h>
+#include <Navigation/RecastNavigationProvider.h>
 
 #include <Editor/EditorLogManager.h>
 #include <Development/Profiler.h>

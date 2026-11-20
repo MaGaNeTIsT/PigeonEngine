@@ -5,7 +5,7 @@
 #include <AssetLoadManager.h>
 #include <EngineCommon.h>
 #include <Navigation/NavigationTypes.h>
-#include <RecastNavigation/Headers/RecastNavigationProvider.h>
+#include <Navigation/RecastNavigationProvider.h>
 
 namespace PigeonEngine
 {
