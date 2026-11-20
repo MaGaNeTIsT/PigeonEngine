@@ -516,6 +516,20 @@ namespace PigeonEngine
 			PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::DestroyActor : Actor does not belong to this world.", FALSE);
 			return;
 		}
+		// Attached actors are part of this actor's subtree. The level serializer and the
+		// editor delete command both treat parent and children as one unit, so destroying
+		// the parent destroys the subtree with it; children that were only scene-removed
+		// would survive as orphans holding a parent pointer that dangles after the flush.
+		const TArray<PActor*> ChildSnapshot = Actor->ChildrenActors;
+		for (PActor* Child : ChildSnapshot)
+		{
+			// A child destroy cascades to its own children first; skip entries the cascade
+			// already removed from this actor's list.
+			if (Actor->ChildrenActors.Contains(Child))
+			{
+				DestroyActor(Child);
+			}
+		}
 		// Mark-time exit from everything that can reach a dying actor this frame: the
 		// tree (no tick walk gets here), the registry (no lookup, editor pick or
 		// post-physics handler gets here) and physics. RemovedFromScene also runs now,

@@ -2009,11 +2009,11 @@ namespace PigeonEngine
 		SavedActors.Add(ActorC);
 		CJsonObject RoundTripDocument;
 		const BOOL32 bRoundTripSaved = ELevelSerializer::SaveActors(SavedActors, RoundTripDocument);
-		// Destroy the attached child before the parent: the parent's RemovedFromScene
-		// cascades over its children and ends their world membership, so a parent-first
-		// order would leave the child outside the world while it is still alive.
-		World->DestroyActor(ActorB);
+		// Destroying the parent takes the attached subtree with it: the child is marked
+		// for destroy, and a second destroy call on it is a no-op rather than a failure.
 		World->DestroyActor(ActorA);
+		const BOOL32 bCascadeMarked = ActorB->IsPendingDestroy();
+		World->DestroyActor(ActorB);
 		World->DestroyActor(ActorC);
 		World->FlushPendingDestroy();
 		TArray<PActor*> LoadedActors;
@@ -2038,11 +2038,8 @@ namespace PigeonEngine
 		}
 		const BOOL32 bRoundTripHierarchy = (LoadedA && LoadedB && (LoadedB->GetAttachedParentActor() == LoadedA)) ? TRUE : FALSE;
 
-		// Same child-first rule for the loaded subtree (LoadedB hangs under LoadedA).
-		if (LoadedB)
-		{
-			World->DestroyActor(LoadedB);
-		}
+		// The loaded subtree follows the same cascade: destroying LoadedA covers LoadedB,
+		// and the pending-destroy early return keeps repeated calls below a no-op.
 		for (UINT32 Index = 0u, Num = LoadedActors.Num<UINT32>(); Index < Num; Index++)
 		{
 			if (LoadedActors[Index])
@@ -2067,6 +2064,7 @@ namespace PigeonEngine
 			bUndoActor && bUndoActorParent && bUndoActorLocal &&
 			bRedoActor && bRedoActorParent && bRedoActorWorld &&
 			bRedoComponent && bRedoComponentParent &&
+			bCascadeMarked &&
 			bRoundTripSaved && bRoundTripLoaded && bRoundTripHierarchy) ? TRUE : FALSE;
 		if (!bOk)
 		{
@@ -2080,6 +2078,7 @@ namespace PigeonEngine
 				EString(PE_TEXT(" undoActor=")) + EString::FromInt(bUndoActor) + EString::FromInt(bUndoActorParent) + EString::FromInt(bUndoActorLocal) +
 				EString(PE_TEXT(" redoActor=")) + EString::FromInt(bRedoActor) + EString::FromInt(bRedoActorParent) + EString::FromInt(bRedoActorWorld) +
 				EString(PE_TEXT(" redoComp=")) + EString::FromInt(bRedoComponent) + EString::FromInt(bRedoComponentParent) +
+				EString(PE_TEXT(" cascade=")) + EString::FromInt(bCascadeMarked) +
 				EString(PE_TEXT(" roundTrip=")) + EString::FromInt(bRoundTripSaved) + EString::FromInt(bRoundTripLoaded) + EString::FromInt(bRoundTripHierarchy));
 		}
 		return bOk;
