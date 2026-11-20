@@ -213,7 +213,9 @@ namespace PigeonEngine
 
 		void StoreEditStart(const FProperty& InProperty, const FPropertyValue& InValue)
 		{
-			EditStartValues.Add(InProperty.Name, InValue);
+			FPropertyValue Snapshot;
+			ClonePropertyValue(InValue, Snapshot);
+			EditStartValues.Add(InProperty.Name, Snapshot);
 		}
 
 		BOOL32 TakeEditStart(const FProperty& InProperty, FPropertyValue& OutValue)
@@ -585,11 +587,14 @@ namespace PigeonEngine
 			return bChanged;
 		}
 
-		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash, BOOL32& bOutActivated, BOOL32& bOutDeactivated);
+		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash,
+			const size_t InStructHash, const EPropertyAssetType InAssetType, BOOL32& bOutActivated, BOOL32& bOutDeactivated);
+		BOOL32 DrawNestedValue(FPropertyValue& InOutValue, const EPropertyAssetType InAssetType, BOOL32& bOutActivated, BOOL32& bOutDeactivated);
+		BOOL32 DrawStructFields(FPropertyValue& InOutValue, const FStructDescriptor& InDescriptor, BOOL32& bOutActivated, BOOL32& bOutDeactivated);
 
 		void InitializeDefaultElement(FPropertyElement& OutElement, const FPropertyValue* InShape);
 
-		BOOL32 DrawNestedArray(FPropertyValue& InOutValue, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
+		BOOL32 DrawNestedArray(FPropertyValue& InOutValue, const EPropertyAssetType InElementAssetType, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
 		{
 			BOOL32 bChanged = FALSE;
 			for (UINT32 Index = 0u; Index < InOutValue.ArrayValues.Num<UINT32>(); Index++)
@@ -597,7 +602,8 @@ namespace PigeonEngine
 				ImGui::PushID(Index);
 				BOOL32 bActivated = FALSE;
 				BOOL32 bDeactivated = FALSE;
-				if (DrawElementWidget(InOutValue.ArrayValues[Index], InOutValue.ElementType, InOutValue.ElementEnumHash, bActivated, bDeactivated))
+				if (DrawElementWidget(InOutValue.ArrayValues[Index], InOutValue.ElementType, InOutValue.ElementEnumHash,
+					InOutValue.ElementStructHash, InElementAssetType, bActivated, bDeactivated))
 				{
 					bChanged = TRUE;
 				}
@@ -623,7 +629,7 @@ namespace PigeonEngine
 			return bChanged;
 		}
 
-		BOOL32 DrawNestedMap(FPropertyValue& InOutValue, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
+		BOOL32 DrawNestedMap(FPropertyValue& InOutValue, const EPropertyAssetType InAssetType, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
 		{
 			BOOL32 bChanged = FALSE;
 			for (UINT32 Index = 0u; Index < InOutValue.MapEntries.Num<UINT32>(); Index++)
@@ -633,7 +639,8 @@ namespace PigeonEngine
 				BOOL32 bKeyActivated = FALSE;
 				BOOL32 bKeyDeactivated = FALSE;
 				ImGui::PushID("Key");
-				if (DrawElementWidget(Entry.Key, InOutValue.KeyType, InOutValue.KeyEnumHash, bKeyActivated, bKeyDeactivated))
+				if (DrawElementWidget(Entry.Key, InOutValue.KeyType, InOutValue.KeyEnumHash,
+					InOutValue.KeyStructHash, InAssetType, bKeyActivated, bKeyDeactivated))
 				{
 					bChanged = TRUE;
 				}
@@ -642,7 +649,8 @@ namespace PigeonEngine
 				BOOL32 bValueActivated = FALSE;
 				BOOL32 bValueDeactivated = FALSE;
 				ImGui::PushID("Value");
-				if (DrawElementWidget(Entry.Value, InOutValue.MapValueType, InOutValue.MapValueEnumHash, bValueActivated, bValueDeactivated))
+				if (DrawElementWidget(Entry.Value, InOutValue.MapValueType, InOutValue.MapValueEnumHash,
+					InOutValue.MapValueStructHash, InAssetType, bValueActivated, bValueDeactivated))
 				{
 					bChanged = TRUE;
 				}
@@ -678,7 +686,105 @@ namespace PigeonEngine
 			return bChanged;
 		}
 
-		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
+		BOOL32 DrawNestedValue(FPropertyValue& InOutValue, const EPropertyAssetType InAssetType, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
+		{
+			if (InOutValue.Type == EPropertyValueType::STRUCT)
+			{
+				const FStructDescriptor* Descriptor = EStructPropertyRegistry::Find(InOutValue.StructHash);
+				if (!Descriptor)
+				{
+					return FALSE;
+				}
+				return DrawStructFields(InOutValue, *Descriptor, bOutActivated, bOutDeactivated);
+			}
+			if (InOutValue.Type == EPropertyValueType::ARRAY)
+			{
+				return DrawNestedArray(InOutValue, InAssetType, bOutActivated, bOutDeactivated);
+			}
+			if (InOutValue.Type == EPropertyValueType::MAP)
+			{
+				return DrawNestedMap(InOutValue, InAssetType, bOutActivated, bOutDeactivated);
+			}
+			return DrawElementWidget(static_cast<FPropertyElement&>(InOutValue), InOutValue.Type, InOutValue.EnumHash,
+				InOutValue.StructHash, InAssetType, bOutActivated, bOutDeactivated);
+		}
+
+		BOOL32 DrawStructFields(FPropertyValue& InOutValue, const FStructDescriptor& InDescriptor, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
+		{
+			BOOL32 bChanged = FALSE;
+			for (UINT32 Index = 0u, Num = InDescriptor.Fields.Num<UINT32>(); Index < Num; Index++)
+			{
+				const FProperty& Field = InDescriptor.Fields[Index];
+				const UINT32 VisibleFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE) |
+					static_cast<UINT32>(EPropertyFlagsType::VISIBLE_ANYWHERE);
+				if ((!Field.GetValue) || (Field.ValueType == EPropertyValueType::CUSTOM) ||
+					((Field.Flags & static_cast<UINT32>(EPropertyFlagsType::TRANSIENT)) != 0u) ||
+					((Field.Flags & VisibleFlags) == 0u))
+				{
+					continue;
+				}
+				if ((Index >= InOutValue.StructFields.Num<UINT32>()) || (!InOutValue.StructFields[Index]))
+				{
+					continue;
+				}
+				FPropertyValue& FieldValue = *InOutValue.StructFields[Index];
+				ImGui::PushID(Index);
+				if (!Field.SetValue)
+				{
+					ImGui::BeginDisabled();
+				}
+				BOOL32 bFieldChanged = FALSE;
+				BOOL32 bFieldActivated = FALSE;
+				BOOL32 bFieldDeactivated = FALSE;
+				if ((Field.ValueType == EPropertyValueType::STRUCT) || (Field.ValueType == EPropertyValueType::ARRAY) ||
+					(Field.ValueType == EPropertyValueType::MAP))
+				{
+					if (ImGui::TreeNodeEx(*Field.Name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+					{
+						bFieldChanged = DrawNestedValue(FieldValue, Field.AssetType, bFieldActivated, bFieldDeactivated);
+						ImGui::TreePop();
+					}
+				}
+				else
+				{
+					ImGui::TextUnformatted(*Field.Name);
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(-1.0f);
+					bFieldChanged = DrawElementWidget(static_cast<FPropertyElement&>(FieldValue), Field.ValueType,
+						Field.EnumHash, Field.StructHash, Field.AssetType, bFieldActivated, bFieldDeactivated);
+				}
+				const BOOL32 bFieldActive = ImGui::IsItemActive();
+				if (!Field.SetValue)
+				{
+					ImGui::EndDisabled();
+				}
+				ImGui::PopID();
+				bOutActivated = (bOutActivated || bFieldActivated) ? TRUE : FALSE;
+				bOutDeactivated = (bOutDeactivated || bFieldDeactivated) ? TRUE : FALSE;
+				// COMMIT_ONLY fields mutate their cached value while dragging but only ask
+				// the owning property to apply it when the control releases.
+				if ((Field.Flags & static_cast<UINT32>(EPropertyFlagsType::COMMIT_ONLY)) != 0u)
+				{
+					if (bFieldDeactivated)
+					{
+						bChanged = TRUE;
+					}
+					else if (bFieldChanged && (!bFieldActive) && (!bFieldActivated))
+					{
+						bChanged = TRUE;
+					}
+					continue;
+				}
+				if (bFieldChanged)
+				{
+					bChanged = TRUE;
+				}
+			}
+			return bChanged;
+		}
+
+		BOOL32 DrawElementWidget(FPropertyElement& InOutElement, const EPropertyValueType InType, const size_t InEnumHash,
+			const size_t InStructHash, const EPropertyAssetType InAssetType, BOOL32& bOutActivated, BOOL32& bOutDeactivated)
 		{
 			bOutActivated = FALSE;
 			bOutDeactivated = FALSE;
@@ -778,6 +884,16 @@ namespace PigeonEngine
 			}
 			case EPropertyValueType::STRING:
 			{
+				if (InAssetType != EPropertyAssetType::NONE)
+				{
+					EString SelectedName = InOutElement.StringValue;
+					if (EPropertyEditor::DrawAssetCombo("##element", InAssetType, SelectedName))
+					{
+						InOutElement.StringValue = SelectedName;
+						return TRUE;
+					}
+					return FALSE;
+				}
 				CHAR Buffer[512] = {};
 				const UINT32 Length = EMath::Min(InOutElement.StringValue.Length(), static_cast<UINT32>(sizeof(Buffer) - 1u));
 				if (Length > 0u)
@@ -886,13 +1002,23 @@ namespace PigeonEngine
 				bOutDeactivated = (bOutDeactivated || (ImGui::IsItemDeactivatedAfterEdit() != FALSE)) ? TRUE : FALSE;
 				return bChanged;
 			}
+			case EPropertyValueType::STRUCT:
+			{
+				const size_t EffectiveStructHash = (InStructHash != 0u) ? InStructHash : InOutElement.StructHash;
+				const FStructDescriptor* Descriptor = EStructPropertyRegistry::Find(EffectiveStructHash);
+				if ((!Descriptor) || (!InOutElement.ContainerValue))
+				{
+					return FALSE;
+				}
+				return DrawStructFields(*InOutElement.ContainerValue, *Descriptor, bOutActivated, bOutDeactivated);
+			}
 			case EPropertyValueType::ARRAY:
 			{
 				if (!InOutElement.ContainerValue)
 				{
 					return FALSE;
 				}
-				return DrawNestedArray(*InOutElement.ContainerValue, bOutActivated, bOutDeactivated);
+				return DrawNestedArray(*InOutElement.ContainerValue, InAssetType, bOutActivated, bOutDeactivated);
 			}
 			case EPropertyValueType::MAP:
 			{
@@ -900,7 +1026,7 @@ namespace PigeonEngine
 				{
 					return FALSE;
 				}
-				return DrawNestedMap(*InOutElement.ContainerValue, bOutActivated, bOutDeactivated);
+				return DrawNestedMap(*InOutElement.ContainerValue, InAssetType, bOutActivated, bOutDeactivated);
 			}
 			default:
 				return FALSE;
@@ -916,9 +1042,18 @@ namespace PigeonEngine
 			}
 			OutElement.Type = InShape->Type;
 			OutElement.EnumHash = InShape->EnumHash;
-			if ((InShape->Type == EPropertyValueType::ARRAY) || (InShape->Type == EPropertyValueType::MAP))
+			OutElement.StructHash = InShape->StructHash;
+			if (InShape->Type == EPropertyValueType::STRUCT)
 			{
-				OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue(*InShape));
+				// Clone the complete shape: every array element needs its own field tree,
+				// otherwise editing one element would mutate all of them.
+				OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
+				ClonePropertyValue(*InShape, *OutElement.ContainerValue);
+			}
+			else if ((InShape->Type == EPropertyValueType::ARRAY) || (InShape->Type == EPropertyValueType::MAP))
+			{
+				OutElement.ContainerValue = TSharedPtr<FPropertyValue>(new FPropertyValue());
+				ClonePropertyValue(*InShape, *OutElement.ContainerValue);
 				OutElement.ContainerValue->ArrayValues.Empty();
 				OutElement.ContainerValue->MapEntries.Empty();
 			}
@@ -943,7 +1078,8 @@ namespace PigeonEngine
 				InProperty.GetValue(InObject, BeforeElement);
 				BOOL32 bActivated = FALSE;
 				BOOL32 bDeactivated = FALSE;
-				const BOOL32 bElementChanged = DrawElementWidget(InOutValue.ArrayValues[Index], InProperty.ElementType, InProperty.ElementEnumHash, bActivated, bDeactivated);
+				const BOOL32 bElementChanged = DrawElementWidget(InOutValue.ArrayValues[Index], InProperty.ElementType,
+					InProperty.ElementEnumHash, InProperty.ElementStructHash, InProperty.AssetType, bActivated, bDeactivated);
 				if (bActivated)
 				{
 					StoreEditStart(InProperty, BeforeElement);
@@ -1006,13 +1142,15 @@ namespace PigeonEngine
 				BOOL32 bKeyActivated = FALSE;
 				BOOL32 bKeyDeactivated = FALSE;
 				ImGui::PushID("Key");
-				const BOOL32 bKeyChanged = DrawElementWidget(Entry.Key, InProperty.KeyType, InProperty.KeyEnumHash, bKeyActivated, bKeyDeactivated);
+				const BOOL32 bKeyChanged = DrawElementWidget(Entry.Key, InProperty.KeyType, InProperty.KeyEnumHash,
+					InProperty.KeyStructHash, InProperty.AssetType, bKeyActivated, bKeyDeactivated);
 				ImGui::PopID();
 				ImGui::SameLine();
 				BOOL32 bValueActivated = FALSE;
 				BOOL32 bValueDeactivated = FALSE;
 				ImGui::PushID("Value");
-				const BOOL32 bValueChanged = DrawElementWidget(Entry.Value, InProperty.MapValueType, InProperty.MapValueEnumHash, bValueActivated, bValueDeactivated);
+				const BOOL32 bValueChanged = DrawElementWidget(Entry.Value, InProperty.MapValueType, InProperty.MapValueEnumHash,
+					InProperty.MapValueStructHash, InProperty.AssetType, bValueActivated, bValueDeactivated);
 				ImGui::PopID();
 				if (bKeyActivated || bValueActivated)
 				{
@@ -1072,6 +1210,47 @@ namespace PigeonEngine
 			return bChanged;
 		}
 
+		BOOL32 DrawStructProperty(const FProperty& InProperty, void* InObject, const size_t& InClassHash, FPropertyValue& InOutValue)
+		{
+			const FStructDescriptor* Descriptor = EStructPropertyRegistry::Find(InProperty.StructHash);
+			if (!Descriptor)
+			{
+				return FALSE;
+			}
+			FPropertyValue Before;
+			InProperty.GetValue(InObject, Before);
+			BOOL32 bActivated = FALSE;
+			BOOL32 bDeactivated = FALSE;
+			BOOL32 bChanged = FALSE;
+			if (ImGui::TreeNodeEx(*InProperty.Name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+			{
+				bChanged = DrawStructFields(InOutValue, *Descriptor, bActivated, bDeactivated);
+				ImGui::TreePop();
+			}
+			if (bActivated)
+			{
+				StoreEditStart(InProperty, Before);
+			}
+			if (bChanged)
+			{
+				InProperty.SetValue(InObject, InOutValue);
+			}
+			if (bDeactivated)
+			{
+				FPropertyValue Start;
+				if (TakeEditStart(InProperty, Start))
+				{
+					Commit(InProperty, InObject, InClassHash, Start, InOutValue);
+				}
+			}
+			else if (bChanged && (!bActivated))
+			{
+				// Checkbox/asset/enum controls apply on selection, without a drag lifetime.
+				Commit(InProperty, InObject, InClassHash, Before, InOutValue);
+			}
+			return bChanged;
+		}
+
 		BOOL32 DrawProperty(const FProperty& InProperty, void* InObject, const size_t& InClassHash)
 		{
 			if ((InProperty.ValueType == EPropertyValueType::CUSTOM) ||
@@ -1084,9 +1263,14 @@ namespace PigeonEngine
 
 			FPropertyValue Value;
 			InProperty.GetValue(InObject, Value);
-			const FPropertyValue Before = Value;
 
 			ImGui::PushID(&InProperty);
+			if (InProperty.ValueType == EPropertyValueType::STRUCT)
+			{
+				const BOOL32 bChanged = DrawStructProperty(InProperty, InObject, InClassHash, Value);
+				ImGui::PopID();
+				return bChanged;
+			}
 			ImGui::TextUnformatted(*InProperty.Name);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(-1.0f);
@@ -1148,7 +1332,6 @@ namespace PigeonEngine
 			}
 
 			ImGui::PopID();
-			(void)Before;
 			return bChanged;
 		}
 	}

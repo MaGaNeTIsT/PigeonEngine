@@ -275,8 +275,12 @@ namespace PigeonEngine
 			FSetPropertyCommand(const FObjectHandle& InObjectHandle, const BOOL32& bInIsComponent, const size_t& InClassHash,
 				const EString& InPropertyName, const FPropertyValue& InBefore, const FPropertyValue& InAfter, const EString& InLabel)
 				: ObjectHandle(InObjectHandle), bIsComponent(bInIsComponent), ClassHash(InClassHash)
-				, PropertyName(InPropertyName), Before(InBefore), After(InAfter), Label(InLabel)
+				, PropertyName(InPropertyName), Label(InLabel)
 			{
+				// The UI values can share struct field trees with the live object; keep
+				// independent snapshots so later edits cannot change the command's history.
+				ClonePropertyValue(InBefore, Before);
+				ClonePropertyValue(InAfter, After);
 			}
 
 			virtual BOOL32 Undo(FWorldEditorCommandContext& InContext) override
