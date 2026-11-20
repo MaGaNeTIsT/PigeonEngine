@@ -204,6 +204,10 @@ private:
 		PE_NODISCARD PActorComponent* GetSelectedComponent() const;
 	public:
 		PE_NODISCARD PActor* GetRootActor() const;
+		// The editor module registers the fly-camera controller factory before main, from a
+		// static initializer; the world creates whatever controller it returns instead of a
+		// concrete editor type. Static because no world exists at registration time.
+		static void SetEditorControllerFactory(const TFunction<class PController*()>& InFactory);
 		// The editor installs its command stack here so the outline/details panels can record
 		// their mutations. Null in a world that is not being edited.
 		void SetEditorCommandStack(FWorldEditorCommandStack* InCommands);
@@ -221,7 +225,7 @@ private:
 		PActor* ImguiSelectedActor = nullptr;
 		PActorComponent* ImguiSelectedComponent = nullptr;
 	private:
-		class PEditorController* EditorController = nullptr;
+		class PController* EditorController = nullptr;
 #endif
 
 	};

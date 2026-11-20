@@ -136,30 +136,53 @@ namespace PigeonEngine
 		return new PLevelActor();
 	}
 
+#if ENGINE_EDITOR_ONLY
+	namespace
+	{
+		// Function-local storage: the editor module registers from a static initializer
+		// before main, which cannot hit an unconstructed object this way.
+		TFunction<class PController*()>& GetEditorControllerFactory()
+		{
+			static TFunction<class PController*()> Factory;
+			return Factory;
+		}
+	}
+
+	void PWorld::SetEditorControllerFactory(const TFunction<class PController*()>& InFactory)
+	{
+		GetEditorControllerFactory() = InFactory;
+	}
+#endif
+
 	void PWorld::CreateDefaultController()
 	{
 #if ENGINE_EDITOR_ONLY
-		this->EditorController = new PEditorController();
-		this->EditorController->SetIsTickable(TRUE);
-		POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
-		// Set transform BEFORE AddActor so that BeginAddedToScene ->
-		// PCameraComponent::CreateRenderState -> RScene::AddCamera captures
-		// the real camera location/rotation when it builds the initial
-		// ERenderViewMatrices. Otherwise SetupProxy is called with identity
-		// and the first frame's view CB stays at identity until the
-		// SetActorLocation-triggered UpdateCamera lambda is drained - which
-		// can be a frame or more late.
-		this->EditorController->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
-		this->EditorController->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
-		this->AddActor(EditorController);
-#else
+		// The editor module owns the concrete fly-camera type; it installed this factory
+		// before main, so the world never names it.
+		if (GetEditorControllerFactory())
+		{
+			this->EditorController = GetEditorControllerFactory()();
+			this->EditorController->SetIsTickable(TRUE);
+			POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
+			// Set transform BEFORE AddActor so that BeginAddedToScene ->
+			// PCameraComponent::CreateRenderState -> RScene::AddCamera captures
+			// the real camera location/rotation when it builds the initial
+			// ERenderViewMatrices. Otherwise SetupProxy is called with identity
+			// and the first frame's view CB stays at identity until the
+			// SetActorLocation-triggered UpdateCamera lambda is drained - which
+			// can be a frame or more late.
+			this->EditorController->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+			this->EditorController->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
+			this->AddActor(EditorController);
+			return;
+		}
+#endif
 		this->Controller = new PController();
 		this->Controller->SetIsTickable(TRUE);
 		POBJ_DEBUGNAME_SET(this->Controller, "Controller");
 		this->Controller->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
 		this->Controller->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
 		this->AddActor(Controller);
-#endif
 	}
 
 	BOOL32 PWorld::ShouldAffectGlobalPhysics() const

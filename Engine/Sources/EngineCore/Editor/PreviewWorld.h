@@ -2,7 +2,7 @@
 
 #if ENGINE_EDITOR_ONLY
 
-#include "World.h"
+#include <PigeonBase/Object/World/World.h>
 
 namespace PigeonEngine
 {

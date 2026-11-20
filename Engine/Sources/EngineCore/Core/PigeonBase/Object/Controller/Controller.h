@@ -54,28 +54,6 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(PController)
 	};
 
-#if ENGINE_EDITOR_ONLY
-
-
-	class PEditorController : public PController
-	{
-	public:
-		CLASS_VIRTUAL_NOCOPY_BODY(PEditorController)
-		void Init() override;
-		void EditorTick(FLOAT deltaTime) override;
-		void DrawImGui();
-	protected:
-		void OnMouse(IMouse::Event::EType Type) override;
-		void OnKey(IKeyboard::Event::EType Type, BYTE KeyCode) override;
-
-	private:
-
-		BOOL8 bStart = FALSE;
-		FLOAT MovingSpeed = 400.0;
-		FLOAT RotationSpeed = 0.25f;
-		Vector2 MousePositionLastTick = Vector2::Zero();
-	};
-#endif
 
 }
 

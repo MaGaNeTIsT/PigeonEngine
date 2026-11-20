@@ -9,7 +9,7 @@
 #include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
-#include <AssetManager.h>
+#include <Editor/AssetManager.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 

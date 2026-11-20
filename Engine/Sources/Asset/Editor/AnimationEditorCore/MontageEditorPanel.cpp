@@ -4,7 +4,7 @@
 
 #include <AnimationAsset/AnimationAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
-#include <AssetManager.h>
+#include <Editor/AssetManager.h>
 #include <Animation/AnimationNotify.h>
 #include <Config/EngineConfig.h>
 #include <Base/DataStructure/Text/Path.h>

@@ -1,7 +1,7 @@
 #include "AssetManager.h"
 #if ENGINE_EDITOR_ONLY
-#include "../EngineCore/IO/FileHelper.h"
-#include "Editor/AnimationEditorCore/AnimationWorkspace.h"
+#include <IO/FileHelper.h>
+#include <Editor/AnimationEditorCore/AnimationWorkspace.h>
 #include <AnimationAsset/AnimationAsset.h>
 #include <AnimationMontageAsset/AnimationMontageAsset.h>
 #include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
@@ -9,12 +9,12 @@
 #include <Base/DataStructure/Text/Path.h>
 #include <Config/EngineConfig.h>
 #include <RapidJson/Headers/JsonObject.h>
-#include "Editor/MeshEditor/MeshEditor.h"
+#include <Editor/MeshEditor/MeshEditor.h>
 #include <TextureAsset/TextureAsset.h>
 
-#include "../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
-#include "../EngineCore/Editor/EditorLogManager.h"
-#include "../Asset/Editor/AssetImporter/ImportManager.h"
+#include <imGUI/Headers/imGUIManager.h>
+#include <Editor/EditorLogManager.h>
+#include <Editor/AssetImporter/ImportManager.h>
 
 namespace PigeonEngine
 {
