@@ -3,6 +3,7 @@
 #include <PigeonBase/Object/World/World.h>
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
+#include <PigeonBase/Object/Component/Navigation/NavMeshBoundsComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <MeshAsset/MeshAsset.h>
 
@@ -14,10 +15,7 @@ namespace PigeonEngine
 	// The value is compared against a squared cross product, which is twice the area.
 	PE_CONSTEXPR_STATIC FLOAT NavigationMinCrossLengthSquared = 4.0e-4f;
 
-	// Component local bound transformed by the component's world transform, expressed as a
-	// world space axis aligned box. Rotation is folded in, so a rotated mesh reports the box
-	// its geometry actually occupies.
-	static EBoundAABB MakeComponentWorldBound(const PSceneComponent& InComponent, const EBoundAABB& InLocalBound)
+	EBoundAABB ENavigationGeometryCollector::MakeComponentWorldBound(const PSceneComponent& InComponent, const EBoundAABB& InLocalBound)
 	{
 		// CalculateBoundWithSpace is a non-const member that writes into the caller's corner
 		// array, so the local copy acts as the input.
@@ -57,6 +55,24 @@ namespace PigeonEngine
 			&& (InA.AABBMin.z <= InB.AABBMax.z) && (InA.AABBMax.z >= InB.AABBMin.z));
 	}
 
+	// No volumes means "no restriction": with no authored coverage every mesh in the world is
+	// a candidate, which is the legacy whole-world bake.
+	static BOOL32 IntersectsAnyVolume(const EBoundAABB& InBound, const TArray<EBoundAABB>& InVolumes)
+	{
+		if (InVolumes.Num<UINT32>() == 0u)
+		{
+			return TRUE;
+		}
+		for (UINT32 Index = 0u, Num = InVolumes.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (BoundsIntersect(InBound, InVolumes[Index]))
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
 	// x, y, z of one vertex out of an interleaved float stream. The importer stores positions
 	// with a 16 byte stride and a padding float, so the stride has to be honored.
 	static Vector3 ReadVertexPosition(const EVertexData& InPositions, UINT32 InVertexIndex)
@@ -82,7 +98,7 @@ namespace PigeonEngine
 		return (CrossLengthSquared < NavigationMinCrossLengthSquared);
 	}
 
-	static void CollectComponentTriangles(const PStaticMeshComponent& InComponent, const EBoundAABB& InBakeBounds, const BOOL32& InFlipTriangleWinding, ENavigationSourceGeometry& InOutGeometry)
+	static void CollectComponentTriangles(const PStaticMeshComponent& InComponent, const TArray<EBoundAABB>& InVolumes, const BOOL32& InFlipTriangleWinding, ENavigationSourceGeometry& InOutGeometry)
 	{
 		const EStaticMeshAsset* MeshAsset = InComponent.GetMeshAsset();
 		const EStaticMesh* Mesh = (!!MeshAsset) ? MeshAsset->GetStoragedResource() : nullptr;
@@ -94,8 +110,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		const EBoundAABB ComponentWorldBound = MakeComponentWorldBound(InComponent, InComponent.GetLocalBound());
-		if (!BoundsIntersect(ComponentWorldBound, InBakeBounds))
+		const EBoundAABB ComponentWorldBound = ENavigationGeometryCollector::MakeComponentWorldBound(InComponent, InComponent.GetLocalBound());
+		if (!IntersectsAnyVolume(ComponentWorldBound, InVolumes))
 		{
 			return;
 		}
@@ -164,7 +180,7 @@ namespace PigeonEngine
 	// actor: an attached child actor's root component is a child of the parent's root
 	// component, and that child actor is visited on its own, so descending would collect its
 	// geometry twice.
-	static void CollectActorTriangles(const PActor& InActor, const PSceneComponent& InComponent, const EBoundAABB& InBakeBounds, const BOOL32& InFlipTriangleWinding, ENavigationSourceGeometry& InOutGeometry)
+	static void CollectActorTriangles(const PActor& InActor, const PSceneComponent& InComponent, const TArray<EBoundAABB>& InVolumes, const BOOL32& InFlipTriangleWinding, ENavigationSourceGeometry& InOutGeometry)
 	{
 		if (InComponent.GetOwnerActor() != (&InActor))
 		{
@@ -174,7 +190,7 @@ namespace PigeonEngine
 		const PStaticMeshComponent* MeshComponent = dynamic_cast<const PStaticMeshComponent*>(&InComponent);
 		if ((!!MeshComponent) && (MeshComponent->ShouldRender()) && (MeshComponent->IsAffectsNavigation()))
 		{
-			CollectComponentTriangles(*MeshComponent, InBakeBounds, InFlipTriangleWinding, InOutGeometry);
+			CollectComponentTriangles(*MeshComponent, InVolumes, InFlipTriangleWinding, InOutGeometry);
 		}
 
 		const TArray<PSceneComponent*> Children = InComponent.GetChildrenComponents();
@@ -183,16 +199,26 @@ namespace PigeonEngine
 			PSceneComponent* ChildComponent = Children[ChildIndex];
 			if (!!ChildComponent)
 			{
-				CollectActorTriangles(InActor, *ChildComponent, InBakeBounds, InFlipTriangleWinding, InOutGeometry);
+				CollectActorTriangles(InActor, *ChildComponent, InVolumes, InFlipTriangleWinding, InOutGeometry);
 			}
 		}
 	}
 
-	void ENavigationGeometryCollector::CollectStaticMeshTriangles(const PWorld& InWorld, const EBoundAABB& InBakeBounds, const BOOL32& InFlipTriangleWinding, ENavigationSourceGeometry& OutGeometry)
+	void ENavigationGeometryCollector::CollectStaticMeshTriangles(const PWorld& InWorld, const TArray<EBoundAABB>& InVolumes, const BOOL32& InFlipTriangleWinding, ENavigationSourceGeometry& OutGeometry)
 	{
 		OutGeometry.Triangles.Empty();
 		OutGeometry.SkippedMeshCount = 0u;
-		OutGeometry.Bounds = InBakeBounds;
+		OutGeometry.Volumes = InVolumes;
+		// The union is what a backend uses to size its grid even when it ignores the list, so
+		// it is derived here instead of at every call site.
+		OutGeometry.Bounds = EBoundAABB(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f), FALSE);
+		for (UINT32 VolumeIndex = 0u, VolumeNum = InVolumes.Num<UINT32>(); VolumeIndex < VolumeNum; VolumeIndex++)
+		{
+			if (InVolumes[VolumeIndex].IsValid)
+			{
+				OutGeometry.Bounds += InVolumes[VolumeIndex];
+			}
+		}
 
 		const TArray<PActor*> Actors = InWorld.GetAllActors();
 		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
@@ -207,7 +233,57 @@ namespace PigeonEngine
 			{
 				continue;
 			}
-			CollectActorTriangles(*Actor, *RootComponent, InBakeBounds, InFlipTriangleWinding, OutGeometry);
+			CollectActorTriangles(*Actor, *RootComponent, InVolumes, InFlipTriangleWinding, OutGeometry);
+		}
+	}
+
+	// Same walk as the triangle collection: a bounds volume may sit anywhere in an actor's
+	// scene component tree, and a child actor is visited on its own so its components are not
+	// counted twice.
+	static void CollectActorVolumeBounds(const PActor& InActor, const PSceneComponent& InComponent, const EString& InNavMeshName, TArray<EBoundAABB>& OutVolumes)
+	{
+		if (InComponent.GetOwnerActor() != (&InActor))
+		{
+			return;
+		}
+
+		const PNavMeshBoundsComponent* VolumeComponent = dynamic_cast<const PNavMeshBoundsComponent*>(&InComponent);
+		if ((!!VolumeComponent) && (VolumeComponent->GetNavMeshName() == InNavMeshName))
+		{
+			const EBoundAABB WorldBound = VolumeComponent->MakeWorldBound();
+			if (WorldBound.IsValid)
+			{
+				OutVolumes.Add(WorldBound);
+			}
+		}
+
+		const TArray<PSceneComponent*> Children = InComponent.GetChildrenComponents();
+		for (UINT32 ChildIndex = 0u, ChildNum = Children.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
+		{
+			PSceneComponent* ChildComponent = Children[ChildIndex];
+			if (!!ChildComponent)
+			{
+				CollectActorVolumeBounds(InActor, *ChildComponent, InNavMeshName, OutVolumes);
+			}
+		}
+	}
+
+	void ENavigationGeometryCollector::CollectVolumeBounds(const PWorld& InWorld, const EString& InNavMeshName, TArray<EBoundAABB>& OutVolumes)
+	{
+		const TArray<PActor*> Actors = InWorld.GetAllActors();
+		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
+		{
+			const PActor* Actor = Actors[ActorIndex];
+			if (!Actor)
+			{
+				continue;
+			}
+			const PSceneComponent* RootComponent = Actor->GetRootComponent();
+			if (!RootComponent)
+			{
+				continue;
+			}
+			CollectActorVolumeBounds(*Actor, *RootComponent, InNavMeshName, OutVolumes);
 		}
 	}
 

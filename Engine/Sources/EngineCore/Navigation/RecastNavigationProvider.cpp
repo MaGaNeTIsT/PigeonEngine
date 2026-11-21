@@ -426,6 +426,9 @@ namespace PigeonEngine
 		// Authored off-mesh connections. The tiled path hands them to the tile cache's mesh
 		// process; the single tile path writes them into its create params directly.
 		const TArray<ENavigationLink>*	Links = nullptr;
+		// Coverage volumes. The tiled path skips tiles no volume touches; empty means the
+		// whole grid is baked.
+		const TArray<EBoundAABB>*		Volumes = nullptr;
 		FLOAT					BMin[3] = { 0.0f, 0.0f, 0.0f };
 		FLOAT					BMax[3] = { 0.0f, 0.0f, 0.0f };
 		FLOAT					CellSize = 20.0f;
@@ -608,6 +611,33 @@ namespace PigeonEngine
 		return EMath::Clamp(Index, 0, InTileNum - 1);
 	}
 
+	// Horizontal tile box against the authored coverage. A null or empty list means "the whole
+	// grid": that is the legacy bake with no bounds volumes, and also an imported asset build
+	// that never passes through here. The vertical axis is deliberately ignored because a tile
+	// spans the whole bake height.
+	static BOOL32 TileOverlapsAnyVolume(const TArray<EBoundAABB>* InVolumes
+		, const FLOAT InMinX, const FLOAT InMaxX, const FLOAT InMinZ, const FLOAT InMaxZ)
+	{
+		if ((!InVolumes) || (InVolumes->Num<UINT32>() == 0u))
+		{
+			return TRUE;
+		}
+		for (UINT32 Index = 0u, Num = InVolumes->Num<UINT32>(); Index < Num; Index++)
+		{
+			const EBoundAABB& Volume = (*InVolumes)[Index];
+			if (!Volume.IsValid)
+			{
+				continue;
+			}
+			if ((Volume.AABBMin.x <= InMaxX) && (Volume.AABBMax.x >= InMinX)
+				&& (Volume.AABBMin.z <= InMaxZ) && (Volume.AABBMax.z >= InMinZ))
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
 	// Builds the whole tile grid, the tile cache that mirrors it and the navmesh they feed.
 	// On failure nothing is handed back; the caller publishes the results only on success.
 	static BOOL32 BakeTiled(const FRecastBakeInputs& InInputs, FRecastNavigationTileCache** OutTileCache
@@ -766,6 +796,14 @@ namespace PigeonEngine
 			for (INT32 TileX = 0; TileX < TileNumX; TileX++)
 			{
 				const UINT32 TileIndex = (static_cast<UINT32>(TileY) * static_cast<UINT32>(TileNumX)) + static_cast<UINT32>(TileX);
+				const FLOAT TileMinX = InInputs.BMin[0] + (static_cast<FLOAT>(TileX) * TileWorldSize);
+				const FLOAT TileMinZ = InInputs.BMin[2] + (static_cast<FLOAT>(TileY) * TileWorldSize);
+				if (!TileOverlapsAnyVolume(InInputs.Volumes, TileMinX, TileMinX + TileWorldSize, TileMinZ, TileMinZ + TileWorldSize))
+				{
+					// No authored region covers this tile, so it is skipped instead of being
+					// rasterized from geometry that happens to sit between two volumes.
+					continue;
+				}
 				const UINT32 First = TileOffsets[TileIndex];
 				const UINT32 Count = TileOffsets[TileIndex + 1u] - First;
 				const INT32 LayerNum = RasterizeTileLayers(Context, InInputs
@@ -794,6 +832,12 @@ namespace PigeonEngine
 		{
 			for (INT32 TileX = 0; TileX < TileNumX; TileX++)
 			{
+				const FLOAT TileMinX = InInputs.BMin[0] + (static_cast<FLOAT>(TileX) * TileWorldSize);
+				const FLOAT TileMinZ = InInputs.BMin[2] + (static_cast<FLOAT>(TileY) * TileWorldSize);
+				if (!TileOverlapsAnyVolume(InInputs.Volumes, TileMinX, TileMinX + TileWorldSize, TileMinZ, TileMinZ + TileWorldSize))
+				{
+					continue;
+				}
 				State->TileCache->buildNavMeshTilesAt(TileX, TileY, NavMesh);
 			}
 		}
@@ -1560,6 +1604,15 @@ namespace PigeonEngine
 			PE_LOG_WARN(EString(PE_TEXT("Navigation: build skipped, no source triangles.")));
 			return FALSE;
 		}
+		// A single tile has one heightfield for the whole union, so it cannot clip geometry to
+		// disjoint volumes: the gaps get rasterized too. The tiled path is the mode with real
+		// per-volume coverage, and this says so once per bake instead of failing silently.
+		if ((Settings.TileSizeCells == 0u) && (InGeometry.Volumes.Num<UINT32>() > 1u))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: a single tile bake rasterizes the union of "))
+				+ EString::FromInt(InGeometry.Volumes.Num<UINT32>())
+				+ EString(PE_TEXT(" coverage volumes, gaps included; set Tile Size (cells) > 0 to clip to the volumes.")));
+		}
 
 		// A triangle soup is expanded to one vertex per triangle corner. Recast does not need
 		// shared vertices, and building them here keeps the collector free of any index
@@ -1655,6 +1708,7 @@ namespace PigeonEngine
 			Inputs.Triangles = &Triangles;
 			Inputs.TriangleAreaFlags = &TriangleAreaFlags;
 			Inputs.Links = &InGeometry.Links;
+			Inputs.Volumes = &InGeometry.Volumes;
 			rcVcopy(Inputs.BMin, Config.bmin);
 			rcVcopy(Inputs.BMax, Config.bmax);
 			Inputs.CellSize = Config.cs;

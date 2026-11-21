@@ -36,8 +36,19 @@ namespace PigeonEngine
 		PE_NODISCARD const ENavMeshBuildSettings&	GetBuildSettings() const;
 		void										SetBuildSettings(const ENavMeshBuildSettings& InSettings);
 
-		// Half extent of the volume, around the component's world location. Zero on all axes
-		// means "the whole world", which is what a level with a single navigation volume wants.
+		/*
+		* Group of the navmesh this component owns. PNavMeshBoundsComponents with the same
+		* name feed this mesh; an empty name is the level's default navmesh, and agents and
+		* obstacles with an empty name query it. Every volume of one group is baked into one
+		* mesh no matter how many components author it.
+		*/
+		PE_NODISCARD const EString&	GetNavMeshName() const;
+		void						SetNavMeshName(const EString& InName);
+
+		// Half extent of one extra region this owner contributes, around its own world
+		// location. It is a region like a PNavMeshBoundsComponent, not the bake's extent: all
+		// three axes have to be positive, otherwise the owner contributes no box. A level
+		// without any bounds volume falls back to the whole world.
 		PE_NODISCARD const Vector3&	GetBakeVolumeExtent() const;
 		void						SetBakeVolumeExtent(const Vector3& InExtent);
 
@@ -78,8 +89,9 @@ namespace PigeonEngine
 		// Runs the automatic publish once the asset queue drained, or once waiting longer would be
 		// worse than baking an incomplete mesh.
 		void	TryBuildOnBeginPlay(FLOAT InDeltaTime);
-		// World space box the collector filters against. An invalid bound collects everything.
-		PE_NODISCARD EBoundAABB	MakeBakeBoundsInWorld() const;
+		// Regions of this component's group plus the owner's own box. An empty result is valid
+		// only for the default group, which then bakes the whole world.
+		PE_NODISCARD TArray<EBoundAABB>	CollectBakeVolumesInWorld() const;
 
 		// Creates the Recast provider this component talks to and copies the bake settings over.
 		// The caller owns it until it is published or deleted.
@@ -94,6 +106,7 @@ namespace PigeonEngine
 
 	private:
 		ENavMeshBuildSettings	BuildSettings;
+		EString					NavMeshName;
 		Vector3					BakeVolumeExtent = Vector3::Zero();
 		BOOL32					bBuildOnBeginPlay = TRUE;
 		TArray<ENavigationLink>	NavigationLinks;

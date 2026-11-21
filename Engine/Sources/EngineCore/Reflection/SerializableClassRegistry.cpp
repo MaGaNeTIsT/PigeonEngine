@@ -26,6 +26,7 @@
 #include <PigeonBase/Object/Component/Character/CharacterInputComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavigationComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
+#include <PigeonBase/Object/Component/Navigation/NavMeshBoundsComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavObstacleComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavAgentComponent.h>
 #include <PigeonBase/Object/Component/Water/WaterSimulationComponent.h>
@@ -102,6 +103,8 @@ namespace PigeonEngine
 		RegisterSerializableClassType<PCharacterInputComponent, PActorComponent>(PE_TEXT("PCharacterInputComponent"));
 		SaveDefaultClassFactory<PNavMeshComponent>();
 		RegisterSerializableClassType<PNavMeshComponent, PNavigationComponent>(PE_TEXT("PNavMeshComponent"));
+		SaveDefaultClassFactory<PNavMeshBoundsComponent>();
+		RegisterSerializableClassType<PNavMeshBoundsComponent, PSceneComponent>(PE_TEXT("PNavMeshBoundsComponent"));
 		SaveDefaultClassFactory<PNavObstacleComponent>();
 		RegisterSerializableClassType<PNavObstacleComponent, PSceneComponent>(PE_TEXT("PNavObstacleComponent"));
 		SaveDefaultClassFactory<PNavAgentComponent>();

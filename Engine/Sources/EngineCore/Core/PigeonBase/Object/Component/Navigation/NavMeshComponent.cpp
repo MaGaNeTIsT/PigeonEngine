@@ -159,6 +159,10 @@ namespace PigeonEngine
 			[](const PNavMeshComponent* Component) -> Vector3 { return Component->GetBakeVolumeExtent(); },
 			[](PNavMeshComponent* Component, const Vector3& Value) -> void { Component->SetBakeVolumeExtent(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavMeshComponent, EString>(ClassHash, PE_TEXT("NavMeshName"),
+			[](const PNavMeshComponent* Component) -> EString { return Component->GetNavMeshName(); },
+			[](PNavMeshComponent* Component, const EString& Value) -> void { Component->SetNavMeshName(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 		AddClassBoolPropertyAccessors<PNavMeshComponent>(ClassHash, PE_TEXT("BuildOnBeginPlay"),
 			[](const PNavMeshComponent* Component) -> BOOL32 { return Component->GetBuildOnBeginPlay(); },
 			[](PNavMeshComponent* Component, const BOOL32& Value) -> void { Component->SetBuildOnBeginPlay(Value); },
@@ -247,6 +251,16 @@ namespace PigeonEngine
 	void PNavMeshComponent::SetBakeVolumeExtent(const Vector3& InExtent)
 	{
 		BakeVolumeExtent = Vector3(EMath::Max(InExtent.x, 0.0f), EMath::Max(InExtent.y, 0.0f), EMath::Max(InExtent.z, 0.0f));
+	}
+
+	const EString& PNavMeshComponent::GetNavMeshName() const
+	{
+		return NavMeshName;
+	}
+
+	void PNavMeshComponent::SetNavMeshName(const EString& InName)
+	{
+		NavMeshName = InName;
 	}
 
 	void PNavMeshComponent::RequestBuildNavigation()
@@ -384,15 +398,30 @@ namespace PigeonEngine
 		return ERecastNavigationProvider::GetProviderName();
 	}
 
-	EBoundAABB PNavMeshComponent::MakeBakeBoundsInWorld() const
+	TArray<EBoundAABB> PNavMeshComponent::CollectBakeVolumesInWorld() const
 	{
-		if ((BakeVolumeExtent.x <= 0.0f) || (BakeVolumeExtent.y <= 0.0f) || (BakeVolumeExtent.z <= 0.0f))
+		TArray<EBoundAABB> Volumes;
+		const PWorld* World = GetWorld();
+		if (World)
 		{
-			// No volume authored: the collector treats an invalid bound as the whole world.
-			return EBoundAABB(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f), FALSE);
+			ENavigationGeometryCollector::CollectVolumeBounds(*World, NavMeshName, Volumes);
 		}
-		const Vector3 Location = GetComponentWorldLocation();
-		return EBoundAABB(Location - BakeVolumeExtent, Location + BakeVolumeExtent, TRUE);
+
+		// The owner may still describe one region of its own, which is how levels authored
+		// before bounds volumes existed keep working. A partially zero extent is an authoring
+		// mistake, not "the whole world": it is reported instead of silently ignored.
+		const BOOL32 bHasOwnExtent = ((BakeVolumeExtent.x > 0.0f) && (BakeVolumeExtent.y > 0.0f) && (BakeVolumeExtent.z > 0.0f)) ? TRUE : FALSE;
+		if (bHasOwnExtent)
+		{
+			const Vector3 Location = GetComponentWorldLocation();
+			Volumes.Add(EBoundAABB(Location - BakeVolumeExtent, Location + BakeVolumeExtent, TRUE));
+		}
+		else if ((BakeVolumeExtent.x > 0.0f) || (BakeVolumeExtent.y > 0.0f) || (BakeVolumeExtent.z > 0.0f))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: BakeVolumeExtent needs every axis > 0 to be a region; the partial extent of '"))
+				+ POBJ_DEBUGNAME_GET(this) + EString(PE_TEXT("' was ignored.")));
+		}
+		return Volumes;
 	}
 
 	void PNavMeshComponent::PublishProvider(ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats)
@@ -444,9 +473,19 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
+		// Regions of this group. A named group without any volume would otherwise bake the
+		// whole world into a second navmesh, so it is refused with a message instead.
+		const TArray<EBoundAABB> Volumes = CollectBakeVolumesInWorld();
+		if ((Volumes.Num<UINT32>() == 0u) && (NavMeshName.Length() > 0u))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh group '")) + NavMeshName
+				+ EString(PE_TEXT("' has no bounds volume, so nothing was baked. Add a PNavMeshBoundsComponent with the same NavMeshName.")));
+			return FALSE;
+		}
+
 		// Collection reads the world, so it stays here; only the Recast part runs on the worker.
 		ENavigationSourceGeometry Geometry;
-		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, MakeBakeBoundsInWorld(), BuildSettings.bFlipTriangleWinding, Geometry);
+		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, Volumes, BuildSettings.bFlipTriangleWinding, Geometry);
 		// The links belong to this volume, not to the world scan, so they are attached after
 		// collection.
 		Geometry.Links = NavigationLinks;
@@ -675,8 +714,16 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
+		const TArray<EBoundAABB> Volumes = CollectBakeVolumesInWorld();
+		if ((Volumes.Num<UINT32>() == 0u) && (NavMeshName.Length() > 0u))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh group '")) + NavMeshName
+				+ EString(PE_TEXT("' has no bounds volume; the bake was skipped.")));
+			delete Provider;
+			return nullptr;
+		}
 		ENavigationSourceGeometry Geometry;
-		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, MakeBakeBoundsInWorld(), BuildSettings.bFlipTriangleWinding, Geometry);
+		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, Volumes, BuildSettings.bFlipTriangleWinding, Geometry);
 		Geometry.Links = NavigationLinks;
 		if (!Provider->Build(Geometry, OutStats))
 		{

@@ -18,6 +18,7 @@
 #include "PigeonBase/Object/Component/Physics/PhysicsComponent.h"
 #include "PigeonBase/Object/Component/Physics/TriggerComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavMeshComponent.h"
+#include "PigeonBase/Object/Component/Navigation/NavMeshBoundsComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavObstacleComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavAgentComponent.h"
 #include <Navigation/NavigationGeometry.h>
@@ -2912,6 +2913,96 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	// Bounds volumes: world AABBs, group matching, invalid volumes and the union the collector
+	// hands to a backend. The volume component has no mesh requirement, so this runs without
+	// any asset data.
+	static PNavMeshBoundsComponent* SpawnSanityBoundsVolume(PWorld* InWorld, TArray<PActor*>& InOutActors
+		, const Vector3& InLocation, const Vector3& InExtent, const EString& InNavMeshName, const Quaternion& InRotation = Quaternion::Identity())
+	{
+		PActor* Actor = new PActor();
+		InWorld->AddActor(Actor);
+		InOutActors.Add(Actor);
+
+		PNavMeshBoundsComponent* Bounds = new PNavMeshBoundsComponent();
+		Actor->AddComponent(Bounds);
+		Bounds->SetComponentWorldLocation(InLocation);
+		Bounds->SetComponentWorldRotation(InRotation);
+		Bounds->SetExtent(InExtent);
+		Bounds->SetNavMeshName(InNavMeshName);
+		return Bounds;
+	}
+
+	static BOOL32 CheckNavMeshVolumeCollection()
+	{
+		PSanityLevelWorld* World = new PSanityLevelWorld();
+		World->Init();
+		TArray<PActor*> Actors;
+
+		// Two overlapping default-group volumes, one named-group volume, one volume with a zero
+		// axis and one rotated volume of its own group.
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), EString());
+		SpawnSanityBoundsVolume(World, Actors, Vector3(150.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), EString());
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), EString(PE_TEXT("Small")));
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 50.0f, 100.0f), EString());
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 10.0f, 10.0f)
+			, EString(PE_TEXT("Rotated")), MakeQuaternion(Euler(0.0f, 45.0f, 0.0f)));
+
+		TArray<EBoundAABB> DefaultVolumes;
+		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(), DefaultVolumes);
+		// The zero-axis volume contributes nothing, so the default group has exactly the two
+		// overlapping boxes.
+		const BOOL32 bDefaultCount = (DefaultVolumes.Num<UINT32>() == 2u) ? TRUE : FALSE;
+
+		TArray<EBoundAABB> SmallVolumes;
+		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(PE_TEXT("Small")), SmallVolumes);
+		const BOOL32 bGroupFilter = (SmallVolumes.Num<UINT32>() == 1u) ? TRUE : FALSE;
+
+		// A 45 degree yawed 200 x 20 x 20 box: rotating a long box shortens its x reach but the
+		// world bound has to grow along z, which is what proves the rotation was folded in.
+		TArray<EBoundAABB> RotatedVolumes;
+		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(PE_TEXT("Rotated")), RotatedVolumes);
+		const BOOL32 bRotation = ((RotatedVolumes.Num<UINT32>() == 1u)
+			&& (RotatedVolumes[0].IsValid)
+			&& (RotatedVolumes[0].AABBMin.z < -70.0f)
+			&& (RotatedVolumes[0].AABBMax.z > 70.0f)) ? TRUE : FALSE;
+
+		// The collector reports the union of the volumes as the geometry bounds, which is what a
+		// backend uses to size its grid.
+		ENavigationSourceGeometry Geometry;
+		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, DefaultVolumes, FALSE, Geometry);
+		const BOOL32 bUnion = ((Geometry.Volumes.Num<UINT32>() == 2u)
+			&& (Geometry.Bounds.IsValid)
+			&& (EMath::Abs(Geometry.Bounds.AABBMin.x + 100.0f) <= 1.0e-3f)
+			&& (EMath::Abs(Geometry.Bounds.AABBMax.x - 250.0f) <= 1.0e-3f)
+			&& (EMath::Abs(Geometry.Bounds.AABBMin.y + 50.0f) <= 1.0e-3f)
+			&& (EMath::Abs(Geometry.Bounds.AABBMax.y - 50.0f) <= 1.0e-3f)) ? TRUE : FALSE;
+
+		// No volumes at all is the legacy whole-world bake: the geometry bounds are left
+		// invalid so the provider derives them from the triangles.
+		ENavigationSourceGeometry WorldGeometry;
+		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, TArray<EBoundAABB>(), FALSE, WorldGeometry);
+		const BOOL32 bWholeWorld = ((WorldGeometry.Volumes.Num<UINT32>() == 0u)
+			&& (!WorldGeometry.Bounds.IsValid)) ? TRUE : FALSE;
+
+		for (UINT32 Index = 0u, Num = Actors.Num<UINT32>(); Index < Num; Index++)
+		{
+			World->DestroyActor(Actors[Index]);
+		}
+		World->FlushPendingDestroy();
+		World->Destroy();
+
+		const BOOL32 bOk = (bDefaultCount && bGroupFilter && bRotation && bUnion && bWholeWorld) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh volume detail: defaultCount=")) + EString::FromInt(DefaultVolumes.Num<UINT32>())
+				+ EString(PE_TEXT(" groupFilter=")) + EString::FromInt(SmallVolumes.Num<UINT32>())
+				+ EString(PE_TEXT(" rotation=")) + EString::FromInt(bRotation)
+				+ EString(PE_TEXT(" union=")) + EString::FromInt(bUnion)
+				+ EString(PE_TEXT(" wholeWorld=")) + EString::FromInt(bWholeWorld));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckContainerPropertySerialization()
 	{
 		static BOOL32 bPropertiesRegistered = FALSE;
@@ -3677,6 +3768,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshLinkBake = CheckNavMeshLinkBake();
 		ReportSanityResult(EString(PE_TEXT("navmesh off-mesh link bake")), bNavMeshLinkBake);
 		if (!bNavMeshLinkBake)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshVolumeCollection = CheckNavMeshVolumeCollection();
+		ReportSanityResult(EString(PE_TEXT("navmesh bounds volume collection")), bNavMeshVolumeCollection);
+		if (!bNavMeshVolumeCollection)
 		{
 			FailedCount += 1u;
 		}
