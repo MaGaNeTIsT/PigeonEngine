@@ -17,6 +17,7 @@
 #include <DetourCrowd/Include/DetourCrowd.h>
 #include <DetourTileCache/Include/DetourTileCache.h>
 #include <DetourTileCache/Include/DetourTileCacheBuilder.h>
+#include <FastLZ/fastlz.h>
 
 namespace PigeonEngine
 {
@@ -188,42 +189,50 @@ namespace PigeonEngine
 		TArray<void*> Blocks;
 	};
 
-	// Stores the layer bytes verbatim. Compression would cut how much the tile cache keeps
-	// resident, but it costs a dependency the engine does not vendor; an uncompressed store is
-	// complete and correct, and the file format does not care which one wrote it.
+	// Compresses the layer bytes with FastLZ - the same compression the upstream demo's tile
+	// cache uses - so obstacle-rebuild layers stay small in memory. The exported navmesh file
+	// never sees this: the asset format stores the built tile bytes, not the layers, so a file
+	// written by an uncompressed build reads back identically.
 	class ENavTileCacheCompressor final : public dtTileCacheCompressor
 	{
 	public:
 		virtual int maxCompressedSize(const int bufferSize) override
 		{
-			return bufferSize;
+			// FastLZ's contract: the output buffer must be at least 5% larger than the input
+			// and never smaller than 66 bytes, and incompressible data can come out slightly
+			// larger than the input. 1/8 plus 128 covers all of it with room to spare.
+			return bufferSize + (bufferSize / 8) + 128;
 		}
 		virtual dtStatus compress(const unsigned char* buffer, const int bufferSize
 			, unsigned char* compressed, const int maxCompressedSize, int* compressedSize) override
 		{
-			if (maxCompressedSize < bufferSize)
+			const int CompressedSize = (bufferSize > 0)
+				? fastlz_compress_level(1, buffer, bufferSize, compressed)
+				: 0;
+			if ((bufferSize > 0) && (CompressedSize <= 0))
+			{
+				return DT_FAILURE;
+			}
+			if (CompressedSize > maxCompressedSize)
 			{
 				return DT_FAILURE | DT_BUFFER_TOO_SMALL;
 			}
-			if (bufferSize > 0)
-			{
-				::memcpy(compressed, buffer, static_cast<size_t>(bufferSize));
-			}
-			*compressedSize = bufferSize;
+			*compressedSize = CompressedSize;
 			return DT_SUCCESS;
 		}
 		virtual dtStatus decompress(const unsigned char* compressed, const int compressedSize
 			, unsigned char* buffer, const int maxBufferSize, int* bufferSize) override
 		{
-			if (maxBufferSize < compressedSize)
+			// A zero return means the data is corrupt or the output buffer is too small;
+			// FastLZ is memory safe either way.
+			const int DecompressedSize = (compressedSize > 0)
+				? fastlz_decompress(compressed, compressedSize, buffer, maxBufferSize)
+				: 0;
+			if ((compressedSize > 0) && (DecompressedSize <= 0))
 			{
-				return DT_FAILURE | DT_BUFFER_TOO_SMALL;
+				return DT_FAILURE;
 			}
-			if (compressedSize > 0)
-			{
-				::memcpy(buffer, compressed, static_cast<size_t>(compressedSize));
-			}
-			*bufferSize = compressedSize;
+			*bufferSize = DecompressedSize;
 			return DT_SUCCESS;
 		}
 	};

@@ -2,13 +2,15 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;DebugEditor;Develop;DevelopEditor;Shipping" CACHE STRING "Recast Navigation Project Configurations" FORCE)
 
-project(RecastNavigation LANGUAGES CXX)
+project(RecastNavigation LANGUAGES C CXX)
 
 #Pigeon Engine Third Party Recast Navigation
 #Source copy of https://github.com/recastnavigation/recastnavigation (commit 9f4ce64).
 #Only the runtime modules are vendored. RecastDemo (SDL2 + OpenGL), Tests (Catch2) and
 #DebugUtils are left out: the engine draws navigation debug geometry through its own
-#wireframe manager, so none of them is needed to build or query a navmesh.
+#wireframe manager, so none of them is needed to build or query a navmesh. The one
+#RecastDemo piece that runtime work does need is its FastLZ compression, vendored from
+#the same upstream repository (RecastDemo/Contrib/fastlz) as FastLZ/ here.
 
 #Every module builds as its own static library, mirroring the upstream layout: refreshing the
 #copy is then a per-directory operation, and a module can be linked or dropped on its own.
@@ -105,3 +107,25 @@ PigeonRecastNavigationModule(DetourCrowd Detour)
 
 #DetourTileCache: dynamically rebuilt navmesh tiles
 PigeonRecastNavigationModule(DetourTileCache Detour)
+
+#FastLZ: the compression DetourTileCache layers go through. Pure C and a single file
+#pair, so it does not go through the module factory (which globs .cpp); the public
+#include directory is the repository root, so engine code writes <FastLZ/fastlz.h>.
+add_library(FastLZ STATIC
+	${CMAKE_CURRENT_SOURCE_DIR}/FastLZ/fastlz.c
+	${CMAKE_CURRENT_SOURCE_DIR}/FastLZ/fastlz.h)
+set_target_properties(FastLZ PROPERTIES
+	SUFFIX ".lib"
+	FOLDER "ThirdParty/RecastNavigation"
+)
+target_include_directories(FastLZ PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+#Static runtime to match the engine target and the Recast modules: one CRT instance
+#across everything linked into PigeonEngine.exe.
+target_compile_options(FastLZ PRIVATE
+	$<$<CONFIG:Debug>:/MTd>
+	$<$<CONFIG:DebugEditor>:/MTd>
+	$<$<CONFIG:Develop>:/MTd>
+	$<$<CONFIG:DevelopEditor>:/MTd>
+	$<$<CONFIG:Shipping>:/MT>
+)
+target_link_libraries(DetourTileCache PUBLIC FastLZ)
