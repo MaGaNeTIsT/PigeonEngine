@@ -3124,6 +3124,9 @@ namespace PigeonEngine
 
 	// Two providers of different groups must answer only their own group, and the composed
 	// asset name must stay a valid file name.
+	// Providers resolve inside one world and one agent profile only. Two worlds holding the same
+	// profile name must answer from their own mesh, and two profiles of one world must not answer
+	// for each other.
 	static BOOL32 CheckNavMeshGroupRouting()
 	{
 		const BOOL32 bDefaultName = (PNavMeshComponent::MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString())
@@ -3131,53 +3134,84 @@ namespace PigeonEngine
 		const BOOL32 bGroupName = (PNavMeshComponent::MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString(PE_TEXT("Large Agent")))
 			== EString(PE_TEXT("Demo_Large_Agent_NavMesh"))) ? TRUE : FALSE;
 
+		PSanityLevelWorld* WorldA = new PSanityLevelWorld();
+		WorldA->Init();
+		PSanityLevelWorld* WorldB = new PSanityLevelWorld();
+		WorldB->Init();
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
 
-		ERecastNavigationProvider* ProviderA = new ERecastNavigationProvider();
-		ENavigationBuildStats StatsA;
-		const BOOL32 bBuiltA = ProviderA->Build(MakeSanityFlatGeometry(-300.0f, -100.0f, -100.0f, 100.0f), StatsA);
+		// World A: the default-profile provider covers the left platform, "Other" covers the right
+		// one. World B reuses the name "Agent" with a right-side mesh only.
+		ERecastNavigationProvider* LeftProvider = new ERecastNavigationProvider();
+		ENavigationBuildStats LeftStats;
+		const BOOL32 bBuiltLeft = LeftProvider->Build(MakeSanityFlatGeometry(-300.0f, -100.0f, -100.0f, 100.0f), LeftStats);
 
-		ERecastNavigationProvider* ProviderB = new ERecastNavigationProvider();
-		ENavigationBuildStats StatsB;
-		BOOL32 bBuiltB = ProviderB->Build(MakeSanityFlatGeometry(100.0f, 300.0f, -100.0f, 100.0f), StatsB);
+		ERecastNavigationProvider* RightProvider = new ERecastNavigationProvider();
+		ENavigationBuildStats RightStats;
+		const BOOL32 bBuiltRight = RightProvider->Build(MakeSanityFlatGeometry(100.0f, 300.0f, -100.0f, 100.0f), RightStats);
 
-		// Unique owner ids without a world: two plain components are enough identity.
-		PSceneComponent* OwnerA = new PSceneComponent();
-		PSceneComponent* OwnerB = new PSceneComponent();
-		const ObjectIdentityType OwnerAId = OwnerA->GetUniqueID();
-		const ObjectIdentityType OwnerBId = OwnerB->GetUniqueID();
-		Manager->RegisterProvider(OwnerAId, EString(PE_TEXT("GroupA")), ProviderA);
-		Manager->RegisterProvider(OwnerBId, EString(PE_TEXT("GroupB")), ProviderB);
+		ERecastNavigationProvider* OtherWorldProvider = new ERecastNavigationProvider();
+		ENavigationBuildStats OtherWorldStats;
+		const BOOL32 bBuiltOtherWorld = OtherWorldProvider->Build(MakeSanityFlatGeometry(100.0f, 300.0f, -100.0f, 100.0f), OtherWorldStats);
+
+		// Source ids only identify the authoring object for cleanup; the world carries the identity.
+		PSceneComponent* SourceA = new PSceneComponent();
+		PSceneComponent* SourceB = new PSceneComponent();
+		PSceneComponent* SourceOther = new PSceneComponent();
+		const ObjectIdentityType SourceAId = SourceA->GetUniqueID();
+		const ObjectIdentityType SourceBId = SourceB->GetUniqueID();
+		const ObjectIdentityType SourceOtherId = SourceOther->GetUniqueID();
+		Manager->RegisterProvider(WorldA, SourceAId, EString(PE_TEXT("Agent")), LeftProvider);
+		Manager->RegisterProvider(WorldA, SourceOtherId, EString(PE_TEXT("Other")), RightProvider);
+		Manager->RegisterProvider(WorldB, SourceBId, EString(PE_TEXT("Agent")), OtherWorldProvider);
 
 		ENavigationQueryFilter Filter;
-		ENavigationPath PathA;
-		const BOOL32 bOwnGroup = (Manager->FindPath(Vector3(-200.0f, 0.0f, 0.0f), Vector3(-150.0f, 0.0f, 0.0f), Filter, PathA, EString(PE_TEXT("GroupA")))
-			&& (PathA.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)) ? TRUE : FALSE;
-		// The same start asked on the other group has no polygon within the projection box.
-		ENavigationPath PathB;
-		const BOOL32 bOtherGroup = (Manager->FindPath(Vector3(-200.0f, 0.0f, 0.0f), Vector3(-150.0f, 0.0f, 0.0f), Filter, PathB, EString(PE_TEXT("GroupB"))) == FALSE) ? TRUE : FALSE;
-		// A path whose destination lives on another group's mesh cannot complete either.
-		ENavigationPath CrossPath;
-		const BOOL32 bNoCross = (Manager->FindPath(Vector3(-200.0f, 0.0f, 0.0f), Vector3(200.0f, 0.0f, 0.0f), Filter, CrossPath, EString(PE_TEXT("GroupA"))) == FALSE) ? TRUE : FALSE;
-		const BOOL32 bDefaults = ((Manager->GetDefaultProvider(EString(PE_TEXT("GroupA"))) != nullptr)
-			&& (Manager->GetDefaultProvider(EString(PE_TEXT("GroupB"))) != nullptr)
-			&& (Manager->GetDefaultProvider(EString(PE_TEXT("Missing"))) == nullptr)) ? TRUE : FALSE;
+		const Vector3 LeftStart(-200.0f, 0.0f, 0.0f);
+		const Vector3 LeftEnd(-150.0f, 0.0f, 0.0f);
+		const Vector3 RightStart(200.0f, 0.0f, 0.0f);
+		const Vector3 RightEnd(150.0f, 0.0f, 0.0f);
+		ENavigationPath LeftPath;
+		const BOOL32 bOwnProfile = (Manager->FindPath(WorldA, LeftStart, LeftEnd, Filter, LeftPath, EString(PE_TEXT("Agent")))
+			&& (LeftPath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)) ? TRUE : FALSE;
+		// The Agent profile of world A does not answer with the Other profile's right-side mesh.
+		ENavigationPath WrongProfilePath;
+		const BOOL32 bOtherProfile = (Manager->FindPath(WorldA, RightStart, RightEnd, Filter, WrongProfilePath, EString(PE_TEXT("Agent"))) == FALSE) ? TRUE : FALSE;
+		ENavigationPath OtherProfilePath;
+		const BOOL32 bRightProfile = (Manager->FindPath(WorldA, RightStart, RightEnd, Filter, OtherProfilePath, EString(PE_TEXT("Other")))
+			&& (OtherProfilePath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)) ? TRUE : FALSE;
+		// The same profile name in world B resolves to world B's mesh, not world A's.
+		ENavigationPath WorldBPath;
+		const BOOL32 bOtherWorld = (Manager->FindPath(WorldB, RightStart, RightEnd, Filter, WorldBPath, EString(PE_TEXT("Agent")))
+			&& (WorldBPath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)) ? TRUE : FALSE;
+		ENavigationPath WorldBCrossPath;
+		const BOOL32 bWorldNoCross = (Manager->FindPath(WorldB, LeftStart, LeftEnd, Filter, WorldBCrossPath, EString(PE_TEXT("Agent"))) == FALSE) ? TRUE : FALSE;
+		const BOOL32 bDefaults = ((Manager->GetDefaultProvider(WorldA, EString(PE_TEXT("Agent"))) != nullptr)
+			&& (Manager->GetDefaultProvider(WorldB, EString(PE_TEXT("Agent"))) != nullptr)
+			&& (Manager->GetDefaultProvider(WorldA, EString(PE_TEXT("Missing"))) == nullptr)) ? TRUE : FALSE;
 
-		Manager->UnregisterProvider(OwnerAId);
-		Manager->UnregisterProvider(OwnerBId);
-		OwnerA->Destroy();
-		OwnerB->Destroy();
+		Manager->UnregisterProfilesBySource(WorldA, SourceAId);
+		Manager->UnregisterProfilesBySource(WorldA, SourceOtherId);
+		Manager->UnregisterProfilesBySource(WorldB, SourceBId);
+		Manager->NotifyWorldDestroyed(WorldA);
+		Manager->NotifyWorldDestroyed(WorldB);
+		SourceA->Destroy();
+		SourceB->Destroy();
+		SourceOther->Destroy();
+		WorldA->Destroy();
+		WorldB->Destroy();
 
-		const BOOL32 bOk = (bDefaultName && bGroupName && bBuiltA && bBuiltB && bOwnGroup && bOtherGroup && bNoCross && bDefaults) ? TRUE : FALSE;
+		const BOOL32 bOk = (bDefaultName && bGroupName && bBuiltLeft && bBuiltRight && bBuiltOtherWorld
+			&& bOwnProfile && bOtherProfile && bRightProfile && bOtherWorld && bWorldNoCross && bDefaults) ? TRUE : FALSE;
 		if (!bOk)
 		{
-			PE_LOG_ERROR(EString(PE_TEXT("navmesh group detail: defaultName=")) + EString::FromInt(bDefaultName)
-				+ EString(PE_TEXT(" groupName=")) + EString::FromInt(bGroupName)
-				+ EString(PE_TEXT(" builtA=")) + EString::FromInt(bBuiltA)
-				+ EString(PE_TEXT(" builtB=")) + EString::FromInt(bBuiltB)
-				+ EString(PE_TEXT(" ownGroup=")) + EString::FromInt(bOwnGroup)
-				+ EString(PE_TEXT(" otherGroup=")) + EString::FromInt(bOtherGroup)
-				+ EString(PE_TEXT(" noCross=")) + EString::FromInt(bNoCross)
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh routing detail: defaultName=")) + EString::FromInt(bDefaultName)
+				+ EString(PE_TEXT(" profileName=")) + EString::FromInt(bGroupName)
+				+ EString(PE_TEXT(" built=")) + EString::FromInt(bBuiltLeft) + EString::FromInt(bBuiltRight) + EString::FromInt(bBuiltOtherWorld)
+				+ EString(PE_TEXT(" own=")) + EString::FromInt(bOwnProfile)
+				+ EString(PE_TEXT(" otherProfile=")) + EString::FromInt(bOtherProfile)
+				+ EString(PE_TEXT(" rightProfile=")) + EString::FromInt(bRightProfile)
+				+ EString(PE_TEXT(" otherWorld=")) + EString::FromInt(bOtherWorld)
+				+ EString(PE_TEXT(" worldNoCross=")) + EString::FromInt(bWorldNoCross)
 				+ EString(PE_TEXT(" defaults=")) + EString::FromInt(bDefaults));
 		}
 		return bOk;

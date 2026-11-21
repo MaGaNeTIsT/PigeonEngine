@@ -31,13 +31,17 @@ namespace PigeonEngine
 	public:
 		// Name the backend registers itself under in ENavigationProviderRegistry.
 		PE_NODISCARD virtual EName GetProviderName() const = 0;
+		// Agent profile this component's provider is published under. An empty name is the
+		// level's default agent; a component that owns several profiles returns its primary one.
+		PE_NODISCARD virtual const EString& GetPrimaryProfileName() const = 0;
 		// Starts publishing this volume. A backend that can answer immediately (importing a baked
 		// asset) does so and returns TRUE; one that has to bake queues the work and returns FALSE,
 		// with the result published by ENavigationManager::Tick. The returned stats are only
 		// meaningful when this returns TRUE.
 		virtual BOOL32	BuildNavigation(ENavigationBuildStats& OutStats) = 0;
 
-		// The provider currently registered for this component, or null before the first build.
+		// The provider currently registered for this component's primary profile, or null before
+		// the first build.
 		PE_NODISCARD ENavigationProviderInterface*	GetRuntimeProvider() const;
 		PE_NODISCARD const ENavigationBuildStats&	GetLastBuildStats() const;
 

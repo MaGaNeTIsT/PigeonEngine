@@ -11,7 +11,7 @@ namespace PigeonEngine
 
 	// The asset queue gates the first bake: cold mesh data is null until its request finishes, and a
 	// LOAD pass must not import/bake before the level's assets settled. One wait now covers the
-	// whole level instead of one per component.
+	// whole level.
 	PE_CONSTEXPR_STATIC FLOAT NavigationWorldBuildAssetWaitSeconds = 30.0f;
 	// Editor input changes (a volume drag bumps the revision every frame) rebuild once they settle.
 	PE_CONSTEXPR_STATIC FLOAT NavigationWorldBuildDebounceSeconds = 0.5f;
@@ -92,45 +92,126 @@ namespace PigeonEngine
 		PublishFinishedBakes();
 
 #if ENGINE_EDITOR_ONLY
-		// Authored inputs changed: one debounced pass for the whole level.
+		// Authored inputs changed: one debounced pass per world.
 		TickWorldBuildInputs(InDeltaTime);
 #endif
 
 		// Per provider work: dynamic obstacles rebuild tiles here, and later local avoidance steps
 		// its agents. It runs after publishing so a provider that became ready this frame is already
 		// driving, and before the world tick so agents see the result.
-		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 WorldIndex = 0u, WorldNum = Worlds.Num<UINT32>(); WorldIndex < WorldNum; WorldIndex++)
 		{
-			ENavigationProviderInterface* Provider = Providers[Index].Provider;
-			if ((!!Provider) && (Provider->IsReady()))
+			FNavigationWorld& WorldState = Worlds[WorldIndex];
+			for (UINT32 Index = 0u, Num = WorldState.Providers.Num<UINT32>(); Index < Num; Index++)
 			{
-				Provider->Tick(InDeltaTime);
+				ENavigationProviderInterface* Provider = WorldState.Providers[Index].Provider;
+				if ((!!Provider) && (Provider->IsReady()))
+				{
+					Provider->Tick(InDeltaTime);
+				}
 			}
 		}
 	}
 
-	void ENavigationManager::RegisterProvider(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats)
+	// --- World state ---------------------------------------------------------
+
+	ENavigationManager::FNavigationWorld* ENavigationManager::FindWorldState(const PWorld* InWorld)
 	{
-		if (!InProvider)
+		for (UINT32 Index = 0u, Num = Worlds.Num<UINT32>(); Index < Num; Index++)
 		{
-			PE_LOG_WARN(EString(PE_TEXT("Navigation: registering a null provider was ignored.")));
+			if (Worlds[Index].World == InWorld)
+			{
+				return &Worlds[Index];
+			}
+		}
+		return nullptr;
+	}
+
+	const ENavigationManager::FNavigationWorld* ENavigationManager::FindWorldState(const PWorld* InWorld) const
+	{
+		for (UINT32 Index = 0u, Num = Worlds.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (Worlds[Index].World == InWorld)
+			{
+				return &Worlds[Index];
+			}
+		}
+		return nullptr;
+	}
+
+	ENavigationManager::FNavigationWorld& ENavigationManager::FindOrCreateWorldState(PWorld* InWorld)
+	{
+		if (FNavigationWorld* Existing = FindWorldState(InWorld))
+		{
+			return *Existing;
+		}
+		FNavigationWorld NewState;
+		NewState.World = InWorld;
+		Worlds.Add(NewState);
+		return Worlds[Worlds.Num<UINT32>() - 1u];
+	}
+
+	void ENavigationManager::NotifyWorldCreated(PWorld* InWorld)
+	{
+		(void)FindOrCreateWorldState(InWorld);
+	}
+
+	void ENavigationManager::NotifyWorldDestroyed(PWorld* InWorld)
+	{
+		for (UINT32 Index = Worlds.Num<UINT32>(); Index > 0u; Index--)
+		{
+			FNavigationWorld& WorldState = Worlds[Index - 1u];
+			if (WorldState.World != InWorld)
+			{
+				continue;
+			}
+			for (UINT32 ProviderIndex = 0u, ProviderNum = WorldState.Providers.Num<UINT32>(); ProviderIndex < ProviderNum; ProviderIndex++)
+			{
+				delete WorldState.Providers[ProviderIndex].Provider;
+				WorldState.Providers[ProviderIndex].Provider = nullptr;
+			}
+			Worlds.RemoveAt(Index - 1u);
+		}
+		InvalidateDebugLines();
+	}
+
+	// --- Providers -----------------------------------------------------------
+
+	INT32 ENavigationManager::FindProviderIndex(const FNavigationWorld& InWorld, const EString& InProfileName) const
+	{
+		for (UINT32 Index = 0u, Num = InWorld.Providers.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (InWorld.Providers[Index].ProfileName == InProfileName)
+			{
+				return static_cast<INT32>(Index);
+			}
+		}
+		return -1;
+	}
+
+	void ENavigationManager::RegisterProvider(PWorld* InWorld, const ObjectIdentityType& InSourceId, const EString& InProfileName, ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats)
+	{
+		if ((!InWorld) || (!InProvider))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: registering a null provider or world was ignored.")));
 			return;
 		}
+		FNavigationWorld& WorldState = FindOrCreateWorldState(InWorld);
 
 		UINT32 Serial = 1u;
-		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
+		const INT32 ExistingIndex = FindProviderIndex(WorldState, InProfileName);
 		if (ExistingIndex >= 0)
 		{
 			// A replacement releases the old provider here rather than at the call site so
 			// ownership never depends on who built what. Republishing the same object is a
 			// state refresh, not a replacement: deleting it would leave the entry dangling.
-			FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ExistingIndex)];
+			FNavigationProviderEntry& Entry = WorldState.Providers[static_cast<UINT32>(ExistingIndex)];
 			if (Entry.Provider != InProvider)
 			{
 				delete Entry.Provider;
 			}
 			Entry.Provider = InProvider;
-			Entry.GroupName = InNavMeshName;
+			Entry.SourceId = InSourceId;
 			Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_READY;
 			Entry.Stats = InStats;
 			// A bake queued before this publish is older than what is being installed now.
@@ -140,51 +221,50 @@ namespace PigeonEngine
 		else
 		{
 			FNavigationProviderEntry Entry;
-			Entry.OwnerId = InOwnerId;
-			Entry.GroupName = InNavMeshName;
+			Entry.ProfileName = InProfileName;
+			Entry.SourceId = InSourceId;
 			Entry.Provider = InProvider;
 			Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_READY;
 			Entry.Serial = 1u;
 			Entry.Stats = InStats;
 			Serial = Entry.Serial;
-			Providers.Add(Entry);
+			WorldState.Providers.Add(Entry);
 		}
 		// The replaced provider took its crowd agents and obstacles with it, so both are
 		// restored on the new one before any query can reach it.
-		InvalidateCrowdBindings(InOwnerId);
-		ReplayObstacles(InOwnerId, InNavMeshName, Serial, *InProvider);
+		InvalidateCrowdBindings(WorldState, InProfileName);
+		ReplayObstacles(WorldState, InProfileName, Serial, *InProvider);
 		InvalidateDebugLines();
 	}
 
-	BOOL32 ENavigationManager::RequestBuild(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry)
+	BOOL32 ENavigationManager::RequestBuild(PWorld* InWorld, const ObjectIdentityType& InSourceId, const EString& InProfileName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry)
 	{
-		return RequestBuildInternal(InOwnerId, InNavMeshName, InProvider, static_cast<ENavigationSourceGeometry&&>(InGeometry), 0u);
+		return RequestBuildInternal(InWorld, InSourceId, InProfileName, InProvider, static_cast<ENavigationSourceGeometry&&>(InGeometry), 0u);
 	}
 
-	BOOL32 ENavigationManager::RequestBuildInternal(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry, const UINT32& InBatchId)
+	BOOL32 ENavigationManager::RequestBuildInternal(PWorld* InWorld, const ObjectIdentityType& InSourceId, const EString& InProfileName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry, const UINT32& InBatchId)
 	{
-		if (!InProvider)
+		if ((!InWorld) || (!InProvider))
 		{
 			return FALSE;
 		}
+		FNavigationWorld& WorldState = FindOrCreateWorldState(InWorld);
 
-		INT32 EntryIndex = FindProviderIndex(InOwnerId);
+		INT32 EntryIndex = FindProviderIndex(WorldState, InProfileName);
 		if (EntryIndex < 0)
 		{
 			FNavigationProviderEntry Entry;
-			Entry.OwnerId = InOwnerId;
-			Entry.GroupName = InNavMeshName;
-			Providers.Add(Entry);
-			EntryIndex = static_cast<INT32>(Providers.Num<UINT32>() - 1u);
+			Entry.ProfileName = InProfileName;
+			Entry.SourceId = InSourceId;
+			WorldState.Providers.Add(Entry);
+			EntryIndex = static_cast<INT32>(WorldState.Providers.Num<UINT32>() - 1u);
 		}
 		else
 		{
-			// The owner may have been renamed between requests; the next publish has to answer
-			// for the profile the caller asked for now.
-			Providers[static_cast<UINT32>(EntryIndex)].GroupName = InNavMeshName;
+			WorldState.Providers[static_cast<UINT32>(EntryIndex)].SourceId = InSourceId;
 		}
 
-		FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(EntryIndex)];
+		FNavigationProviderEntry& Entry = WorldState.Providers[static_cast<UINT32>(EntryIndex)];
 		if (Entry.State == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
 		{
 			// Already baking this profile: the caller keeps its provider and the running job wins.
@@ -197,8 +277,9 @@ namespace PigeonEngine
 		{
 			EScopedLock Lock(BakeMutex);
 			FBakeJob Job;
-			Job.OwnerId = InOwnerId;
-			Job.NavMeshName = InNavMeshName;
+			Job.World = InWorld;
+			Job.SourceId = InSourceId;
+			Job.ProfileName = InProfileName;
 			Job.Serial = Entry.Serial;
 			Job.BatchId = InBatchId;
 			Job.Provider = InProvider;
@@ -209,61 +290,121 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void ENavigationManager::UnregisterProvider(const ObjectIdentityType& InOwnerId)
+	void ENavigationManager::UnregisterProvider(PWorld* InWorld, const EString& InProfileName)
 	{
-		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
+		FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return;
+		}
+		const INT32 ExistingIndex = FindProviderIndex(*WorldState, InProfileName);
 		if (ExistingIndex < 0)
 		{
 			return;
 		}
 		// Dropping the entry means a bake still running for it is discarded when it reports back.
-		delete Providers[static_cast<UINT32>(ExistingIndex)].Provider;
-		Providers[static_cast<UINT32>(ExistingIndex)].Provider = nullptr;
-		Providers.RemoveAt(static_cast<UINT32>(ExistingIndex));
+		delete WorldState->Providers[static_cast<UINT32>(ExistingIndex)].Provider;
+		WorldState->Providers[static_cast<UINT32>(ExistingIndex)].Provider = nullptr;
+		WorldState->Providers.RemoveAt(static_cast<UINT32>(ExistingIndex));
 
 		// Obstacles and crowd handles are namespaces of the dead provider; keeping them would
 		// let a later provider interpret a handle it never issued. Obstacles stay retained and
-		// unowned so a replacement provider of the same group can adopt them.
-		for (UINT32 Index = 0u, Num = Obstacles.Num<UINT32>(); Index < Num; Index++)
+		// unowned so a replacement provider of the same profile can adopt them.
+		for (UINT32 Index = 0u, Num = WorldState->Obstacles.Num<UINT32>(); Index < Num; Index++)
 		{
-			if (Obstacles[Index].ProviderOwnerId == InOwnerId)
+			if (WorldState->Obstacles[Index].ProviderProfile == InProfileName)
 			{
-				Obstacles[Index].ProviderHandle = NavigationInvalidObstacleHandle;
-				Obstacles[Index].ProviderOwnerId = 0;
-				Obstacles[Index].ProviderSerial = 0u;
+				WorldState->Obstacles[Index].ProviderHandle = NavigationInvalidObstacleHandle;
+				WorldState->Obstacles[Index].ProviderProfile = EString();
+				WorldState->Obstacles[Index].ProviderSerial = 0u;
 			}
 		}
-		InvalidateCrowdBindings(InOwnerId);
+		InvalidateCrowdBindings(*WorldState, InProfileName);
 		InvalidateDebugLines();
 	}
 
-	void ENavigationManager::SetProviderDebugDrawEnabled(const ObjectIdentityType& InOwnerId, const BOOL32& InEnabled)
+	void ENavigationManager::UnregisterProfilesBySource(PWorld* InWorld, const ObjectIdentityType& InSourceId)
 	{
-		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
+		TArray<EString> RemovedProfiles;
+		for (UINT32 WorldIndex = 0u, WorldNum = Worlds.Num<UINT32>(); WorldIndex < WorldNum; WorldIndex++)
+		{
+			FNavigationWorld& WorldState = Worlds[WorldIndex];
+			if ((InWorld) && (WorldState.World != InWorld))
+			{
+				continue;
+			}
+			for (UINT32 Index = WorldState.Providers.Num<UINT32>(); Index > 0u; Index--)
+			{
+				FNavigationProviderEntry& Entry = WorldState.Providers[Index - 1u];
+				if (Entry.SourceId != InSourceId)
+				{
+					continue;
+				}
+				RemovedProfiles.Add(Entry.ProfileName);
+				delete Entry.Provider;
+				Entry.Provider = nullptr;
+				WorldState.Providers.RemoveAt(Index - 1u);
+			}
+			for (UINT32 ProfileIndex = 0u; ProfileIndex < RemovedProfiles.Num<UINT32>(); ProfileIndex++)
+			{
+				for (UINT32 Index = 0u, Num = WorldState.Obstacles.Num<UINT32>(); Index < Num; Index++)
+				{
+					if (WorldState.Obstacles[Index].ProviderProfile == RemovedProfiles[ProfileIndex])
+					{
+						WorldState.Obstacles[Index].ProviderHandle = NavigationInvalidObstacleHandle;
+						WorldState.Obstacles[Index].ProviderProfile = EString();
+						WorldState.Obstacles[Index].ProviderSerial = 0u;
+					}
+				}
+				InvalidateCrowdBindings(WorldState, RemovedProfiles[ProfileIndex]);
+			}
+			RemovedProfiles.Empty(0u);
+		}
+		InvalidateDebugLines();
+	}
+
+	void ENavigationManager::SetProviderDebugDrawEnabled(PWorld* InWorld, const EString& InProfileName, const BOOL32& InEnabled)
+	{
+		FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return;
+		}
+		const INT32 ExistingIndex = FindProviderIndex(*WorldState, InProfileName);
 		if (ExistingIndex < 0)
 		{
 			return;
 		}
-		if (Providers[static_cast<UINT32>(ExistingIndex)].bDebugDrawEnabled == InEnabled)
+		if (WorldState->Providers[static_cast<UINT32>(ExistingIndex)].bDebugDrawEnabled == InEnabled)
 		{
 			return;
 		}
-		Providers[static_cast<UINT32>(ExistingIndex)].bDebugDrawEnabled = InEnabled;
+		WorldState->Providers[static_cast<UINT32>(ExistingIndex)].bDebugDrawEnabled = InEnabled;
 		InvalidateDebugLines();
 	}
 
-	ENavigationProviderInterface* ENavigationManager::GetProvider(const ObjectIdentityType& InOwnerId) const
+	ENavigationProviderInterface* ENavigationManager::GetProvider(PWorld* InWorld, const EString& InProfileName) const
 	{
-		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
-		return (ExistingIndex >= 0) ? Providers[static_cast<UINT32>(ExistingIndex)].Provider : nullptr;
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return nullptr;
+		}
+		const INT32 ExistingIndex = FindProviderIndex(*WorldState, InProfileName);
+		return (ExistingIndex >= 0) ? WorldState->Providers[static_cast<UINT32>(ExistingIndex)].Provider : nullptr;
 	}
 
-	ENavigationProviderInterface* ENavigationManager::GetDefaultProvider(const EString& InNavMeshName) const
+	ENavigationProviderInterface* ENavigationManager::GetDefaultProvider(PWorld* InWorld, const EString& InProfileName) const
 	{
-		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
 		{
-			const FNavigationProviderEntry& Entry = Providers[Index];
-			if ((Entry.GroupName != InNavMeshName) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
+			return nullptr;
+		}
+		for (UINT32 Index = 0u, Num = WorldState->Providers.Num<UINT32>(); Index < Num; Index++)
+		{
+			const FNavigationProviderEntry& Entry = WorldState->Providers[Index];
+			if ((Entry.ProfileName != InProfileName) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
 			{
 				continue;
 			}
@@ -272,13 +413,13 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
-	INT32 ENavigationManager::FindProviderIndexForLocation(const Vector3& InLocation, const EString& InNavMeshName) const
+	INT32 ENavigationManager::FindProviderIndexForLocation(const FNavigationWorld& InWorld, const Vector3& InLocation, const EString& InProfileName) const
 	{
 		INT32 FirstReady = -1;
-		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 Index = 0u, Num = InWorld.Providers.Num<UINT32>(); Index < Num; Index++)
 		{
-			const FNavigationProviderEntry& Entry = Providers[Index];
-			if ((Entry.GroupName != InNavMeshName) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
+			const FNavigationProviderEntry& Entry = InWorld.Providers[Index];
+			if ((Entry.ProfileName != InProfileName) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
 			{
 				continue;
 			}
@@ -294,24 +435,29 @@ namespace PigeonEngine
 		return FirstReady;
 	}
 
-	ENavigationProviderInterface* ENavigationManager::FindProviderForLocation(const Vector3& InLocation, const EString& InNavMeshName) const
+	ENavigationProviderInterface* ENavigationManager::FindProviderForLocation(PWorld* InWorld, const Vector3& InLocation, const EString& InProfileName) const
 	{
-		// A group never falls back to another group's mesh: an agent configured for one navmesh
-		// must not silently walk on a different one. Inside the group the covering provider
-		// wins, and outside every volume of it the group's first ready provider projects the
+		// A profile never falls back to another profile's mesh: an agent configured for one agent
+		// size must not silently walk on a different one. Inside the profile the covering provider
+		// wins, and outside every volume of it the profile's first ready provider projects the
 		// stray point onto its own mesh.
-		const INT32 Index = FindProviderIndexForLocation(InLocation, InNavMeshName);
-		return (Index >= 0) ? Providers[static_cast<UINT32>(Index)].Provider : nullptr;
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return nullptr;
+		}
+		const INT32 Index = FindProviderIndexForLocation(*WorldState, InLocation, InProfileName);
+		return (Index >= 0) ? WorldState->Providers[static_cast<UINT32>(Index)].Provider : nullptr;
 	}
 
-	ENavigationProviderInterface* ENavigationManager::GetProviderForOwner(const ObjectIdentityType& InOwnerId, const UINT32& InSerial) const
+	ENavigationProviderInterface* ENavigationManager::GetProviderForProfile(const FNavigationWorld& InWorld, const EString& InProfileName, const UINT32& InSerial) const
 	{
-		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
+		const INT32 ExistingIndex = FindProviderIndex(InWorld, InProfileName);
 		if (ExistingIndex < 0)
 		{
 			return nullptr;
 		}
-		const FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ExistingIndex)];
+		const FNavigationProviderEntry& Entry = InWorld.Providers[static_cast<UINT32>(ExistingIndex)];
 		if ((Entry.Serial != InSerial) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
 		{
 			// A rebuild replaced the provider the caller's handle belonged to.
@@ -320,153 +466,97 @@ namespace PigeonEngine
 		return Entry.Provider;
 	}
 
-	UINT32 ENavigationManager::GetProviderNum() const
+	UINT32 ENavigationManager::GetProviderNum(PWorld* InWorld) const
 	{
-		return Providers.Num<UINT32>();
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		return WorldState ? WorldState->Providers.Num<UINT32>() : 0u;
 	}
 
-	ENavigationBuildStateType ENavigationManager::GetBuildState(const ObjectIdentityType& InOwnerId) const
+	ENavigationBuildStateType ENavigationManager::GetBuildState(PWorld* InWorld, const EString& InProfileName) const
 	{
-		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return ENavigationBuildStateType::NAVIGATION_BUILD_IDLE;
+		}
+		const INT32 ExistingIndex = FindProviderIndex(*WorldState, InProfileName);
 		if (ExistingIndex < 0)
 		{
 			return ENavigationBuildStateType::NAVIGATION_BUILD_IDLE;
 		}
-		return Providers[static_cast<UINT32>(ExistingIndex)].State;
+		return WorldState->Providers[static_cast<UINT32>(ExistingIndex)].State;
 	}
 
-	const ENavigationBuildStats& ENavigationManager::GetBuildStats(const ObjectIdentityType& InOwnerId) const
+	const ENavigationBuildStats& ENavigationManager::GetBuildStats(PWorld* InWorld, const EString& InProfileName) const
 	{
 		static const ENavigationBuildStats EmptyStats;
-		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return EmptyStats;
+		}
+		const INT32 ExistingIndex = FindProviderIndex(*WorldState, InProfileName);
 		if (ExistingIndex < 0)
 		{
 			return EmptyStats;
 		}
-		return Providers[static_cast<UINT32>(ExistingIndex)].Stats;
+		return WorldState->Providers[static_cast<UINT32>(ExistingIndex)].Stats;
 	}
 
-	void ENavigationManager::BumpNavigationInputRevision(const PWorld* InWorld)
+	void ENavigationManager::BumpNavigationInputRevision(PWorld* InWorld)
 	{
-		for (UINT32 Index = 0u, Num = WorldInputRevisions.Num<UINT32>(); Index < Num; Index++)
+		if (!InWorld)
 		{
-			if (WorldInputRevisions[Index].World == InWorld)
-			{
-				WorldInputRevisions[Index].Revision++;
-				return;
-			}
+			return;
 		}
-		FNavigationWorldRevision Entry;
-		Entry.World = InWorld;
-		Entry.Revision = 2u;
-		WorldInputRevisions.Add(Entry);
+		FindOrCreateWorldState(InWorld).InputRevision++;
 	}
 
 	UINT32 ENavigationManager::GetNavigationInputRevision(const PWorld* InWorld) const
 	{
-		for (UINT32 Index = 0u, Num = WorldInputRevisions.Num<UINT32>(); Index < Num; Index++)
-		{
-			if (WorldInputRevisions[Index].World == InWorld)
-			{
-				return WorldInputRevisions[Index].Revision;
-			}
-		}
-		return 1u;
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		return WorldState ? WorldState->InputRevision : 1u;
 	}
 
-	ENavigationManager::FNavigationWorldBuildState* ENavigationManager::FindWorldBuild(const PWorld* InWorld)
-	{
-		for (UINT32 Index = 0u, Num = WorldBuilds.Num<UINT32>(); Index < Num; Index++)
-		{
-			if (WorldBuilds[Index].World == InWorld)
-			{
-				return &WorldBuilds[Index];
-			}
-		}
-		return nullptr;
-	}
-
-	const ENavigationManager::FNavigationWorldBuildState* ENavigationManager::FindWorldBuild(const PWorld* InWorld) const
-	{
-		for (UINT32 Index = 0u, Num = WorldBuilds.Num<UINT32>(); Index < Num; Index++)
-		{
-			if (WorldBuilds[Index].World == InWorld)
-			{
-				return &WorldBuilds[Index];
-			}
-		}
-		return nullptr;
-	}
+	// --- World build pass ----------------------------------------------------
 
 	BOOL32 ENavigationManager::IsWorldBuildRunning(PWorld& InWorld) const
 	{
-		const FNavigationWorldBuildState* State = FindWorldBuild(&InWorld);
-		return ((State) && (State->Pending > 0u)) ? TRUE : FALSE;
+		const FNavigationWorld* WorldState = FindWorldState(&InWorld);
+		return ((WorldState) && (WorldState->Build.Pending > 0u)) ? TRUE : FALSE;
 	}
 
 	const ENavigationManager::FNavigationWorldBuildReport& ENavigationManager::GetWorldBuildReport(PWorld& InWorld) const
 	{
 		static const FNavigationWorldBuildReport EmptyReport;
-		const FNavigationWorldBuildState* State = FindWorldBuild(&InWorld);
-		return (!!State) ? State->Report : EmptyReport;
-	}
-
-	void ENavigationManager::NotifyWorldDestroyed(PWorld* InWorld)
-	{
-		for (UINT32 Index = WorldBuilds.Num<UINT32>(); Index > 0u; Index--)
-		{
-			if (WorldBuilds[Index - 1u].World == InWorld)
-			{
-				WorldBuilds.RemoveAt(Index - 1u);
-			}
-		}
-		for (UINT32 Index = PendingWorldBuilds.Num<UINT32>(); Index > 0u; Index--)
-		{
-			if (PendingWorldBuilds[Index - 1u].World == InWorld)
-			{
-				PendingWorldBuilds.RemoveAt(Index - 1u);
-			}
-		}
-		for (UINT32 Index = WorldInputRevisions.Num<UINT32>(); Index > 0u; Index--)
-		{
-			if (WorldInputRevisions[Index - 1u].World == InWorld)
-			{
-				WorldInputRevisions.RemoveAt(Index - 1u);
-			}
-		}
+		const FNavigationWorld* WorldState = FindWorldState(&InWorld);
+		return (!!WorldState) ? WorldState->Build.Report : EmptyReport;
 	}
 
 	BOOL32 ENavigationManager::RequestWorldBuild(PWorld& InWorld, ENavigationWorldBuildReason InReason, const EString& InLevelStem)
 	{
-		if (FNavigationWorldBuildState* State = FindWorldBuild(&InWorld))
+		FNavigationWorld& WorldState = FindOrCreateWorldState(&InWorld);
+		if (WorldState.Build.Pending > 0u)
 		{
-			if (State->Pending > 0u)
-			{
-				// A pass is running; repeat once with the latest world state when it finishes.
-				State->bDirtyDuringBuild = TRUE;
-				return TRUE;
-			}
+			// A pass is running; repeat once with the latest world state when it finishes.
+			WorldState.Build.bDirtyDuringBuild = TRUE;
+			return TRUE;
 		}
 
 		// An explicit bake cancels a pending load wait: it deliberately bakes from the world and
 		// has no reason to wait for the asset queue.
-		for (UINT32 Index = 0u, Num = PendingWorldBuilds.Num<UINT32>(); Index < Num; Index++)
+		if (WorldState.bHasPendingBuild)
 		{
-			if (PendingWorldBuilds[Index].World != (&InWorld))
-			{
-				continue;
-			}
 			if ((InReason == ENavigationWorldBuildReason::EDITOR) || (InReason == ENavigationWorldBuildReason::SAVE))
 			{
-				PendingWorldBuilds.RemoveAt(Index);
+				WorldState.bHasPendingBuild = FALSE;
 			}
 			else
 			{
-				PendingWorldBuilds[Index].Reason = InReason;
-				PendingWorldBuilds[Index].LevelStem = InLevelStem;
+				WorldState.Pending.Reason = InReason;
+				WorldState.Pending.LevelStem = InLevelStem;
 				return TRUE;
 			}
-			break;
 		}
 
 		if (((InReason == ENavigationWorldBuildReason::LOAD)
@@ -474,11 +564,10 @@ namespace PigeonEngine
 			|| ((InReason == ENavigationWorldBuildReason::RUNTIME) && (HasOutstandingProfileAssets(InWorld) != FALSE)))
 		{
 			// One wait for the whole level; the manager tick starts the pass once it is resolved.
-			FPendingWorldBuild Pending;
-			Pending.World = &InWorld;
-			Pending.Reason = InReason;
-			Pending.LevelStem = InLevelStem;
-			PendingWorldBuilds.Add(Pending);
+			WorldState.bHasPendingBuild = TRUE;
+			WorldState.Pending.Reason = InReason;
+			WorldState.Pending.LevelStem = InLevelStem;
+			WorldState.Pending.WaitedSeconds = 0.0f;
 			return TRUE;
 		}
 
@@ -487,32 +576,35 @@ namespace PigeonEngine
 
 	void ENavigationManager::TickPendingWorldBuilds(FLOAT InDeltaTime)
 	{
-		for (UINT32 Index = 0u; Index < PendingWorldBuilds.Num<UINT32>(); )
+		for (UINT32 WorldIndex = 0u; WorldIndex < Worlds.Num<UINT32>(); WorldIndex++)
 		{
-			FPendingWorldBuild& Pending = PendingWorldBuilds[Index];
-			Pending.WaitedSeconds += InDeltaTime;
+			FNavigationWorld& WorldState = Worlds[WorldIndex];
+			if ((!WorldState.bHasPendingBuild) || (!WorldState.World))
+			{
+				continue;
+			}
+			WorldState.Pending.WaitedSeconds += InDeltaTime;
 			BOOL32 bReady = FALSE;
-			if (Pending.Reason == ENavigationWorldBuildReason::LOAD)
+			if (WorldState.Pending.Reason == ENavigationWorldBuildReason::LOAD)
 			{
 				const BOOL32 bQueueDrained = (EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum() == 0u) ? TRUE : FALSE;
 				// The deferred asset apply can run a frame after the queue drains; wait a moment
 				// past the drain so an assigned asset is visible before the import decision.
-				bReady = ((bQueueDrained) && (Pending.WaitedSeconds >= 0.2f)) ? TRUE : FALSE;
+				bReady = ((bQueueDrained) && (WorldState.Pending.WaitedSeconds >= 0.2f)) ? TRUE : FALSE;
 			}
 			else
 			{
 				// Runtime: only the profiles' own navmesh assets gate the pass.
-				bReady = (HasOutstandingProfileAssets(*Pending.World) == FALSE) ? TRUE : FALSE;
+				bReady = (HasOutstandingProfileAssets(*WorldState.World) == FALSE) ? TRUE : FALSE;
 			}
-			if ((!bReady) && (Pending.WaitedSeconds < NavigationWorldBuildAssetWaitSeconds))
+			if ((!bReady) && (WorldState.Pending.WaitedSeconds < NavigationWorldBuildAssetWaitSeconds))
 			{
-				Index++;
 				continue;
 			}
-			PWorld* World = Pending.World;
-			const ENavigationWorldBuildReason Reason = Pending.Reason;
-			const EString Stem = Pending.LevelStem;
-			PendingWorldBuilds.RemoveAt(Index);
+			PWorld* World = WorldState.World;
+			const ENavigationWorldBuildReason Reason = WorldState.Pending.Reason;
+			const EString Stem = WorldState.Pending.LevelStem;
+			WorldState.bHasPendingBuild = FALSE;
 			StartWorldBuild(*World, Reason, Stem);
 		}
 	}
@@ -526,15 +618,8 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		FNavigationWorldBuildState* Existing = FindWorldBuild(&InWorld);
-		if (!Existing)
-		{
-			FNavigationWorldBuildState NewState;
-			NewState.World = &InWorld;
-			WorldBuilds.Add(NewState);
-			Existing = &WorldBuilds[WorldBuilds.Num<UINT32>() - 1u];
-		}
-		FNavigationWorldBuildState& State = *Existing;
+		FNavigationWorld& WorldState = FindOrCreateWorldState(&InWorld);
+		FNavigationWorldBuildState& State = WorldState.Build;
 		const UINT32 BatchId = NextWorldBuildBatchId++;
 		State.BatchId = BatchId;
 		State.Pending = 0u;
@@ -563,8 +648,8 @@ namespace PigeonEngine
 			Considered++;
 
 			FNavigationProfileBuildResult Result;
-			Result.OwnerId = Owner->GetUniqueID();
-			Result.NavMeshName = Owner->GetNavMeshName();
+			Result.SourceId = Owner->GetUniqueID();
+			Result.ProfileName = Owner->GetNavMeshName();
 
 			// A loaded level takes the shipped path first: an assigned asset is a memory copy. A
 			// rejected asset falls through to a world bake instead of leaving the profile empty.
@@ -582,11 +667,11 @@ namespace PigeonEngine
 			}
 
 			const TArray<EBoundAABB> Volumes = Owner->CollectBakeVolumesInWorld();
-			if ((Volumes.Num<UINT32>() == 0u) && (Result.NavMeshName.Length() > 0u))
+			if ((Volumes.Num<UINT32>() == 0u) && (Result.ProfileName.Length() > 0u))
 			{
 				Result.Error = EString(PE_TEXT("no bounds volume supports this navmesh"));
 				State.Report.Profiles.Add(Result);
-				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh '")) + Result.NavMeshName
+				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh '")) + Result.ProfileName
 					+ EString(PE_TEXT("' has no bounds volume that supports it; the profile was skipped.")));
 				continue;
 			}
@@ -602,7 +687,7 @@ namespace PigeonEngine
 				State.Report.Profiles.Add(Result);
 				continue;
 			}
-			if (!RequestBuildInternal(Result.OwnerId, Result.NavMeshName, Provider, static_cast<ENavigationSourceGeometry&&>(Geometry), BatchId))
+			if (!RequestBuildInternal(&InWorld, Result.SourceId, Result.ProfileName, Provider, static_cast<ENavigationSourceGeometry&&>(Geometry), BatchId))
 			{
 				delete Provider;
 				Result.Error = EString(PE_TEXT("a bake for this profile is already running"));
@@ -623,7 +708,7 @@ namespace PigeonEngine
 
 		if (State.Pending == 0u)
 		{
-			FinishWorldBuild(State);
+			FinishWorldBuild(WorldState);
 		}
 		return TRUE;
 	}
@@ -634,36 +719,29 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		FNavigationWorldBuildState* State = nullptr;
-		for (UINT32 Index = 0u, Num = WorldBuilds.Num<UINT32>(); Index < Num; Index++)
-		{
-			if (WorldBuilds[Index].BatchId == InResult.BatchId)
-			{
-				State = &WorldBuilds[Index];
-				break;
-			}
-		}
-		if (!State)
+		FNavigationWorld* WorldState = FindWorldState(InResult.World);
+		if ((!WorldState) || (WorldState->Build.BatchId != InResult.BatchId))
 		{
 			return;
 		}
+		FNavigationWorldBuildState& State = WorldState->Build;
 
 		FNavigationProfileBuildResult* Profile = nullptr;
-		for (UINT32 Index = 0u, Num = State->Report.Profiles.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 Index = 0u, Num = State.Report.Profiles.Num<UINT32>(); Index < Num; Index++)
 		{
-			if (State->Report.Profiles[Index].OwnerId == InResult.OwnerId)
+			if (State.Report.Profiles[Index].SourceId == InResult.SourceId)
 			{
-				Profile = &State->Report.Profiles[Index];
+				Profile = &State.Report.Profiles[Index];
 				break;
 			}
 		}
 		if (!Profile)
 		{
 			FNavigationProfileBuildResult NewProfile;
-			NewProfile.OwnerId = InResult.OwnerId;
-			NewProfile.NavMeshName = InResult.NavMeshName;
-			State->Report.Profiles.Add(NewProfile);
-			Profile = &State->Report.Profiles[State->Report.Profiles.Num<UINT32>() - 1u];
+			NewProfile.SourceId = InResult.SourceId;
+			NewProfile.ProfileName = InResult.ProfileName;
+			State.Report.Profiles.Add(NewProfile);
+			Profile = &State.Report.Profiles[State.Report.Profiles.Num<UINT32>() - 1u];
 		}
 
 		if (bSucceeded != FALSE)
@@ -680,19 +758,20 @@ namespace PigeonEngine
 				: EString(PE_TEXT("the bake produced no navmesh"));
 		}
 
-		if (State->Pending > 0u)
+		if (State.Pending > 0u)
 		{
-			State->Pending--;
+			State.Pending--;
 		}
-		if (State->Pending == 0u)
+		if (State.Pending == 0u)
 		{
-			FinishWorldBuild(*State);
+			FinishWorldBuild(*WorldState);
 		}
 	}
 
-	void ENavigationManager::FinishWorldBuild(FNavigationWorldBuildState& InOutState)
+	void ENavigationManager::FinishWorldBuild(FNavigationWorld& InWorld)
 	{
-		FNavigationWorldBuildReport& Report = InOutState.Report;
+		FNavigationWorldBuildState& State = InWorld.Build;
+		FNavigationWorldBuildReport& Report = State.Report;
 		Report.bHasRun = TRUE;
 		Report.bAllSucceeded = TRUE;
 		UINT32 Succeeded = 0u;
@@ -705,7 +784,7 @@ namespace PigeonEngine
 				if (Profile.Stats.SkippedMeshCount > 0u)
 				{
 					PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
-						+ ((Profile.NavMeshName.Length() > 0u) ? Profile.NavMeshName : EString(PE_TEXT("Default")))
+						+ ((Profile.ProfileName.Length() > 0u) ? Profile.ProfileName : EString(PE_TEXT("Default")))
 						+ EString(PE_TEXT("' was built with "))
 						+ EString::FromInt(Profile.Stats.SkippedMeshCount)
 						+ EString(PE_TEXT(" static mesh components skipped; build again once they load.")));
@@ -714,21 +793,21 @@ namespace PigeonEngine
 			}
 			Report.bAllSucceeded = FALSE;
 			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
-				+ ((Profile.NavMeshName.Length() > 0u) ? Profile.NavMeshName : EString(PE_TEXT("Default")))
+				+ ((Profile.ProfileName.Length() > 0u) ? Profile.ProfileName : EString(PE_TEXT("Default")))
 				+ EString(PE_TEXT("' was not built: ")) + Profile.Error);
 		}
 		PE_LOG_LOG(EString(PE_TEXT("Navigation: level build finished: "))
 			+ EString::FromInt(Succeeded) + EString(PE_TEXT("/")) + EString::FromInt(Report.Profiles.Num<UINT32>())
 			+ EString(PE_TEXT(" navmesh profiles built.")));
 
-		const BOOL32 bRestart = InOutState.bDirtyDuringBuild;
-		PWorld* World = InOutState.World;
-		const ENavigationWorldBuildReason Reason = InOutState.Reason;
-		const EString Stem = InOutState.LevelStem;
-		InOutState.bDirtyDuringBuild = FALSE;
-		InOutState.LastSeenInputRevision = GetNavigationInputRevision(World);
-		InOutState.RebuildCountdown = 0.0f;
-		InOutState.bWatchingInput = TRUE;
+		const BOOL32 bRestart = State.bDirtyDuringBuild;
+		PWorld* World = InWorld.World;
+		const ENavigationWorldBuildReason Reason = State.Reason;
+		const EString Stem = State.LevelStem;
+		State.bDirtyDuringBuild = FALSE;
+		State.LastSeenInputRevision = InWorld.InputRevision;
+		State.RebuildCountdown = 0.0f;
+		State.bWatchingInput = TRUE;
 		if (bRestart)
 		{
 			// Inputs changed while this pass baked; run one more for the latest world state.
@@ -738,17 +817,17 @@ namespace PigeonEngine
 
 	void ENavigationManager::TickWorldBuildInputs(FLOAT InDeltaTime)
 	{
-		for (UINT32 Index = 0u; Index < WorldBuilds.Num<UINT32>(); Index++)
+		for (UINT32 WorldIndex = 0u; WorldIndex < Worlds.Num<UINT32>(); WorldIndex++)
 		{
-			FNavigationWorldBuildState& State = WorldBuilds[Index];
-			if ((!State.bWatchingInput) || (!State.World) || (State.Pending > 0u))
+			FNavigationWorld& WorldState = Worlds[WorldIndex];
+			FNavigationWorldBuildState& State = WorldState.Build;
+			if ((!State.bWatchingInput) || (!WorldState.World) || (State.Pending > 0u))
 			{
 				continue;
 			}
-			const UINT32 Revision = GetNavigationInputRevision(State.World);
-			if (Revision != State.LastSeenInputRevision)
+			if (WorldState.InputRevision != State.LastSeenInputRevision)
 			{
-				State.LastSeenInputRevision = Revision;
+				State.LastSeenInputRevision = WorldState.InputRevision;
 				// Restart the countdown on every change, so a volume drag bakes once at its end.
 				State.RebuildCountdown = NavigationWorldBuildDebounceSeconds;
 				continue;
@@ -763,8 +842,7 @@ namespace PigeonEngine
 				continue;
 			}
 			State.RebuildCountdown = 0.0f;
-			PWorld* World = State.World;
-			RequestWorldBuild(*World, ENavigationWorldBuildReason::EDITOR);
+			RequestWorldBuild(*WorldState.World, ENavigationWorldBuildReason::EDITOR);
 		}
 	}
 
@@ -786,11 +864,11 @@ namespace PigeonEngine
 				continue;
 			}
 			FNavigationProfileBuildResult Result;
-			Result.OwnerId = Owner->GetUniqueID();
-			Result.NavMeshName = Owner->GetNavMeshName();
+			Result.SourceId = Owner->GetUniqueID();
+			Result.ProfileName = Owner->GetNavMeshName();
 
 			const TArray<EBoundAABB> Volumes = Owner->CollectBakeVolumesInWorld();
-			if ((Volumes.Num<UINT32>() == 0u) && (Result.NavMeshName.Length() > 0u))
+			if ((Volumes.Num<UINT32>() == 0u) && (Result.ProfileName.Length() > 0u))
 			{
 				Result.Error = EString(PE_TEXT("no bounds volume supports this navmesh"));
 				OutReport.Profiles.Add(Result);
@@ -836,7 +914,7 @@ namespace PigeonEngine
 			EString AssetName = Owner->GetNavMeshAssetName();
 			if (AssetName.Length() == 0u)
 			{
-				AssetName = PNavMeshComponent::MakeNavMeshAssetName(InLevelStem, Result.NavMeshName);
+				AssetName = PNavMeshComponent::MakeNavMeshAssetName(InLevelStem, Result.ProfileName);
 			}
 			EString SaveError;
 			if (!Owner->SaveProviderAsAsset(*Provider, AssetName, Stats, SaveError, TRUE))
@@ -850,7 +928,7 @@ namespace PigeonEngine
 
 			// The provider is published only after its asset was written, so a failed write does
 			// not leave the level referencing a file that does not exist.
-			RegisterProvider(Result.OwnerId, Result.NavMeshName, Provider, Stats);
+			RegisterProvider(&InWorld, Result.SourceId, Result.ProfileName, Provider, Stats);
 			Result.bSucceeded = TRUE;
 			Result.Stats = Stats;
 			OutReport.Profiles.Add(Result);
@@ -858,20 +936,13 @@ namespace PigeonEngine
 
 		// Save builds do not need a batch record, but the panel and the input watch should see the
 		// result, and the level is about to be serialized right after this.
-		FNavigationWorldBuildState* State = FindWorldBuild(&InWorld);
-		if (!State)
-		{
-			FNavigationWorldBuildState NewState;
-			NewState.World = &InWorld;
-			WorldBuilds.Add(NewState);
-			State = &WorldBuilds[WorldBuilds.Num<UINT32>() - 1u];
-		}
-		State->Report = OutReport;
-		State->Pending = 0u;
-		State->bDirtyDuringBuild = FALSE;
-		State->LastSeenInputRevision = GetNavigationInputRevision(&InWorld);
-		State->RebuildCountdown = 0.0f;
-		State->bWatchingInput = TRUE;
+		FNavigationWorld& WorldState = FindOrCreateWorldState(&InWorld);
+		WorldState.Build.Report = OutReport;
+		WorldState.Build.Pending = 0u;
+		WorldState.Build.bDirtyDuringBuild = FALSE;
+		WorldState.Build.LastSeenInputRevision = WorldState.InputRevision;
+		WorldState.Build.RebuildCountdown = 0.0f;
+		WorldState.Build.bWatchingInput = TRUE;
 
 		UINT32 Succeeded = 0u;
 		for (UINT32 Index = 0u, Num = OutReport.Profiles.Num<UINT32>(); Index < Num; Index++)
@@ -883,7 +954,7 @@ namespace PigeonEngine
 			else
 			{
 				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
-					+ ((OutReport.Profiles[Index].NavMeshName.Length() > 0u) ? OutReport.Profiles[Index].NavMeshName : EString(PE_TEXT("Default")))
+					+ ((OutReport.Profiles[Index].ProfileName.Length() > 0u) ? OutReport.Profiles[Index].ProfileName : EString(PE_TEXT("Default")))
 					+ EString(PE_TEXT("' was not built for save: ")) + OutReport.Profiles[Index].Error);
 			}
 		}
@@ -894,15 +965,15 @@ namespace PigeonEngine
 	}
 #endif
 
-	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath, const EString& InNavMeshName) const
+	BOOL32 ENavigationManager::FindPath(PWorld* InWorld, const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath, const EString& InProfileName) const
 	{
 		const ENavigationQueryFilter DefaultFilter;
-		return FindPath(InStart, InEnd, DefaultFilter, OutPath, InNavMeshName);
+		return FindPath(InWorld, InStart, InEnd, DefaultFilter, OutPath, InProfileName);
 	}
 
-	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, ENavigationPath& OutPath, const EString& InNavMeshName) const
+	BOOL32 ENavigationManager::FindPath(PWorld* InWorld, const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, ENavigationPath& OutPath, const EString& InProfileName) const
 	{
-		ENavigationProviderInterface* Provider = FindProviderForLocation(InStart, InNavMeshName);
+		ENavigationProviderInterface* Provider = FindProviderForLocation(InWorld, InStart, InProfileName);
 		if (!Provider)
 		{
 			return FALSE;
@@ -910,9 +981,9 @@ namespace PigeonEngine
 		return Provider->FindPath(InStart, InEnd, InFilter, OutPath);
 	}
 
-	BOOL32 ENavigationManager::ProjectPoint(const Vector3& InLocation, Vector3& OutLocation, const EString& InNavMeshName) const
+	BOOL32 ENavigationManager::ProjectPoint(PWorld* InWorld, const Vector3& InLocation, Vector3& OutLocation, const EString& InProfileName) const
 	{
-		ENavigationProviderInterface* Provider = FindProviderForLocation(InLocation, InNavMeshName);
+		ENavigationProviderInterface* Provider = FindProviderForLocation(InWorld, InLocation, InProfileName);
 		if (!Provider)
 		{
 			return FALSE;
@@ -927,7 +998,9 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	ENavigationObstacleHandle ENavigationManager::AttachObstacle(FNavigationObstacleDesc& InOutDesc, const ObjectIdentityType& InOwnerId, const UINT32& InSerial, ENavigationProviderInterface& InProvider)
+	// --- Obstacles -----------------------------------------------------------
+
+	ENavigationObstacleHandle ENavigationManager::AttachObstacle(FNavigationWorld& InWorld, FNavigationObstacleDesc& InOutDesc, const EString& InProfileName, const UINT32& InSerial, ENavigationProviderInterface& InProvider)
 	{
 		const ENavigationObstacleHandle Handle = InOutDesc.bBox
 			? InProvider.AddBoxObstacle(InOutDesc.Center, InOutDesc.HalfExtents, InOutDesc.YawRadians)
@@ -935,37 +1008,37 @@ namespace PigeonEngine
 		if (Handle == NavigationInvalidObstacleHandle)
 		{
 			// The provider cannot take obstacles at all (a single tile bake has no tile cache).
-			// The description stays unowned so a later tiled provider of the group can adopt it.
+			// The description stays unowned so a later tiled provider of the profile can adopt it.
 			InOutDesc.ProviderHandle = NavigationInvalidObstacleHandle;
-			InOutDesc.ProviderOwnerId = 0;
+			InOutDesc.ProviderProfile = EString();
 			InOutDesc.ProviderSerial = 0u;
 			return NavigationInvalidObstacleHandle;
 		}
 		InOutDesc.ProviderHandle = Handle;
-		InOutDesc.ProviderOwnerId = InOwnerId;
+		InOutDesc.ProviderProfile = InProfileName;
 		InOutDesc.ProviderSerial = InSerial;
 		return Handle;
 	}
 
-	ENavigationObstacleHandle ENavigationManager::PublishObstacle(FNavigationObstacleDesc& InOutDesc)
+	ENavigationObstacleHandle ENavigationManager::PublishObstacle(FNavigationWorld& InWorld, FNavigationObstacleDesc& InOutDesc)
 	{
-		const INT32 ProviderIndex = FindProviderIndexForLocation(InOutDesc.Center, InOutDesc.GroupName);
+		const INT32 ProviderIndex = FindProviderIndexForLocation(InWorld, InOutDesc.Center, InOutDesc.ProfileName);
 		if (ProviderIndex < 0)
 		{
-			// No volume of the group covers the obstacle yet. The description stays retained and
+			// No volume of the profile covers the obstacle yet. The description stays retained and
 			// is replayed when one is published, which is what makes an obstacle added before
 			// the bake survive it.
 			InOutDesc.ProviderHandle = NavigationInvalidObstacleHandle;
-			InOutDesc.ProviderOwnerId = 0;
+			InOutDesc.ProviderProfile = EString();
 			InOutDesc.ProviderSerial = 0u;
 			return InOutDesc.Id;
 		}
-		const FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ProviderIndex)];
+		const FNavigationProviderEntry& Entry = InWorld.Providers[static_cast<UINT32>(ProviderIndex)];
 		if (!Entry.Provider)
 		{
 			return InOutDesc.Id;
 		}
-		if (AttachObstacle(InOutDesc, Entry.OwnerId, Entry.Serial, *Entry.Provider) == NavigationInvalidObstacleHandle)
+		if (AttachObstacle(InWorld, InOutDesc, Entry.ProfileName, Entry.Serial, *Entry.Provider) == NavigationInvalidObstacleHandle)
 		{
 			// A provider exists but refused the obstacle: report it instead of handing back an
 			// id for something that is not live.
@@ -974,18 +1047,18 @@ namespace PigeonEngine
 		return InOutDesc.Id;
 	}
 
-	void ENavigationManager::ReplayObstacles(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, const UINT32& InSerial, ENavigationProviderInterface& InProvider)
+	void ENavigationManager::ReplayObstacles(FNavigationWorld& InWorld, const EString& InProfileName, const UINT32& InSerial, ENavigationProviderInterface& InProvider)
 	{
-		for (UINT32 Index = 0u, Num = Obstacles.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 Index = 0u, Num = InWorld.Obstacles.Num<UINT32>(); Index < Num; Index++)
 		{
-			FNavigationObstacleDesc& Desc = Obstacles[Index];
-			const BOOL32 bOwnedHere = (Desc.ProviderOwnerId == InOwnerId) ? TRUE : FALSE;
-			if ((!bOwnedHere) && (Desc.ProviderOwnerId != 0))
+			FNavigationObstacleDesc& Desc = InWorld.Obstacles[Index];
+			const BOOL32 bOwnedHere = (Desc.ProviderProfile == InProfileName) ? TRUE : FALSE;
+			if ((!bOwnedHere) && (Desc.ProviderProfile.Length() > 0u))
 			{
 				// Belongs to another live provider; touching it here would duplicate it there.
 				continue;
 			}
-			if ((!bOwnedHere) && (Desc.GroupName != InNavMeshName))
+			if ((!bOwnedHere) && (Desc.ProfileName != InProfileName))
 			{
 				continue;
 			}
@@ -994,146 +1067,169 @@ namespace PigeonEngine
 				// Still outside this provider's coverage; the provider that covers it adopts it.
 				continue;
 			}
-			AttachObstacle(Desc, InOwnerId, InSerial, InProvider);
+			AttachObstacle(InWorld, Desc, InProfileName, InSerial, InProvider);
 		}
 	}
 
-	ENavigationObstacleHandle ENavigationManager::AddCylinderObstacle(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight)
+	ENavigationObstacleHandle ENavigationManager::AddCylinderObstacle(PWorld* InWorld, const ObjectIdentityType& InRequesterId, const EString& InProfileName, const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight)
 	{
+		if (!InWorld)
+		{
+			return NavigationInvalidObstacleHandle;
+		}
+		FNavigationWorld& WorldState = FindOrCreateWorldState(InWorld);
 		FNavigationObstacleDesc Desc;
 		Desc.Id = NextObstacleId++;
 		Desc.RequesterId = InRequesterId;
-		Desc.GroupName = InNavMeshName;
+		Desc.ProfileName = InProfileName;
 		Desc.bBox = FALSE;
 		Desc.Center = InCenter;
 		Desc.Radius = InRadius;
 		Desc.Height = InHeight;
 		// Retained even when no volume covers it yet: the replay after the next build picks it up.
-		if (PublishObstacle(Desc) == NavigationInvalidObstacleHandle)
+		if (PublishObstacle(WorldState, Desc) == NavigationInvalidObstacleHandle)
 		{
 			return NavigationInvalidObstacleHandle;
 		}
-		Obstacles.Add(Desc);
+		WorldState.Obstacles.Add(Desc);
 		return Desc.Id;
 	}
 
-	ENavigationObstacleHandle ENavigationManager::AddBoxObstacle(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians)
+	ENavigationObstacleHandle ENavigationManager::AddBoxObstacle(PWorld* InWorld, const ObjectIdentityType& InRequesterId, const EString& InProfileName, const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians)
 	{
+		if (!InWorld)
+		{
+			return NavigationInvalidObstacleHandle;
+		}
+		FNavigationWorld& WorldState = FindOrCreateWorldState(InWorld);
 		FNavigationObstacleDesc Desc;
 		Desc.Id = NextObstacleId++;
 		Desc.RequesterId = InRequesterId;
-		Desc.GroupName = InNavMeshName;
+		Desc.ProfileName = InProfileName;
 		Desc.bBox = TRUE;
 		Desc.Center = InCenter;
 		Desc.HalfExtents = InHalfExtents;
 		Desc.YawRadians = InYawRadians;
-		if (PublishObstacle(Desc) == NavigationInvalidObstacleHandle)
+		if (PublishObstacle(WorldState, Desc) == NavigationInvalidObstacleHandle)
 		{
 			return NavigationInvalidObstacleHandle;
 		}
-		Obstacles.Add(Desc);
+		WorldState.Obstacles.Add(Desc);
 		return Desc.Id;
 	}
 
-	void ENavigationManager::RemoveObstacle(const ObjectIdentityType& InRequesterId, ENavigationObstacleHandle InHandle)
+	void ENavigationManager::RemoveObstacle(PWorld* InWorld, const ObjectIdentityType& InRequesterId, ENavigationObstacleHandle InHandle)
 	{
 		if (InHandle == NavigationInvalidObstacleHandle)
 		{
 			return;
 		}
-		for (UINT32 Index = 0u, Num = Obstacles.Num<UINT32>(); Index < Num; Index++)
+		FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
 		{
-			if ((Obstacles[Index].RequesterId != InRequesterId) || (Obstacles[Index].Id != InHandle))
+			return;
+		}
+		for (UINT32 Index = 0u, Num = WorldState->Obstacles.Num<UINT32>(); Index < Num; Index++)
+		{
+			FNavigationObstacleDesc& Desc = WorldState->Obstacles[Index];
+			if ((Desc.RequesterId != InRequesterId) || (Desc.Id != InHandle))
 			{
 				continue;
 			}
 			// Remove through the provider that accepted the obstacle. Resolving by position
 			// could hand the handle to a different provider after a rebuild.
-			if (Obstacles[Index].ProviderHandle != NavigationInvalidObstacleHandle)
+			if (Desc.ProviderHandle != NavigationInvalidObstacleHandle)
 			{
-				ENavigationProviderInterface* Provider = GetProviderForOwner(Obstacles[Index].ProviderOwnerId, Obstacles[Index].ProviderSerial);
+				ENavigationProviderInterface* Provider = GetProviderForProfile(*WorldState, Desc.ProviderProfile, Desc.ProviderSerial);
 				if (!!Provider)
 				{
-					Provider->RemoveObstacle(Obstacles[Index].ProviderHandle);
+					Provider->RemoveObstacle(Desc.ProviderHandle);
 				}
 			}
-			Obstacles.RemoveAt(Index);
+			WorldState->Obstacles.RemoveAt(Index);
 			return;
 		}
 	}
 
-	ENavigationManager::FCrowdBinding* ENavigationManager::FindCrowdBinding(const ObjectIdentityType& InRequesterId)
+	// --- Crowd ---------------------------------------------------------------
+
+	ENavigationManager::FCrowdBinding* ENavigationManager::FindCrowdBinding(FNavigationWorld& InWorld, const ObjectIdentityType& InRequesterId)
 	{
-		for (UINT32 Index = 0u, Num = CrowdBindings.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 Index = 0u, Num = InWorld.CrowdBindings.Num<UINT32>(); Index < Num; Index++)
 		{
-			if (CrowdBindings[Index].RequesterId == InRequesterId)
+			if (InWorld.CrowdBindings[Index].RequesterId == InRequesterId)
 			{
-				return &CrowdBindings[Index];
+				return &InWorld.CrowdBindings[Index];
 			}
 		}
 		return nullptr;
 	}
 
-	const ENavigationManager::FCrowdBinding* ENavigationManager::FindCrowdBinding(const ObjectIdentityType& InRequesterId) const
+	const ENavigationManager::FCrowdBinding* ENavigationManager::FindCrowdBinding(const FNavigationWorld& InWorld, const ObjectIdentityType& InRequesterId) const
 	{
-		for (UINT32 Index = 0u, Num = CrowdBindings.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 Index = 0u, Num = InWorld.CrowdBindings.Num<UINT32>(); Index < Num; Index++)
 		{
-			if (CrowdBindings[Index].RequesterId == InRequesterId)
+			if (InWorld.CrowdBindings[Index].RequesterId == InRequesterId)
 			{
-				return &CrowdBindings[Index];
+				return &InWorld.CrowdBindings[Index];
 			}
 		}
 		return nullptr;
 	}
 
-	void ENavigationManager::InvalidateCrowdBindings(const ObjectIdentityType& InOwnerId)
+	void ENavigationManager::InvalidateCrowdBindings(FNavigationWorld& InWorld, const EString& InProfileName)
 	{
 		// Only the bindings of the provider that was replaced or removed lose their handle;
 		// agents living on other providers keep steering in place.
-		for (UINT32 Index = 0u, Num = CrowdBindings.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 Index = 0u, Num = InWorld.CrowdBindings.Num<UINT32>(); Index < Num; Index++)
 		{
-			if (CrowdBindings[Index].ProviderOwnerId != InOwnerId)
+			if (InWorld.CrowdBindings[Index].ProviderProfile != InProfileName)
 			{
 				continue;
 			}
-			CrowdBindings[Index].ProviderHandle = NavigationInvalidCrowdAgentHandle;
-			CrowdBindings[Index].ProviderOwnerId = 0;
-			CrowdBindings[Index].ProviderSerial = 0u;
+			InWorld.CrowdBindings[Index].ProviderHandle = NavigationInvalidCrowdAgentHandle;
+			InWorld.CrowdBindings[Index].ProviderProfile = EString();
+			InWorld.CrowdBindings[Index].ProviderSerial = 0u;
 		}
 	}
 
-	BOOL32 ENavigationManager::RegisterCrowdAgent(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InPosition, const ENavigationAgentSettings& InSettings)
+	BOOL32 ENavigationManager::RegisterCrowdAgent(PWorld* InWorld, const ObjectIdentityType& InRequesterId, const EString& InProfileName, const Vector3& InPosition, const ENavigationAgentSettings& InSettings)
 	{
-		FCrowdBinding* Binding = FindCrowdBinding(InRequesterId);
+		if (!InWorld)
+		{
+			return FALSE;
+		}
+		FNavigationWorld& WorldState = FindOrCreateWorldState(InWorld);
+		FCrowdBinding* Binding = FindCrowdBinding(WorldState, InRequesterId);
 		if (!Binding)
 		{
 			FCrowdBinding NewBinding;
 			NewBinding.RequesterId = InRequesterId;
-			CrowdBindings.Add(NewBinding);
-			Binding = &CrowdBindings[CrowdBindings.Num<UINT32>() - 1u];
+			WorldState.CrowdBindings.Add(NewBinding);
+			Binding = &WorldState.CrowdBindings[WorldState.CrowdBindings.Num<UINT32>() - 1u];
 		}
-		Binding->GroupName = InNavMeshName;
+		Binding->ProfileName = InProfileName;
 		Binding->Settings = InSettings;
 		Binding->LastPosition = InPosition;
 
 		if (Binding->ProviderHandle != NavigationInvalidCrowdAgentHandle)
 		{
 			// Already registered, but only while the provider is still the build that issued it.
-			if (!!GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial))
+			if (!!GetProviderForProfile(WorldState, Binding->ProviderProfile, Binding->ProviderSerial))
 			{
 				return TRUE;
 			}
 			Binding->ProviderHandle = NavigationInvalidCrowdAgentHandle;
-			Binding->ProviderOwnerId = 0;
+			Binding->ProviderProfile = EString();
 			Binding->ProviderSerial = 0u;
 		}
 
-		const INT32 ProviderIndex = FindProviderIndexForLocation(InPosition, Binding->GroupName);
+		const INT32 ProviderIndex = FindProviderIndexForLocation(WorldState, InPosition, Binding->ProfileName);
 		if (ProviderIndex < 0)
 		{
 			return FALSE;
 		}
-		const FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ProviderIndex)];
+		const FNavigationProviderEntry& Entry = WorldState.Providers[static_cast<UINT32>(ProviderIndex)];
 		if (!Entry.Provider)
 		{
 			return FALSE;
@@ -1143,7 +1239,7 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		Binding->ProviderOwnerId = Entry.OwnerId;
+		Binding->ProviderProfile = Entry.ProfileName;
 		Binding->ProviderSerial = Entry.Serial;
 		if (Binding->bHasTarget)
 		{
@@ -1153,9 +1249,14 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL32 ENavigationManager::RequestCrowdAgentMove(const ObjectIdentityType& InRequesterId, const Vector3& InTarget)
+	BOOL32 ENavigationManager::RequestCrowdAgentMove(PWorld* InWorld, const ObjectIdentityType& InRequesterId, const Vector3& InTarget)
 	{
-		FCrowdBinding* Binding = FindCrowdBinding(InRequesterId);
+		FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return FALSE;
+		}
+		FCrowdBinding* Binding = FindCrowdBinding(*WorldState, InRequesterId);
 		if (!Binding)
 		{
 			return FALSE;
@@ -1167,20 +1268,25 @@ namespace PigeonEngine
 			// No agent yet; RegisterCrowdAgent hands the retained target over once there is one.
 			return FALSE;
 		}
-		ENavigationProviderInterface* Provider = GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial);
+		ENavigationProviderInterface* Provider = GetProviderForProfile(*WorldState, Binding->ProviderProfile, Binding->ProviderSerial);
 		if (!Provider)
 		{
 			Binding->ProviderHandle = NavigationInvalidCrowdAgentHandle;
-			Binding->ProviderOwnerId = 0;
+			Binding->ProviderProfile = EString();
 			Binding->ProviderSerial = 0u;
 			return FALSE;
 		}
 		return Provider->RequestCrowdAgentMove(Binding->ProviderHandle, InTarget);
 	}
 
-	void ENavigationManager::StopCrowdAgent(const ObjectIdentityType& InRequesterId)
+	void ENavigationManager::StopCrowdAgent(PWorld* InWorld, const ObjectIdentityType& InRequesterId)
 	{
-		FCrowdBinding* Binding = FindCrowdBinding(InRequesterId);
+		FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return;
+		}
+		FCrowdBinding* Binding = FindCrowdBinding(*WorldState, InRequesterId);
 		if (!Binding)
 		{
 			return;
@@ -1190,7 +1296,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		ENavigationProviderInterface* Provider = GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial);
+		ENavigationProviderInterface* Provider = GetProviderForProfile(*WorldState, Binding->ProviderProfile, Binding->ProviderSerial);
 		if (!!Provider)
 		{
 			Provider->StopCrowdAgent(Binding->ProviderHandle);
@@ -1198,46 +1304,62 @@ namespace PigeonEngine
 		else
 		{
 			Binding->ProviderHandle = NavigationInvalidCrowdAgentHandle;
-			Binding->ProviderOwnerId = 0;
+			Binding->ProviderProfile = EString();
 			Binding->ProviderSerial = 0u;
 		}
 	}
 
-	void ENavigationManager::UnregisterCrowdAgent(const ObjectIdentityType& InRequesterId)
+	void ENavigationManager::UnregisterCrowdAgent(PWorld* InWorld, const ObjectIdentityType& InRequesterId)
 	{
-		for (UINT32 Index = 0u, Num = CrowdBindings.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 WorldIndex = 0u; WorldIndex < Worlds.Num<UINT32>(); WorldIndex++)
 		{
-			if (CrowdBindings[Index].RequesterId != InRequesterId)
+			FNavigationWorld& WorldState = Worlds[WorldIndex];
+			if ((InWorld) && (WorldState.World != InWorld))
 			{
 				continue;
 			}
-			if (CrowdBindings[Index].ProviderHandle != NavigationInvalidCrowdAgentHandle)
+			for (UINT32 Index = 0u, Num = WorldState.CrowdBindings.Num<UINT32>(); Index < Num; Index++)
 			{
-				ENavigationProviderInterface* Provider = GetProviderForOwner(CrowdBindings[Index].ProviderOwnerId, CrowdBindings[Index].ProviderSerial);
-				if (!!Provider)
+				FCrowdBinding& Binding = WorldState.CrowdBindings[Index];
+				if (Binding.RequesterId != InRequesterId)
 				{
-					Provider->RemoveCrowdAgent(CrowdBindings[Index].ProviderHandle);
+					continue;
 				}
+				if (Binding.ProviderHandle != NavigationInvalidCrowdAgentHandle)
+				{
+					ENavigationProviderInterface* Provider = GetProviderForProfile(WorldState, Binding.ProviderProfile, Binding.ProviderSerial);
+					if (!!Provider)
+					{
+						Provider->RemoveCrowdAgent(Binding.ProviderHandle);
+					}
+				}
+				WorldState.CrowdBindings.RemoveAt(Index);
+				return;
 			}
-			CrowdBindings.RemoveAt(Index);
-			return;
 		}
 	}
 
-	BOOL32 ENavigationManager::GetCrowdAgentState(const ObjectIdentityType& InRequesterId, ENavigationCrowdAgentState& OutState) const
+	BOOL32 ENavigationManager::GetCrowdAgentState(PWorld* InWorld, const ObjectIdentityType& InRequesterId, ENavigationCrowdAgentState& OutState) const
 	{
-		const FCrowdBinding* Binding = FindCrowdBinding(InRequesterId);
+		const FNavigationWorld* WorldState = FindWorldState(InWorld);
+		if (!WorldState)
+		{
+			return FALSE;
+		}
+		const FCrowdBinding* Binding = FindCrowdBinding(*WorldState, InRequesterId);
 		if ((!Binding) || (Binding->ProviderHandle == NavigationInvalidCrowdAgentHandle))
 		{
 			return FALSE;
 		}
-		ENavigationProviderInterface* Provider = GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial);
+		ENavigationProviderInterface* Provider = GetProviderForProfile(*WorldState, Binding->ProviderProfile, Binding->ProviderSerial);
 		if (!Provider)
 		{
 			return FALSE;
 		}
 		return Provider->GetCrowdAgentState(Binding->ProviderHandle, OutState);
 	}
+
+	// --- Debug ---------------------------------------------------------------
 
 	void ENavigationManager::SetDebugDrawEnabled(const BOOL32& InEnabled)
 	{
@@ -1306,12 +1428,20 @@ namespace PigeonEngine
 		// provider's own content revision as well.
 		if (!bDebugLinesDirty)
 		{
-			for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
+			for (UINT32 WorldIndex = 0u, WorldNum = Worlds.Num<UINT32>(); WorldIndex < WorldNum; WorldIndex++)
 			{
-				ENavigationProviderInterface* Provider = Providers[Index].Provider;
-				if ((!!Provider) && (Provider->IsReady()) && (Provider->GetContentRevision() != Providers[Index].DebugRevision))
+				const FNavigationWorld& WorldState = Worlds[WorldIndex];
+				for (UINT32 Index = 0u, Num = WorldState.Providers.Num<UINT32>(); Index < Num; Index++)
 				{
-					bDebugLinesDirty = TRUE;
+					ENavigationProviderInterface* Provider = WorldState.Providers[Index].Provider;
+					if ((!!Provider) && (Provider->IsReady()) && (Provider->GetContentRevision() != WorldState.Providers[Index].DebugRevision))
+					{
+						bDebugLinesDirty = TRUE;
+						break;
+					}
+				}
+				if (bDebugLinesDirty)
+				{
 					break;
 				}
 			}
@@ -1324,40 +1454,33 @@ namespace PigeonEngine
 
 		DebugPolygonSegments.Empty();
 		DebugTriangleSegments.Empty();
-		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 WorldIndex = 0u, WorldNum = Worlds.Num<UINT32>(); WorldIndex < WorldNum; WorldIndex++)
 		{
-			ENavigationProviderInterface* Provider = Providers[Index].Provider;
-			if ((!!Provider) && (Provider->IsReady()))
+			FNavigationWorld& WorldState = Worlds[WorldIndex];
+			for (UINT32 Index = 0u, Num = WorldState.Providers.Num<UINT32>(); Index < Num; Index++)
 			{
-				if (Providers[Index].bDebugDrawEnabled)
+				FNavigationProviderEntry& Entry = WorldState.Providers[Index];
+				ENavigationProviderInterface* Provider = Entry.Provider;
+				if ((!!Provider) && (Provider->IsReady()))
 				{
-					Provider->CollectDebugLines(DebugDrawMode, DebugPolygonSegments);
-					if (bDebugTrianglesEnabled)
+					if (Entry.bDebugDrawEnabled)
 					{
-						Provider->CollectDebugTriangles(DebugTriangleSegments);
+						Provider->CollectDebugLines(DebugDrawMode, DebugPolygonSegments);
+						if (bDebugTrianglesEnabled)
+						{
+							Provider->CollectDebugTriangles(DebugTriangleSegments);
+						}
 					}
+					// Tracked even while this provider is hidden: otherwise its content revision would
+					// keep the whole cache dirty and every request would re-collect every provider.
+					Entry.DebugRevision = Provider->GetContentRevision();
 				}
-				// Tracked even while this provider is hidden: otherwise its content revision would
-				// keep the whole cache dirty and every request would re-collect every provider.
-				Providers[Index].DebugRevision = Provider->GetContentRevision();
 			}
 		}
 		bDebugLinesDirty = FALSE;
 		// The editor compares this against the revision it last uploaded, so every rebuild
 		// has to produce a value the previous one did not.
 		DebugSegmentsRevision++;
-	}
-
-	INT32 ENavigationManager::FindProviderIndex(const ObjectIdentityType& InOwnerId) const
-	{
-		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
-		{
-			if (Providers[Index].OwnerId == InOwnerId)
-			{
-				return static_cast<INT32>(Index);
-			}
-		}
-		return -1;
 	}
 
 	void ENavigationManager::InvalidateDebugLines()
@@ -1370,17 +1493,16 @@ namespace PigeonEngine
 
 	void ENavigationManager::ReleaseAllProviders()
 	{
-		Obstacles.Empty(0u);
-		CrowdBindings.Empty(0u);
-		WorldInputRevisions.Empty(0u);
-		WorldBuilds.Empty(0u);
-		PendingWorldBuilds.Empty(0u);
-		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
+		for (UINT32 WorldIndex = 0u, WorldNum = Worlds.Num<UINT32>(); WorldIndex < WorldNum; WorldIndex++)
 		{
-			delete Providers[Index].Provider;
-			Providers[Index].Provider = nullptr;
+			FNavigationWorld& WorldState = Worlds[WorldIndex];
+			for (UINT32 Index = 0u, Num = WorldState.Providers.Num<UINT32>(); Index < Num; Index++)
+			{
+				delete WorldState.Providers[Index].Provider;
+				WorldState.Providers[Index].Provider = nullptr;
+			}
 		}
-		Providers.Empty(0u);
+		Worlds.Empty(0u);
 	}
 
 	void ENavigationManager::PublishFinishedBakes()
@@ -1398,17 +1520,18 @@ namespace PigeonEngine
 		for (UINT32 Index = 0u, Num = Results.Num<UINT32>(); Index < Num; Index++)
 		{
 			FBakeResult& Result = Results[Index];
-			const INT32 EntryIndex = FindProviderIndex(Result.OwnerId);
-			if ((EntryIndex < 0) || (Providers[static_cast<UINT32>(EntryIndex)].Serial != Result.Serial))
+			FNavigationWorld* WorldState = FindWorldState(Result.World);
+			const INT32 EntryIndex = WorldState ? FindProviderIndex(*WorldState, Result.ProfileName) : -1;
+			if ((!WorldState) || (EntryIndex < 0) || (WorldState->Providers[static_cast<UINT32>(EntryIndex)].Serial != Result.Serial))
 			{
-				// The component left the world or asked again while this was baking.
+				// The profile left the world or asked again while this was baking.
 				delete Result.Provider;
 				Result.Provider = nullptr;
 				CompleteWorldBuildJob(Result, FALSE, TRUE);
 				continue;
 			}
 
-			FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(EntryIndex)];
+			FNavigationProviderEntry& Entry = WorldState->Providers[static_cast<UINT32>(EntryIndex)];
 			if (!Result.bSucceeded)
 			{
 				Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_FAILED;
@@ -1422,14 +1545,15 @@ namespace PigeonEngine
 			// answering queries, so a rebuild never leaves the world without navigation.
 			delete Entry.Provider;
 			Entry.Provider = Result.Provider;
+			Entry.SourceId = Result.SourceId;
 			Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_READY;
 			Entry.Stats = Result.Stats;
 			Result.Provider = nullptr;
 			// The old provider's tile cache and crowd died with it, so the obstacles have to be
 			// re-registered and the crowd bindings rebuilt by their owners. Only this provider's
 			// records are touched; other profiles keep their agents and obstacles.
-			InvalidateCrowdBindings(Entry.OwnerId);
-			ReplayObstacles(Entry.OwnerId, Entry.GroupName, Entry.Serial, *Entry.Provider);
+			InvalidateCrowdBindings(*WorldState, Entry.ProfileName);
+			ReplayObstacles(*WorldState, Entry.ProfileName, Entry.Serial, *Entry.Provider);
 			InvalidateDebugLines();
 			CompleteWorldBuildJob(Result, TRUE, FALSE);
 		}
@@ -1461,8 +1585,9 @@ namespace PigeonEngine
 				// Only the backend runs here. It owns its own Recast/Detour state and logs through
 				// the mutex guarded logger; it never touches the world.
 				FBakeResult Result;
-				Result.OwnerId = Job.OwnerId;
-				Result.NavMeshName = Job.NavMeshName;
+				Result.World = Job.World;
+				Result.SourceId = Job.SourceId;
+				Result.ProfileName = Job.ProfileName;
 				Result.Serial = Job.Serial;
 				Result.BatchId = Job.BatchId;
 				Result.Provider = Job.Provider;

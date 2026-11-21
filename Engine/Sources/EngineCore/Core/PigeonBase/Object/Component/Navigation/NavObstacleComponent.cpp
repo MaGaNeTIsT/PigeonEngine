@@ -158,11 +158,11 @@ namespace PigeonEngine
 		ENavigationObstacleHandle NewId = NavigationInvalidObstacleHandle;
 		if (ShapeType == ENavigationObstacleShapeType::NAVIGATION_OBSTACLE_BOX)
 		{
-			NewId = Manager->AddBoxObstacle(GetUniqueID(), NavMeshName, Center, BoxHalfExtents, EMath::DegreesToRadians(YawDegrees));
+			NewId = Manager->AddBoxObstacle(GetWorld(), GetUniqueID(), NavMeshName, Center, BoxHalfExtents, EMath::DegreesToRadians(YawDegrees));
 		}
 		else
 		{
-			NewId = Manager->AddCylinderObstacle(GetUniqueID(), NavMeshName, Center, CylinderRadius, CylinderHeight);
+			NewId = Manager->AddCylinderObstacle(GetWorld(), GetUniqueID(), NavMeshName, Center, CylinderRadius, CylinderHeight);
 		}
 
 		if (NewId == NavigationInvalidObstacleHandle)
@@ -189,7 +189,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		ENavigationManager::GetManagerSingleton()->RemoveObstacle(GetUniqueID(), ObstacleId);
+		ENavigationManager::GetManagerSingleton()->RemoveObstacle(GetWorld(), GetUniqueID(), ObstacleId);
 		ObstacleId = NavigationInvalidObstacleHandle;
 	}
 

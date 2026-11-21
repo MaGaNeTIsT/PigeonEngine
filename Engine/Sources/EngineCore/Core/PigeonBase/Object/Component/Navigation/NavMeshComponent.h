@@ -27,6 +27,7 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(PNavMeshComponent)
 	public:
 		virtual EName	GetProviderName() const override;
+		virtual const EString&	GetPrimaryProfileName() const override;
 		// Asks the manager to run an editor build pass over the whole world (all profiles).
 		virtual BOOL32	BuildNavigation(ENavigationBuildStats& OutStats) override;
 

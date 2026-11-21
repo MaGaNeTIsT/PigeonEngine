@@ -209,7 +209,7 @@ namespace PigeonEngine
 				const ENavigationManager::FNavigationProfileBuildResult* ProfileResult = nullptr;
 				for (UINT32 Index = 0u, Num = Report.Profiles.Num<UINT32>(); Index < Num; Index++)
 				{
-					if (Report.Profiles[Index].NavMeshName == ProfileName)
+					if (Report.Profiles[Index].ProfileName == ProfileName)
 					{
 						ProfileResult = &Report.Profiles[Index];
 						break;

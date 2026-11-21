@@ -186,7 +186,7 @@ namespace PigeonEngine
 		// Switching modes drops whatever the previous mode had in flight.
 		if (bUseCrowd)
 		{
-			ENavigationManager::GetManagerSingleton()->UnregisterCrowdAgent(GetUniqueID());
+			ENavigationManager::GetManagerSingleton()->UnregisterCrowdAgent(GetWorld(), GetUniqueID());
 		}
 		bUseCrowd = InUseCrowd;
 		bCrowdMoveRequested = FALSE;
@@ -221,7 +221,7 @@ namespace PigeonEngine
 	{
 		if (bUseCrowd)
 		{
-			ENavigationManager::GetManagerSingleton()->StopCrowdAgent(GetUniqueID());
+			ENavigationManager::GetManagerSingleton()->StopCrowdAgent(GetWorld(), GetUniqueID());
 			bCrowdMoveRequested = FALSE;
 		}
 		bHasMoveRequest = FALSE;
@@ -320,7 +320,7 @@ namespace PigeonEngine
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
 		// Idempotent: it recreates the agent after its volume was rebuilt, which is what keeps a
 		// crowd agent walking when the navmesh is rebuilt underneath it.
-		if (!Manager->RegisterCrowdAgent(GetUniqueID(), NavMeshName, OwnerActor->GetActorWorldLocation(), Settings))
+		if (!Manager->RegisterCrowdAgent(GetWorld(), GetUniqueID(), NavMeshName, OwnerActor->GetActorWorldLocation(), Settings))
 		{
 			return;
 		}
@@ -328,7 +328,7 @@ namespace PigeonEngine
 		if (bHasMoveRequest)
 		{
 			bHasMoveRequest = FALSE;
-			if (!Manager->RequestCrowdAgentMove(GetUniqueID(), MoveTarget))
+			if (!Manager->RequestCrowdAgentMove(GetWorld(), GetUniqueID(), MoveTarget))
 			{
 				FinishMove(ENavigationPathStatusType::NAVIGATION_PATH_INVALID);
 				return;
@@ -337,7 +337,7 @@ namespace PigeonEngine
 		}
 
 		ENavigationCrowdAgentState AgentState;
-		if (!Manager->GetCrowdAgentState(GetUniqueID(), AgentState))
+		if (!Manager->GetCrowdAgentState(GetWorld(), GetUniqueID(), AgentState))
 		{
 			return;
 		}
@@ -350,7 +350,7 @@ namespace PigeonEngine
 			// Detour does not clear a reached target by itself: it only slows the agent down as the
 			// remaining distance shrinks, so an agent left with its target keeps circling the goal
 			// polygon. Resetting it collapses the desired velocity to zero and the agent stands.
-			Manager->StopCrowdAgent(GetUniqueID());
+			Manager->StopCrowdAgent(GetWorld(), GetUniqueID());
 			bCrowdMoveRequested = FALSE;
 			FinishMove((AgentState.bPartial) ? ENavigationPathStatusType::NAVIGATION_PATH_PARTIAL : ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE);
 		}
@@ -369,7 +369,7 @@ namespace PigeonEngine
 		}
 
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		if (!Manager->GetDefaultProvider(NavMeshName))
+		if (!Manager->GetDefaultProvider(GetWorld(), NavMeshName))
 		{
 			// The level has no navmesh yet: the bake may still be waiting for its assets.
 			// Keeping the request pending is what lets an agent spawned in the same frame as
@@ -379,7 +379,7 @@ namespace PigeonEngine
 
 		ENavigationPath Path;
 		const ENavigationQueryFilter Filter = MakeAgentQueryFilter(Settings);
-		if ((!Manager->FindPath(OwnerActor->GetActorWorldLocation(), InTarget, Filter, Path, NavMeshName)) || (!Path.IsValid()))
+		if ((!Manager->FindPath(GetWorld(), OwnerActor->GetActorWorldLocation(), InTarget, Filter, Path, NavMeshName)) || (!Path.IsValid()))
 		{
 			bHasMoveRequest = FALSE;
 			FinishMove(ENavigationPathStatusType::NAVIGATION_PATH_INVALID);
@@ -467,7 +467,7 @@ namespace PigeonEngine
 
 	void PNavAgentComponent::RemovedFromScene()
 	{
-		ENavigationManager::GetManagerSingleton()->UnregisterCrowdAgent(GetUniqueID());
+		ENavigationManager::GetManagerSingleton()->UnregisterCrowdAgent(GetWorld(), GetUniqueID());
 		PActorComponent::RemovedFromScene();
 	}
 

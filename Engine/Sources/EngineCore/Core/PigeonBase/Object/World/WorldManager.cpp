@@ -89,6 +89,7 @@ namespace PigeonEngine
 		EManagerBase::Initialize();
 
 		this->World = new PWorld();
+		ENavigationManager::GetManagerSingleton()->NotifyWorldCreated(this->World);
 	}
 
 	void EWorldManager::ShutDown()
@@ -107,6 +108,7 @@ namespace PigeonEngine
 		if(!this->World)
 		{
 			this->World = new PWorld();
+			ENavigationManager::GetManagerSingleton()->NotifyWorldCreated(this->World);
 		}
 		this->World->Init();
 

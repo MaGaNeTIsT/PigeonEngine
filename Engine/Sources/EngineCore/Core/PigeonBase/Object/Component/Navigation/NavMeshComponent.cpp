@@ -410,6 +410,11 @@ namespace PigeonEngine
 		return ERecastNavigationProvider::GetProviderName();
 	}
 
+	const EString& PNavMeshComponent::GetPrimaryProfileName() const
+	{
+		return NavMeshName;
+	}
+
 	TArray<EBoundAABB> PNavMeshComponent::CollectBakeVolumesInWorld() const
 	{
 		TArray<EBoundAABB> Volumes;
@@ -610,8 +615,8 @@ namespace PigeonEngine
 		OutStats.NavMeshBytes = Blob.Num<UINT32>();
 
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		Manager->RegisterProvider(GetUniqueID(), NavMeshName, Provider, OutStats);
-		Manager->SetProviderDebugDrawEnabled(GetUniqueID(), bDebugDrawEnabled);
+		Manager->RegisterProvider(GetWorld(), GetUniqueID(), NavMeshName, Provider, OutStats);
+		Manager->SetProviderDebugDrawEnabled(GetWorld(), NavMeshName, bDebugDrawEnabled);
 		PE_LOG_LOG(EString(PE_TEXT("Navigation: imported navmesh asset '")) + NavMeshAsset->GetAssetFullPathName()
 			+ EString(PE_TEXT("' (")) + EString::FromInt(AssetSettings.PolygonCount)
 			+ EString(PE_TEXT(" polygons, ")) + EString::FromInt(AssetSettings.TileCount)
@@ -773,8 +778,8 @@ namespace PigeonEngine
 		}
 
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		Manager->RegisterProvider(GetUniqueID(), NavMeshName, Provider, Stats);
-		Manager->SetProviderDebugDrawEnabled(GetUniqueID(), bDebugDrawEnabled);
+		Manager->RegisterProvider(GetWorld(), GetUniqueID(), NavMeshName, Provider, Stats);
+		Manager->SetProviderDebugDrawEnabled(GetWorld(), NavMeshName, bDebugDrawEnabled);
 		return TRUE;
 	}
 
