@@ -15,6 +15,7 @@
 #include <Editor/Panels/PropertyEditor.h>
 #include <Editor/Panels/WorldDetailsPanel.h>
 #include <Editor/Manager/EditorWorldContext.h>
+#include <Editor/Manager/EditorWindowRegistry.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #include "Navigation/NavigationManager.h"
 #include <imgui.h>
@@ -131,6 +132,10 @@ namespace PigeonEngine
 		// One registration point for the per-class details editors: everything registered
 		// here draws on top of the reflection grid for its class chain.
 		EWorldDetailsPanel::RegisterBuiltinCustomEditors();
+
+		// Both optional panels (Level and Navigation) start hidden; the Window menu opens the
+		// one that is needed without disturbing the rest of the layout.
+		EEditorWindowRegistry::Initialize();
 
 		// One registration point for every reflected edit: the Details panel applies the value
 		// and hands the before/after pair here, which records the undo command.
@@ -370,6 +375,11 @@ namespace PigeonEngine
 						ImGui::MenuItem(*Label, nullptr, false, false);
 					}
 				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Window"))
+			{
+				EEditorWindowRegistry::DrawWindowMenu();
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();

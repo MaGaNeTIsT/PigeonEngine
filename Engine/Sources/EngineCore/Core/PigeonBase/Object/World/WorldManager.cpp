@@ -11,6 +11,7 @@
 #include <Editor/Manager/EditorWorldContext.h>
 #include <Editor/Panels/LevelPanel.h>
 #include <Editor/Panels/NavigationPanel.h>
+#include <Editor/Manager/EditorWindowRegistry.h>
 #endif
 
 namespace PigeonEngine
@@ -372,11 +373,16 @@ namespace PigeonEngine
 		}
 
 		// ---- Level panel: current file plus New/Open/Save/Save As/Reload ----
-		ImGui::SetNextWindowSize(ImVec2(360, 330), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(300, 30), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Level");
-		ELevelPanel::GenerateLevelPanel(this);
-		ImGui::End();
+		if (EEditorWindowRegistry::IsVisible(EEditorWindowType::Level))
+		{
+			ImGui::SetNextWindowSize(ImVec2(360, 330), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowPos(ImVec2(300, 30), ImGuiCond_FirstUseEver);
+			FScopedEditorWindow Window(EEditorWindowType::Level);
+			if (Window.IsOpen())
+			{
+				ELevelPanel::GenerateLevelPanel(this);
+			}
+		}
 
 		// ---- World Outline panel ----
 		ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_FirstUseEver);
@@ -393,11 +399,16 @@ namespace PigeonEngine
 		ImGui::End();
 
 		// ---- Navigation panel: every navmesh agent of the level in one place ----
-		ImGui::SetNextWindowSize(ImVec2(380, 300), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(300, 380), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Navigation");
-		EWorldNavigationPanel::GenerateNavigation(this->GetWorld());
-		ImGui::End();
+		if (EEditorWindowRegistry::IsVisible(EEditorWindowType::Navigation))
+		{
+			ImGui::SetNextWindowSize(ImVec2(380, 300), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowPos(ImVec2(300, 380), ImGuiCond_FirstUseEver);
+			FScopedEditorWindow Window(EEditorWindowType::Navigation);
+			if (Window.IsOpen())
+			{
+				EWorldNavigationPanel::GenerateNavigation(this->GetWorld());
+			}
+		}
 	}
 #endif
 	PWorld* EWorldManager::GetWorld() const
