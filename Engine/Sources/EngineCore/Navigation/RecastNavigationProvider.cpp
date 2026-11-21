@@ -128,6 +128,64 @@ namespace PigeonEngine
 	// Obstacles a tile cache can hold at once.
 	PE_CONSTEXPR_STATIC INT32 NavigationMaxObstacles = 128;
 
+	// Flat arrays dtNavMeshCreateParams expects for the authored connections. Both bake paths
+	// fill one of these from the engine links, so the single tile build and the tile cache's
+	// mesh process cannot drift apart.
+	struct FNavigationLinkArrays
+	{
+		// (start.x, start.y, start.z, end.x, end.y, end.z) per link.
+		TArray<FLOAT>	Vertices;
+		TArray<FLOAT>	Radii;
+		TArray<UINT16>	ConFlags;
+		TArray<UINT8>	ConAreas;
+		// One per link. Detour reads this byte as "bidirectional", despite the name.
+		TArray<UINT8>	ConDirections;
+
+		void Fill(const TArray<ENavigationLink>& InLinks)
+		{
+			for (UINT32 Index = 0u, Num = InLinks.Num<UINT32>(); Index < Num; Index++)
+			{
+				const ENavigationLink& Link = InLinks[Index];
+				Vertices.Add(Link.Start.x);
+				Vertices.Add(Link.Start.y);
+				Vertices.Add(Link.Start.z);
+				Vertices.Add(Link.End.x);
+				Vertices.Add(Link.End.y);
+				Vertices.Add(Link.End.z);
+				// A link is never smaller than a voxel in radius, and a zero radius would leave
+				// Detour unable to find the polygon under the endpoint.
+				Radii.Add(EMath::Max(Link.Radius, 1.0f));
+
+				UINT8 DetourArea = 0u;
+				UINT16 Flags = 0u;
+				NavigationAreaDetourStamp(NavigationAreaBuildId(static_cast<UINT16>(Link.Area)), DetourArea, Flags);
+				ConAreas.Add(DetourArea);
+				ConFlags.Add(Flags);
+				ConDirections.Add(Link.bDirectional ? 0u : 1u);
+			}
+		}
+
+		PE_NODISCARD INT32 Count() const
+		{
+			return static_cast<INT32>(Radii.Num<UINT32>());
+		}
+
+		void ApplyTo(dtNavMeshCreateParams& OutParams) const
+		{
+			if (Count() <= 0)
+			{
+				return;
+			}
+			OutParams.offMeshConVerts = Vertices.GetData();
+			OutParams.offMeshConRad = Radii.GetData();
+			OutParams.offMeshConFlags = ConFlags.GetData();
+			OutParams.offMeshConAreas = ConAreas.GetData();
+			OutParams.offMeshConDir = ConDirections.GetData();
+			OutParams.offMeshConUserID = nullptr;
+			OutParams.offMeshConCount = Count();
+		}
+	};
+
 	// Routes Recast's own diagnostics into the engine log. Progress lines are file only: the
 	// bake reports one summary line, and a per step transcript in the editor window would
 	// bury it.
@@ -303,6 +361,14 @@ namespace PigeonEngine
 	class ENavTileCacheMeshProcess final : public dtTileCacheMeshProcess
 	{
 	public:
+		// Copies the authored connections for the tile cache to hand to every tile build. The
+		// cache calls process for each tile, including obstacle rebuilds long after the bake,
+		// so the arrays live here for the cache's lifetime.
+		void SetLinks(const TArray<ENavigationLink>& InLinks)
+		{
+			LinkArrays.Fill(InLinks);
+		}
+
 		virtual void process(dtNavMeshCreateParams* params, unsigned char* polyAreas, unsigned short* polyFlags) override
 		{
 			if ((!params) || (!polyAreas) || (!polyFlags))
@@ -317,8 +383,13 @@ namespace PigeonEngine
 				polyAreas[Index] = DetourArea;
 				polyFlags[Index] = Flags;
 			}
-			// Off-mesh connections are not authored, so there is nothing to add here.
+			// Every tile gets the whole connection list: dtCreateNavMeshData stores a link in
+			// the tile its start point falls into and links the other end across the seam.
+			LinkArrays.ApplyTo(*params);
 		}
+
+	private:
+		FNavigationLinkArrays LinkArrays;
 	};
 
 	// Owns the tile cache and the three interfaces it borrows. Declared in the provider header as
@@ -352,6 +423,9 @@ namespace PigeonEngine
 		// Area class per triangle, parallel to Triangles (one entry per triangle). The bake
 		// turns each into the Recast area id it rasterizes the triangle with.
 		const TArray<UINT16>*	TriangleAreaFlags = nullptr;
+		// Authored off-mesh connections. The tiled path hands them to the tile cache's mesh
+		// process; the single tile path writes them into its create params directly.
+		const TArray<ENavigationLink>*	Links = nullptr;
 		FLOAT					BMin[3] = { 0.0f, 0.0f, 0.0f };
 		FLOAT					BMax[3] = { 0.0f, 0.0f, 0.0f };
 		FLOAT					CellSize = 20.0f;
@@ -633,6 +707,10 @@ namespace PigeonEngine
 		}
 
 		FRecastNavigationTileCache* State = new FRecastNavigationTileCache();
+		if (InInputs.Links)
+		{
+			State->MeshProcess.SetLinks(*InInputs.Links);
+		}
 		memset(&State->Params, 0, sizeof(State->Params));
 		rcVcopy(State->Params.orig, InInputs.BMin);
 		State->Params.cs = InInputs.CellSize;
@@ -1563,6 +1641,7 @@ namespace PigeonEngine
 			Inputs.Vertices = &Vertices;
 			Inputs.Triangles = &Triangles;
 			Inputs.TriangleAreaFlags = &TriangleAreaFlags;
+			Inputs.Links = &InGeometry.Links;
 			rcVcopy(Inputs.BMin, Config.bmin);
 			rcVcopy(Inputs.BMax, Config.bmax);
 			Inputs.CellSize = Config.cs;
@@ -1737,6 +1816,11 @@ namespace PigeonEngine
 			Build.PolyMesh->flags[PolygonIndex] = Flags;
 		}
 
+		// Authored off-mesh connections. The arrays have to outlive the create call below,
+		// which is why they live in this scope.
+		FNavigationLinkArrays LinkArrays;
+		LinkArrays.Fill(InGeometry.Links);
+
 		dtNavMeshCreateParams Params;
 		memset(&Params, 0, sizeof(Params));
 		Params.verts = Build.PolyMesh->verts;
@@ -1751,15 +1835,7 @@ namespace PigeonEngine
 		Params.detailVertsCount = Build.DetailMesh->nverts;
 		Params.detailTris = Build.DetailMesh->tris;
 		Params.detailTriCount = Build.DetailMesh->ntris;
-		// Off-mesh connections (jump, ladder) are not authored yet. The arrays stay null and
-		// empty, which dtCreateNavMeshData accepts.
-		Params.offMeshConVerts = nullptr;
-		Params.offMeshConRad = nullptr;
-		Params.offMeshConDir = nullptr;
-		Params.offMeshConAreas = nullptr;
-		Params.offMeshConFlags = nullptr;
-		Params.offMeshConUserID = nullptr;
-		Params.offMeshConCount = 0;
+		LinkArrays.ApplyTo(Params);
 		Params.walkableHeight = Settings.AgentHeight;
 		Params.walkableRadius = Settings.AgentRadius;
 		Params.walkableClimb = Settings.AgentMaxClimb;

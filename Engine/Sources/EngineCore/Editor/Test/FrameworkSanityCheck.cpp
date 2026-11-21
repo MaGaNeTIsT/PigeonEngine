@@ -2697,6 +2697,124 @@ namespace PigeonEngine
 		return Length;
 	}
 
+	static BOOL32 SanityPathHasLinkPoint(const ENavigationPath& InPath)
+	{
+		for (UINT32 Index = 0u; Index < InPath.Num(); Index++)
+		{
+			if (InPath.PointTypes[Index] == ENavigationPathPointType::NAVIGATION_PATH_POINT_LINK)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	// Two platforms separated by a gap too wide to walk, optionally joined by an authored link.
+	// The link endpoints sit inside the eroded platforms, which is where an author places them.
+	static ENavigationSourceGeometry MakeSanityNavigationLinkGeometry(const BOOL32 bWithLink)
+	{
+		ENavigationSourceGeometry Geometry;
+		Geometry.Bounds = EBoundAABB(Vector3(-500.0f, -50.0f, -200.0f), Vector3(500.0f, 400.0f, 200.0f), TRUE);
+		AddSanityNavigationQuad(Geometry, -500.0f, -100.0f, -200.0f, 200.0f, ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		AddSanityNavigationQuad(Geometry, 100.0f, 500.0f, -200.0f, 200.0f, ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		if (bWithLink)
+		{
+			ENavigationLink Link;
+			Link.Start = Vector3(-150.0f, 0.0f, 0.0f);
+			Link.End = Vector3(150.0f, 0.0f, 0.0f);
+			Link.Radius = 60.0f;
+			Link.Area = ENavigationAreaFlagType::NAVIGATION_AREA_JUMP;
+			Geometry.Links.Add(Link);
+		}
+		return Geometry;
+	}
+
+	static BOOL32 SanityPathCrossesGap(ERecastNavigationProvider& InProvider)
+	{
+		ENavigationQueryFilter Filter;
+		ENavigationPath Path;
+		if ((!InProvider.FindPath(Vector3(-300.0f, 0.0f, 0.0f), Vector3(300.0f, 0.0f, 0.0f), Filter, Path)) || (!Path.IsValid()))
+		{
+			return FALSE;
+		}
+		return ((Path.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE) && SanityPathHasLinkPoint(Path)) ? TRUE : FALSE;
+	}
+
+	// Without the link the platforms are a partial path at best; with it, a single tile bake and a
+	// tiled bake both have to produce a complete path whose LINK point is the jump.
+	static BOOL32 CheckNavMeshLinkBake()
+	{
+		ENavigationQueryFilter Filter;
+		ERecastNavigationProvider PlainProvider;
+		ENavigationBuildStats PlainStats;
+		const BOOL32 bPlainBuilt = PlainProvider.Build(MakeSanityNavigationLinkGeometry(FALSE), PlainStats);
+		ENavigationPath PlainPath;
+		const BOOL32 bDisconnected = (bPlainBuilt
+			&& ((!PlainProvider.FindPath(Vector3(-300.0f, 0.0f, 0.0f), Vector3(300.0f, 0.0f, 0.0f), Filter, PlainPath))
+				|| (PlainPath.Status != ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE))) ? TRUE : FALSE;
+
+		ENavMeshBuildSettings SingleSettings;
+		SingleSettings.TileSizeCells = 0u;
+		ERecastNavigationProvider SingleProvider;
+		SingleProvider.SetSettings(SingleSettings);
+		ENavigationBuildStats SingleStats;
+		const BOOL32 bSingleBuilt = SingleProvider.Build(MakeSanityNavigationLinkGeometry(TRUE), SingleStats);
+		const BOOL32 bSingleLink = (bSingleBuilt && SanityPathCrossesGap(SingleProvider)) ? TRUE : FALSE;
+
+		// Two tiles, so the connection's start and landing polygons are in different tiles and
+		// the seam linking is exercised.
+		ENavMeshBuildSettings TiledSettings;
+		TiledSettings.TileSizeCells = 32u;
+		ERecastNavigationProvider TiledProvider;
+		TiledProvider.SetSettings(TiledSettings);
+		ENavigationBuildStats TiledStats;
+		const BOOL32 bTiledBuilt = TiledProvider.Build(MakeSanityNavigationLinkGeometry(TRUE), TiledStats);
+		const BOOL32 bTiledLink = (bTiledBuilt && (TiledStats.TileCount >= 2u) && SanityPathCrossesGap(TiledProvider)) ? TRUE : FALSE;
+
+		// The component's link array is the level format for the connections, so the reflected
+		// property has to round trip a link exactly.
+		PNavMeshComponent* SourceComponent = new PNavMeshComponent();
+		ENavigationLink SourceLink;
+		SourceLink.Start = Vector3(-150.0f, 20.0f, 10.0f);
+		SourceLink.End = Vector3(150.0f, 20.0f, -10.0f);
+		SourceLink.Radius = 75.0f;
+		SourceLink.bDirectional = TRUE;
+		SourceLink.Area = ENavigationAreaFlagType::NAVIGATION_AREA_DOOR;
+		TArray<ENavigationLink> SourceLinks;
+		SourceLinks.Add(SourceLink);
+		SourceComponent->SetNavigationLinks(SourceLinks);
+
+		CJsonObject Document;
+		EJsonArchiveWriter Writer(Document);
+		EClassPropertyRegistry::SerializeObject(Writer, GetClassHashCode<PNavMeshComponent>(), SourceComponent);
+		PNavMeshComponent* LoadedComponent = new PNavMeshComponent();
+		EJsonArchiveReader Reader(Document);
+		EClassPropertyRegistry::SerializeObject(Reader, GetClassHashCode<PNavMeshComponent>(), LoadedComponent);
+		const TArray<ENavigationLink>& LoadedLinks = LoadedComponent->GetNavigationLinks();
+		const BOOL32 bRoundTrip = ((LoadedLinks.Num<UINT32>() == 1u)
+			&& IsVectorNearlyEqual(LoadedLinks[0].Start, SourceLink.Start, 1.0e-4f)
+			&& IsVectorNearlyEqual(LoadedLinks[0].End, SourceLink.End, 1.0e-4f)
+			&& (EMath::Abs(LoadedLinks[0].Radius - SourceLink.Radius) <= 1.0e-4f)
+			&& (LoadedLinks[0].bDirectional == TRUE)
+			&& (LoadedLinks[0].Area == ENavigationAreaFlagType::NAVIGATION_AREA_DOOR)) ? TRUE : FALSE;
+		SourceComponent->Destroy();
+		LoadedComponent->Destroy();
+
+		const BOOL32 bOk = (bDisconnected && bSingleLink && bTiledLink && bRoundTrip) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh link detail: plainBuilt=")) + EString::FromInt(bPlainBuilt)
+				+ EString(PE_TEXT(" disconnected=")) + EString::FromInt(bDisconnected)
+				+ EString(PE_TEXT(" singleBuilt=")) + EString::FromInt(bSingleBuilt)
+				+ EString(PE_TEXT(" singleLink=")) + EString::FromInt(bSingleLink)
+				+ EString(PE_TEXT(" tiledBuilt=")) + EString::FromInt(bTiledBuilt)
+				+ EString(PE_TEXT(" tiledTiles=")) + EString::FromInt(TiledStats.TileCount)
+				+ EString(PE_TEXT(" tiledLink=")) + EString::FromInt(bTiledLink)
+				+ EString(PE_TEXT(" roundTrip=")) + EString::FromInt(bRoundTrip));
+		}
+		return bOk;
+	}
+
 	// Runs the same four queries against one bake: crossing water, ground only, ground with
 	// expensive water, and a destination that only exists on the water. The length thresholds
 	// separate the straight route (~800 cm) from the ground detour (~980 cm).
@@ -3549,6 +3667,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshAreaBake = CheckNavMeshAreaBake();
 		ReportSanityResult(EString(PE_TEXT("navmesh area bake and filters")), bNavMeshAreaBake);
 		if (!bNavMeshAreaBake)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshLinkBake = CheckNavMeshLinkBake();
+		ReportSanityResult(EString(PE_TEXT("navmesh off-mesh link bake")), bNavMeshLinkBake);
+		if (!bNavMeshLinkBake)
 		{
 			FailedCount += 1u;
 		}

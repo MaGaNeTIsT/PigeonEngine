@@ -44,9 +44,8 @@ namespace PigeonEngine
 	enum ENavigationPathPointType : UINT8
 	{
 		NAVIGATION_PATH_POINT_WALK = 0,
-		// Crossing an authored link (jump, ladder). Off-mesh connections are not built yet;
-		// the value exists so the agent and the debug drawing do not have to change when
-		// they are.
+		// Crossing an authored link (jump, ladder). The point is where the agent leaves the
+		// surface; the next point is where it lands.
 		NAVIGATION_PATH_POINT_LINK
 	};
 
@@ -184,6 +183,28 @@ namespace PigeonEngine
 		FLOAT	WaterCost = 1.0f;
 		FLOAT	DoorCost = 1.0f;
 		FLOAT	JumpCost = 1.0f;
+	};
+
+	/*
+	* One authored off-mesh connection: a shortcut between two points the polygon mesh does
+	* not connect (a jump, a ladder, a drop). The bake stores it with the polygons, so it
+	* travels with the navmesh and with the asset.
+	*
+	* Start and End are world space positions. Each end is linked to the closest polygon
+	* within Radius, so authoring the endpoint slightly above a platform edge is expected;
+	* an endpoint with no polygon in range silently does not link.
+	*/
+	struct ENavigationLink
+	{
+	public:
+		Vector3	Start = Vector3::Zero();
+		Vector3	End = Vector3::Zero();
+		// How far from an endpoint a polygon may be and still be connected.
+		FLOAT	Radius = 50.0f;
+		// When set, an agent may only cross from Start to End.
+		BOOL32	bDirectional = FALSE;
+		// Query class of the connection, so a filter can price or forbid it like a polygon.
+		ENavigationAreaFlagType	Area = ENavigationAreaFlagType::NAVIGATION_AREA_JUMP;
 	};
 
 	// Runtime obstacle handle. Zero means "not created"; the value is opaque to gameplay and only

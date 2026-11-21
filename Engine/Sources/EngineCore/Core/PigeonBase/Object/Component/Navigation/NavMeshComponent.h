@@ -51,6 +51,12 @@ namespace PigeonEngine
 		PE_NODISCARD BOOL32	GetBuildOnBeginPlay() const;
 		void				SetBuildOnBeginPlay(const BOOL32& InBuildOnBeginPlay);
 
+		// Authored off-mesh connections baked into this volume. They are part of the bake, so a
+		// change takes effect on the next rebuild, and an assigned navmesh asset carries the
+		// connections it was baked with.
+		PE_NODISCARD const TArray<ENavigationLink>&	GetNavigationLinks() const;
+		void										SetNavigationLinks(const TArray<ENavigationLink>& InLinks);
+
 	public:
 		// Baked mesh to use instead of a runtime bake. Assigning one drops the current provider and
 		// republishes from the asset on the next tick.
@@ -90,6 +96,7 @@ namespace PigeonEngine
 		ENavMeshBuildSettings	BuildSettings;
 		Vector3					BakeVolumeExtent = Vector3::Zero();
 		BOOL32					bBuildOnBeginPlay = TRUE;
+		TArray<ENavigationLink>	NavigationLinks;
 		BOOL32					bBuildRequested = FALSE;
 		BOOL32					bHasBuilt = FALSE;
 		// Seconds spent waiting for the asset queue. Once it passes the threshold the bake runs

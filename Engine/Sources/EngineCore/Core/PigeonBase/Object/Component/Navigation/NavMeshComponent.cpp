@@ -90,6 +90,53 @@ namespace PigeonEngine
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE) | static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY));
 	}
 
+	// Authored off-mesh connections, kept as one indexed array of objects so a level file stays
+	// readable and an older file without the field simply loads no links.
+	static void SerializeNavigationLinks(EArchive& InArchive, const CHAR* InName, TArray<ENavigationLink>& InOutLinks)
+	{
+		UINT32 Count = InOutLinks.Num<UINT32>();
+		InArchive.BeginArray(InName, Count);
+		if (!InArchive.IsSaving())
+		{
+			InOutLinks.Empty();
+		}
+		for (UINT32 Index = 0u; Index < Count; Index++)
+		{
+			const EString IndexKey = EString::FromInt(Index);
+			ENavigationLink Link;
+			if (InArchive.IsSaving())
+			{
+				Link = InOutLinks[Index];
+			}
+			InArchive.BeginObject(*IndexKey);
+			SerializeValue(InArchive, PE_TEXT("Start"), Link.Start);
+			SerializeValue(InArchive, PE_TEXT("End"), Link.End);
+			InArchive.SerializeFloat(PE_TEXT("Radius"), Link.Radius);
+			InArchive.SerializeBool(PE_TEXT("Directional"), Link.bDirectional);
+			INT32 AreaValue = static_cast<INT32>(Link.Area);
+			SerializeEnumValue(InArchive, PE_TEXT("Area"), AreaValue, GetClassHashCode<ENavigationAreaFlagType>());
+			Link.Area = static_cast<ENavigationAreaFlagType>(AreaValue);
+			InArchive.EndObject();
+			if (!InArchive.IsSaving())
+			{
+				InOutLinks.Add(Link);
+			}
+		}
+		InArchive.EndArray();
+	}
+
+	static void RegisterNavigationLinkStruct()
+	{
+		const size_t StructHash = GetClassHashCode<ENavigationLink>();
+		const EString StructName(PE_TEXT("ENavigationLink"));
+		const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Start"), &ENavigationLink::Start, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("End"), &ENavigationLink::End, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Radius"), &ENavigationLink::Radius, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Directional"), &ENavigationLink::bDirectional, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("Area"), &ENavigationLink::Area, EditFlags);
+	}
+
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PNavMeshComponent>();
@@ -120,6 +167,15 @@ namespace PigeonEngine
 			[](const PNavMeshComponent* Component) -> ENavMeshBuildSettings { return Component->GetBuildSettings(); },
 			[](PNavMeshComponent* Component, const ENavMeshBuildSettings& Value) -> void { Component->SetBuildSettings(Value); },
 			SerializeNavMeshBuildSettings,
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+
+		// Off-mesh connections: a struct array edited inline by the generic Details grid, so
+		// authoring a jump needs no dedicated panel.
+		RegisterNavigationLinkStruct();
+		AddClassPropertyStructCustom<PNavMeshComponent, TArray<ENavigationLink>>(ClassHash, PE_TEXT("NavLinks"),
+			[](const PNavMeshComponent* Component) -> TArray<ENavigationLink> { return Component->GetNavigationLinks(); },
+			[](PNavMeshComponent* Component, const TArray<ENavigationLink>& Value) -> void { Component->SetNavigationLinks(Value); },
+			SerializeNavigationLinks,
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 
 		// Editor views onto the serialized BuildSettings object. Keeping the object as the file
@@ -206,6 +262,16 @@ namespace PigeonEngine
 	void PNavMeshComponent::SetBuildOnBeginPlay(const BOOL32& InBuildOnBeginPlay)
 	{
 		bBuildOnBeginPlay = InBuildOnBeginPlay;
+	}
+
+	const TArray<ENavigationLink>& PNavMeshComponent::GetNavigationLinks() const
+	{
+		return NavigationLinks;
+	}
+
+	void PNavMeshComponent::SetNavigationLinks(const TArray<ENavigationLink>& InLinks)
+	{
+		NavigationLinks = InLinks;
 	}
 
 	const ENavMeshAsset* PNavMeshComponent::GetNavMeshAsset() const
@@ -381,6 +447,9 @@ namespace PigeonEngine
 		// Collection reads the world, so it stays here; only the Recast part runs on the worker.
 		ENavigationSourceGeometry Geometry;
 		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, MakeBakeBoundsInWorld(), BuildSettings.bFlipTriangleWinding, Geometry);
+		// The links belong to this volume, not to the world scan, so they are attached after
+		// collection.
+		Geometry.Links = NavigationLinks;
 
 		if (!ENavigationManager::GetManagerSingleton()->RequestBuild(GetUniqueID(), Provider, static_cast<ENavigationSourceGeometry&&>(Geometry)))
 		{
@@ -605,6 +674,7 @@ namespace PigeonEngine
 		}
 		ENavigationSourceGeometry Geometry;
 		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, MakeBakeBoundsInWorld(), BuildSettings.bFlipTriangleWinding, Geometry);
+		Geometry.Links = NavigationLinks;
 		if (!Provider->Build(Geometry, OutStats))
 		{
 			delete Provider;

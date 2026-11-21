@@ -27,6 +27,9 @@ namespace PigeonEngine
 	{
 	public:
 		TArray<ENavigationSourceTriangle>	Triangles;
+		// Authored off-mesh connections. They are not surface geometry: the backend stores
+		// them next to the polygons and links each end to the closest polygon it finds.
+		TArray<ENavigationLink>				Links;
 		// Volume the backend should rasterize. An invalid bound means "derive it from the
 		// triangles". A valid bound pins the voxel grid to the bake volume, so rebuilding
 		// the same scene keeps the same cell layout even when geometry changes slightly.
