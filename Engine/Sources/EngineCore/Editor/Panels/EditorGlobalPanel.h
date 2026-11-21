@@ -11,6 +11,8 @@ namespace PigeonEngine
 	public:
 		void Initialize() override;
 		void ShutDown() override;
+		// Pushes the persisted Display Settings switches into the managers that own them.
+		void ApplySettings();
 		void DrawDisplaySettings();
 	private:
 		INT32	SelectedResolutionIndex	= 0;

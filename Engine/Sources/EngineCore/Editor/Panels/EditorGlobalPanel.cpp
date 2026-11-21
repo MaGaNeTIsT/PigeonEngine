@@ -7,6 +7,7 @@
 #include <PhysicsConfig/PhysicsConfig.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #include <Navigation/NavigationManager.h>
+#include <Editor/Manager/EditorSettings.h>
 #include "../Main/MainManager.h"
 
 namespace PigeonEngine
@@ -32,6 +33,18 @@ namespace PigeonEngine
 
 	void EEditorGlobalPanel::ShutDown()
 	{
+	}
+
+	void EEditorGlobalPanel::ApplySettings()
+	{
+		FPhysicsCommonSettings::GetSingleton()->bDrawCollision = EEditorSettings::GetShowCollision();
+		RDebugWireframePrimitiveManager::GetManagerSingleton()->SetDebugWireframeVisible(EEditorSettings::GetShowDebugWireframe());
+		ENavigationManager* NavigationManager = ENavigationManager::GetManagerSingleton();
+		NavigationManager->SetDebugDrawEnabled(EEditorSettings::GetShowNavigation());
+		NavigationManager->SetDebugDrawMode(EEditorSettings::GetFullNavMeshPolygons()
+			? ENavigationDebugModeType::NAVIGATION_DEBUG_FULL
+			: ENavigationDebugModeType::NAVIGATION_DEBUG_BOUNDARY);
+		NavigationManager->SetDebugTrianglesEnabled(EEditorSettings::GetShowNavMeshTriangulation());
 	}
 
 	void EEditorGlobalPanel::DrawDisplaySettings()
@@ -99,6 +112,7 @@ namespace PigeonEngine
 		if (ImGui::Checkbox("Show Collision", &bShowCollision))
 		{
 			PhysicsSettings->bDrawCollision = bShowCollision ? TRUE : FALSE;
+			EEditorSettings::SetShowCollision(PhysicsSettings->bDrawCollision);
 		}
 
 		// Everything the debug wireframe manager owns - the built in primitive preview, the
@@ -109,6 +123,7 @@ namespace PigeonEngine
 		if (ImGui::Checkbox("Show Debug Wireframe", &bShowDebugWireframe))
 		{
 			DebugWireframeManager->SetDebugWireframeVisible(bShowDebugWireframe ? TRUE : FALSE);
+			EEditorSettings::SetShowDebugWireframe(bShowDebugWireframe ? TRUE : FALSE);
 		}
 
 		// The navigation overlay is drawn from the manager's cached segment list, so it keeps a
@@ -119,6 +134,7 @@ namespace PigeonEngine
 		if (ImGui::Checkbox("Show Navigation", &bShowNavigation))
 		{
 			NavigationManager->SetDebugDrawEnabled(bShowNavigation ? TRUE : FALSE);
+			EEditorSettings::SetShowNavigation(bShowNavigation ? TRUE : FALSE);
 		}
 		if (bShowNavigation)
 		{
@@ -128,12 +144,14 @@ namespace PigeonEngine
 				NavigationManager->SetDebugDrawMode(bFullNavigation
 					? ENavigationDebugModeType::NAVIGATION_DEBUG_FULL
 					: ENavigationDebugModeType::NAVIGATION_DEBUG_BOUNDARY);
+				EEditorSettings::SetFullNavMeshPolygons(bFullNavigation ? TRUE : FALSE);
 			}
 
 			bool bShowTriangles = (NavigationManager->IsDebugTrianglesEnabled() != FALSE);
 			if (ImGui::Checkbox("  NavMesh Triangulation", &bShowTriangles))
 			{
 				NavigationManager->SetDebugTrianglesEnabled(bShowTriangles ? TRUE : FALSE);
+				EEditorSettings::SetShowNavMeshTriangulation(bShowTriangles ? TRUE : FALSE);
 			}
 		}
 

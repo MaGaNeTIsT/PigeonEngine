@@ -4,6 +4,8 @@
 
 #include <imgui.h>
 
+#include <Editor/Manager/EditorSettings.h>
+
 namespace PigeonEngine
 {
 	namespace
@@ -14,21 +16,47 @@ namespace PigeonEngine
 		{
 			// Panel title, which is also the ImGui window and docking layout key.
 			const CHAR*	Name;
-			BOOL32		bDefaultVisible;
 			BOOL32		bVisible;
 		};
 
-		// Indexed by EEditorWindowType. Both are authoring panels that are not needed every
-		// session, so they start hidden; the Window menu brings them back.
+		// Indexed by EEditorWindowType.
 		FEditorWindowEntry WindowEntries[EditorWindowCount] =
 		{
-			{ PE_TEXT("Level"),			FALSE,	FALSE	},
-			{ PE_TEXT("Navigation"),	FALSE,	FALSE	},
+			{ PE_TEXT("Level"),			FALSE	},
+			{ PE_TEXT("Navigation"),	FALSE	},
 		};
 
 		BOOL32 IsValidWindow(const EEditorWindowType& InWindow)
 		{
 			return (static_cast<UINT32>(InWindow) < EditorWindowCount) ? TRUE : FALSE;
+		}
+
+		BOOL32 LoadVisibility(const EEditorWindowType& InWindow)
+		{
+			switch (InWindow)
+			{
+			case EEditorWindowType::Level:
+				return EEditorSettings::IsLevelPanelVisible();
+			case EEditorWindowType::Navigation:
+				return EEditorSettings::IsNavigationPanelVisible();
+			default:
+				return FALSE;
+			}
+		}
+
+		void StoreVisibility(const EEditorWindowType& InWindow, const BOOL32& bInVisible)
+		{
+			switch (InWindow)
+			{
+			case EEditorWindowType::Level:
+				EEditorSettings::SetLevelPanelVisible(bInVisible);
+				break;
+			case EEditorWindowType::Navigation:
+				EEditorSettings::SetNavigationPanelVisible(bInVisible);
+				break;
+			default:
+				break;
+			}
 		}
 	}
 
@@ -38,7 +66,8 @@ namespace PigeonEngine
 		{
 			for (UINT32 Index = 0u; Index < EditorWindowCount; Index++)
 			{
-				WindowEntries[Index].bVisible = WindowEntries[Index].bDefaultVisible;
+				const EEditorWindowType Window = static_cast<EEditorWindowType>(Index);
+				WindowEntries[Index].bVisible = LoadVisibility(Window);
 			}
 		}
 
@@ -51,7 +80,13 @@ namespace PigeonEngine
 		{
 			if (IsValidWindow(InWindow))
 			{
-				WindowEntries[static_cast<UINT32>(InWindow)].bVisible = bInVisible;
+				FEditorWindowEntry& Entry = WindowEntries[static_cast<UINT32>(InWindow)];
+				if (Entry.bVisible == bInVisible)
+				{
+					return;
+				}
+				Entry.bVisible = bInVisible;
+				StoreVisibility(InWindow, bInVisible);
 			}
 		}
 
@@ -68,7 +103,7 @@ namespace PigeonEngine
 				bool bVisible = (Entry.bVisible != FALSE);
 				if (ImGui::MenuItem(Entry.Name, nullptr, &bVisible))
 				{
-					Entry.bVisible = bVisible ? TRUE : FALSE;
+					SetVisible(static_cast<EEditorWindowType>(Index), bVisible ? TRUE : FALSE);
 				}
 			}
 		}

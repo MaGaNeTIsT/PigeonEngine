@@ -16,6 +16,7 @@
 #include <Editor/Panels/WorldDetailsPanel.h>
 #include <Editor/Manager/EditorWorldContext.h>
 #include <Editor/Manager/EditorWindowRegistry.h>
+#include <Editor/Manager/EditorSettings.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #include "Navigation/NavigationManager.h"
 #include <imgui.h>
@@ -132,6 +133,11 @@ namespace PigeonEngine
 		// One registration point for the per-class details editors: everything registered
 		// here draws on top of the reflection grid for its class chain.
 		EWorldDetailsPanel::RegisterBuiltinCustomEditors();
+
+		// Editor preferences (optional panels, Display Settings switches) are loaded before
+		// any panel draws and applied to the managers that own the runtime flags.
+		EEditorSettings::Initialize();
+		EditorGlobalPanel->ApplySettings();
 
 		// Both optional panels (Level and Navigation) start hidden; the Window menu opens the
 		// one that is needed without disturbing the rest of the layout.
