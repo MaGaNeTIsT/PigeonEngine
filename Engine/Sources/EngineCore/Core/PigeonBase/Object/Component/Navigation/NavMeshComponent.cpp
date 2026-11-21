@@ -337,6 +337,11 @@ namespace PigeonEngine
 		LastBuildStats = InStats;
 	}
 
+	BOOL32 PNavMeshComponent::HasBuiltNavMesh() const
+	{
+		return bHasBuilt;
+	}
+
 	ERecastNavigationProvider* PNavMeshComponent::CreateProvider()
 	{
 		ENavigationProviderInterface* CreatedProvider = ENavigationProviderRegistry::Create(GetProviderName());
@@ -645,7 +650,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL32 PNavMeshComponent::SaveBakeAsAsset(const EString& InAssetName, EString& OutError)
+	BOOL32 PNavMeshComponent::SaveBakeAsAsset(const EString& InAssetName, EString& OutError, const BOOL32& bInAllowOverwrite)
 	{
 		OutError = EString();
 		LastAssetError = EString();
@@ -685,7 +690,7 @@ namespace PigeonEngine
 
 		const ENavMeshAsset* SavedAsset = nullptr;
 		if (!ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
-			InAssetName, Settings, Blob, EString(EBaseSettings::ENGINE_NAV_MESH_PATH), SavedAsset, OutError))
+			InAssetName, Settings, Blob, EString(EBaseSettings::ENGINE_NAV_MESH_PATH), SavedAsset, OutError, bInAllowOverwrite))
 		{
 			delete Provider;
 			LastAssetError = OutError;
@@ -713,6 +718,35 @@ namespace PigeonEngine
 	const EString& PNavMeshComponent::GetLastNavMeshAssetError() const
 	{
 		return LastAssetError;
+	}
+
+	BOOL32 PNavMeshComponent::AutoAssignNamedNavMeshAsset(const EString& InLevelStem, EString& OutError)
+	{
+		OutError = EString();
+		// The author named this component's asset themselves; the convention name must not
+		// override an explicit choice.
+		if (NavMeshAssetName.Length() > 0u)
+		{
+			return TRUE;
+		}
+		if (InLevelStem.Length() <= 0u)
+		{
+			return TRUE;
+		}
+		// Nothing published means nothing worth exporting; a fresh checkout loads the level
+		// and bakes, or the author names the asset in the panel.
+		if (!bHasBuilt)
+		{
+			return TRUE;
+		}
+		// The convention name is generated from this level, so re-saving regenerates it;
+		// manual panel saves keep refusing to overwrite.
+		const EString AssetName = InLevelStem + EString(PE_TEXT("_NavMesh"));
+		if (!SaveBakeAsAsset(AssetName, OutError, TRUE))
+		{
+			return FALSE;
+		}
+		return TRUE;
 	}
 
 	void PNavMeshComponent::EditorTick(FLOAT InDeltaTime)

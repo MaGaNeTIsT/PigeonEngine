@@ -128,6 +128,11 @@ namespace PigeonEngine
 				if ((LastBuildStats.TriangleCount > 0u) || (LastBuildStats.Milliseconds > 0.0f))
 				{
 					ImGui::Text("Triangles: %u (%u walkable)", LastBuildStats.TriangleCount, LastBuildStats.WalkableTriangleCount);
+					if (LastBuildStats.LayerCount > 0u)
+					{
+						ImGui::SameLine();
+						ImGui::TextDisabled("Layers: %u", LastBuildStats.LayerCount);
+					}
 					ImGui::Text("Bake: %.2f ms", LastBuildStats.Milliseconds);
 				}
 				else

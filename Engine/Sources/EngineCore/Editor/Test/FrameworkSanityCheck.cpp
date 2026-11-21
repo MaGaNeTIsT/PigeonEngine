@@ -2576,6 +2576,78 @@ namespace PigeonEngine
 		return bReloaded;
 	}
 
+	static BOOL32 CheckNavMeshSaveAutoAssign()
+	{
+		const EString AssetPath(EBaseSettings::ENGINE_NAV_MESH_PATH);
+
+		// A component with no published bake takes no convention name and writes no file:
+		// a fresh checkout loads the level and bakes, or the author names the asset.
+		PSanityLevelWorld* World = new PSanityLevelWorld();
+		World->Init();
+		PActor* Actor = new PActor();
+		POBJ_DEBUGNAME_SET(Actor, "SanityNavAutoActor");
+		World->AddActor(Actor);
+		PNavMeshComponent* NavComponent = new PNavMeshComponent();
+		POBJ_DEBUGNAME_SET(NavComponent, "SanityNavAutoComponent");
+		Actor->AddComponent(NavComponent);
+		EString SkipError;
+		const BOOL32 bSkippedWithoutBuild = NavComponent->AutoAssignNamedNavMeshAsset(EString(PE_TEXT("Sanity_Auto")), SkipError);
+		const BOOL32 bNoFileWritten = !EFileHelper::IsFileExists(MakeAssetFullPathName(AssetPath, EString(PE_TEXT("Sanity_Auto_NavMesh"))));
+		const BOOL32 bNameStillEmpty = (NavComponent->GetNavMeshAssetName().Length() == 0u);
+		World->DestroyActor(Actor);
+		World->FlushPendingDestroy();
+		World->Destroy();
+
+		// The overwrite flag on CreateNavMeshAsset: refused without it, allowed with it, and
+		// the reload chain behind the overwrite still publishes the newest bytes.
+		const EString AssetName(PE_TEXT("Sanity_NavMeshAutoAssign"));
+		const EString FullPathName = MakeAssetFullPathName(AssetPath, AssetName);
+		EFileHelper::DeleteFile(FullPathName);
+
+		TArray<UINT8> FirstBlob;
+		FirstBlob.Add(1u);
+		FirstBlob.Add(2u);
+		FNavMeshAssetSettings Settings;
+		Settings.ProviderName = EString(PE_TEXT("RecastNavMesh"));
+		const ENavMeshAsset* FirstAsset = nullptr;
+		EString Error;
+		const BOOL32 bFirstSaved = ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
+			AssetName, Settings, FirstBlob, AssetPath, FirstAsset, Error);
+
+		TArray<UINT8> SecondBlob;
+		SecondBlob.Add(9u);
+		const ENavMeshAsset* RefusedAsset = nullptr;
+		EString RefuseError;
+		const BOOL32 bOverwriteRefused = (ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
+			AssetName, Settings, SecondBlob, AssetPath, RefusedAsset, RefuseError) == FALSE) ? TRUE : FALSE;
+
+		const ENavMeshAsset* OverwrittenAsset = nullptr;
+		EString OverwriteError;
+		const BOOL32 bOverwritten = ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
+			AssetName, Settings, SecondBlob, AssetPath, OverwrittenAsset, OverwriteError, TRUE);
+		const ENavMeshData* OverwrittenData = OverwrittenAsset ? OverwrittenAsset->GetStoragedResource() : nullptr;
+		const BOOL32 bOverwriteContent = (OverwrittenData && (OverwrittenData->GetBlob().Num<UINT32>() == 1u) &&
+			(OverwrittenData->GetBlob()[0] == 9u)) ? TRUE : FALSE;
+
+		EFileHelper::DeleteFile(FullPathName);
+
+		const BOOL32 bOk = (bSkippedWithoutBuild && bNoFileWritten && bNameStillEmpty &&
+			bFirstSaved && bOverwriteRefused && bOverwritten && bOverwriteContent) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh auto-assign detail: skipped=")) + EString::FromInt(bSkippedWithoutBuild) +
+				EString(PE_TEXT(" noFile=")) + EString::FromInt(bNoFileWritten) +
+				EString(PE_TEXT(" nameEmpty=")) + EString::FromInt(bNameStillEmpty) +
+				EString(PE_TEXT(" firstSaved=")) + EString::FromInt(bFirstSaved) +
+				EString(PE_TEXT(" refused=")) + EString::FromInt(bOverwriteRefused) +
+				EString(PE_TEXT(" overwritten=")) + EString::FromInt(bOverwritten) +
+				EString(PE_TEXT(" content=")) + EString::FromInt(bOverwriteContent) +
+				EString(PE_TEXT(" firstError=[")) + Error + EString(PE_TEXT("] refuseError=[")) + RefuseError +
+				EString(PE_TEXT("] overwriteError=[")) + OverwriteError + EString(PE_TEXT("]")));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckContainerPropertySerialization()
 	{
 		static BOOL32 bPropertiesRegistered = FALSE;
@@ -3323,6 +3395,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshCacheReload = CheckNavMeshAssetCacheReload();
 		ReportSanityResult(EString(PE_TEXT("navmesh asset cache reload")), bNavMeshCacheReload);
 		if (!bNavMeshCacheReload)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshAutoAssign = CheckNavMeshSaveAutoAssign();
+		ReportSanityResult(EString(PE_TEXT("navmesh save auto-assign")), bNavMeshAutoAssign);
+		if (!bNavMeshAutoAssign)
 		{
 			FailedCount += 1u;
 		}

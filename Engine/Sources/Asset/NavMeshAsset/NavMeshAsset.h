@@ -103,11 +103,12 @@ namespace PigeonEngine
 		// still hold the old object, so it is retired instead of released immediately.
 		BOOL32	ReloadNavMeshAsset(const EString& InLoadPath, const EString& InLoadName
 			, const ENavMeshAsset*& OutAsset, EString& OutError);
-		// Writes a new asset and publishes it. Refuses to overwrite, so the caller has to delete or
-		// rename first; that is what keeps an accidental bake from destroying the shipped mesh.
+		// Writes a new asset and publishes it. Refuses to overwrite unless the caller explicitly
+		// allows it; the refusal is what keeps an accidental bake from destroying the shipped
+		// mesh, so only generated convention names (the level-save auto-assign) may pass TRUE.
 		BOOL32	CreateNavMeshAsset(const EString& InAssetName, const FNavMeshAssetSettings& InSettings
 			, const TArray<UINT8>& InBlob, const EString& InSavePath
-			, const ENavMeshAsset*& OutAsset, EString& OutError);
+			, const ENavMeshAsset*& OutAsset, EString& OutError, const BOOL32& bInAllowOverwrite = FALSE);
 		void	ClearNavMeshAssets();
 
 	private:

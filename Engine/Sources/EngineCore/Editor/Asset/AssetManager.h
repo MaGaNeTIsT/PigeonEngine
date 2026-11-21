@@ -104,6 +104,9 @@ namespace PigeonEngine
 	private:
 		TSharedPtr<EFolderTreeNode> EngineAssetRoot  = nullptr;
 		TSharedPtr<EFolderTreeNode> ProjectAssetRoot = nullptr;
+		// Committed engine content (Assets/): navmesh assets a saved level references travel
+		// with the checkout, so the browser needs a root for them.
+		TSharedPtr<EFolderTreeNode> SourceAssetRoot  = nullptr;
 		TSharedPtr<EFolderTreeNode> Current          = nullptr;
 		TSharedPtr<EAssetFile>      SelectedFile     = nullptr;
 		ImTextureID FolderTextureId;

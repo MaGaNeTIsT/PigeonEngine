@@ -9,6 +9,7 @@
 #include <Editor/Panels/WorldDetailsPanel.h>
 #include <Editor/Manager/EditorWorldContext.h>
 #include <Editor/Panels/LevelPanel.h>
+#include "PigeonBase/Object/Component/Navigation/NavMeshComponent.h"
 #endif
 
 namespace PigeonEngine
@@ -153,6 +154,11 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
+#if ENGINE_EDITOR_ONLY
+		// Before the serializer walks the properties: an unnamed baked navmesh picks up the
+		// convention name here, so the saved file carries the reference.
+		AutoAssignNavMeshAssetsOnSave(InPath);
+#endif
 		if (!this->World->SaveLevel(InPath))
 		{
 			return FALSE;
@@ -193,6 +199,11 @@ namespace PigeonEngine
 #endif
 			break;
 		case ELevelRequestType::SAVE:
+#if ENGINE_EDITOR_ONLY
+			// Same contract as SaveLevelNow: the saved file carries a navmesh reference for
+			// every baked, unnamed navmesh component.
+			AutoAssignNavMeshAssetsOnSave(Path);
+#endif
 			if (this->World->SaveLevel(Path))
 			{
 				CurrentLevelPath = Path;
@@ -284,6 +295,48 @@ namespace PigeonEngine
 		CurrentLevelPath = EString();
 		bLevelDirty = FALSE;
 		RequestNewLevel();
+	}
+
+	void EWorldManager::AutoAssignNavMeshAssetsOnSave(const EString& InLevelPath)
+	{
+		if (!this->World)
+		{
+			return;
+		}
+		// The convention name is <LevelStem>_NavMesh, derived the same way PWorld::SaveLevel
+		// derives the level name it writes into the file header.
+		EString LevelStem = InLevelPath;
+		const INT32 LastSlash = LevelStem.RightFind(EString(PE_TEXT("/")));
+		if (LastSlash >= 0)
+		{
+			LevelStem = LevelStem.Right(LevelStem.Length() - static_cast<UINT32>(LastSlash) - 1u);
+		}
+		const INT32 LastDot = LevelStem.RightFind(EString(PE_TEXT(".")));
+		if (LastDot > 0)
+		{
+			LevelStem = LevelStem.Left(static_cast<UINT32>(LastDot));
+		}
+		if (LevelStem.Length() == 0u)
+		{
+			return;
+		}
+		for (PActor* Actor : this->World->GetAllActors())
+		{
+			const TArray<PNavMeshComponent*> NavComponents = Actor->GetComponents<PNavMeshComponent>();
+			for (UINT32 Index = 0u, Num = NavComponents.Num<UINT32>(); Index < Num; Index++)
+			{
+				PNavMeshComponent* NavComponent = NavComponents[Index];
+				if (!NavComponent)
+				{
+					continue;
+				}
+				EString AssignError;
+				if (!NavComponent->AutoAssignNamedNavMeshAsset(LevelStem, AssignError))
+				{
+					PE_LOG_WARN(EString(PE_TEXT("Level save: navmesh auto-assign failed on ")) + POBJ_DEBUGNAME_GET(Actor) + EString(PE_TEXT(": ")) + AssignError);
+				}
+			}
+		}
 	}
 
 #endif

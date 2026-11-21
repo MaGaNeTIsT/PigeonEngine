@@ -27,7 +27,9 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_STATE_MACHINE_PATH			= "${TEMP_BINARY_DIR}/StateMachineAssets/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MONTAGE_PATH					= "${TEMP_BINARY_DIR}/MontageAssets/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_NOTIFY_PATH					= "${TEMP_BINARY_DIR}/NotifyAssets/";
-		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_NAV_MESH_PATH				= "${TEMP_BINARY_DIR}/NavMeshAssets/";
+		// Committed content, like the levels that reference it: a saved level carries its
+		// navmesh with it across checkouts instead of rebaking from scratch.
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_NAV_MESH_PATH				= "${ASSETS_SOURCE_DIR}/NavMeshAssets/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_LEVEL_PATH					= "${ASSETS_SOURCE_DIR}/Levels/";
 
 		PE_CONSTEXPR_STATIC		const CHAR*     ENGINE_CONTENT_PATH					= "${TEMP_BINARY_DIR}/";

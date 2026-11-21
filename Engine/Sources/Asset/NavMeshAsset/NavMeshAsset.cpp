@@ -496,7 +496,7 @@ namespace PigeonEngine
 
 	BOOL32 ENavMeshAssetManager::CreateNavMeshAsset(const EString& InAssetName, const FNavMeshAssetSettings& InSettings
 		, const TArray<UINT8>& InBlob, const EString& InSavePath
-		, const ENavMeshAsset*& OutAsset, EString& OutError)
+		, const ENavMeshAsset*& OutAsset, EString& OutError, const BOOL32& bInAllowOverwrite)
 	{
 		OutAsset = nullptr;
 		OutError = EString();
@@ -517,7 +517,7 @@ namespace PigeonEngine
 		}
 
 		const EString FullPathName = MakeAssetFullPathName(InSavePath, InAssetName);
-		if (EFileHelper::IsFileExists(FullPathName))
+		if ((!bInAllowOverwrite) && (EFileHelper::IsFileExists(FullPathName)))
 		{
 			OutError = EString(PE_TEXT("Navigation mesh asset already exists: ")) + FullPathName;
 			return FALSE;

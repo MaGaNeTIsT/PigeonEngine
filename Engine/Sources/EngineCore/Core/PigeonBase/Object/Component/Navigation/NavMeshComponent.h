@@ -109,6 +109,11 @@ namespace PigeonEngine
 		// re-requesting blindly.
 		BOOL32					bBakeFailed = FALSE;
 
+		// Whether the component currently holds a published provider (baked here, or imported
+		// from its asset). The level-save auto-assign uses it to skip components with nothing
+		// to export.
+		PE_NODISCARD BOOL32			HasBuiltNavMesh() const;
+
 #if ENGINE_EDITOR_ONLY
 	public:
 		virtual void	EditorTick(FLOAT InDeltaTime) override;
@@ -117,7 +122,7 @@ namespace PigeonEngine
 		// an explicit editor action and has to publish exactly the bytes the file holds, so it does
 		// not go through the worker. Both actions record their failure into the last-asset error,
 		// so the editor panel only needs the getters below.
-		BOOL32						SaveBakeAsAsset(const EString& InAssetName, EString& OutError);
+		BOOL32						SaveBakeAsAsset(const EString& InAssetName, EString& OutError, const BOOL32& bInAllowOverwrite = FALSE);
 		// Re-reads the current asset from disk and publishes it immediately. Used by the editor
 		// panel after an external bake/replace, without restarting the editor.
 		BOOL32						ReloadNavMeshAsset(EString& OutError);
@@ -127,6 +132,13 @@ namespace PigeonEngine
 		PE_NODISCARD BOOL32			HasNavMeshAssetFailedToLoad() const;
 		// The last error recorded by SaveBakeAsAsset/ReloadNavMeshAsset; both clear it at entry.
 		PE_NODISCARD const EString&	GetLastNavMeshAssetError() const;
+
+		// Level-save auto-assign. A component the author already named is left alone; one with a
+		// published provider but no name gets the generated convention name <InLevelStem>_NavMesh,
+		// re-baked from the world being saved and written with overwrite allowed (the convention
+		// name is generated from this level, so re-saving regenerates it; manual saves keep
+		// refusing to overwrite). Returns TRUE when the component was left alone or was assigned.
+		BOOL32						AutoAssignNamedNavMeshAsset(const EString& InLevelStem, EString& OutError);
 
 	private:
 		EString	LastAssetError;

@@ -15,6 +15,10 @@
 #include <imGUI/Headers/imGUIManager.h>
 #include <Development/EditorLogManager.h>
 #include <Editor/AssetImporter/ImportManager.h>
+#include <PigeonBase/Object/Actor.h>
+#include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
+#include <PigeonBase/Object/World/World.h>
+#include <PigeonBase/Object/World/WorldManager.h>
 
 namespace PigeonEngine
 {
@@ -360,6 +364,7 @@ namespace PigeonEngine
 
 		EngineAssetRoot  = EMemory::MakeShared<EFolderTreeNode>(nullptr, EBaseSettings::ENGINE_CONTENT_PATH);
 		ProjectAssetRoot = EMemory::MakeShared<EFolderTreeNode>(nullptr, EEngineSettings::PROJECT_CONTENT_PATH);
+		SourceAssetRoot  = EMemory::MakeShared<EFolderTreeNode>(nullptr, EBaseSettings::ENGINE_ASSET_DIRECTORY);
 		if(!ScanFolder(EngineAssetRoot))
 		{
 			EngineAssetRoot = nullptr;
@@ -367,6 +372,10 @@ namespace PigeonEngine
 		if(!ScanFolder(ProjectAssetRoot))
 		{
 			ProjectAssetRoot = nullptr;
+		}
+		if(!ScanFolder(SourceAssetRoot))
+		{
+			SourceAssetRoot = nullptr;
 		}
 
 		// folder icon
@@ -540,9 +549,15 @@ namespace PigeonEngine
 						}
 						ImGui::EndPopup();
 					}
-					ImGui::BeginChild("Project", ImVec2(180, 120), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+					ImGui::BeginChild("Project", ImVec2(180, 110), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 					ImGui::Text("Project");
 					EFolderTreeNode::TraverseFolder(ProjectAssetRoot, Current);
+					ImGui::EndChild();
+				}
+				{
+					ImGui::BeginChild("Source", ImVec2(180, 110), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+					ImGui::Text("Source");
+					EFolderTreeNode::TraverseFolder(SourceAssetRoot, Current);
 					ImGui::EndChild();
 				}
 				{
@@ -962,15 +977,37 @@ namespace PigeonEngine
 						}
 					}
 				}
-				if (bUsed != FALSE)
-				{
-					AddUser(MontageAssets[AssetIndex]->GetAssetName());
-				}
+			if (bUsed != FALSE)
+			{
+				AddUser(MontageAssets[AssetIndex]->GetAssetName());
 			}
 		}
 	}
+	else if (InType == EAssetType::ASSET_TYPE_NAV_MESH)
+		{
+			// Navmesh assets are referenced by name from world components, so the users are
+			// the scene objects of the currently open level.
+			PWorld* World = EWorldManager::GetManagerSingleton()->GetWorld();
+			if (World)
+			{
+				for (PActor* Actor : World->GetAllActors())
+				{
+					const TArray<PNavMeshComponent*> NavComponents = Actor->GetComponents<PNavMeshComponent>();
+					for (INT32 ComponentIndex = 0; ComponentIndex < NavComponents.Num(); ComponentIndex++)
+					{
+						const PNavMeshComponent* NavComponent = NavComponents[ComponentIndex];
+						if ((NavComponent) && (NavComponent->GetNavMeshAssetName() == AssetName))
+						{
+							AddUser(POBJ_DEBUGNAME_GET(Actor) + EString(PE_TEXT("/")) + POBJ_DEBUGNAME_GET(NavComponent));
+						}
+					}
+					}
+				}
+			}
+	}
 
 	BOOL32 EAssetManager::RenameSelectedAsset(const EString& InNewName, EString& OutError)
+
 	{
 		OutError = EString();
 		if (IsValidNewAssetName(InNewName) == FALSE)
@@ -1578,6 +1615,10 @@ namespace PigeonEngine
 		{
 			Destination = FindFolderByPath(ProjectAssetRoot, SavePath);
 		}
+		if (!Destination)
+		{
+			Destination = FindFolderByPath(SourceAssetRoot, SavePath);
+		}
 		if (Destination)
 		{
 			Current = Destination;
@@ -1619,10 +1660,18 @@ namespace PigeonEngine
 		{
 			ScanFolder(ProjectAssetRoot);
 		}
+		if (SourceAssetRoot)
+		{
+			ScanFolder(SourceAssetRoot);
+		}
 		TSharedPtr<EFolderTreeNode> Found = FindFolderByPath(EngineAssetRoot, CurrentPath);
 		if (!Found)
 		{
 			Found = FindFolderByPath(ProjectAssetRoot, CurrentPath);
+		}
+		if (!Found)
+		{
+			Found = FindFolderByPath(SourceAssetRoot, CurrentPath);
 		}
 		Current = (Found ? Found : EngineAssetRoot);
 		SelectedFile = nullptr;
