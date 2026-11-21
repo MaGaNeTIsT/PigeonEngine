@@ -774,6 +774,8 @@ namespace PigeonEngine
 						Provider->CollectDebugTriangles(DebugTriangleSegments);
 					}
 				}
+				// Tracked even while this provider is hidden: otherwise its content revision would
+				// keep the whole cache dirty and every request would re-collect every provider.
 				Providers[Index].DebugRevision = Provider->GetContentRevision();
 			}
 		}

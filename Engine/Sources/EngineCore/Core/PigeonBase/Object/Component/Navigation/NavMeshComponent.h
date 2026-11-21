@@ -89,6 +89,9 @@ namespace PigeonEngine
 		// its runtime bake source.
 		void	ClearNavMeshAsset();
 
+	protected:
+		virtual void	RemovedFromScene() override;
+
 	private:
 		// Runs the automatic publish once the asset queue drained, or once waiting longer would be
 		// worse than baking an incomplete mesh.

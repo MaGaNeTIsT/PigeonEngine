@@ -669,6 +669,20 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
+	void PNavMeshComponent::RemovedFromScene()
+	{
+		// The base unregisters the provider. A component that is added again (a level actor
+		// removed and re-added, or a scene exit without destruction) has to publish a new mesh,
+		// so the begin-play path must see an unbuilt component and start from a clean wait.
+		bHasBuilt = FALSE;
+		bBakeFailed = FALSE;
+		WaitedSeconds = 0.0f;
+		NextAttemptSeconds = 0.0f;
+		bHasSeenInputRevision = FALSE;
+		PendingRebuildSeconds = 0.0f;
+		PNavigationComponent::RemovedFromScene();
+	}
+
 	void PNavMeshComponent::Tick(FLOAT InDeltaTime)
 	{
 		PSceneComponent::Tick(InDeltaTime);
@@ -679,11 +693,9 @@ namespace PigeonEngine
 		const ENavigationBuildStateType BuildState = Manager->GetBuildState(GetUniqueID());
 		if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_READY)
 		{
-			if (!bHasBuilt)
-			{
-				bHasBuilt = TRUE;
-				LastBuildStats = Manager->GetBuildStats(GetUniqueID());
-			}
+			// Also after a rebuild: the panel shows the newest mesh, not the first one.
+			bHasBuilt = TRUE;
+			LastBuildStats = Manager->GetBuildStats(GetUniqueID());
 			bBuildRequested = FALSE;
 			bBakeFailed = FALSE;
 		}
