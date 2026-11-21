@@ -375,8 +375,10 @@ namespace PigeonEngine
 		// ---- Level panel: current file plus New/Open/Save/Save As/Reload ----
 		if (EEditorWindowRegistry::IsVisible(EEditorWindowType::Level))
 		{
+			// No SetNextWindowPos here: it implicitly undocks, so a panel reopened into its
+			// saved Details tab would pop out as a floating window. Size is still a first-use
+			// default; dock and position come from the ImGui layout.
 			ImGui::SetNextWindowSize(ImVec2(360, 330), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowPos(ImVec2(300, 30), ImGuiCond_FirstUseEver);
 			FScopedEditorWindow Window(EEditorWindowType::Level);
 			if (Window.IsOpen())
 			{
@@ -401,8 +403,8 @@ namespace PigeonEngine
 		// ---- Navigation panel: every navmesh agent of the level in one place ----
 		if (EEditorWindowRegistry::IsVisible(EEditorWindowType::Navigation))
 		{
+			// Same as Level: no SetNextWindowPos, so reopening keeps the saved dock/tab.
 			ImGui::SetNextWindowSize(ImVec2(380, 300), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowPos(ImVec2(300, 380), ImGuiCond_FirstUseEver);
 			FScopedEditorWindow Window(EEditorWindowType::Navigation);
 			if (Window.IsOpen())
 			{
