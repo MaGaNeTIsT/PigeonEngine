@@ -4,6 +4,7 @@
 #include <PigeonBase/Object/Component/Physics/TriggerComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavObstacleComponent.h>
 #include <PigeonBase/Object/Component/Water/WaterSimulationTypes.h>
+#include <Navigation/NavigationTypes.h>
 #include <Animation/AnimationTypes.h>
 #include "EnumRegistry.h"
 
@@ -45,6 +46,15 @@ namespace PigeonEngine
 		RegisterEnumType<ENavigationObstacleShapeType>(PE_TEXT("ENavigationObstacleShapeType"), {
 			{ static_cast<INT32>(NAVIGATION_OBSTACLE_CYLINDER), EString(PE_TEXT("CYLINDER")) },
 			{ static_cast<INT32>(NAVIGATION_OBSTACLE_BOX),      EString(PE_TEXT("BOX")) },
+		});
+
+		// The enum is a bit mask in the query filter, but a mesh carries one class, so only the
+		// single bits are offerable values.
+		RegisterEnumType<ENavigationAreaFlagType>(PE_TEXT("ENavigationAreaFlagType"), {
+			{ static_cast<INT32>(NAVIGATION_AREA_GROUND), EString(PE_TEXT("GROUND")) },
+			{ static_cast<INT32>(NAVIGATION_AREA_WATER),  EString(PE_TEXT("WATER")) },
+			{ static_cast<INT32>(NAVIGATION_AREA_DOOR),   EString(PE_TEXT("DOOR")) },
+			{ static_cast<INT32>(NAVIGATION_AREA_JUMP),   EString(PE_TEXT("JUMP")) },
 		});
 
 		RegisterEnumType<EWaterGroundType>(PE_TEXT("EWaterGroundType"), {

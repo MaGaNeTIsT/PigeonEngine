@@ -20,6 +20,8 @@
 #include "PigeonBase/Object/Component/Navigation/NavMeshComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavObstacleComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavAgentComponent.h"
+#include <Navigation/NavigationGeometry.h>
+#include <Navigation/RecastNavigationProvider.h>
 #include "PigeonBase/Object/Component/Water/WaterSurfaceComponent.h"
 #include "PigeonBase/Object/Component/Water/WaterSimulationComponent.h"
 #include "../../../EngineThirdParty/JoltPhysics/Headers/Shapes.h"
@@ -2648,6 +2650,146 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	// Two triangles forming one flat world space rectangle on the y = 0 plane, wound so the
+	// normal points up - which is what Recast tests walkability by.
+	static void AddSanityNavigationQuad(ENavigationSourceGeometry& InOutGeometry
+		, const FLOAT InMinX, const FLOAT InMaxX, const FLOAT InMinZ, const FLOAT InMaxZ
+		, const ENavigationAreaFlagType InArea)
+	{
+		ENavigationSourceTriangle First;
+		First.Vertex0 = Vector3(InMinX, 0.0f, InMinZ);
+		First.Vertex1 = Vector3(InMinX, 0.0f, InMaxZ);
+		First.Vertex2 = Vector3(InMaxX, 0.0f, InMinZ);
+		First.Area = InArea;
+		InOutGeometry.Triangles.Add(First);
+
+		ENavigationSourceTriangle Second;
+		Second.Vertex0 = Vector3(InMaxX, 0.0f, InMinZ);
+		Second.Vertex1 = Vector3(InMinX, 0.0f, InMaxZ);
+		Second.Vertex2 = Vector3(InMaxX, 0.0f, InMaxZ);
+		Second.Area = InArea;
+		InOutGeometry.Triangles.Add(Second);
+	}
+
+	// Two ground platforms joined by two parallel corridors: the short one along z = 0 is water,
+	// the long one behind it is ground. A filter that may cross water walks straight; one that
+	// may not, or one that prices water high, has to take the ground corridor. The vertical
+	// extent of the pinned bounds is what gives the flat floor the clearance Recast's walkable
+	// height filter needs.
+	static ENavigationSourceGeometry MakeSanityNavigationAreaGeometry()
+	{
+		ENavigationSourceGeometry Geometry;
+		Geometry.Bounds = EBoundAABB(Vector3(-500.0f, -50.0f, -200.0f), Vector3(500.0f, 400.0f, 360.0f), TRUE);
+		AddSanityNavigationQuad(Geometry, -500.0f, -300.0f, -200.0f, 360.0f, ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		AddSanityNavigationQuad(Geometry, 300.0f, 500.0f, -200.0f, 360.0f, ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		AddSanityNavigationQuad(Geometry, -300.0f, 300.0f, -200.0f, 200.0f, ENavigationAreaFlagType::NAVIGATION_AREA_WATER);
+		AddSanityNavigationQuad(Geometry, -300.0f, 300.0f, 200.0f, 360.0f, ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		return Geometry;
+	}
+
+	static FLOAT GetSanityPathLength(const ENavigationPath& InPath)
+	{
+		FLOAT Length = 0.0f;
+		for (UINT32 Index = 1u; Index < InPath.Num(); Index++)
+		{
+			Length += Vector3::Distance(InPath.Points[Index - 1u], InPath.Points[Index]);
+		}
+		return Length;
+	}
+
+	// Runs the same four queries against one bake: crossing water, ground only, ground with
+	// expensive water, and a destination that only exists on the water. The length thresholds
+	// separate the straight route (~800 cm) from the ground detour (~980 cm).
+	static BOOL32 CheckNavigationAreaProvider(ERecastNavigationProvider& InProvider)
+	{
+		const Vector3 Start(-400.0f, 0.0f, 0.0f);
+		const Vector3 End(400.0f, 0.0f, 0.0f);
+		const FLOAT StraightLimit = 900.0f;
+		const FLOAT DetourLimit = 900.0f;
+
+		ENavigationQueryFilter CrossWaterFilter;
+		ENavigationPath CrossWaterPath;
+		FLOAT CrossWaterLength = 0.0f;
+		const BOOL32 bCrossWater = (InProvider.FindPath(Start, End, CrossWaterFilter, CrossWaterPath)
+			&& (CrossWaterPath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)
+			&& ((CrossWaterLength = GetSanityPathLength(CrossWaterPath)) < StraightLimit)) ? TRUE : FALSE;
+
+		ENavigationQueryFilter GroundOnlyFilter;
+		GroundOnlyFilter.IncludeAreaFlags = static_cast<UINT16>(ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		ENavigationPath GroundOnlyPath;
+		FLOAT GroundOnlyLength = 0.0f;
+		const BOOL32 bGroundOnly = (InProvider.FindPath(Start, End, GroundOnlyFilter, GroundOnlyPath)
+			&& (GroundOnlyPath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)
+			&& ((GroundOnlyLength = GetSanityPathLength(GroundOnlyPath)) > DetourLimit)) ? TRUE : FALSE;
+
+		// The path may cross the water here, but at this price the detour is cheaper.
+		ENavigationQueryFilter CostsFilter;
+		CostsFilter.AreaCosts.SetNum(4u);
+		CostsFilter.AreaCosts[0u] = 1.0f;
+		CostsFilter.AreaCosts[1u] = 20.0f;
+		CostsFilter.AreaCosts[2u] = 1.0f;
+		CostsFilter.AreaCosts[3u] = 1.0f;
+		ENavigationPath CostsPath;
+		FLOAT CostsLength = 0.0f;
+		const BOOL32 bCosts = (InProvider.FindPath(Start, End, CostsFilter, CostsPath)
+			&& (CostsPath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)
+			&& ((CostsLength = GetSanityPathLength(CostsPath)) > DetourLimit)) ? TRUE : FALSE;
+
+		// The middle of the water corridor has no ground within the projection box, so a ground
+		// only agent cannot be given a destination there.
+		ENavigationPath BlockedPath;
+		const BOOL32 bBlocked = (InProvider.FindPath(Start, Vector3(0.0f, 0.0f, 0.0f), GroundOnlyFilter, BlockedPath) == FALSE) ? TRUE : FALSE;
+
+		const BOOL32 bOk = (bCrossWater && bGroundOnly && bCosts && bBlocked) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh area detail: crossWater=")) + EString::FromInt(bCrossWater)
+				+ EString(PE_TEXT(" (len ")) + EString::FromFloat(CrossWaterLength) + EString(PE_TEXT(")"))
+				+ EString(PE_TEXT(" groundOnly=")) + EString::FromInt(bGroundOnly)
+				+ EString(PE_TEXT(" (len ")) + EString::FromFloat(GroundOnlyLength) + EString(PE_TEXT(")"))
+				+ EString(PE_TEXT(" costs=")) + EString::FromInt(bCosts)
+				+ EString(PE_TEXT(" (len ")) + EString::FromFloat(CostsLength) + EString(PE_TEXT(")"))
+				+ EString(PE_TEXT(" blocked=")) + EString::FromInt(bBlocked));
+		}
+		return bOk;
+	}
+
+	// Bakes the same two-corridor geometry twice: once as a single tile, which stamps the
+	// polygon areas in the direct build path, and once tiled, where the tile cache's mesh
+	// process stamps the rebuilt polygons. Both bakes have to answer the area queries alike.
+	static BOOL32 CheckNavMeshAreaBake()
+	{
+		const ENavigationSourceGeometry Geometry = MakeSanityNavigationAreaGeometry();
+
+		ENavMeshBuildSettings SingleSettings;
+		SingleSettings.TileSizeCells = 0u;
+		ERecastNavigationProvider SingleProvider;
+		SingleProvider.SetSettings(SingleSettings);
+		ENavigationBuildStats SingleStats;
+		const BOOL32 bSingleBuilt = SingleProvider.Build(Geometry, SingleStats);
+		const BOOL32 bSingle = (bSingleBuilt && (SingleStats.PolygonCount > 0u) && CheckNavigationAreaProvider(SingleProvider)) ? TRUE : FALSE;
+
+		ENavMeshBuildSettings TiledSettings;
+		TiledSettings.TileSizeCells = 32u;
+		ERecastNavigationProvider TiledProvider;
+		TiledProvider.SetSettings(TiledSettings);
+		ENavigationBuildStats TiledStats;
+		const BOOL32 bTiledBuilt = TiledProvider.Build(Geometry, TiledStats);
+		const BOOL32 bTiled = (bTiledBuilt && (TiledStats.PolygonCount > 0u) && CheckNavigationAreaProvider(TiledProvider)) ? TRUE : FALSE;
+
+		const BOOL32 bOk = (bSingle && bTiled) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh area bake detail: singleBuilt=")) + EString::FromInt(bSingleBuilt)
+				+ EString(PE_TEXT(" singlePolys=")) + EString::FromInt(SingleStats.PolygonCount)
+				+ EString(PE_TEXT(" singleQueries=")) + EString::FromInt(bSingle)
+				+ EString(PE_TEXT(" tiledBuilt=")) + EString::FromInt(bTiledBuilt)
+				+ EString(PE_TEXT(" tiledPolys=")) + EString::FromInt(TiledStats.PolygonCount)
+				+ EString(PE_TEXT(" tiledQueries=")) + EString::FromInt(bTiled));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckContainerPropertySerialization()
 	{
 		static BOOL32 bPropertiesRegistered = FALSE;
@@ -3073,7 +3215,7 @@ namespace PigeonEngine
 		const FStructDescriptor* AnimationDescriptor = Animation ? EStructPropertyRegistry::Find(Animation->StructHash) : nullptr;
 		const FStructDescriptor* MaterialDescriptor = EStructPropertyRegistry::Find(GetClassHashCode<FMaterialSlotReference>());
 		BOOL32 bMigratedMetadataOk = (NavSettings && NavSettings->ValueType == EPropertyValueType::STRUCT &&
-			NavDescriptor && NavDescriptor->Fields.Num<UINT32>() == 11u &&
+			NavDescriptor && NavDescriptor->Fields.Num<UINT32>() == 18u &&
 			CascadeData && CascadeData->ValueType == EPropertyValueType::STRUCT &&
 			CascadeDescriptor && CascadeDescriptor->Fields.Num<UINT32>() == 3u &&
 			Animation && Animation->ValueType == EPropertyValueType::STRUCT &&
@@ -3401,6 +3543,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshAutoAssign = CheckNavMeshSaveAutoAssign();
 		ReportSanityResult(EString(PE_TEXT("navmesh save auto-assign")), bNavMeshAutoAssign);
 		if (!bNavMeshAutoAssign)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshAreaBake = CheckNavMeshAreaBake();
+		ReportSanityResult(EString(PE_TEXT("navmesh area bake and filters")), bNavMeshAreaBake);
+		if (!bNavMeshAreaBake)
 		{
 			FailedCount += 1u;
 		}

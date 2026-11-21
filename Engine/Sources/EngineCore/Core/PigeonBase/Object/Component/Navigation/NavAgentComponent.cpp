@@ -30,6 +30,13 @@ namespace PigeonEngine
 		UINT32 AvoidanceType = static_cast<UINT32>(InOutValue.ObstacleAvoidanceType);
 		InArchive.SerializeUInt32(PE_TEXT("ObstacleAvoidanceType"), AvoidanceType);
 		InOutValue.ObstacleAvoidanceType = static_cast<UINT8>(AvoidanceType);
+		InArchive.SerializeBool(PE_TEXT("TraverseWater"), InOutValue.bTraverseWater);
+		InArchive.SerializeBool(PE_TEXT("TraverseDoor"), InOutValue.bTraverseDoor);
+		InArchive.SerializeBool(PE_TEXT("TraverseJump"), InOutValue.bTraverseJump);
+		InArchive.SerializeFloat(PE_TEXT("GroundCost"), InOutValue.GroundCost);
+		InArchive.SerializeFloat(PE_TEXT("WaterCost"), InOutValue.WaterCost);
+		InArchive.SerializeFloat(PE_TEXT("DoorCost"), InOutValue.DoorCost);
+		InArchive.SerializeFloat(PE_TEXT("JumpCost"), InOutValue.JumpCost);
 		InArchive.EndObject();
 	}
 
@@ -54,6 +61,13 @@ namespace PigeonEngine
 			[](const ENavigationAgentSettings* Value) -> UINT32 { return static_cast<UINT32>(Value->ObstacleAvoidanceType); },
 			[](ENavigationAgentSettings* Value, const UINT32& InValue) -> void { Value->ObstacleAvoidanceType = static_cast<UINT8>(InValue); },
 			EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("TraverseWater"), &ENavigationAgentSettings::bTraverseWater, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("TraverseDoor"), &ENavigationAgentSettings::bTraverseDoor, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("TraverseJump"), &ENavigationAgentSettings::bTraverseJump, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("GroundCost"), &ENavigationAgentSettings::GroundCost, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("WaterCost"), &ENavigationAgentSettings::WaterCost, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("DoorCost"), &ENavigationAgentSettings::DoorCost, EditFlags);
+		AddStructProperty(StructHash, StructName, PE_TEXT("JumpCost"), &ENavigationAgentSettings::JumpCost, EditFlags);
 	}
 
 	static void RegisterClassProperties()
@@ -89,6 +103,35 @@ namespace PigeonEngine
 	// settling on its target, or being nudged by a neighbour, is small and its direction flips from
 	// frame to frame; turning towards it would spin the actor in place instead of letting it stand.
 	PE_CONSTEXPR_STATIC FLOAT NavigationAgentMinTurnSpeedSquared = 25.0f;
+
+	// The query filter this agent's settings describe: the area classes it may walk on, priced as
+	// configured. The cost array follows the ENavigationAreaFlagType bit order, which is the order
+	// the backend numbers its area classes in.
+	static ENavigationQueryFilter MakeAgentQueryFilter(const ENavigationAgentSettings& InSettings)
+	{
+		ENavigationQueryFilter Filter;
+		UINT16 IncludeFlags = static_cast<UINT16>(ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		if (InSettings.bTraverseWater)
+		{
+			IncludeFlags = static_cast<UINT16>(IncludeFlags | ENavigationAreaFlagType::NAVIGATION_AREA_WATER);
+		}
+		if (InSettings.bTraverseDoor)
+		{
+			IncludeFlags = static_cast<UINT16>(IncludeFlags | ENavigationAreaFlagType::NAVIGATION_AREA_DOOR);
+		}
+		if (InSettings.bTraverseJump)
+		{
+			IncludeFlags = static_cast<UINT16>(IncludeFlags | ENavigationAreaFlagType::NAVIGATION_AREA_JUMP);
+		}
+		Filter.IncludeAreaFlags = IncludeFlags;
+
+		Filter.AreaCosts.SetNum(4u);
+		Filter.AreaCosts[0u] = InSettings.GroundCost;
+		Filter.AreaCosts[1u] = InSettings.WaterCost;
+		Filter.AreaCosts[2u] = InSettings.DoorCost;
+		Filter.AreaCosts[3u] = InSettings.JumpCost;
+		return Filter;
+	}
 
 	// Turns the actor towards InDirection at the configured rate. Yaw only: a navigation agent that
 	// inherits pitch from a step looks broken, and the movement itself already follows the surface.
@@ -321,7 +364,8 @@ namespace PigeonEngine
 		}
 
 		ENavigationPath Path;
-		if ((!Manager->FindPath(OwnerActor->GetActorWorldLocation(), InTarget, Path)) || (!Path.IsValid()))
+		const ENavigationQueryFilter Filter = MakeAgentQueryFilter(Settings);
+		if ((!Manager->FindPath(OwnerActor->GetActorWorldLocation(), InTarget, Filter, Path)) || (!Path.IsValid()))
 		{
 			bHasMoveRequest = FALSE;
 			FinishMove(ENavigationPathStatusType::NAVIGATION_PATH_INVALID);

@@ -141,6 +141,7 @@ namespace PigeonEngine
 					Triangle.Vertex0 = Matrix4x4TransformPosition(LocalToWorld, LocalVertex0);
 					Triangle.Vertex1 = Matrix4x4TransformPosition(LocalToWorld, LocalVertex1);
 					Triangle.Vertex2 = Matrix4x4TransformPosition(LocalToWorld, LocalVertex2);
+					Triangle.Area = InComponent.GetNavigationArea();
 					if (IsDegenerateTriangle(Triangle.Vertex0, Triangle.Vertex1, Triangle.Vertex2))
 					{
 						continue;

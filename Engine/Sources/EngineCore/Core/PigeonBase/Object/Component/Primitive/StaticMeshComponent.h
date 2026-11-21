@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Navigation/NavigationTypes.h>
 #include "MeshComponent.h"
 
 namespace PigeonEngine
@@ -38,6 +39,11 @@ namespace PigeonEngine
 		// RStaticMeshSceneProxy registers itself with.
 		PE_NODISCARD virtual const EName& GetRenderProxyTypeName() const override;
 
+		// Area class the triangles of this mesh are baked with. Marking a surface WATER (or
+		// DOOR/JUMP) is what makes an agent's filter able to avoid or price it.
+		PE_NODISCARD ENavigationAreaFlagType	GetNavigationArea() const;
+		void									SetNavigationArea(const ENavigationAreaFlagType& InArea);
+
 		// Render proxy functions START
 		// The registration and the update of this primitive, driven by the scene's generic
 		// primitive path: the component states what it is and the scene builds the proxy on the
@@ -54,6 +60,7 @@ namespace PigeonEngine
 		// Kept separately because the asset manager is asynchronous: a component saved right
 		// after RequestMeshAsset must still write the name it asked for.
 		EString                     RequestedMeshAssetName;
+		ENavigationAreaFlagType     NavigationArea = ENavigationAreaFlagType::NAVIGATION_AREA_GROUND;
 	};
 
 };

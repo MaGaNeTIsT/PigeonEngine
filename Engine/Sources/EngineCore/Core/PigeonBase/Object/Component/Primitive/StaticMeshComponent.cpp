@@ -32,6 +32,12 @@ namespace PigeonEngine
 			},
 			EPropertyAssetType::STATIC_MESH,
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		// Which class of surface this mesh contributes to the navmesh. A static mesh is the
+		// only thing the collector bakes, so the mark lives here and not on the primitive base.
+		AddClassEnumPropertyAccessors<PStaticMeshComponent, ENavigationAreaFlagType>(GetClassHashCode<PStaticMeshComponent>(), PE_TEXT("NavigationArea"),
+			[](const PStaticMeshComponent* Component) -> ENavigationAreaFlagType { return Component->GetNavigationArea(); },
+			[](PStaticMeshComponent* Component, const ENavigationAreaFlagType& Value) -> void { Component->SetNavigationArea(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 
 	static void RegisterClassTypes()
@@ -71,10 +77,18 @@ namespace PigeonEngine
 		static const EName ProxyTypeName(PE_TEXT("StaticMeshPrimitive"));
 		return ProxyTypeName;
 	}
+	ENavigationAreaFlagType PStaticMeshComponent::GetNavigationArea() const
+	{
+		return NavigationArea;
+	}
+	void PStaticMeshComponent::SetNavigationArea(const ENavigationAreaFlagType& InArea)
+	{
+		NavigationArea = InArea;
+	}
 	void PStaticMeshComponent::SetMeshAsset(const EStaticMeshAsset* InMeshAsset)
 	{
-	MeshAsset = InMeshAsset;
-	if (!!InMeshAsset)
+		MeshAsset = InMeshAsset;
+		if (!!InMeshAsset)
 	{
 		const EStaticMesh* Mesh = InMeshAsset->GetStoragedResource();
 #if ENGINE_EDITOR_ONLY

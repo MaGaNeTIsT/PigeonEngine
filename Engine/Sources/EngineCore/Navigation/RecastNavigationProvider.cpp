@@ -59,10 +59,69 @@ namespace PigeonEngine
 	PE_CONSTEXPR_STATIC INT32 NavigationMaxPathPolygons = 256;
 	PE_CONSTEXPR_STATIC INT32 NavigationMaxPathPoints = 256;
 	PE_CONSTEXPR_STATIC INT32 NavigationMaxVisitedPolygons = 32;
-	// Area id every walkable polygon gets. Zero is RC_NULL_AREA in Recast and a legal area id
-	// in Detour; the reference sample assigns ground area 0 as well, and the query filter
-	// selects polygons by flags, not by area.
+	// Detour area ids the engine classes are stored as. Ground is zero, and the remaining
+	// classes follow in the same order as their bits in ENavigationAreaFlagType, because a
+	// query filter's cost array is indexed by class order and mapped straight onto these ids.
 	PE_CONSTEXPR_STATIC UINT8 NavigationGroundAreaId = 0u;
+	PE_CONSTEXPR_STATIC UINT8 NavigationWaterAreaId = 1u;
+	PE_CONSTEXPR_STATIC UINT8 NavigationDoorAreaId = 2u;
+	PE_CONSTEXPR_STATIC UINT8 NavigationJumpAreaId = 3u;
+
+	// Recast stamps one area id per triangle and carries it through to the polygon. Its ids
+	// are UINT8 and RC_WALKABLE_AREA (63) is the largest legal value, so the classes are
+	// stamped descending from it - ground first, which leaves the common case untouched -
+	// and translated to the compact Detour ids above when polygons are written.
+	static UINT8 NavigationAreaBuildId(const UINT16 InAreaFlags)
+	{
+		if (InAreaFlags & ENavigationAreaFlagType::NAVIGATION_AREA_GROUND)
+		{
+			return RC_WALKABLE_AREA;
+		}
+		if (InAreaFlags & ENavigationAreaFlagType::NAVIGATION_AREA_WATER)
+		{
+			return RC_WALKABLE_AREA - 1;
+		}
+		if (InAreaFlags & ENavigationAreaFlagType::NAVIGATION_AREA_DOOR)
+		{
+			return RC_WALKABLE_AREA - 2;
+		}
+		if (InAreaFlags & ENavigationAreaFlagType::NAVIGATION_AREA_JUMP)
+		{
+			return RC_WALKABLE_AREA - 3;
+		}
+		// An unmarked surface is plain ground.
+		return RC_WALKABLE_AREA;
+	}
+
+	// Rewrites one polygon's build area id into the Detour area id it is queried by and the
+	// flags the query filter selects on. Ids outside the mapping belong to no class and end up
+	// with flags 0, which no filter matches.
+	static void NavigationAreaDetourStamp(const UINT8 InBuildArea, UINT8& OutDetourArea, UINT16& OutFlags)
+	{
+		switch (InBuildArea)
+		{
+		case RC_WALKABLE_AREA:
+			OutDetourArea = NavigationGroundAreaId;
+			OutFlags = ENavigationAreaFlagType::NAVIGATION_AREA_GROUND;
+			return;
+		case RC_WALKABLE_AREA - 1:
+			OutDetourArea = NavigationWaterAreaId;
+			OutFlags = ENavigationAreaFlagType::NAVIGATION_AREA_WATER;
+			return;
+		case RC_WALKABLE_AREA - 2:
+			OutDetourArea = NavigationDoorAreaId;
+			OutFlags = ENavigationAreaFlagType::NAVIGATION_AREA_DOOR;
+			return;
+		case RC_WALKABLE_AREA - 3:
+			OutDetourArea = NavigationJumpAreaId;
+			OutFlags = ENavigationAreaFlagType::NAVIGATION_AREA_JUMP;
+			return;
+		default:
+			OutDetourArea = 0u;
+			OutFlags = 0u;
+			return;
+		}
+	}
 	// Upper bound Detour reserves per grid cell. A tile that would need more polygons fails to add
 	// and is reported, which is the same failure the reference sample has.
 	PE_CONSTEXPR_STATIC INT32 NavigationMaxPolysPerTile = 2048;
@@ -238,7 +297,9 @@ namespace PigeonEngine
 	};
 
 	// Stamps the same area id and flags on a rebuilt polygon that a fresh bake writes, so a tile
-	// rebuilt around an obstacle is indistinguishable from a baked one.
+	// rebuilt around an obstacle is indistinguishable from a baked one. The layer keeps the area
+	// ids the bake stamped, which is why the mapping is the same function the single tile path
+	// uses.
 	class ENavTileCacheMeshProcess final : public dtTileCacheMeshProcess
 	{
 	public:
@@ -250,15 +311,11 @@ namespace PigeonEngine
 			}
 			for (int Index = 0; Index < params->polyCount; Index++)
 			{
-				if (polyAreas[Index] == RC_WALKABLE_AREA)
-				{
-					polyAreas[Index] = NavigationGroundAreaId;
-					polyFlags[Index] = ENavigationAreaFlagType::NAVIGATION_AREA_GROUND;
-				}
-				else
-				{
-					polyFlags[Index] = 0;
-				}
+				UINT8 DetourArea = 0u;
+				UINT16 Flags = 0u;
+				NavigationAreaDetourStamp(polyAreas[Index], DetourArea, Flags);
+				polyAreas[Index] = DetourArea;
+				polyFlags[Index] = Flags;
 			}
 			// Off-mesh connections are not authored, so there is nothing to add here.
 		}
@@ -292,6 +349,9 @@ namespace PigeonEngine
 	{
 		const TArray<FLOAT>*	Vertices = nullptr;
 		const TArray<INT32>*	Triangles = nullptr;
+		// Area class per triangle, parallel to Triangles (one entry per triangle). The bake
+		// turns each into the Recast area id it rasterizes the triangle with.
+		const TArray<UINT16>*	TriangleAreaFlags = nullptr;
 		FLOAT					BMin[3] = { 0.0f, 0.0f, 0.0f };
 		FLOAT					BMax[3] = { 0.0f, 0.0f, 0.0f };
 		FLOAT					CellSize = 20.0f;
@@ -321,7 +381,7 @@ namespace PigeonEngine
 	// InTileIndexNum is the number of indices in InTileTriangles (three per triangle); the Recast
 	// calls below take a triangle count, which is why it is divided once and used from there.
 	static INT32 RasterizeTileLayers(rcContext& Context, const FRecastBakeInputs& InInputs
-		, const INT32* InTileTriangles, const INT32 InTileIndexNum
+		, const INT32* InTileTriangles, const UINT16* InTileAreaFlags, const INT32 InTileIndexNum
 		, const INT32 InTileX, const INT32 InTileY, dtTileCache& InTileCache
 		, INT32& OutWalkableTriangleNum)
 	{
@@ -385,6 +445,10 @@ namespace PigeonEngine
 				if (TriangleAreas.GetRef(TriangleIndex) != RC_NULL_AREA)
 				{
 					OutWalkableTriangleNum++;
+					// rcMarkWalkableTriangles stamped every walkable triangle with the same
+					// class; the source triangle's mark replaces it.
+					const UINT16 AreaFlags = InTileAreaFlags ? InTileAreaFlags[TriangleIndex] : 0u;
+					TriangleAreas.GetRef(TriangleIndex) = NavigationAreaBuildId(AreaFlags);
 				}
 			}
 			if (!rcRasterizeTriangles(&Context, InInputs.Vertices->GetData(), InInputs.Vertices->Num<INT32>()
@@ -503,6 +567,9 @@ namespace PigeonEngine
 		TArray<UINT32> TileCursor;
 		TileCursor.SetNum(TileNum);
 		TArray<INT32> BucketTriangles;
+		// Area class per bucket triangle, parallel to BucketTriangles. A triangle straddling a
+		// seam lands in several tiles, and every copy has to keep its class.
+		TArray<UINT16> BucketAreaFlags;
 
 		for (UINT32 Pass = 0u; Pass < 2u; Pass++)
 		{
@@ -517,6 +584,7 @@ namespace PigeonEngine
 				}
 				TileOffsets[TileNum] = Running;
 				BucketTriangles.SetNum(Running * 3u);
+				BucketAreaFlags.SetNum(Running);
 			}
 
 			for (UINT32 TriangleIndex = 0u; TriangleIndex < TriangleNum; TriangleIndex++)
@@ -540,6 +608,7 @@ namespace PigeonEngine
 				const INT32 TileY0 = TileIndexFromCoordinate(MinZ - BorderWorld, InInputs.BMin[2], TileWorldSize, TileNumY);
 				const INT32 TileY1 = TileIndexFromCoordinate(MaxZ + BorderWorld, InInputs.BMin[2], TileWorldSize, TileNumY);
 				const INT32* Source = SourceTriangles + (TriangleIndex * 3u);
+				const UINT16 AreaFlags = InInputs.TriangleAreaFlags ? (*InInputs.TriangleAreaFlags)[TriangleIndex] : 0u;
 
 				for (INT32 TileY = TileY0; TileY <= TileY1; TileY++)
 				{
@@ -556,6 +625,7 @@ namespace PigeonEngine
 							BucketTriangles[Target * 3u + 0u] = Source[0];
 							BucketTriangles[Target * 3u + 1u] = Source[1];
 							BucketTriangles[Target * 3u + 2u] = Source[2];
+							BucketAreaFlags[Target] = AreaFlags;
 						}
 					}
 				}
@@ -622,6 +692,7 @@ namespace PigeonEngine
 				const UINT32 Count = TileOffsets[TileIndex + 1u] - First;
 				const INT32 LayerNum = RasterizeTileLayers(Context, InInputs
 					, (Count > 0u) ? (BucketTriangles.GetData() + (First * 3u)) : nullptr
+					, (Count > 0u) ? (BucketAreaFlags.GetData() + First) : nullptr
 					, static_cast<INT32>(Count * 3u), TileX, TileY, *State->TileCache
 					, OutWalkableTriangleNum);
 				if (LayerNum < 0)
@@ -1404,8 +1475,11 @@ namespace PigeonEngine
 		// remapping.
 		TArray<FLOAT> Vertices;
 		TArray<INT32> Triangles;
+		// Area class per triangle, kept parallel to Triangles through the whole bake.
+		TArray<UINT16> TriangleAreaFlags;
 		Vertices.SetNum(OutStats.TriangleCount * 9u);
 		Triangles.SetNum(OutStats.TriangleCount * 3u);
+		TriangleAreaFlags.SetNum(OutStats.TriangleCount);
 		for (UINT32 Index = 0u; Index < OutStats.TriangleCount; Index++)
 		{
 			const ENavigationSourceTriangle& Triangle = InGeometry.Triangles[Index];
@@ -1424,6 +1498,7 @@ namespace PigeonEngine
 			Triangles[IndexBase + 0u] = static_cast<INT32>(IndexBase);
 			Triangles[IndexBase + 1u] = static_cast<INT32>(IndexBase + 1u);
 			Triangles[IndexBase + 2u] = static_cast<INT32>(IndexBase + 2u);
+			TriangleAreaFlags[Index] = static_cast<UINT16>(Triangle.Area);
 		}
 
 		const INT32 VertexNum = static_cast<INT32>(OutStats.TriangleCount * 3u);
@@ -1487,6 +1562,7 @@ namespace PigeonEngine
 			FRecastBakeInputs Inputs;
 			Inputs.Vertices = &Vertices;
 			Inputs.Triangles = &Triangles;
+			Inputs.TriangleAreaFlags = &TriangleAreaFlags;
 			rcVcopy(Inputs.BMin, Config.bmin);
 			rcVcopy(Inputs.BMax, Config.bmax);
 			Inputs.CellSize = Config.cs;
@@ -1570,6 +1646,9 @@ namespace PigeonEngine
 			if (TriangleAreas[Index] != RC_NULL_AREA)
 			{
 				OutStats.WalkableTriangleCount++;
+				// rcMarkWalkableTriangles stamped every walkable triangle with the same class;
+				// the source triangle's mark replaces it.
+				TriangleAreas[Index] = NavigationAreaBuildId(TriangleAreaFlags[Index]);
 			}
 		}
 
@@ -1647,19 +1726,15 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		// Recast marks walkable polygons with RC_WALKABLE_AREA; Detour stores an area id and a
-		// separate flag word, and the query filter selects on the flags.
+		// Recast keeps the per-triangle class on the polygons it built; Detour stores a compact
+		// area id and a separate flag word, and the query filter selects on the flags.
 		for (int PolygonIndex = 0; PolygonIndex < Build.PolyMesh->npolys; PolygonIndex++)
 		{
-			if (Build.PolyMesh->areas[PolygonIndex] == RC_WALKABLE_AREA)
-			{
-				Build.PolyMesh->areas[PolygonIndex] = NavigationGroundAreaId;
-				Build.PolyMesh->flags[PolygonIndex] = ENavigationAreaFlagType::NAVIGATION_AREA_GROUND;
-			}
-			else
-			{
-				Build.PolyMesh->flags[PolygonIndex] = 0;
-			}
+			UINT8 DetourArea = 0u;
+			UINT16 Flags = 0u;
+			NavigationAreaDetourStamp(Build.PolyMesh->areas[PolygonIndex], DetourArea, Flags);
+			Build.PolyMesh->areas[PolygonIndex] = DetourArea;
+			Build.PolyMesh->flags[PolygonIndex] = Flags;
 		}
 
 		dtNavMeshCreateParams Params;

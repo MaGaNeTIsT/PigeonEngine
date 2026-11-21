@@ -19,9 +19,9 @@ namespace PigeonEngine
 	// whole classes, so gameplay asks for "ground only" or "no water" without knowing how a
 	// backend stores area identifiers.
 	//
-	// Today the bake stamps every walkable polygon with GROUND, so only GROUND is reachable and
-	// the other bits exist for a future area authoring pass. A filter that excludes GROUND
-	// therefore reaches nothing.
+	// A static mesh marks the class its surface belongs to, and the bake stamps that class on
+	// every polygon generated from its triangles. An unmarked surface is GROUND, which is also
+	// what an agent traverses unless its settings say otherwise.
 	enum ENavigationAreaFlagType : UINT16
 	{
 		NAVIGATION_AREA_GROUND	= (1 << 0),
@@ -100,8 +100,11 @@ namespace PigeonEngine
 		void Reset();
 	};
 
-	// Filters are copied per query, so a caller can build one on the stack. AreaCosts is
-	// indexed by area id as the backend numbers them; an empty array means "all costs 1".
+	// Filters are copied per query, so a caller can build one on the stack. AreaCosts lists a
+	// cost multiplier per area class in bit order - [0] ground, [1] water, [2] door, [3] jump -
+	// and a missing entry costs 1. Costs are expressed in classes rather than in whatever ids
+	// the backend stores on a polygon, so the same filter means the same thing on every
+	// backend; a backend numbers its ids in that class order.
 	struct ENavigationQueryFilter
 	{
 	public:
@@ -164,6 +167,23 @@ namespace PigeonEngine
 		FLOAT	SeparationWeight = 2.0f;
 		// Index into the backend's avoidance quality presets.
 		UINT8	ObstacleAvoidanceType = 3u;
+
+		/*
+		* Area classes the agent may walk on. Clearing a flag makes that class impassable, so
+		* a path either avoids the polygons marked with it or ends at their border.
+		*/
+		BOOL32	bTraverseWater = TRUE;
+		BOOL32	bTraverseDoor = TRUE;
+		BOOL32	bTraverseJump = TRUE;
+		/*
+		* Cost multiplier per area class: ground, water, door, jump. A higher value makes the
+		* planner prefer other routes; 1 is neutral. Costs only apply to an agent this
+		* component moves itself - the crowd steers with its own fixed filter.
+		*/
+		FLOAT	GroundCost = 1.0f;
+		FLOAT	WaterCost = 1.0f;
+		FLOAT	DoorCost = 1.0f;
+		FLOAT	JumpCost = 1.0f;
 	};
 
 	// Runtime obstacle handle. Zero means "not created"; the value is opaque to gameplay and only
