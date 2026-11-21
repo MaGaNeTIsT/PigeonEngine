@@ -3026,38 +3026,38 @@ namespace PigeonEngine
 		return Geometry;
 	}
 
-	// Two navmesh profiles of one level share the same volume set, so a large agent and the
-	// default agent are two bakes of one world, not two duplicated level setups.
+	// Two agents of one level share the same volume set: the collector resolves each agent's
+	// volumes by the bounds volume support list, and the actors enumerate the agents.
 	static BOOL32 CheckNavMeshProfileCoverage()
 	{
 		PSanityLevelWorld* World = new PSanityLevelWorld();
 		World->Init();
 		TArray<PActor*> Actors;
 
-		PActor* DefaultOwnerActor = new PActor();
-		World->AddActor(DefaultOwnerActor);
-		Actors.Add(DefaultOwnerActor);
-		PNavMeshComponent* DefaultOwner = new PNavMeshComponent();
-		DefaultOwnerActor->AddComponent(DefaultOwner);
+		PNavMeshActor* DefaultActor = new PNavMeshActor();
+		World->AddActor(DefaultActor);
+		Actors.Add(DefaultActor);
 
-		PActor* LargeOwnerActor = new PActor();
-		World->AddActor(LargeOwnerActor);
-		Actors.Add(LargeOwnerActor);
-		PNavMeshComponent* LargeOwner = new PNavMeshComponent();
-		LargeOwner->SetNavMeshName(EString(PE_TEXT("Large")));
-		LargeOwnerActor->AddComponent(LargeOwner);
+		PNavMeshActor* LargeActor = new PNavMeshActor();
+		FNavMeshProfile LargeProfile;
+		LargeProfile.Name = EString(PE_TEXT("Large"));
+		LargeActor->SetProfile(LargeProfile);
+		World->AddActor(LargeActor);
+		Actors.Add(LargeActor);
 
 		// One shared volume for both agents and one volume only the large agent supports.
 		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), MakeSanityProfileList(""));
 		SpawnSanityBoundsVolume(World, Actors, Vector3(400.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), MakeSanityProfileList("Large"));
 
-		const TArray<EBoundAABB> DefaultVolumes = DefaultOwner->CollectBakeVolumesInWorld();
-		const TArray<EBoundAABB> LargeVolumes = LargeOwner->CollectBakeVolumesInWorld();
+		TArray<EBoundAABB> DefaultVolumes;
+		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(), DefaultVolumes);
+		TArray<EBoundAABB> LargeVolumes;
+		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(PE_TEXT("Large")), LargeVolumes);
 		const BOOL32 bShared = ((DefaultVolumes.Num<UINT32>() == 1u) && (LargeVolumes.Num<UINT32>() == 2u)) ? TRUE : FALSE;
 
-		TArray<PNavMeshComponent*> PrimaryOwners;
-		PNavMeshComponent::CollectPrimaryOwnersInWorld(*World, PrimaryOwners);
-		const BOOL32 bTwoProfiles = (PrimaryOwners.Num<UINT32>() == 2u) ? TRUE : FALSE;
+		TArray<PNavMeshActor*> PrimaryActors;
+		PNavMeshActor::CollectPrimaryActorsInWorld(*World, PrimaryActors);
+		const BOOL32 bTwoAgents = (PrimaryActors.Num<UINT32>() == 2u) ? TRUE : FALSE;
 
 		for (UINT32 Index = 0u, Num = Actors.Num<UINT32>(); Index < Num; Index++)
 		{
@@ -3066,18 +3066,16 @@ namespace PigeonEngine
 		World->FlushPendingDestroy();
 		World->Destroy();
 
-		const BOOL32 bOk = (bShared && bTwoProfiles) ? TRUE : FALSE;
+		const BOOL32 bOk = (bShared && bTwoAgents) ? TRUE : FALSE;
 		if (!bOk)
 		{
 			PE_LOG_ERROR(EString(PE_TEXT("navmesh profile coverage detail: defaultVolumes=")) + EString::FromInt(DefaultVolumes.Num<UINT32>())
 				+ EString(PE_TEXT(" largeVolumes=")) + EString::FromInt(LargeVolumes.Num<UINT32>())
-				+ EString(PE_TEXT(" profiles=")) + EString::FromInt(PrimaryOwners.Num<UINT32>()));
+				+ EString(PE_TEXT(" agents=")) + EString::FromInt(PrimaryActors.Num<UINT32>()));
 		}
 		return bOk;
 	}
 
-	// Writing an already built provider is the save path: the file and the component's asset
-	// reference appear in one step, without a second bake.
 	// The navmesh actor is one agent's authoring data: profile defaults, a JSON round trip, and
 	// the first-wins rule for duplicate agent names.
 	static BOOL32 CheckNavMeshActorProfile()
@@ -3154,6 +3152,8 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	// Writing an already built provider is the save path: the file appears without a second bake,
+	// and the overwrite flag decides whether an existing file may be replaced.
 	static BOOL32 CheckNavMeshAssetWrite()
 	{
 		ERecastNavigationProvider* Provider = new ERecastNavigationProvider();
@@ -3168,47 +3168,38 @@ namespace PigeonEngine
 		const EString AssetName(PE_TEXT("Sanity_ProfileWrite"));
 		const EString FullPathName = MakeAssetFullPathName(AssetPath, AssetName);
 		EFileHelper::DeleteFile(FullPathName);
-
-		PNavMeshComponent* Component = new PNavMeshComponent();
-		Component->SetNavMeshName(EString(PE_TEXT("Large")));
+		ENavMeshBuildSettings Settings;
 
 		EString Error;
-		const BOOL32 bFirstWritten = Component->SaveProviderAsAsset(*Provider, AssetName, Stats, Error, FALSE);
+		const BOOL32 bFirstWritten = WriteNavMeshAsset(*Provider, Settings, Stats, AssetName, Error, FALSE);
 		const BOOL32 bFileExists = (EFileHelper::IsFileExists(FullPathName) != FALSE) ? TRUE : FALSE;
 		// Without overwrite the second write is refused, exactly like the manual save.
-		const BOOL32 bRefused = (Component->SaveProviderAsAsset(*Provider, AssetName, Stats, Error, FALSE) == FALSE) ? TRUE : FALSE;
-		const BOOL32 bOverwritten = Component->SaveProviderAsAsset(*Provider, AssetName, Stats, Error, TRUE);
-		// The component now points at the file, so the next level load imports it.
-		const BOOL32 bNameAssigned = (Component->GetNavMeshAssetName() == AssetName) ? TRUE : FALSE;
+		const BOOL32 bRefused = (WriteNavMeshAsset(*Provider, Settings, Stats, AssetName, Error, FALSE) == FALSE) ? TRUE : FALSE;
+		const BOOL32 bOverwritten = WriteNavMeshAsset(*Provider, Settings, Stats, AssetName, Error, TRUE);
 
 		EFileHelper::DeleteFile(FullPathName);
-		Component->Destroy();
-		// Not published, so the provider is still the caller's.
 		delete Provider;
 
-		const BOOL32 bOk = (bFirstWritten && bFileExists && bRefused && bOverwritten && bNameAssigned) ? TRUE : FALSE;
+		const BOOL32 bOk = (bFirstWritten && bFileExists && bRefused && bOverwritten) ? TRUE : FALSE;
 		if (!bOk)
 		{
 			PE_LOG_ERROR(EString(PE_TEXT("navmesh asset write detail: written=")) + EString::FromInt(bFirstWritten)
 				+ EString(PE_TEXT(" exists=")) + EString::FromInt(bFileExists)
 				+ EString(PE_TEXT(" refused=")) + EString::FromInt(bRefused)
 				+ EString(PE_TEXT(" overwritten=")) + EString::FromInt(bOverwritten)
-				+ EString(PE_TEXT(" nameAssigned=")) + EString::FromInt(bNameAssigned)
 				+ EString(PE_TEXT(" error=[")) + Error + EString(PE_TEXT("]")));
 		}
 		return bOk;
 	}
 
-	// Two providers of different groups must answer only their own group, and the composed
-	// asset name must stay a valid file name.
 	// Providers resolve inside one world and one agent profile only. Two worlds holding the same
 	// profile name must answer from their own mesh, and two profiles of one world must not answer
 	// for each other.
 	static BOOL32 CheckNavMeshGroupRouting()
 	{
-		const BOOL32 bDefaultName = (PNavMeshComponent::MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString())
+		const BOOL32 bDefaultName = (MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString())
 			== EString(PE_TEXT("Demo_NavMesh"))) ? TRUE : FALSE;
-		const BOOL32 bGroupName = (PNavMeshComponent::MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString(PE_TEXT("Large Agent")))
+		const BOOL32 bGroupName = (MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString(PE_TEXT("Large Agent")))
 			== EString(PE_TEXT("Demo_Large_Agent_NavMesh"))) ? TRUE : FALSE;
 
 		PSanityLevelWorld* WorldA = new PSanityLevelWorld();

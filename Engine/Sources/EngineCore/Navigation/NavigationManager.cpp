@@ -1,9 +1,12 @@
 #include <Navigation/NavigationManager.h>
 
+#include <Asset/NavMeshAsset/NavMeshAsset.h>
 #include <AssetLoadManager.h>
 #include <Development/EditorLogManager.h>
+#include <Navigation/NavMeshProfile.h>
 #include <Navigation/NavigationProviderInterface.h>
-#include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
+#include <Navigation/NavigationProviderRegistry.h>
+#include <PigeonBase/Object/Actor/NavMeshActor.h>
 #include <PigeonBase/Object/World/World.h>
 
 namespace PigeonEngine
@@ -16,20 +19,67 @@ namespace PigeonEngine
 	// Editor input changes (a volume drag bumps the revision every frame) rebuild once they settle.
 	PE_CONSTEXPR_STATIC FLOAT NavigationWorldBuildDebounceSeconds = 0.5f;
 
-	// A runtime pass waits only for the profiles' own navmesh assets, not for the whole asset
-	// queue: a level's textures may still be streaming in while the navmesh is ready to import.
-	static BOOL32 HasOutstandingProfileAssets(const PWorld& InWorld)
+	// Creates the backend provider for one agent profile with its bake settings. The caller owns
+	// it until it is published or deleted.
+	static ERecastNavigationProvider* CreateProfileProvider(const FNavMeshProfile& InProfile)
 	{
-		TArray<PNavMeshComponent*> Owners;
-		PNavMeshComponent::CollectPrimaryOwnersInWorld(InWorld, Owners);
-		for (UINT32 Index = 0u, Num = Owners.Num<UINT32>(); Index < Num; Index++)
+		ENavigationProviderInterface* CreatedProvider = ENavigationProviderRegistry::Create(ERecastNavigationProvider::GetProviderName());
+		if (!CreatedProvider)
 		{
-			if ((!!Owners[Index]) && (Owners[Index]->HasOutstandingAssetRequest() != FALSE))
-			{
-				return TRUE;
-			}
+			return nullptr;
 		}
-		return FALSE;
+		ERecastNavigationProvider* Provider = dynamic_cast<ERecastNavigationProvider*>(CreatedProvider);
+		if (!Provider)
+		{
+			delete CreatedProvider;
+			return nullptr;
+		}
+		Provider->SetSettings(InProfile.BuildSettings);
+		return Provider;
+	}
+
+	// Imports an assigned asset into a provider. The asset carries the settings it was baked with,
+	// so they win over the profile's current values - the mesh and its agent dimensions must stay
+	// consistent. Returns null when the asset is unusable and the profile should bake instead.
+	static ERecastNavigationProvider* ImportProfileAssetProvider(const ENavMeshAsset& InAsset, const FNavMeshProfile& InProfile, ENavigationBuildStats& OutStats)
+	{
+		const ENavMeshData* Data = InAsset.GetStoragedResource();
+		if ((!Data) || (!Data->IsResourceValid()))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh asset '")) + InAsset.GetAssetFullPathName()
+				+ EString(PE_TEXT("' has no usable data; the agent will bake from the world.")));
+			return nullptr;
+		}
+		const FNavMeshAssetSettings& AssetSettings = Data->GetSettings();
+		if (AssetSettings.ProviderName != ERecastNavigationProvider::GetProviderName().ToString())
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh asset '")) + InAsset.GetAssetFullPathName()
+				+ EString(PE_TEXT("' was baked by '")) + AssetSettings.ProviderName
+				+ EString(PE_TEXT("', which this agent cannot import; baking from the world instead.")));
+			return nullptr;
+		}
+		ERecastNavigationProvider* Provider = CreateProfileProvider(InProfile);
+		if (!Provider)
+		{
+			return nullptr;
+		}
+		Provider->SetSettings(AssetSettings.BuildSettings);
+		const TArray<UINT8>& Blob = Data->GetBlob();
+		if (!Provider->ImportData(Blob.GetData(), Blob.Num<UINT32>()))
+		{
+			delete Provider;
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh asset '")) + InAsset.GetAssetFullPathName()
+				+ EString(PE_TEXT("' could not be imported; baking from the world instead.")));
+			return nullptr;
+		}
+		OutStats.PolygonCount = AssetSettings.PolygonCount;
+		OutStats.TileCount = AssetSettings.TileCount;
+		OutStats.NavMeshBytes = Blob.Num<UINT32>();
+		PE_LOG_LOG(EString(PE_TEXT("Navigation: imported navmesh asset '")) + InAsset.GetAssetFullPathName()
+			+ EString(PE_TEXT("' (")) + EString::FromInt(AssetSettings.PolygonCount)
+			+ EString(PE_TEXT(" polygons, ")) + EString::FromInt(AssetSettings.TileCount)
+			+ EString(PE_TEXT(" tiles).")));
+		return Provider;
 	}
 
 	static void RegisterClassTypes()
@@ -173,6 +223,124 @@ namespace PigeonEngine
 			Worlds.RemoveAt(Index - 1u);
 		}
 		InvalidateDebugLines();
+	}
+
+	// --- Profile assets ------------------------------------------------------
+
+	ENavigationManager::FNavigationProfileAsset* ENavigationManager::FindProfileAsset(FNavigationWorld& InWorld, const EString& InAgentName)
+	{
+		for (UINT32 Index = 0u, Num = InWorld.ProfileAssets.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (InWorld.ProfileAssets[Index].AgentName == InAgentName)
+			{
+				return &InWorld.ProfileAssets[Index];
+			}
+		}
+		return nullptr;
+	}
+
+	void ENavigationManager::SyncProfileAssets(FNavigationWorld& InWorld)
+	{
+		if (!InWorld.World)
+		{
+			return;
+		}
+		TArray<PNavMeshActor*> Actors;
+		PNavMeshActor::CollectPrimaryActorsInWorld(*InWorld.World, Actors);
+
+		// Keep only states that still describe an agent asking for the same file: an agent that was
+		// removed, renamed or cleared must not hold the build pass waiting for an old request.
+		for (UINT32 Index = InWorld.ProfileAssets.Num<UINT32>(); Index > 0u; Index--)
+		{
+			FNavigationProfileAsset& State = InWorld.ProfileAssets[Index - 1u];
+			BOOL32 bStillDescribed = FALSE;
+			for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
+			{
+				PNavMeshActor* Actor = Actors[ActorIndex];
+				if ((Actor->GetAgentName() == State.AgentName)
+					&& (Actor->GetNavMeshAssetName() == State.RequestedAssetName)
+					&& (State.RequestedAssetName.Length() > 0u))
+				{
+					bStillDescribed = TRUE;
+					break;
+				}
+			}
+			if (!bStillDescribed)
+			{
+				InWorld.ProfileAssets.RemoveAt(Index - 1u);
+			}
+		}
+
+		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
+		{
+			PNavMeshActor* Actor = Actors[ActorIndex];
+			const EString& AssetName = Actor->GetNavMeshAssetName();
+			if (AssetName.Length() == 0u)
+			{
+				continue;
+			}
+			if (FindProfileAsset(InWorld, Actor->GetAgentName()))
+			{
+				continue;
+			}
+			FNavigationProfileAsset State;
+			State.AgentName = Actor->GetAgentName();
+			State.RequestedAssetName = AssetName;
+			InWorld.ProfileAssets.Add(State);
+		}
+	}
+
+	BOOL32 ENavigationManager::TickProfileAssets(FNavigationWorld& InWorld)
+	{
+		SyncProfileAssets(InWorld);
+		if (InWorld.ProfileAssets.Num<UINT32>() == 0u)
+		{
+			return FALSE;
+		}
+		const EString AssetPath(EBaseSettings::ENGINE_NAV_MESH_PATH);
+		const BOOL32 bQueueDrained = (EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum() == 0u) ? TRUE : FALSE;
+		BOOL32 bOutstanding = FALSE;
+		for (UINT32 Index = 0u, Num = InWorld.ProfileAssets.Num<UINT32>(); Index < Num; Index++)
+		{
+			FNavigationProfileAsset& State = InWorld.ProfileAssets[Index];
+			if ((!!State.Asset) || (State.bFailed))
+			{
+				continue;
+			}
+			if (!State.bRequested)
+			{
+				State.bRequested = TRUE;
+				const ENavMeshAsset* LoadedAsset = nullptr;
+				if (ENavMeshAssetManager::GetManagerSingleton()->RequireLoadNavMeshAsset(AssetPath, State.RequestedAssetName, LoadedAsset)
+					&& (!!LoadedAsset))
+				{
+					State.Asset = LoadedAsset;
+					continue;
+				}
+			}
+			else
+			{
+				const ENavMeshAsset* FoundAsset = ENavMeshAssetManager::GetManagerSingleton()->FindNavMeshAsset(AssetPath, State.RequestedAssetName);
+				if (!!FoundAsset)
+				{
+					State.Asset = FoundAsset;
+					continue;
+				}
+				if (bQueueDrained != FALSE)
+				{
+					// The queue drained without producing the file: it is missing or invalid. Report
+					// once and let the profile bake from the world.
+					State.bFailed = TRUE;
+					PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh asset '")) + State.RequestedAssetName
+						+ EString(PE_TEXT("' is missing or invalid; agent '"))
+						+ ((State.AgentName.Length() > 0u) ? State.AgentName : EString(PE_TEXT("Default")))
+						+ EString(PE_TEXT("' will bake from the world.")));
+					continue;
+				}
+			}
+			bOutstanding = TRUE;
+		}
+		return bOutstanding;
 	}
 
 	// --- Providers -----------------------------------------------------------
@@ -559,9 +727,11 @@ namespace PigeonEngine
 			}
 		}
 
-		if (((InReason == ENavigationWorldBuildReason::LOAD)
-				&& (EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum() > 0u))
-			|| ((InReason == ENavigationWorldBuildReason::RUNTIME) && (HasOutstandingProfileAssets(InWorld) != FALSE)))
+		const BOOL32 bAssetsOutstanding = (((InReason == ENavigationWorldBuildReason::LOAD) || (InReason == ENavigationWorldBuildReason::RUNTIME))
+			? (TickProfileAssets(WorldState) != FALSE) : FALSE) ? TRUE : FALSE;
+		const BOOL32 bQueuePending = (EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum() > 0u) ? TRUE : FALSE;
+		if (((InReason == ENavigationWorldBuildReason::LOAD) && ((bQueuePending != FALSE) || (bAssetsOutstanding != FALSE)))
+			|| ((InReason == ENavigationWorldBuildReason::RUNTIME) && (bAssetsOutstanding != FALSE)))
 		{
 			// One wait for the whole level; the manager tick starts the pass once it is resolved.
 			WorldState.bHasPendingBuild = TRUE;
@@ -584,18 +754,19 @@ namespace PigeonEngine
 				continue;
 			}
 			WorldState.Pending.WaitedSeconds += InDeltaTime;
+			const BOOL32 bAssetsOutstanding = (TickProfileAssets(WorldState) != FALSE) ? TRUE : FALSE;
 			BOOL32 bReady = FALSE;
 			if (WorldState.Pending.Reason == ENavigationWorldBuildReason::LOAD)
 			{
 				const BOOL32 bQueueDrained = (EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum() == 0u) ? TRUE : FALSE;
 				// The deferred asset apply can run a frame after the queue drains; wait a moment
 				// past the drain so an assigned asset is visible before the import decision.
-				bReady = ((bQueueDrained) && (WorldState.Pending.WaitedSeconds >= 0.2f)) ? TRUE : FALSE;
+				bReady = ((bQueueDrained) && (bAssetsOutstanding == FALSE) && (WorldState.Pending.WaitedSeconds >= 0.2f)) ? TRUE : FALSE;
 			}
 			else
 			{
 				// Runtime: only the profiles' own navmesh assets gate the pass.
-				bReady = (HasOutstandingProfileAssets(*WorldState.World) == FALSE) ? TRUE : FALSE;
+				bReady = (bAssetsOutstanding == FALSE) ? TRUE : FALSE;
 			}
 			if ((!bReady) && (WorldState.Pending.WaitedSeconds < NavigationWorldBuildAssetWaitSeconds))
 			{
@@ -611,14 +782,15 @@ namespace PigeonEngine
 
 	BOOL32 ENavigationManager::StartWorldBuild(PWorld& InWorld, ENavigationWorldBuildReason InReason, const EString& InLevelStem)
 	{
-		TArray<PNavMeshComponent*> Owners;
-		PNavMeshComponent::CollectPrimaryOwnersInWorld(InWorld, Owners);
-		if (Owners.Num<UINT32>() == 0u)
+		TArray<PNavMeshActor*> Actors;
+		PNavMeshActor::CollectPrimaryActorsInWorld(InWorld, Actors);
+		if (Actors.Num<UINT32>() == 0u)
 		{
 			return FALSE;
 		}
 
 		FNavigationWorld& WorldState = FindOrCreateWorldState(&InWorld);
+		SyncProfileAssets(WorldState);
 		FNavigationWorldBuildState& State = WorldState.Build;
 		const UINT32 BatchId = NextWorldBuildBatchId++;
 		State.BatchId = BatchId;
@@ -630,57 +802,64 @@ namespace PigeonEngine
 		State.Report.BatchId = BatchId;
 		State.RebuildCountdown = 0.0f;
 
-		PE_LOG_LOG(EString(PE_TEXT("Navigation: building ")) + EString::FromInt(Owners.Num<UINT32>())
-			+ EString(PE_TEXT(" navmesh profile(s) for the level.")));
+		PE_LOG_LOG(EString(PE_TEXT("Navigation: building ")) + EString::FromInt(Actors.Num<UINT32>())
+			+ EString(PE_TEXT(" navmesh agent(s) for the level.")));
 
 		UINT32 Considered = 0u;
-		for (UINT32 OwnerIndex = 0u, OwnerNum = Owners.Num<UINT32>(); OwnerIndex < OwnerNum; OwnerIndex++)
+		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
 		{
-			PNavMeshComponent* Owner = Owners[OwnerIndex];
-			if (!Owner)
+			PNavMeshActor* Actor = Actors[ActorIndex];
+			if (!Actor)
 			{
 				continue;
 			}
-			if ((InReason == ENavigationWorldBuildReason::RUNTIME) && (!Owner->GetBuildOnBeginPlay()))
+			if ((InReason == ENavigationWorldBuildReason::RUNTIME) && (!Actor->GetBuildOnBeginPlay()))
 			{
 				continue;
 			}
 			Considered++;
 
+			const FNavMeshProfile& Profile = Actor->GetProfile();
 			FNavigationProfileBuildResult Result;
-			Result.SourceId = Owner->GetUniqueID();
-			Result.ProfileName = Owner->GetNavMeshName();
+			Result.SourceId = Actor->GetUniqueID();
+			Result.ProfileName = Profile.Name;
 
 			// A loaded level takes the shipped path first: an assigned asset is a memory copy. A
-			// rejected asset falls through to a world bake instead of leaving the profile empty.
-			if (((InReason == ENavigationWorldBuildReason::LOAD) || (InReason == ENavigationWorldBuildReason::RUNTIME))
-				&& (!!Owner->GetNavMeshAsset()))
+			// rejected asset falls through to a world bake instead of leaving the agent without a mesh.
+			if ((InReason == ENavigationWorldBuildReason::LOAD) || (InReason == ENavigationWorldBuildReason::RUNTIME))
 			{
-				ENavigationBuildStats ImportStats;
-				if (Owner->ImportAssignedAsset(ImportStats))
+				FNavigationProfileAsset* AssetState = FindProfileAsset(WorldState, Profile.Name);
+				if ((!!AssetState) && (!!AssetState->Asset))
 				{
-					Result.bSucceeded = TRUE;
-					Result.Stats = ImportStats;
-					State.Report.Profiles.Add(Result);
-					continue;
+					ENavigationBuildStats ImportStats;
+					ERecastNavigationProvider* ImportedProvider = ImportProfileAssetProvider(*AssetState->Asset, Profile, ImportStats);
+					if (!!ImportedProvider)
+					{
+						RegisterProvider(&InWorld, Result.SourceId, Result.ProfileName, ImportedProvider, ImportStats);
+						Result.bSucceeded = TRUE;
+						Result.Stats = ImportStats;
+						State.Report.Profiles.Add(Result);
+						continue;
+					}
 				}
 			}
 
-			const TArray<EBoundAABB> Volumes = Owner->CollectBakeVolumesInWorld();
+			TArray<EBoundAABB> Volumes;
+			ENavigationGeometryCollector::CollectVolumeBounds(InWorld, Result.ProfileName, Volumes);
 			if ((Volumes.Num<UINT32>() == 0u) && (Result.ProfileName.Length() > 0u))
 			{
 				Result.Error = EString(PE_TEXT("no bounds volume supports this navmesh"));
 				State.Report.Profiles.Add(Result);
 				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh '")) + Result.ProfileName
-					+ EString(PE_TEXT("' has no bounds volume that supports it; the profile was skipped.")));
+					+ EString(PE_TEXT("' has no bounds volume that supports it; the agent was skipped.")));
 				continue;
 			}
 
 			ENavigationSourceGeometry Geometry;
-			ENavigationGeometryCollector::CollectStaticMeshTriangles(InWorld, Volumes, Owner->GetBuildSettings().bFlipTriangleWinding, Geometry);
-			Geometry.Links = Owner->GetNavigationLinks();
+			ENavigationGeometryCollector::CollectStaticMeshTriangles(InWorld, Volumes, Profile.BuildSettings.bFlipTriangleWinding, Geometry);
+			Geometry.Links = Profile.NavLinks;
 
-			ERecastNavigationProvider* Provider = Owner->CreateConfiguredProvider();
+			ERecastNavigationProvider* Provider = CreateProfileProvider(Profile);
 			if (!Provider)
 			{
 				Result.Error = EString(PE_TEXT("the provider registry refused the navigation backend"));
@@ -690,7 +869,7 @@ namespace PigeonEngine
 			if (!RequestBuildInternal(&InWorld, Result.SourceId, Result.ProfileName, Provider, static_cast<ENavigationSourceGeometry&&>(Geometry), BatchId))
 			{
 				delete Provider;
-				Result.Error = EString(PE_TEXT("a bake for this profile is already running"));
+				Result.Error = EString(PE_TEXT("a bake for this agent is already running"));
 				State.Report.Profiles.Add(Result);
 				continue;
 			}
@@ -701,7 +880,7 @@ namespace PigeonEngine
 
 		if (Considered == 0u)
 		{
-			// Every profile opted out of a runtime build; leave no half-filled report behind.
+			// Every agent opted out of a runtime build; leave no half-filled report behind.
 			State.Report = FNavigationWorldBuildReport();
 			return FALSE;
 		}
@@ -783,7 +962,7 @@ namespace PigeonEngine
 				Succeeded++;
 				if (Profile.Stats.SkippedMeshCount > 0u)
 				{
-					PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
+					PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh agent '"))
 						+ ((Profile.ProfileName.Length() > 0u) ? Profile.ProfileName : EString(PE_TEXT("Default")))
 						+ EString(PE_TEXT("' was built with "))
 						+ EString::FromInt(Profile.Stats.SkippedMeshCount)
@@ -792,13 +971,13 @@ namespace PigeonEngine
 				continue;
 			}
 			Report.bAllSucceeded = FALSE;
-			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh agent '"))
 				+ ((Profile.ProfileName.Length() > 0u) ? Profile.ProfileName : EString(PE_TEXT("Default")))
 				+ EString(PE_TEXT("' was not built: ")) + Profile.Error);
 		}
 		PE_LOG_LOG(EString(PE_TEXT("Navigation: level build finished: "))
 			+ EString::FromInt(Succeeded) + EString(PE_TEXT("/")) + EString::FromInt(Report.Profiles.Num<UINT32>())
-			+ EString(PE_TEXT(" navmesh profiles built.")));
+			+ EString(PE_TEXT(" navmesh agents built.")));
 
 		const BOOL32 bRestart = State.bDirtyDuringBuild;
 		PWorld* World = InWorld.World;
@@ -852,22 +1031,26 @@ namespace PigeonEngine
 		OutReport = FNavigationWorldBuildReport();
 		OutReport.bHasRun = TRUE;
 		OutReport.BatchId = NextWorldBuildBatchId++;
-
-		TArray<PNavMeshComponent*> Owners;
-		PNavMeshComponent::CollectPrimaryOwnersInWorld(InWorld, Owners);
 		OutReport.bAllSucceeded = TRUE;
-		for (UINT32 OwnerIndex = 0u; OwnerIndex < Owners.Num<UINT32>(); OwnerIndex++)
+
+		TArray<PNavMeshActor*> Actors;
+		PNavMeshActor::CollectPrimaryActorsInWorld(InWorld, Actors);
+		FNavigationWorld& WorldState = FindOrCreateWorldState(&InWorld);
+		SyncProfileAssets(WorldState);
+		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
 		{
-			PNavMeshComponent* Owner = Owners[OwnerIndex];
-			if (!Owner)
+			PNavMeshActor* Actor = Actors[ActorIndex];
+			if (!Actor)
 			{
 				continue;
 			}
+			const FNavMeshProfile& Profile = Actor->GetProfile();
 			FNavigationProfileBuildResult Result;
-			Result.SourceId = Owner->GetUniqueID();
-			Result.ProfileName = Owner->GetNavMeshName();
+			Result.SourceId = Actor->GetUniqueID();
+			Result.ProfileName = Profile.Name;
 
-			const TArray<EBoundAABB> Volumes = Owner->CollectBakeVolumesInWorld();
+			TArray<EBoundAABB> Volumes;
+			ENavigationGeometryCollector::CollectVolumeBounds(InWorld, Result.ProfileName, Volumes);
 			if ((Volumes.Num<UINT32>() == 0u) && (Result.ProfileName.Length() > 0u))
 			{
 				Result.Error = EString(PE_TEXT("no bounds volume supports this navmesh"));
@@ -876,7 +1059,7 @@ namespace PigeonEngine
 				continue;
 			}
 
-			ERecastNavigationProvider* Provider = Owner->CreateConfiguredProvider();
+			ERecastNavigationProvider* Provider = CreateProfileProvider(Profile);
 			if (!Provider)
 			{
 				Result.Error = EString(PE_TEXT("the provider registry refused the navigation backend"));
@@ -886,8 +1069,8 @@ namespace PigeonEngine
 			}
 
 			ENavigationSourceGeometry Geometry;
-			ENavigationGeometryCollector::CollectStaticMeshTriangles(InWorld, Volumes, Owner->GetBuildSettings().bFlipTriangleWinding, Geometry);
-			Geometry.Links = Owner->GetNavigationLinks();
+			ENavigationGeometryCollector::CollectStaticMeshTriangles(InWorld, Volumes, Profile.BuildSettings.bFlipTriangleWinding, Geometry);
+			Geometry.Links = Profile.NavLinks;
 
 			ENavigationBuildStats Stats;
 			if (!Provider->Build(Geometry, Stats))
@@ -910,14 +1093,14 @@ namespace PigeonEngine
 			}
 
 			// Named assets keep their name; unnamed profiles get the level convention name,
-			// including the profile so two agent sizes cannot overwrite each other's file.
-			EString AssetName = Owner->GetNavMeshAssetName();
+			// including the agent so two agent sizes cannot overwrite each other's file.
+			EString AssetName = Profile.NavMeshAsset;
 			if (AssetName.Length() == 0u)
 			{
-				AssetName = PNavMeshComponent::MakeNavMeshAssetName(InLevelStem, Result.ProfileName);
+				AssetName = MakeNavMeshAssetName(InLevelStem, Result.ProfileName);
 			}
 			EString SaveError;
-			if (!Owner->SaveProviderAsAsset(*Provider, AssetName, Stats, SaveError, TRUE))
+			if (!WriteNavMeshAsset(*Provider, Profile.BuildSettings, Stats, AssetName, SaveError, TRUE))
 			{
 				delete Provider;
 				Result.Error = SaveError;
@@ -925,6 +1108,8 @@ namespace PigeonEngine
 				OutReport.bAllSucceeded = FALSE;
 				continue;
 			}
+			// The file exists now, so the actor references it and the level serializes that name.
+			Actor->SetNavMeshAssetName(AssetName);
 
 			// The provider is published only after its asset was written, so a failed write does
 			// not leave the level referencing a file that does not exist.
@@ -936,7 +1121,6 @@ namespace PigeonEngine
 
 		// Save builds do not need a batch record, but the panel and the input watch should see the
 		// result, and the level is about to be serialized right after this.
-		FNavigationWorld& WorldState = FindOrCreateWorldState(&InWorld);
 		WorldState.Build.Report = OutReport;
 		WorldState.Build.Pending = 0u;
 		WorldState.Build.bDirtyDuringBuild = FALSE;
@@ -953,16 +1137,17 @@ namespace PigeonEngine
 			}
 			else
 			{
-				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
+				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh agent '"))
 					+ ((OutReport.Profiles[Index].ProfileName.Length() > 0u) ? OutReport.Profiles[Index].ProfileName : EString(PE_TEXT("Default")))
 					+ EString(PE_TEXT("' was not built for save: ")) + OutReport.Profiles[Index].Error);
 			}
 		}
 		PE_LOG_LOG(EString(PE_TEXT("Navigation: save build finished: "))
 			+ EString::FromInt(Succeeded) + EString(PE_TEXT("/")) + EString::FromInt(OutReport.Profiles.Num<UINT32>())
-			+ EString(PE_TEXT(" navmesh profiles written.")));
+			+ EString(PE_TEXT(" navmesh agents written.")));
 		return OutReport.bAllSucceeded;
 	}
+
 #endif
 
 	BOOL32 ENavigationManager::FindPath(PWorld* InWorld, const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath, const EString& InProfileName) const

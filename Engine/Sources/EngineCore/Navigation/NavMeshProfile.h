@@ -8,6 +8,7 @@ namespace PigeonEngine
 {
 
 	class EArchive;
+	class ENavigationProviderInterface;
 
 	/*
 	* One agent profile of the navigation system - the engine's RecastNavMesh settings.
@@ -40,6 +41,19 @@ namespace PigeonEngine
 	// The nested pieces, shared with the older single-profile component and the level file.
 	void SerializeNavMeshBuildSettings(EArchive& InArchive, const CHAR* InName, ENavMeshBuildSettings& InOutValue);
 	void SerializeNavigationLinks(EArchive& InArchive, const CHAR* InName, TArray<ENavigationLink>& InOutLinks);
+
+	// <LevelStem>_NavMesh for the default agent, <LevelStem>_<Agent>_NavMesh otherwise, with
+	// characters a file name cannot hold replaced by '_'.
+	PE_NODISCARD EString MakeNavMeshAssetName(const EString& InLevelStem, const EString& InAgentName);
+
+	/*
+	* Writes an already built provider as a profile asset and leaves the file describing the
+	* provider (bounds, polygons, tiles). The caller updates the profile's asset name afterwards;
+	* the level save pass uses this so the file exists before the level is serialized.
+	*/
+	BOOL32 WriteNavMeshAsset(ENavigationProviderInterface& InProvider, const ENavMeshBuildSettings& InBuildSettings,
+		const ENavigationBuildStats& InStats, const EString& InAssetName,
+		EString& OutError, const BOOL32& bInAllowOverwrite = FALSE);
 
 	/*
 	* Registers the struct descriptors the Details grid needs: ENavMeshBuildSettings (17 fields),

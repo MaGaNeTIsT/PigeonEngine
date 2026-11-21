@@ -43,8 +43,8 @@ namespace PigeonEngine
 		return LevelStem;
 	}
 
-	// A loaded level builds all of its navmesh profiles in one pass. The manager waits for the
-	// asset queue once, then imports assigned assets and bakes the profiles without one.
+	// A loaded level builds all of its navmesh agents in one pass. The manager waits for the
+	// asset queue once, then imports assigned assets and bakes the agents without one.
 	static void RequestNavigationBuildOnLevelLoad(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -60,8 +60,8 @@ namespace PigeonEngine
 	}
 
 #if ENGINE_EDITOR_ONLY
-	// Save = build paths + save: every profile is baked from the world and its asset written, so
-	// the level and the files it references describe the same world.
+	// Save = build paths + save: every navmesh agent is baked from the world and its asset
+	// written, so the level and the files it references describe the same world.
 	static void BuildNavigationForSave(PWorld* InWorld, const EString& InLevelPath)
 	{
 		if (!InWorld)

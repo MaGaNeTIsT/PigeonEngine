@@ -1,9 +1,73 @@
 #include <Navigation/NavMeshProfile.h>
 
+#include <Asset/NavMeshAsset/NavMeshAsset.h>
+#include <Navigation/NavigationProviderInterface.h>
 #include <Reflection/Property.h>
 
 namespace PigeonEngine
 {
+
+	EString MakeNavMeshAssetName(const EString& InLevelStem, const EString& InAgentName)
+	{
+		if (InAgentName.Length() == 0u)
+		{
+			return InLevelStem + EString(PE_TEXT("_NavMesh"));
+		}
+		// File name safe form of the agent: a name like "Large Agent" must not split the asset
+		// into another directory or lose the suffix.
+		EString Sanitized;
+		for (UINT32 Index = 0u, Num = InAgentName.Length(); Index < Num; Index++)
+		{
+			const CHAR Character = InAgentName[Index];
+			const BOOL32 bAllowed = (((Character >= 'A') && (Character <= 'Z'))
+				|| ((Character >= 'a') && (Character <= 'z'))
+				|| ((Character >= '0') && (Character <= '9'))
+				|| (Character == '_') || (Character == '-')) ? TRUE : FALSE;
+			if (bAllowed)
+			{
+				const CHAR CharacterBuffer[2] = { Character, '\0' };
+				Sanitized += CharacterBuffer;
+			}
+			else
+			{
+				Sanitized += EString(PE_TEXT("_"));
+			}
+		}
+		return InLevelStem + EString(PE_TEXT("_")) + Sanitized + EString(PE_TEXT("_NavMesh"));
+	}
+
+	BOOL32 WriteNavMeshAsset(ENavigationProviderInterface& InProvider, const ENavMeshBuildSettings& InBuildSettings,
+		const ENavigationBuildStats& InStats, const EString& InAssetName,
+		EString& OutError, const BOOL32& bInAllowOverwrite)
+	{
+		OutError = EString();
+		if (InAssetName.Length() == 0u)
+		{
+			OutError = EString(PE_TEXT("The navmesh asset name is empty."));
+			return FALSE;
+		}
+		TArray<UINT8> Blob;
+		if (!InProvider.ExportData(Blob))
+		{
+			OutError = EString(PE_TEXT("The baked navmesh could not be exported."));
+			return FALSE;
+		}
+
+		FNavMeshAssetSettings Settings;
+		Settings.ProviderName = ERecastNavigationProvider::GetProviderName().ToString();
+		Settings.BuildSettings = InBuildSettings;
+		Settings.Bounds = InProvider.GetBounds();
+		Settings.PolygonCount = InStats.PolygonCount;
+		Settings.TileCount = InStats.TileCount;
+
+		const ENavMeshAsset* SavedAsset = nullptr;
+		if (!ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
+			InAssetName, Settings, Blob, EString(EBaseSettings::ENGINE_NAV_MESH_PATH), SavedAsset, OutError, bInAllowOverwrite))
+		{
+			return FALSE;
+		}
+		return TRUE;
+	}
 
 	void SerializeNavMeshBuildSettings(EArchive& InArchive, const CHAR* InName, ENavMeshBuildSettings& InOutValue)
 	{

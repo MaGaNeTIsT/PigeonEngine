@@ -11,6 +11,7 @@
 namespace PigeonEngine
 {
 
+	class ENavMeshAsset;
 	class ENavigationProviderInterface;
 	class PWorld;
 
@@ -52,9 +53,9 @@ namespace PigeonEngine
 		/*
 		* Publishes a provider immediately. Used by the asset import path, which is a memory copy,
 		* and by any provider that does not need a bake. InProfileName is the agent profile the
-		* provider answers for; an empty name is the level's default agent. InSourceId is the object
-		* that authored the profile (its component today), used to clean the providers up when that
-		* object leaves the world.
+		* provider answers for; an empty name is the level's default agent. InSourceId is the navmesh
+		* actor that authored the profile, used to clean the providers up when that object leaves the
+		* world.
 		*/
 		void	RegisterProvider(PWorld* InWorld, const ObjectIdentityType& InSourceId, const EString& InProfileName, ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats = ENavigationBuildStats());
 		// Queues a bake of InProvider with InGeometry on the worker. Ownership of the provider
@@ -64,7 +65,7 @@ namespace PigeonEngine
 		// Removes the provider of one profile in one world.
 		void	UnregisterProvider(PWorld* InWorld, const EString& InProfileName);
 		// Removes every provider authored by InSourceId. A null world searches all worlds, which is
-		// what a component's Uninit needs after it has already left the scene.
+		// what an object needs right after it left the scene.
 		void	UnregisterProfilesBySource(PWorld* InWorld, const ObjectIdentityType& InSourceId);
 		// Per provider overlay switch.
 		void	SetProviderDebugDrawEnabled(PWorld* InWorld, const EString& InProfileName, const BOOL32& InEnabled);
@@ -95,21 +96,21 @@ namespace PigeonEngine
 		// Why a world build pass runs. It selects the source of each profile's mesh.
 		enum class ENavigationWorldBuildReason : UINT8
 		{
-			// Load a level: import an assigned asset when there is one, bake the profiles that
+			// Load a level: import an assigned asset when there is one, bake the agents that
 			// have none. One wait for the asset queue covers the whole level.
 			LOAD,
-			// Shipped game start: like LOAD, but profiles with BuildOnBeginPlay off are skipped.
+			// Shipped game start: like LOAD, but agents with BuildOnBeginPlay off are skipped.
 			RUNTIME,
-			// Editor Build Navigation: bake every profile from the world, ignoring assets.
+			// Editor Build Navigation: bake every agent from the world, ignoring assets.
 			EDITOR,
-			// Level save: bake every profile from the world and write each profile's asset, so
+			// Level save: bake every agent from the world and write each agent's asset, so
 			// the level and the files it references describe the same world.
 			SAVE
 		};
 		// One agent profile's outcome inside a world build pass.
 		struct FNavigationProfileBuildResult
 		{
-			// Authoring object behind the profile; the save pass writes the file through it.
+			// Navmesh actor behind the profile; identifies who authored the agent in this pass.
 			ObjectIdentityType	SourceId = 0;
 			EString				ProfileName;
 			BOOL32				bSucceeded = FALSE;
@@ -299,12 +300,25 @@ namespace PigeonEngine
 			EString							LevelStem;
 			FLOAT							WaitedSeconds = 0.0f;
 		};
+		// Runtime state of one agent's assigned navmesh asset. LOAD/RUNTIME request these once and
+		// wait for them; a profile whose asset failed falls back to a world bake.
+		struct FNavigationProfileAsset
+		{
+			// Agent name the state belongs to (the world keys assets by agent, not by actor).
+			EString					AgentName;
+			EString					RequestedAssetName;
+			const ENavMeshAsset*	Asset = nullptr;
+			BOOL32					bRequested = FALSE;
+			BOOL32					bFailed = FALSE;
+		};
 		struct FNavigationWorld
 		{
 			PWorld*								World = nullptr;
 			TArray<FNavigationProviderEntry>	Providers;
 			TArray<FNavigationObstacleDesc>		Obstacles;
 			TArray<FCrowdBinding>				CrowdBindings;
+			// Parallel to the world's agent names, not to the actors: duplicates share one entry.
+			TArray<FNavigationProfileAsset>		ProfileAssets;
 			// Authored bake input revision; see BumpNavigationInputRevision.
 			UINT32								InputRevision = 1u;
 			FNavigationWorldBuildState			Build;
@@ -339,6 +353,13 @@ namespace PigeonEngine
 		PE_NODISCARD const FCrowdBinding*	FindCrowdBinding(const FNavigationWorld& InWorld, const ObjectIdentityType& InRequesterId) const;
 		// The provider died with the old build, so its bindings need a new agent.
 		void						InvalidateCrowdBindings(FNavigationWorld& InWorld, const EString& InProfileName);
+
+		// Refreshes the per-agent asset states from the world's navmesh actors (an asset name may
+		// have changed, appeared or disappeared since the last pass).
+		void							SyncProfileAssets(FNavigationWorld& InWorld);
+		// Requests/resolves the assets and reports whether any request is still outstanding.
+		BOOL32							TickProfileAssets(FNavigationWorld& InWorld);
+		PE_NODISCARD FNavigationProfileAsset*	FindProfileAsset(FNavigationWorld& InWorld, const EString& InAgentName);
 
 		// Queues a bake; a non zero batch id ties it to a world build pass.
 		BOOL32	RequestBuildInternal(PWorld* InWorld, const ObjectIdentityType& InSourceId, const EString& InProfileName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry, const UINT32& InBatchId);

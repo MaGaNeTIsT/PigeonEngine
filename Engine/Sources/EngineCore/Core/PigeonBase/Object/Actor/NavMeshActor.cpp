@@ -3,9 +3,31 @@
 #include <Navigation/NavigationManager.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Reflection/Property.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {
+
+	// Authoring safety net: agent names are the key the build pass routes by, so a duplicate is
+	// an authoring mistake. Report it where it happens (actor added, profile edited) instead of
+	// letting two actors silently fight over one mesh. The build keeps using the earliest actor.
+	static void WarnIfAgentNameIsTaken(const PNavMeshActor& InActor, PWorld& InWorld)
+	{
+		const EString& AgentName = InActor.GetAgentName();
+		const TArray<PActor*> Actors = InWorld.GetAllActors();
+		for (UINT32 Index = 0u, Num = Actors.Num<UINT32>(); Index < Num; Index++)
+		{
+			const PNavMeshActor* Other = dynamic_cast<const PNavMeshActor*>(Actors[Index]);
+			if ((!!Other) && (Other != (&InActor)) && (Other->GetAgentName() == AgentName))
+			{
+				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh agent '"))
+					+ ((AgentName.Length() > 0u) ? AgentName : EString(PE_TEXT("Default")))
+					+ EString(PE_TEXT("' is also configured by '")) + POBJ_DEBUGNAME_GET(Other)
+					+ EString(PE_TEXT("'; the earliest created navmesh actor provides this agent.")));
+				return;
+			}
+		}
+	}
 
 	static void RegisterClassProperties()
 	{
@@ -52,6 +74,7 @@ namespace PigeonEngine
 		// The profile is bake input: a settings/link/name edit has to schedule a rebuild.
 		if (PWorld* World = GetWorld())
 		{
+			WarnIfAgentNameIsTaken(*this, *World);
 			ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(World);
 		}
 	}
@@ -132,6 +155,7 @@ namespace PigeonEngine
 		PActor::BeginAddedToScene(World);
 		if (World)
 		{
+			WarnIfAgentNameIsTaken(*this, *World);
 			ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(World);
 		}
 	}
