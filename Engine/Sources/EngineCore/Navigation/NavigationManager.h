@@ -42,9 +42,9 @@ namespace PigeonEngine
 
 	public:
 		// Publishes a provider immediately. Used by the asset import path, which is a memory copy,
-		// and by any provider that does not need a bake. InNavMeshName is the group the provider
+		// and by any provider that does not need a bake. InNavMeshName is the profile the provider
 		// answers for: an empty name is the level's default navmesh.
-		void	RegisterProvider(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider);
+		void	RegisterProvider(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats = ENavigationBuildStats());
 		// Queues a bake of InProvider with InGeometry on the worker. Ownership of the provider
 		// transfers when this returns TRUE; on FALSE the caller still owns it. A second request
 		// while one is running is refused, so a caller spamming rebuild is harmless.
@@ -72,11 +72,64 @@ namespace PigeonEngine
 		* Authored navigation input changed: a bounds volume was added, moved or resized, or an
 		* owner edited its bake settings or links. The revision is per world, so a test or preview
 		* world editing its volumes never schedules a rebuild in the level that is open next to it.
-		* Owners compare this against the revision of their last build and schedule a debounced
-		* rebuild in the editor; runtime builds stay explicit.
+		* The world build pass watches it and rebuilds in the editor; runtime builds stay explicit.
 		*/
 		void				BumpNavigationInputRevision(const PWorld* InWorld);
 		PE_NODISCARD UINT32	GetNavigationInputRevision(const PWorld* InWorld) const;
+
+	public:
+		// Why a world build pass runs. It selects the source of each profile's mesh.
+		enum class ENavigationWorldBuildReason : UINT8
+		{
+			// Load a level: import an assigned asset when there is one, bake the profiles that
+			// have none. One wait for the asset queue covers the whole level.
+			LOAD,
+			// Shipped game start: like LOAD, but profiles with BuildOnBeginPlay off are skipped.
+			RUNTIME,
+			// Editor Build Navigation: bake every profile from the world, ignoring assets.
+			EDITOR,
+			// Level save: bake every profile from the world and write each profile's asset, so
+			// the level and the files it references describe the same world.
+			SAVE
+		};
+		// One navmesh profile's outcome inside a world build pass.
+		struct FNavigationProfileBuildResult
+		{
+			ObjectIdentityType	OwnerId = 0;
+			EString				NavMeshName;
+			BOOL32				bSucceeded = FALSE;
+			ENavigationBuildStats	Stats;
+			EString				Error;
+		};
+		// Outcome of the last world build pass. One entry per navmesh profile of the level.
+		struct FNavigationWorldBuildReport
+		{
+			BOOL32								bHasRun = FALSE;
+			UINT32								BatchId = 0;
+			BOOL32								bAllSucceeded = FALSE;
+			TArray<FNavigationProfileBuildResult>	Profiles;
+		};
+		/*
+		* One pass over every navmesh profile of InWorld: LOAD/RUNTIME wait for the asset queue
+		* once, then import or bake each profile; EDITOR and SAVE bake all of them from the world.
+		* SAVE additionally writes each profile's asset (the level-save path uses the synchronous
+		* variant, so the files exist before the level is serialized).
+		*
+		* Returns TRUE when a pass was started, was already running (the running pass is marked
+		* dirty and repeats once), or was queued behind the asset load. False only when the world
+		* has no navmesh profile at all.
+		*/
+		BOOL32 RequestWorldBuild(PWorld& InWorld, ENavigationWorldBuildReason InReason, const EString& InLevelStem = EString());
+#if ENGINE_EDITOR_ONLY
+		// Synchronous SAVE-style pass: bakes and writes every profile on this thread and publishes
+		// the results. Used by the level save path.
+		BOOL32 BuildWorldSynchronously(PWorld& InWorld, const EString& InLevelStem, FNavigationWorldBuildReport& OutReport);
+#endif
+		PE_NODISCARD BOOL32 IsWorldBuildRunning(PWorld& InWorld) const;
+		PE_NODISCARD const FNavigationWorldBuildReport& GetWorldBuildReport(PWorld& InWorld) const;
+		// Drops the build record, the pending request and the input revision of a world that is
+		// going away. Called by the world manager before the world is destroyed.
+		void NotifyWorldDestroyed(PWorld* InWorld);
 
 		/*
 		* Runtime obstacles. The description is retained, so a provider that is rebuilt or reloaded
@@ -155,7 +208,11 @@ namespace PigeonEngine
 		struct FBakeJob
 		{
 			ObjectIdentityType				OwnerId = 0;
+			// Profile name, carried to the report of a world build pass.
+			EString							NavMeshName;
 			UINT32							Serial = 0;
+			// Non zero when this job belongs to a world build pass.
+			UINT32							BatchId = 0;
 			ENavigationProviderInterface*	Provider = nullptr;
 			ENavigationSourceGeometry		Geometry;
 		};
@@ -197,7 +254,9 @@ namespace PigeonEngine
 		struct FBakeResult
 		{
 			ObjectIdentityType				OwnerId = 0;
+			EString							NavMeshName;
 			UINT32							Serial = 0;
+			UINT32							BatchId = 0;
 			ENavigationProviderInterface*	Provider = nullptr;
 			BOOL32							bSucceeded = FALSE;
 			ENavigationBuildStats			Stats;
@@ -205,8 +264,8 @@ namespace PigeonEngine
 
 	private:
 		PE_NODISCARD INT32	FindProviderIndex(const ObjectIdentityType& InOwnerId) const;
-		// Index of the group's provider covering InLocation, or of the group's first ready one.
-		// -1 when the group has no ready provider at all.
+		// Index of the profile's provider covering InLocation, or of the profile's first ready one.
+		// -1 when the profile has no ready provider at all.
 		PE_NODISCARD INT32	FindProviderIndexForLocation(const Vector3& InLocation, const EString& InNavMeshName) const;
 		// Provider of InOwnerId, but only while it is still the build recorded by InSerial.
 		PE_NODISCARD ENavigationProviderInterface* GetProviderForOwner(const ObjectIdentityType& InOwnerId, const UINT32& InSerial) const;
@@ -220,13 +279,50 @@ namespace PigeonEngine
 		// provider cannot take obstacles.
 		ENavigationObstacleHandle	AttachObstacle(FNavigationObstacleDesc& InOutDesc, const ObjectIdentityType& InOwnerId, const UINT32& InSerial, ENavigationProviderInterface& InProvider);
 		ENavigationObstacleHandle	PublishObstacle(FNavigationObstacleDesc& InOutDesc);
-		// Re-adds the obstacles that belonged to InOwnerId, and adopts unowned ones of the group
+		// Re-adds the obstacles that belonged to InOwnerId, and adopts unowned ones of the profile
 		// that this provider now covers.
 		void						ReplayObstacles(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, const UINT32& InSerial, ENavigationProviderInterface& InProvider);
 		PE_NODISCARD FCrowdBinding*			FindCrowdBinding(const ObjectIdentityType& InRequesterId);
 		PE_NODISCARD const FCrowdBinding*	FindCrowdBinding(const ObjectIdentityType& InRequesterId) const;
 		// The provider died with the old build, so its bindings need a new agent.
 		void						InvalidateCrowdBindings(const ObjectIdentityType& InOwnerId);
+
+		// --- World build pass -------------------------------------------------
+		struct FNavigationWorldBuildState
+		{
+			PWorld*							World = nullptr;
+			UINT32							BatchId = 0;
+			UINT32							Pending = 0;
+			BOOL32							bDirtyDuringBuild = FALSE;
+			EString							LevelStem;
+			ENavigationWorldBuildReason		Reason = ENavigationWorldBuildReason::LOAD;
+			FNavigationWorldBuildReport		Report;
+			// Editor input watch: the revision the last completed pass saw and the debounce left.
+			UINT32							LastSeenInputRevision = 0;
+			FLOAT							RebuildCountdown = 0.0f;
+			BOOL32							bWatchingInput = FALSE;
+		};
+		// A LOAD/RUNTIME pass waiting for the asset queue to drain (once for the whole level).
+		struct FPendingWorldBuild
+		{
+			PWorld*							World = nullptr;
+			ENavigationWorldBuildReason		Reason = ENavigationWorldBuildReason::LOAD;
+			EString							LevelStem;
+			FLOAT							WaitedSeconds = 0.0f;
+		};
+
+		// Queues a bake; a non zero batch id ties it to a world build pass.
+		BOOL32	RequestBuildInternal(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry, const UINT32& InBatchId);
+		// Enumerates the world's primary owners and submits one import or bake per profile.
+		BOOL32	StartWorldBuild(PWorld& InWorld, ENavigationWorldBuildReason InReason, const EString& InLevelStem);
+		void	TickPendingWorldBuilds(FLOAT InDeltaTime);
+		// Editor only: turns a changed input revision into one debounced world build.
+		void	TickWorldBuildInputs(FLOAT InDeltaTime);
+		// Accounts one finished (or discarded) batch job and completes the pass at zero.
+		void	CompleteWorldBuildJob(const FBakeResult& InResult, BOOL32 bSucceeded, BOOL32 bDiscarded);
+		void	FinishWorldBuild(FNavigationWorldBuildState& InOutState);
+		PE_NODISCARD FNavigationWorldBuildState* FindWorldBuild(const PWorld* InWorld);
+		PE_NODISCARD const FNavigationWorldBuildState* FindWorldBuild(const PWorld* InWorld) const;
 		void				BakeWorkerLoop();
 		void				StopBakeWorker();
 
@@ -244,6 +340,11 @@ namespace PigeonEngine
 			UINT32			Revision = 1u;
 		};
 		TArray<FNavigationWorldRevision>	WorldInputRevisions;
+		// One record per world that ran a build pass, kept for the editor input watch and the
+		// panel report; the pending list holds passes still waiting for the asset queue.
+		TArray<FNavigationWorldBuildState>	WorldBuilds;
+		TArray<FPendingWorldBuild>			PendingWorldBuilds;
+		UINT32								NextWorldBuildBatchId = 1;
 
 		EThread					BakeThread;
 		EEvent					BakeWakeEvent;

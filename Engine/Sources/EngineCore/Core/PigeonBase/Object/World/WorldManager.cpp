@@ -3,6 +3,7 @@
 #include "World.h"
 #include "../../Development/Message/Message.h"
 #include <Development/EditorLogManager.h>
+#include <Navigation/NavigationManager.h>
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
 #include <Editor/Panels/WorldOutlinePanel.h>
@@ -23,6 +24,54 @@ namespace PigeonEngine
 	{
 		PE_LOG_LOG(EString("[TestMessage] ") + InMessage);
 	}
+
+	// Level stem, derived the same way PWorld::SaveLevel derives the header name. The world
+	// build uses it for generated navmesh asset names (<stem>_NavMesh, <stem>_<profile>_NavMesh).
+	static EString MakeLevelStem(const EString& InLevelPath)
+	{
+		EString LevelStem = InLevelPath;
+		const INT32 LastSlash = LevelStem.RightFind(EString(PE_TEXT("/")));
+		if (LastSlash >= 0)
+		{
+			LevelStem = LevelStem.Right(LevelStem.Length() - static_cast<UINT32>(LastSlash) - 1u);
+		}
+		const INT32 LastDot = LevelStem.RightFind(EString(PE_TEXT(".")));
+		if (LastDot > 0)
+		{
+			LevelStem = LevelStem.Left(static_cast<UINT32>(LastDot));
+		}
+		return LevelStem;
+	}
+
+	// A loaded level builds all of its navmesh profiles in one pass. The manager waits for the
+	// asset queue once, then imports assigned assets and bakes the profiles without one.
+	static void RequestNavigationBuildOnLevelLoad(PWorld* InWorld)
+	{
+		if (!InWorld)
+		{
+			return;
+		}
+		ENavigationManager* Navigation = ENavigationManager::GetManagerSingleton();
+#if ENGINE_EDITOR_ONLY
+		Navigation->RequestWorldBuild(*InWorld, ENavigationManager::ENavigationWorldBuildReason::LOAD);
+#else
+		Navigation->RequestWorldBuild(*InWorld, ENavigationManager::ENavigationWorldBuildReason::RUNTIME);
+#endif
+	}
+
+#if ENGINE_EDITOR_ONLY
+	// Save = build paths + save: every profile is baked from the world and its asset written, so
+	// the level and the files it references describe the same world.
+	static void BuildNavigationForSave(PWorld* InWorld, const EString& InLevelPath)
+	{
+		if (!InWorld)
+		{
+			return;
+		}
+		ENavigationManager::FNavigationWorldBuildReport Report;
+		ENavigationManager::GetManagerSingleton()->BuildWorldSynchronously(*InWorld, MakeLevelStem(InLevelPath), Report);
+	}
+#endif
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
@@ -46,6 +95,7 @@ namespace PigeonEngine
 	{
 		if(this->World)
 		{
+			ENavigationManager::GetManagerSingleton()->NotifyWorldDestroyed(this->World);
 			this->World->Destroy();
 			this->World = nullptr;
 		}
@@ -67,6 +117,7 @@ namespace PigeonEngine
 		{
 			CurrentLevelPath = DefaultLevelPath;
 			LevelRevision += 1u;
+			RequestNavigationBuildOnLevelLoad(this->World);
 		}
 		else
 		{
@@ -79,6 +130,7 @@ namespace PigeonEngine
 	{
 		if(this->World)
 		{
+			ENavigationManager::GetManagerSingleton()->NotifyWorldDestroyed(this->World);
 			this->World->Destroy();
 			this->World = nullptr;
 		}
@@ -155,9 +207,9 @@ namespace PigeonEngine
 			return FALSE;
 		}
 #if ENGINE_EDITOR_ONLY
-		// Before the serializer walks the properties: an unnamed baked navmesh picks up the
-		// convention name here, so the saved file carries the reference.
-		AutoAssignNavMeshAssetsOnSave(InPath);
+		// Before the serializer walks the properties: every profile is baked and its asset
+		// written, so the saved file's references match the world being saved.
+		BuildNavigationForSave(this->World, InPath);
 #endif
 		if (!this->World->SaveLevel(InPath))
 		{
@@ -186,6 +238,8 @@ namespace PigeonEngine
 		{
 		case ELevelRequestType::NEW:
 			this->World->ClearLevelActors();
+			// The previous level's build pass and input watch do not describe this empty world.
+			ENavigationManager::GetManagerSingleton()->NotifyWorldDestroyed(this->World);
 #if ENGINE_EDITOR_ONLY
 			EEditorWorldContext::ClearSelection(this->World);
 #endif
@@ -200,9 +254,8 @@ namespace PigeonEngine
 			break;
 		case ELevelRequestType::SAVE:
 #if ENGINE_EDITOR_ONLY
-			// Same contract as SaveLevelNow: the saved file carries a navmesh reference for
-			// every baked, unnamed navmesh component.
-			AutoAssignNavMeshAssetsOnSave(Path);
+			// Same contract as SaveLevelNow: every profile is rebuilt and its asset written.
+			BuildNavigationForSave(this->World, Path);
 #endif
 			if (this->World->SaveLevel(Path))
 			{
@@ -219,6 +272,10 @@ namespace PigeonEngine
 				CurrentLevelPath = Path;
 				LevelRevision += 1u;
 				bLevelDirty = FALSE;
+				// The new level's profiles replace whatever the previous one left behind; one
+				// pass imports their assets and bakes the profiles without one.
+				ENavigationManager::GetManagerSingleton()->NotifyWorldDestroyed(this->World);
+				RequestNavigationBuildOnLevelLoad(this->World);
 #if ENGINE_EDITOR_ONLY
 				ELevelPanel::MarkLevelListDirty();
 #endif
@@ -297,47 +354,6 @@ namespace PigeonEngine
 		RequestNewLevel();
 	}
 
-	void EWorldManager::AutoAssignNavMeshAssetsOnSave(const EString& InLevelPath)
-	{
-		if (!this->World)
-		{
-			return;
-		}
-		// The convention name is <LevelStem>_NavMesh, derived the same way PWorld::SaveLevel
-		// derives the level name it writes into the file header.
-		EString LevelStem = InLevelPath;
-		const INT32 LastSlash = LevelStem.RightFind(EString(PE_TEXT("/")));
-		if (LastSlash >= 0)
-		{
-			LevelStem = LevelStem.Right(LevelStem.Length() - static_cast<UINT32>(LastSlash) - 1u);
-		}
-		const INT32 LastDot = LevelStem.RightFind(EString(PE_TEXT(".")));
-		if (LastDot > 0)
-		{
-			LevelStem = LevelStem.Left(static_cast<UINT32>(LastDot));
-		}
-		if (LevelStem.Length() == 0u)
-		{
-			return;
-		}
-		for (PActor* Actor : this->World->GetAllActors())
-		{
-			const TArray<PNavMeshComponent*> NavComponents = Actor->GetComponents<PNavMeshComponent>();
-			for (UINT32 Index = 0u, Num = NavComponents.Num<UINT32>(); Index < Num; Index++)
-			{
-				PNavMeshComponent* NavComponent = NavComponents[Index];
-				if (!NavComponent)
-				{
-					continue;
-				}
-				EString AssignError;
-				if (!NavComponent->AutoAssignNamedNavMeshAsset(LevelStem, AssignError))
-				{
-					PE_LOG_WARN(EString(PE_TEXT("Level save: navmesh auto-assign failed on ")) + POBJ_DEBUGNAME_GET(Actor) + EString(PE_TEXT(": ")) + AssignError);
-				}
-			}
-		}
-	}
 
 #endif
 

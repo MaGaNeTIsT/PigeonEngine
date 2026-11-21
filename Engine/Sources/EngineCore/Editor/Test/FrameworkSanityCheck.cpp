@@ -2580,30 +2580,11 @@ namespace PigeonEngine
 		return bReloaded;
 	}
 
+	// The overwrite flag on CreateNavMeshAsset: the level save pass writes every profile's asset
+	// with overwrite allowed, while a manual save refuses to clobber an existing file.
 	static BOOL32 CheckNavMeshSaveAutoAssign()
 	{
 		const EString AssetPath(EBaseSettings::ENGINE_NAV_MESH_PATH);
-
-		// A component with no published bake takes no convention name and writes no file:
-		// a fresh checkout loads the level and bakes, or the author names the asset.
-		PSanityLevelWorld* World = new PSanityLevelWorld();
-		World->Init();
-		PActor* Actor = new PActor();
-		POBJ_DEBUGNAME_SET(Actor, "SanityNavAutoActor");
-		World->AddActor(Actor);
-		PNavMeshComponent* NavComponent = new PNavMeshComponent();
-		POBJ_DEBUGNAME_SET(NavComponent, "SanityNavAutoComponent");
-		Actor->AddComponent(NavComponent);
-		EString SkipError;
-		const BOOL32 bSkippedWithoutBuild = NavComponent->AutoAssignNamedNavMeshAsset(EString(PE_TEXT("Sanity_Auto")), SkipError);
-		const BOOL32 bNoFileWritten = !EFileHelper::IsFileExists(MakeAssetFullPathName(AssetPath, EString(PE_TEXT("Sanity_Auto_NavMesh"))));
-		const BOOL32 bNameStillEmpty = (NavComponent->GetNavMeshAssetName().Length() == 0u);
-		World->DestroyActor(Actor);
-		World->FlushPendingDestroy();
-		World->Destroy();
-
-		// The overwrite flag on CreateNavMeshAsset: refused without it, allowed with it, and
-		// the reload chain behind the overwrite still publishes the newest bytes.
 		const EString AssetName(PE_TEXT("Sanity_NavMeshAutoAssign"));
 		const EString FullPathName = MakeAssetFullPathName(AssetPath, AssetName);
 		EFileHelper::DeleteFile(FullPathName);
@@ -2635,14 +2616,10 @@ namespace PigeonEngine
 
 		EFileHelper::DeleteFile(FullPathName);
 
-		const BOOL32 bOk = (bSkippedWithoutBuild && bNoFileWritten && bNameStillEmpty &&
-			bFirstSaved && bOverwriteRefused && bOverwritten && bOverwriteContent) ? TRUE : FALSE;
+		const BOOL32 bOk = (bFirstSaved && bOverwriteRefused && bOverwritten && bOverwriteContent) ? TRUE : FALSE;
 		if (!bOk)
 		{
-			PE_LOG_ERROR(EString(PE_TEXT("navmesh auto-assign detail: skipped=")) + EString::FromInt(bSkippedWithoutBuild) +
-				EString(PE_TEXT(" noFile=")) + EString::FromInt(bNoFileWritten) +
-				EString(PE_TEXT(" nameEmpty=")) + EString::FromInt(bNameStillEmpty) +
-				EString(PE_TEXT(" firstSaved=")) + EString::FromInt(bFirstSaved) +
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh asset overwrite detail: firstSaved=")) + EString::FromInt(bFirstSaved) +
 				EString(PE_TEXT(" refused=")) + EString::FromInt(bOverwriteRefused) +
 				EString(PE_TEXT(" overwritten=")) + EString::FromInt(bOverwritten) +
 				EString(PE_TEXT(" content=")) + EString::FromInt(bOverwriteContent) +
@@ -2918,7 +2895,7 @@ namespace PigeonEngine
 	// hands to a backend. The volume component has no mesh requirement, so this runs without
 	// any asset data.
 	static PNavMeshBoundsComponent* SpawnSanityBoundsVolume(PWorld* InWorld, TArray<PActor*>& InOutActors
-		, const Vector3& InLocation, const Vector3& InExtent, const EString& InNavMeshName, const Quaternion& InRotation = Quaternion::Identity())
+		, const Vector3& InLocation, const Vector3& InExtent, const TArray<EString>& InSupportedProfiles, const Quaternion& InRotation = Quaternion::Identity())
 	{
 		PActor* Actor = new PActor();
 		InWorld->AddActor(Actor);
@@ -2929,8 +2906,18 @@ namespace PigeonEngine
 		Bounds->SetComponentWorldLocation(InLocation);
 		Bounds->SetComponentWorldRotation(InRotation);
 		Bounds->SetExtent(InExtent);
-		Bounds->SetNavMeshName(InNavMeshName);
+		Bounds->SetSupportedNavMeshes(InSupportedProfiles);
 		return Bounds;
+	}
+
+	static TArray<EString> MakeSanityProfileList(const CHAR* InProfile)
+	{
+		TArray<EString> Profiles;
+		if (InProfile && (InProfile[0] != '\0'))
+		{
+			Profiles.Add(EString(InProfile));
+		}
+		return Profiles;
 	}
 
 	static BOOL32 CheckNavMeshVolumeCollection()
@@ -2939,33 +2926,41 @@ namespace PigeonEngine
 		World->Init();
 		TArray<PActor*> Actors;
 
-		// Two overlapping default-group volumes, one named-group volume, one volume with a zero
-		// axis and one rotated volume of its own group.
-		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), EString());
-		SpawnSanityBoundsVolume(World, Actors, Vector3(150.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), EString());
-		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), EString(PE_TEXT("Small")));
-		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 50.0f, 100.0f), EString());
+		// Two volumes that support every profile (the usual case: one volume set shared by the
+		// default agent and a large one), one volume restricted to "Small", one volume with a
+		// zero axis and one rotated volume restricted to "Rotated".
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), MakeSanityProfileList(""));
+		SpawnSanityBoundsVolume(World, Actors, Vector3(150.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), MakeSanityProfileList(""));
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), MakeSanityProfileList("Small"));
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 50.0f, 100.0f), MakeSanityProfileList(""));
 		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 10.0f, 10.0f)
-			, EString(PE_TEXT("Rotated")), MakeQuaternion(Euler(0.0f, 45.0f, 0.0f)));
+			, MakeSanityProfileList("Rotated"), MakeQuaternion(Euler(0.0f, 45.0f, 0.0f)));
 
 		TArray<EBoundAABB> DefaultVolumes;
 		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(), DefaultVolumes);
-		// The zero-axis volume contributes nothing, so the default group has exactly the two
-		// overlapping boxes.
+		// The zero-axis volume contributes nothing and the Small-only volume does not support the
+		// default profile, so only the two shared boxes remain.
 		const BOOL32 bDefaultCount = (DefaultVolumes.Num<UINT32>() == 2u) ? TRUE : FALSE;
 
+		// The key property of the model: the Small profile gets the two shared volumes AND its own
+		// restricted one, without duplicating a single volume in the level.
 		TArray<EBoundAABB> SmallVolumes;
 		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(PE_TEXT("Small")), SmallVolumes);
-		const BOOL32 bGroupFilter = (SmallVolumes.Num<UINT32>() == 1u) ? TRUE : FALSE;
+		const BOOL32 bSharedCoverage = (SmallVolumes.Num<UINT32>() == 3u) ? TRUE : FALSE;
 
 		// A 45 degree yawed 200 x 20 x 20 box: rotating a long box shortens its x reach but the
 		// world bound has to grow along z, which is what proves the rotation was folded in.
 		TArray<EBoundAABB> RotatedVolumes;
 		ENavigationGeometryCollector::CollectVolumeBounds(*World, EString(PE_TEXT("Rotated")), RotatedVolumes);
-		const BOOL32 bRotation = ((RotatedVolumes.Num<UINT32>() == 1u)
-			&& (RotatedVolumes[0].IsValid)
-			&& (RotatedVolumes[0].AABBMin.z < -70.0f)
-			&& (RotatedVolumes[0].AABBMax.z > 70.0f)) ? TRUE : FALSE;
+		BOOL32 bRotation = FALSE;
+		for (UINT32 Index = 0u, Num = RotatedVolumes.Num<UINT32>(); Index < Num; Index++)
+		{
+			if ((RotatedVolumes[Index].AABBMax.x < 90.0f) && (RotatedVolumes[Index].AABBMin.z < -70.0f))
+			{
+				bRotation = TRUE;
+				break;
+			}
+		}
 
 		// The collector reports the union of the volumes as the geometry bounds, which is what a
 		// backend uses to size its grid.
@@ -2985,6 +2980,22 @@ namespace PigeonEngine
 		const BOOL32 bWholeWorld = ((WorldGeometry.Volumes.Num<UINT32>() == 0u)
 			&& (!WorldGeometry.Bounds.IsValid)) ? TRUE : FALSE;
 
+		// The profile support list is a reflected string array, so it has to round trip through
+		// the level serializer like any other property.
+		PNavMeshBoundsComponent* SourceBounds = new PNavMeshBoundsComponent();
+		SourceBounds->SetSupportedNavMeshes(MakeSanityProfileList("Small"));
+		CJsonObject Document;
+		EJsonArchiveWriter Writer(Document);
+		EClassPropertyRegistry::SerializeObject(Writer, GetClassHashCode<PNavMeshBoundsComponent>(), SourceBounds);
+		PNavMeshBoundsComponent* LoadedBounds = new PNavMeshBoundsComponent();
+		EJsonArchiveReader Reader(Document);
+		EClassPropertyRegistry::SerializeObject(Reader, GetClassHashCode<PNavMeshBoundsComponent>(), LoadedBounds);
+		const TArray<EString>& LoadedProfiles = LoadedBounds->GetSupportedNavMeshes();
+		const BOOL32 bSupportRoundTrip = ((LoadedProfiles.Num<UINT32>() == 1u)
+			&& (LoadedProfiles[0] == EString(PE_TEXT("Small")))) ? TRUE : FALSE;
+		SourceBounds->Destroy();
+		LoadedBounds->Destroy();
+
 		for (UINT32 Index = 0u, Num = Actors.Num<UINT32>(); Index < Num; Index++)
 		{
 			World->DestroyActor(Actors[Index]);
@@ -2992,14 +3003,15 @@ namespace PigeonEngine
 		World->FlushPendingDestroy();
 		World->Destroy();
 
-		const BOOL32 bOk = (bDefaultCount && bGroupFilter && bRotation && bUnion && bWholeWorld) ? TRUE : FALSE;
+		const BOOL32 bOk = (bDefaultCount && bSharedCoverage && bRotation && bUnion && bWholeWorld && bSupportRoundTrip) ? TRUE : FALSE;
 		if (!bOk)
 		{
 			PE_LOG_ERROR(EString(PE_TEXT("navmesh volume detail: defaultCount=")) + EString::FromInt(DefaultVolumes.Num<UINT32>())
-				+ EString(PE_TEXT(" groupFilter=")) + EString::FromInt(SmallVolumes.Num<UINT32>())
+				+ EString(PE_TEXT(" sharedCoverage=")) + EString::FromInt(SmallVolumes.Num<UINT32>())
 				+ EString(PE_TEXT(" rotation=")) + EString::FromInt(bRotation)
 				+ EString(PE_TEXT(" union=")) + EString::FromInt(bUnion)
-				+ EString(PE_TEXT(" wholeWorld=")) + EString::FromInt(bWholeWorld));
+				+ EString(PE_TEXT(" wholeWorld=")) + EString::FromInt(bWholeWorld)
+				+ EString(PE_TEXT(" supportRoundTrip=")) + EString::FromInt(bSupportRoundTrip));
 		}
 		return bOk;
 	}
@@ -3011,6 +3023,103 @@ namespace PigeonEngine
 		Geometry.Bounds = EBoundAABB(Vector3(InMinX, -50.0f, InMinZ), Vector3(InMaxX, 400.0f, InMaxZ), TRUE);
 		AddSanityNavigationQuad(Geometry, InMinX, InMaxX, InMinZ, InMaxZ, ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
 		return Geometry;
+	}
+
+	// Two navmesh profiles of one level share the same volume set, so a large agent and the
+	// default agent are two bakes of one world, not two duplicated level setups.
+	static BOOL32 CheckNavMeshProfileCoverage()
+	{
+		PSanityLevelWorld* World = new PSanityLevelWorld();
+		World->Init();
+		TArray<PActor*> Actors;
+
+		PActor* DefaultOwnerActor = new PActor();
+		World->AddActor(DefaultOwnerActor);
+		Actors.Add(DefaultOwnerActor);
+		PNavMeshComponent* DefaultOwner = new PNavMeshComponent();
+		DefaultOwnerActor->AddComponent(DefaultOwner);
+
+		PActor* LargeOwnerActor = new PActor();
+		World->AddActor(LargeOwnerActor);
+		Actors.Add(LargeOwnerActor);
+		PNavMeshComponent* LargeOwner = new PNavMeshComponent();
+		LargeOwner->SetNavMeshName(EString(PE_TEXT("Large")));
+		LargeOwnerActor->AddComponent(LargeOwner);
+
+		// One shared volume for both agents and one volume only the large agent supports.
+		SpawnSanityBoundsVolume(World, Actors, Vector3(0.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), MakeSanityProfileList(""));
+		SpawnSanityBoundsVolume(World, Actors, Vector3(400.0f, 0.0f, 0.0f), Vector3(100.0f, 50.0f, 100.0f), MakeSanityProfileList("Large"));
+
+		const TArray<EBoundAABB> DefaultVolumes = DefaultOwner->CollectBakeVolumesInWorld();
+		const TArray<EBoundAABB> LargeVolumes = LargeOwner->CollectBakeVolumesInWorld();
+		const BOOL32 bShared = ((DefaultVolumes.Num<UINT32>() == 1u) && (LargeVolumes.Num<UINT32>() == 2u)) ? TRUE : FALSE;
+
+		TArray<PNavMeshComponent*> PrimaryOwners;
+		PNavMeshComponent::CollectPrimaryOwnersInWorld(*World, PrimaryOwners);
+		const BOOL32 bTwoProfiles = (PrimaryOwners.Num<UINT32>() == 2u) ? TRUE : FALSE;
+
+		for (UINT32 Index = 0u, Num = Actors.Num<UINT32>(); Index < Num; Index++)
+		{
+			World->DestroyActor(Actors[Index]);
+		}
+		World->FlushPendingDestroy();
+		World->Destroy();
+
+		const BOOL32 bOk = (bShared && bTwoProfiles) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh profile coverage detail: defaultVolumes=")) + EString::FromInt(DefaultVolumes.Num<UINT32>())
+				+ EString(PE_TEXT(" largeVolumes=")) + EString::FromInt(LargeVolumes.Num<UINT32>())
+				+ EString(PE_TEXT(" profiles=")) + EString::FromInt(PrimaryOwners.Num<UINT32>()));
+		}
+		return bOk;
+	}
+
+	// Writing an already built provider is the save path: the file and the component's asset
+	// reference appear in one step, without a second bake.
+	static BOOL32 CheckNavMeshAssetWrite()
+	{
+		ERecastNavigationProvider* Provider = new ERecastNavigationProvider();
+		ENavigationBuildStats Stats;
+		if (!Provider->Build(MakeSanityFlatGeometry(-200.0f, 200.0f, -200.0f, 200.0f), Stats))
+		{
+			delete Provider;
+			return FALSE;
+		}
+
+		const EString AssetPath(EBaseSettings::ENGINE_NAV_MESH_PATH);
+		const EString AssetName(PE_TEXT("Sanity_ProfileWrite"));
+		const EString FullPathName = MakeAssetFullPathName(AssetPath, AssetName);
+		EFileHelper::DeleteFile(FullPathName);
+
+		PNavMeshComponent* Component = new PNavMeshComponent();
+		Component->SetNavMeshName(EString(PE_TEXT("Large")));
+
+		EString Error;
+		const BOOL32 bFirstWritten = Component->SaveProviderAsAsset(*Provider, AssetName, Stats, Error, FALSE);
+		const BOOL32 bFileExists = (EFileHelper::IsFileExists(FullPathName) != FALSE) ? TRUE : FALSE;
+		// Without overwrite the second write is refused, exactly like the manual save.
+		const BOOL32 bRefused = (Component->SaveProviderAsAsset(*Provider, AssetName, Stats, Error, FALSE) == FALSE) ? TRUE : FALSE;
+		const BOOL32 bOverwritten = Component->SaveProviderAsAsset(*Provider, AssetName, Stats, Error, TRUE);
+		// The component now points at the file, so the next level load imports it.
+		const BOOL32 bNameAssigned = (Component->GetNavMeshAssetName() == AssetName) ? TRUE : FALSE;
+
+		EFileHelper::DeleteFile(FullPathName);
+		Component->Destroy();
+		// Not published, so the provider is still the caller's.
+		delete Provider;
+
+		const BOOL32 bOk = (bFirstWritten && bFileExists && bRefused && bOverwritten && bNameAssigned) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh asset write detail: written=")) + EString::FromInt(bFirstWritten)
+				+ EString(PE_TEXT(" exists=")) + EString::FromInt(bFileExists)
+				+ EString(PE_TEXT(" refused=")) + EString::FromInt(bRefused)
+				+ EString(PE_TEXT(" overwritten=")) + EString::FromInt(bOverwritten)
+				+ EString(PE_TEXT(" nameAssigned=")) + EString::FromInt(bNameAssigned)
+				+ EString(PE_TEXT(" error=[")) + Error + EString(PE_TEXT("]")));
+		}
+		return bOk;
 	}
 
 	// Two providers of different groups must answer only their own group, and the composed
@@ -3876,9 +3985,15 @@ namespace PigeonEngine
 		{
 			FailedCount += 1u;
 		}
-		const BOOL32 bNavMeshAutoAssign = CheckNavMeshSaveAutoAssign();
-		ReportSanityResult(EString(PE_TEXT("navmesh save auto-assign")), bNavMeshAutoAssign);
-		if (!bNavMeshAutoAssign)
+		const BOOL32 bNavMeshAssetOverwrite = CheckNavMeshSaveAutoAssign();
+		ReportSanityResult(EString(PE_TEXT("navmesh asset overwrite")), bNavMeshAssetOverwrite);
+		if (!bNavMeshAssetOverwrite)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshAssetWrite = CheckNavMeshAssetWrite();
+		ReportSanityResult(EString(PE_TEXT("navmesh asset write")), bNavMeshAssetWrite);
+		if (!bNavMeshAssetWrite)
 		{
 			FailedCount += 1u;
 		}
@@ -3909,6 +4024,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshVolumeCoverage = CheckNavMeshVolumeCoverage();
 		ReportSanityResult(EString(PE_TEXT("navmesh volume coverage")), bNavMeshVolumeCoverage);
 		if (!bNavMeshVolumeCoverage)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshProfileCoverage = CheckNavMeshProfileCoverage();
+		ReportSanityResult(EString(PE_TEXT("navmesh profile coverage")), bNavMeshProfileCoverage);
+		if (!bNavMeshProfileCoverage)
 		{
 			FailedCount += 1u;
 		}

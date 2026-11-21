@@ -49,7 +49,6 @@ namespace PigeonEngine
 		virtual void	RemovedFromScene() override;
 
 	protected:
-		ENavigationBuildStats	LastBuildStats;
 		BOOL32					bDebugDrawEnabled = TRUE;
 	};
 

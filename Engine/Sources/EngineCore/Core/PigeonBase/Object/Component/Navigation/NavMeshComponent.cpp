@@ -206,66 +206,6 @@ namespace PigeonEngine
 		AddNavMeshBoolProperty(ClassHash, PE_TEXT("FlipTriangleWinding"), &ENavMeshBuildSettings::bFlipTriangleWinding);
 	}
 
-	// How long the automatic bake waits for the asset queue to drain before it reports an
-	// incomplete mesh instead of waiting forever. Long enough for a level load, short enough
-	// that a permanently pending request does not leave the level without navigation.
-	PE_CONSTEXPR_STATIC FLOAT NavigationAutoBuildWaitSeconds = 30.0f;
-	// A failed automatic attempt (no ground yet, for example) is retried at this interval
-	// rather than every frame: a bake walks the whole world.
-	PE_CONSTEXPR_STATIC FLOAT NavigationAutoBuildRetrySeconds = 1.0f;
-	// An edit bumps the input revision on every frame of a drag; the owner waits this long after
-	// the last change, so dragging a volume produces one bake instead of dozens.
-	PE_CONSTEXPR_STATIC FLOAT NavigationAutoRebuildDebounceSeconds = 0.5f;
-
-	// Walks the same actor/component tree the geometry collector walks to find an owner of the
-	// same group that was created before InComponent. Object ids are allocated in creation
-	// order, so the oldest owner is the deterministic one.
-	static const PNavMeshComponent* FindOlderNavMeshOwnerInComponent(const PActor& InActor
-		, const PSceneComponent& InSceneComponent, const PNavMeshComponent& InComponent)
-	{
-		if (InSceneComponent.GetOwnerActor() != (&InActor))
-		{
-			return nullptr;
-		}
-		const PNavMeshComponent* Other = dynamic_cast<const PNavMeshComponent*>(&InSceneComponent);
-		if ((!!Other) && (Other != (&InComponent)) && (Other->GetNavMeshName() == InComponent.GetNavMeshName())
-			&& (Other->GetUniqueID() < InComponent.GetUniqueID()))
-		{
-			return Other;
-		}
-		const TArray<PSceneComponent*> Children = InSceneComponent.GetChildrenComponents();
-		for (UINT32 ChildIndex = 0u, ChildNum = Children.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
-		{
-			const PSceneComponent* ChildComponent = Children[ChildIndex];
-			if (!!ChildComponent)
-			{
-				if (const PNavMeshComponent* Found = FindOlderNavMeshOwnerInComponent(InActor, *ChildComponent, InComponent))
-				{
-					return Found;
-				}
-			}
-		}
-		return nullptr;
-	}
-
-	static const PNavMeshComponent* FindOlderNavMeshOwner(const PWorld& InWorld, const PNavMeshComponent& InComponent)
-	{
-		const TArray<PActor*> Actors = InWorld.GetAllActors();
-		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
-		{
-			const PActor* Actor = Actors[ActorIndex];
-			if ((!Actor) || (!Actor->GetRootComponent()))
-			{
-				continue;
-			}
-			if (const PNavMeshComponent* Found = FindOlderNavMeshOwnerInComponent(*Actor, *Actor->GetRootComponent(), InComponent))
-			{
-				return Found;
-			}
-		}
-		return nullptr;
-	}
-
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PNavMeshComponent, PNavigationComponent>();
@@ -277,10 +217,11 @@ namespace PigeonEngine
 	PNavMeshComponent::PNavMeshComponent()
 	{
 		POBJ_DEBUGNAME_SET(this, "NavMeshComponent");
-		// The component has per frame work of its own: the automatic publish polls the asset
-		// queue. Requesting it here is what keeps a level that forgot to mark the component
-		// tickable from silently never getting a navmesh.
+#if ENGINE_EDITOR_ONLY
+		// Only the editor wireframe of the owner's own extent runs from a tick; builds are driven
+		// by ENavigationManager's world build pass, so a shipped game does not tick this component.
 		SetIsTickable(TRUE);
+#endif
 	}
 
 	PNavMeshComponent::~PNavMeshComponent()
@@ -320,14 +261,19 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		// A different group means a different set of volumes and possibly a different asset.
+		// A different profile means a different set of volumes and possibly a different asset.
 		NavMeshName = InName;
 		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
 	}
 
 	void PNavMeshComponent::RequestBuildNavigation()
 	{
-		bBuildRequested = TRUE;
+		// Building belongs to the level: ask for the world pass, which covers every profile.
+		PWorld* World = GetWorld();
+		if (World)
+		{
+			ENavigationManager::GetManagerSingleton()->RequestWorldBuild(*World, ENavigationManager::ENavigationWorldBuildReason::EDITOR);
+		}
 	}
 
 	BOOL32 PNavMeshComponent::GetBuildOnBeginPlay() const
@@ -355,6 +301,7 @@ namespace PigeonEngine
 	{
 		return NavMeshAsset;
 	}
+
 	const EString& PNavMeshComponent::GetNavMeshAssetName() const
 	{
 		if (NavMeshAsset)
@@ -371,9 +318,6 @@ namespace PigeonEngine
 			return;
 		}
 		NavMeshAsset = InAsset;
-		// The provider in the manager was built from the previous source, so the next tick has to
-		// publish again. Until then the old provider keeps answering queries.
-		bHasBuilt = FALSE;
 		if (!!InAsset)
 		{
 			PE_LOG_LOG(EString(PE_TEXT("Navigation: using navmesh asset '")) + InAsset->GetAssetFullPathName() + EString(PE_TEXT("'.")));
@@ -411,8 +355,8 @@ namespace PigeonEngine
 				Component->SetNavMeshAsset(CachedAsset);
 				return TRUE;
 			}
-			// One request, issued once. Re-requesting while the first one is still queued would make
-			// a missing file retry and log forever.
+			// One request, issued once. Re-requesting while the first one is still queued would
+			// make a missing file retry and log forever.
 			if (!Component->bAssetRequestIssued)
 			{
 				Component->bAssetRequestIssued = TRUE;
@@ -435,7 +379,7 @@ namespace PigeonEngine
 			// The request finished without producing an asset: the file is missing or was rejected.
 			// Report it once and let the bake path take over.
 			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh asset '")) + FullPathName
-				+ EString(PE_TEXT("' is missing or invalid; the component will bake from the world instead.")));
+				+ EString(PE_TEXT("' is missing or invalid; the level build will bake this profile from the world instead.")));
 			Component->bAssetLoadFailed = TRUE;
 			return TRUE;
 		};
@@ -456,6 +400,11 @@ namespace PigeonEngine
 		SetNavMeshAsset(nullptr);
 	}
 
+	BOOL32 PNavMeshComponent::HasOutstandingAssetRequest() const
+	{
+		return ((NavMeshAssetName.Length() > 0u) && (!NavMeshAsset) && (!bAssetLoadFailed)) ? TRUE : FALSE;
+	}
+
 	EName PNavMeshComponent::GetProviderName() const
 	{
 		return ERecastNavigationProvider::GetProviderName();
@@ -467,6 +416,8 @@ namespace PigeonEngine
 		const PWorld* World = GetWorld();
 		if (World)
 		{
+			// Volumes that support this profile (an empty support list means all profiles), so
+			// one volume set can feed the default agent and a larger one.
 			ENavigationGeometryCollector::CollectVolumeBounds(*World, NavMeshName, Volumes);
 		}
 
@@ -487,44 +438,105 @@ namespace PigeonEngine
 		return Volumes;
 	}
 
+	// Walks the actor/component tree the geometry collector walks. A child actor's components
+	// belong to that actor and are visited through it, so the walk stops at an owner boundary.
+	static void CollectOwnersInComponent(PActor& InActor, PSceneComponent& InSceneComponent, TArray<PNavMeshComponent*>& OutOwners)
+	{
+		if (InSceneComponent.GetOwnerActor() != (&InActor))
+		{
+			return;
+		}
+		if (PNavMeshComponent* Owner = dynamic_cast<PNavMeshComponent*>(&InSceneComponent))
+		{
+			OutOwners.Add(Owner);
+		}
+		const TArray<PSceneComponent*> Children = InSceneComponent.GetChildrenComponents();
+		for (UINT32 ChildIndex = 0u, ChildNum = Children.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
+		{
+			PSceneComponent* ChildComponent = Children[ChildIndex];
+			if (!!ChildComponent)
+			{
+				CollectOwnersInComponent(InActor, *ChildComponent, OutOwners);
+			}
+		}
+	}
+
+	void PNavMeshComponent::CollectPrimaryOwnersInWorld(const PWorld& InWorld, TArray<PNavMeshComponent*>& OutOwners)
+	{
+		TArray<PNavMeshComponent*> AllOwners;
+		const TArray<PActor*> Actors = InWorld.GetAllActors();
+		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
+		{
+			PActor* Actor = Actors[ActorIndex];
+			if ((!Actor) || (!Actor->GetRootComponent()))
+			{
+				continue;
+			}
+			CollectOwnersInComponent(*Actor, *Actor->GetRootComponent(), AllOwners);
+		}
+
+		// One owner per profile: the oldest component publishes, so object id order (creation
+		// order) is the deterministic tie break.
+		for (UINT32 CandidateIndex = 0u, CandidateNum = AllOwners.Num<UINT32>(); CandidateIndex < CandidateNum; CandidateIndex++)
+		{
+			PNavMeshComponent* Candidate = AllOwners[CandidateIndex];
+			BOOL32 bHasOlderOwner = FALSE;
+			for (UINT32 OtherIndex = 0u; OtherIndex < CandidateNum; OtherIndex++)
+			{
+				PNavMeshComponent* Other = AllOwners[OtherIndex];
+				if ((Other != Candidate) && (Other->GetNavMeshName() == Candidate->GetNavMeshName())
+					&& (Other->GetUniqueID() < Candidate->GetUniqueID()))
+				{
+					bHasOlderOwner = TRUE;
+					break;
+				}
+			}
+			if (!bHasOlderOwner)
+			{
+				OutOwners.Add(Candidate);
+			}
+		}
+	}
+
 	BOOL32 PNavMeshComponent::IsPrimaryNavMeshOwner() const
 	{
 		const PWorld* World = GetWorld();
 		if (!World)
 		{
-			// Not in a world; the manager refuses the publish anyway.
+			// Not in a world; nothing can be built or shadowed.
 			return TRUE;
 		}
-		const PNavMeshComponent* OlderOwner = FindOlderNavMeshOwner(*World, *this);
-		if (!OlderOwner)
+		TArray<PNavMeshComponent*> Owners;
+		CollectPrimaryOwnersInWorld(*World, Owners);
+		for (UINT32 Index = 0u, Num = Owners.Num<UINT32>(); Index < Num; Index++)
 		{
-			return TRUE;
+			if (Owners[Index] == this)
+			{
+				return TRUE;
+			}
 		}
 		if (!bWarnedNotPrimary)
 		{
 			bWarnedNotPrimary = TRUE;
-			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh group '")) + NavMeshName
-				+ EString(PE_TEXT("' is owned by '")) + POBJ_DEBUGNAME_GET(OlderOwner)
-				+ EString(PE_TEXT("'), so '")) + POBJ_DEBUGNAME_GET(this)
-				+ EString(PE_TEXT("' will not publish a mesh; one owner per group publishes.")));
+			const PNavMeshComponent* PrimaryOwner = nullptr;
+			for (UINT32 Index = 0u, Num = Owners.Num<UINT32>(); Index < Num; Index++)
+			{
+				if (Owners[Index]->GetNavMeshName() == NavMeshName)
+				{
+					PrimaryOwner = Owners[Index];
+					break;
+				}
+			}
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
+				+ ((NavMeshName.Length() > 0u) ? NavMeshName : EString(PE_TEXT("Default")))
+				+ EString(PE_TEXT("' is already owned by "))
+				+ ((!!PrimaryOwner) ? POBJ_DEBUGNAME_GET(PrimaryOwner) : EString(PE_TEXT("<another component>")))
+				+ EString(PE_TEXT("; this component stays inert.")));
 		}
 		return FALSE;
 	}
 
-	void PNavMeshComponent::PublishProvider(ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats)
-	{
-		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		Manager->RegisterProvider(GetUniqueID(), NavMeshName, InProvider);
-		Manager->SetProviderDebugDrawEnabled(GetUniqueID(), bDebugDrawEnabled);
-		LastBuildStats = InStats;
-	}
-
-	BOOL32 PNavMeshComponent::HasBuiltNavMesh() const
-	{
-		return bHasBuilt;
-	}
-
-	ERecastNavigationProvider* PNavMeshComponent::CreateProvider()
+	ERecastNavigationProvider* PNavMeshComponent::CreateConfiguredProvider() const
 	{
 		ENavigationProviderInterface* CreatedProvider = ENavigationProviderRegistry::Create(GetProviderName());
 		if (!CreatedProvider)
@@ -545,59 +557,11 @@ namespace PigeonEngine
 		return Provider;
 	}
 
-	BOOL32 PNavMeshComponent::StartBakeFromWorld()
-	{
-		PWorld* World = GetWorld();
-		if (!World)
-		{
-			PE_LOG_WARN(EString(PE_TEXT("Navigation: build requested for a navmesh component that is not in a world.")));
-			return FALSE;
-		}
-		if (!IsPrimaryNavMeshOwner())
-		{
-			return FALSE;
-		}
-
-		ERecastNavigationProvider* Provider = CreateProvider();
-		if (!Provider)
-		{
-			return FALSE;
-		}
-
-		// Regions of this group. A named group without any volume would otherwise bake the
-		// whole world into a second navmesh, so it is refused with a message instead.
-		const TArray<EBoundAABB> Volumes = CollectBakeVolumesInWorld();
-		if ((Volumes.Num<UINT32>() == 0u) && (NavMeshName.Length() > 0u))
-		{
-			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh group '")) + NavMeshName
-				+ EString(PE_TEXT("' has no bounds volume, so nothing was baked. Add a PNavMeshBoundsComponent with the same NavMeshName.")));
-			return FALSE;
-		}
-
-		// Collection reads the world, so it stays here; only the Recast part runs on the worker.
-		ENavigationSourceGeometry Geometry;
-		ENavigationGeometryCollector::CollectStaticMeshTriangles(*World, Volumes, BuildSettings.bFlipTriangleWinding, Geometry);
-		// The links belong to this volume, not to the world scan, so they are attached after
-		// collection.
-		Geometry.Links = NavigationLinks;
-
-		if (!ENavigationManager::GetManagerSingleton()->RequestBuild(GetUniqueID(), NavMeshName, Provider, static_cast<ENavigationSourceGeometry&&>(Geometry)))
-		{
-			// Either a bake is already running for this volume (nothing to do) or the provider was
-			// refused; in both cases this one is not needed.
-			delete Provider;
-			return FALSE;
-		}
-		bBakeFailed = FALSE;
-		return TRUE;
-	}
-
-	BOOL32 PNavMeshComponent::BuildFromAsset(ENavigationBuildStats& OutStats)
+	BOOL32 PNavMeshComponent::ImportAssignedAsset(ENavigationBuildStats& OutStats)
 	{
 		OutStats = ENavigationBuildStats();
 
-		// A second owner of the same group must not import its own copy and shadow the primary's
-		// mesh; it stays inert like it does on the bake path.
+		// A non-primary owner importing its own copy would shadow the primary's mesh.
 		if (!IsPrimaryNavMeshOwner())
 		{
 			return FALSE;
@@ -644,7 +608,10 @@ namespace PigeonEngine
 		// An imported mesh never runs the bake path, so its size comes from the blob it was
 		// copied out of. It covers the same tile bytes plus the container header.
 		OutStats.NavMeshBytes = Blob.Num<UINT32>();
-		PublishProvider(Provider, OutStats);
+
+		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
+		Manager->RegisterProvider(GetUniqueID(), NavMeshName, Provider, OutStats);
+		Manager->SetProviderDebugDrawEnabled(GetUniqueID(), bDebugDrawEnabled);
 		PE_LOG_LOG(EString(PE_TEXT("Navigation: imported navmesh asset '")) + NavMeshAsset->GetAssetFullPathName()
 			+ EString(PE_TEXT("' (")) + EString::FromInt(AssetSettings.PolygonCount)
 			+ EString(PE_TEXT(" polygons, ")) + EString::FromInt(AssetSettings.TileCount)
@@ -654,215 +621,15 @@ namespace PigeonEngine
 
 	BOOL32 PNavMeshComponent::BuildNavigation(ENavigationBuildStats& OutStats)
 	{
-		// The shipped path first: a level that carries a baked mesh never pays for a bake, and a
-		// mesh that fails to import falls through to the bake instead of leaving the level without
-		// navigation.
-		if ((!!NavMeshAsset) && (BuildFromAsset(OutStats)))
-		{
-			return TRUE;
-		}
-
-		// The world path is asynchronous: this only queues it. Returns FALSE because no provider is
-		// live yet; the manager publishes it and Tick reports it.
 		OutStats = ENavigationBuildStats();
-		StartBakeFromWorld();
+		PWorld* World = GetWorld();
+		if (!World)
+		{
+			return FALSE;
+		}
+		// One pass builds every profile of the level; the result is reported by the manager.
+		ENavigationManager::GetManagerSingleton()->RequestWorldBuild(*World, ENavigationManager::ENavigationWorldBuildReason::EDITOR);
 		return FALSE;
-	}
-
-	void PNavMeshComponent::RemovedFromScene()
-	{
-		// The base unregisters the provider. A component that is added again (a level actor
-		// removed and re-added, or a scene exit without destruction) has to publish a new mesh,
-		// so the begin-play path must see an unbuilt component and start from a clean wait.
-		bHasBuilt = FALSE;
-		bBakeFailed = FALSE;
-		WaitedSeconds = 0.0f;
-		NextAttemptSeconds = 0.0f;
-		bHasSeenInputRevision = FALSE;
-		PendingRebuildSeconds = 0.0f;
-		PNavigationComponent::RemovedFromScene();
-	}
-
-	void PNavMeshComponent::Tick(FLOAT InDeltaTime)
-	{
-		PSceneComponent::Tick(InDeltaTime);
-
-		// The manager publishes a finished bake before the world ticks, so a provider that became
-		// ready this frame is already answering queries.
-		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		const ENavigationBuildStateType BuildState = Manager->GetBuildState(GetUniqueID());
-		if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_READY)
-		{
-			// Also after a rebuild: the panel shows the newest mesh, not the first one.
-			bHasBuilt = TRUE;
-			LastBuildStats = Manager->GetBuildStats(GetUniqueID());
-			bBuildRequested = FALSE;
-			bBakeFailed = FALSE;
-		}
-		else if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_FAILED)
-		{
-			bBuildRequested = FALSE;
-			bBakeFailed = TRUE;
-		}
-
-		if (bBuildRequested)
-		{
-			// An explicit rebuild always comes from the world: the button exists to pick up geometry
-			// changes, which the asset cannot know about. It is queued, not executed here.
-			bBuildRequested = FALSE;
-			StartBakeFromWorld();
-			return;
-		}
-
-		if ((bBuildOnBeginPlay) && (!bHasBuilt))
-		{
-			TryBuildOnBeginPlay(InDeltaTime);
-		}
-
-#if ENGINE_EDITOR_ONLY
-		// Authored inputs (bounds volumes, settings, links) changed. The debounce turns a drag
-		// into a single rebuild; runtime builds stay on the explicit paths above.
-		UpdateAutoRebuild(InDeltaTime);
-#endif
-	}
-
-#if ENGINE_EDITOR_ONLY
-	void PNavMeshComponent::UpdateAutoRebuild(FLOAT InDeltaTime)
-	{
-		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		const UINT32 Revision = Manager->GetNavigationInputRevision(GetWorld());
-		if (!bHasSeenInputRevision)
-		{
-			// The first tick only records the revision: loading a level adds volumes, and that
-			// must not schedule a rebuild of the mesh the level is about to import.
-			bHasSeenInputRevision = TRUE;
-			LastSeenInputRevision = Revision;
-			return;
-		}
-		if (Revision != LastSeenInputRevision)
-		{
-			LastSeenInputRevision = Revision;
-			// Restart the countdown on every change, so a drag produces one bake at its end.
-			PendingRebuildSeconds = NavigationAutoRebuildDebounceSeconds;
-			return;
-		}
-		if (PendingRebuildSeconds <= 0.0f)
-		{
-			return;
-		}
-		PendingRebuildSeconds -= InDeltaTime;
-		if (PendingRebuildSeconds > 0.0f)
-		{
-			return;
-		}
-		PendingRebuildSeconds = 0.0f;
-
-		// Begin-play owns the first build, and a non-primary owner publishes nothing at all.
-		if ((!bHasBuilt) || (!IsPrimaryNavMeshOwner()))
-		{
-			return;
-		}
-		if (Manager->GetBuildState(GetUniqueID()) == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
-		{
-			// Let the running bake finish; the next input change schedules the following one.
-			return;
-		}
-		StartBakeFromWorld();
-	}
-
-	BOOL32 PNavMeshComponent::IsRebuildPending() const
-	{
-		return (PendingRebuildSeconds > 0.0f) ? TRUE : FALSE;
-	}
-#endif
-
-	void PNavMeshComponent::TryBuildOnBeginPlay(FLOAT InDeltaTime)
-	{
-		// A requested asset is part of the load queue, but its completion callback (the deferred
-		// apply that assigns it) can run a frame after the queue drains. Waiting for that frame
-		// prevents baking a mesh the asset was about to replace.
-		const BOOL32 bAssetOutstanding = ((NavMeshAssetName.Length() > 0u) && (!NavMeshAsset) && (!bAssetLoadFailed)) ? TRUE : FALSE;
-		if (bAssetOutstanding)
-		{
-			return;
-		}
-
-		WaitedSeconds += InDeltaTime;
-		if (WaitedSeconds < NextAttemptSeconds)
-		{
-			return;
-		}
-
-		// Baking before the static mesh assets are loaded produces a navmesh with holes, and the
-		// cold data of a mesh component is null until its request finishes. The queue is the only
-		// signal available, so it gates the first bake.
-		const UINT32 PendingNum = EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum();
-		const BOOL32 bQueueDrained = (PendingNum == 0u);
-		const BOOL32 bWaitExpired = (WaitedSeconds >= NavigationAutoBuildWaitSeconds);
-		if ((!bQueueDrained) && (!bWaitExpired))
-		{
-			return;
-		}
-
-		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		if (Manager->GetBuildState(GetUniqueID()) == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
-		{
-			// A queued bake is in flight; Tick reports the result.
-			return;
-		}
-
-		if (!!NavMeshAsset)
-		{
-			// Importing an asset is a memory copy and finishes the publish right here.
-			ENavigationBuildStats AssetStats;
-			if (BuildFromAsset(AssetStats))
-			{
-				bHasBuilt = TRUE;
-				return;
-			}
-		}
-
-		if (bBakeFailed)
-		{
-			// The last queued bake produced nothing. Retrying only helps while the asset queue is
-			// still busy; otherwise the level has nothing rasterizable and a manual rebuild is the
-			// only way forward.
-			if (PendingNum == 0u)
-			{
-				bHasBuilt = TRUE;
-				PE_LOG_WARN(EString(PE_TEXT("Navigation: no navmesh could be built from the current world; use Rebuild From World after adding walkable geometry.")));
-				return;
-			}
-			NextAttemptSeconds = WaitedSeconds + NavigationAutoBuildRetrySeconds;
-			return;
-		}
-
-		ENavigationBuildStats Stats;
-		if (!BuildNavigation(Stats))
-		{
-			// Either the bake was queued (the usual case) or nothing could be collected. Both are
-			// observed through the build state on the following ticks.
-			return;
-		}
-		if (Stats.SkippedMeshCount == 0u)
-		{
-			bHasBuilt = TRUE;
-			return;
-		}
-		if (PendingNum == 0u)
-		{
-			// Nothing is loading any more, so the components that were skipped are not going to
-			// recover by themselves. Keep the incomplete mesh and let the warning say so; a manual
-			// rebuild picks up whatever was fixed.
-			bHasBuilt = TRUE;
-			PE_LOG_WARN(EString(PE_TEXT("Navigation: automatic bake kept a mesh with "))
-				+ EString::FromInt(Stats.SkippedMeshCount)
-				+ EString(PE_TEXT(" skipped static mesh components; rebuild manually once they load.")));
-			return;
-		}
-		// Something is still loading: bake again shortly instead of freezing the holes into the
-		// navmesh for the rest of the session.
-		NextAttemptSeconds = WaitedSeconds + NavigationAutoBuildRetrySeconds;
 	}
 
 #if ENGINE_EDITOR_ONLY
@@ -879,7 +646,7 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
-		ERecastNavigationProvider* Provider = CreateProvider();
+		ERecastNavigationProvider* Provider = CreateConfiguredProvider();
 		if (!Provider)
 		{
 			return nullptr;
@@ -887,7 +654,7 @@ namespace PigeonEngine
 		const TArray<EBoundAABB> Volumes = CollectBakeVolumesInWorld();
 		if ((Volumes.Num<UINT32>() == 0u) && (NavMeshName.Length() > 0u))
 		{
-			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh group '")) + NavMeshName
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '")) + NavMeshName
 				+ EString(PE_TEXT("' has no bounds volume; the bake was skipped.")));
 			delete Provider;
 			return nullptr;
@@ -929,14 +696,57 @@ namespace PigeonEngine
 		SetNavMeshAsset(ReloadedAsset);
 
 		ENavigationBuildStats Stats;
-		if (!BuildFromAsset(Stats))
+		if (!ImportAssignedAsset(Stats))
 		{
-			bHasBuilt = FALSE;
-			OutError = EString(PE_TEXT("Reloaded navmesh asset has no usable data; the world bake will run instead."));
+			OutError = EString(PE_TEXT("Reloaded navmesh asset has no usable data; the next level build will bake this profile from the world."));
 			LastAssetError = OutError;
 			return FALSE;
 		}
-		bHasBuilt = TRUE;
+		return TRUE;
+	}
+
+	BOOL32 PNavMeshComponent::SaveProviderAsAsset(ENavigationProviderInterface& InProvider, const EString& InAssetName,
+		const ENavigationBuildStats& InStats, EString& OutError, const BOOL32& bInAllowOverwrite)
+	{
+		OutError = EString();
+		LastAssetError = EString();
+		if (InAssetName.Length() == 0u)
+		{
+			OutError = EString(PE_TEXT("Enter a name for the navmesh asset first."));
+			LastAssetError = OutError;
+			return FALSE;
+		}
+
+		TArray<UINT8> Blob;
+		if (!InProvider.ExportData(Blob))
+		{
+			OutError = EString(PE_TEXT("Baked navmesh could not be exported."));
+			LastAssetError = OutError;
+			return FALSE;
+		}
+
+		FNavMeshAssetSettings Settings;
+		Settings.ProviderName = GetProviderName().ToString();
+		Settings.BuildSettings = BuildSettings;
+		Settings.Bounds = InProvider.GetBounds();
+		Settings.PolygonCount = InStats.PolygonCount;
+		Settings.TileCount = InStats.TileCount;
+
+		const ENavMeshAsset* SavedAsset = nullptr;
+		if (!ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
+			InAssetName, Settings, Blob, EString(EBaseSettings::ENGINE_NAV_MESH_PATH), SavedAsset, OutError, bInAllowOverwrite))
+		{
+			LastAssetError = OutError;
+			return FALSE;
+		}
+
+		// Assigned directly instead of through SetNavMeshAsset: that setter logs the load path,
+		// and this is a write. The asset manager owns the object; the component only points at it.
+		NavMeshAsset = SavedAsset;
+		NavMeshAssetName = InAssetName;
+		// The browser only rescans after its own create/rename/delete actions, so a bake has to
+		// ask for one explicitly.
+		EAssetManager::GetManagerSingleton()->RequestContentRefresh();
 		return TRUE;
 	}
 
@@ -944,15 +754,9 @@ namespace PigeonEngine
 	{
 		OutError = EString();
 		LastAssetError = EString();
-		if (InAssetName.Length() <= 0u)
-		{
-			OutError = EString(PE_TEXT("Enter a name for the navmesh asset first."));
-			LastAssetError = OutError;
-			return FALSE;
-		}
 
-		// Deliberately synchronous: saving is an explicit editor action, and it has to publish the
-		// same bytes the file holds.
+		// Deliberately synchronous: this manual action has to publish the same bytes the file
+		// holds. The level-wide path is Build Navigation / level save.
 		ENavigationBuildStats Stats;
 		ERecastNavigationProvider* Provider = BakeProviderSynchronously(Stats);
 		if (!Provider)
@@ -962,86 +766,15 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		TArray<UINT8> Blob;
-		if (!Provider->ExportData(Blob))
+		if (!SaveProviderAsAsset(*Provider, InAssetName, Stats, OutError, bInAllowOverwrite))
 		{
 			delete Provider;
-			OutError = EString(PE_TEXT("Baked navmesh could not be exported."));
-			LastAssetError = OutError;
 			return FALSE;
 		}
 
-		FNavMeshAssetSettings Settings;
-		Settings.ProviderName = GetProviderName().ToString();
-		Settings.BuildSettings = BuildSettings;
-		Settings.Bounds = Provider->GetBounds();
-		Settings.PolygonCount = Stats.PolygonCount;
-		Settings.TileCount = Stats.TileCount;
-
-		const ENavMeshAsset* SavedAsset = nullptr;
-		if (!ENavMeshAssetManager::GetManagerSingleton()->CreateNavMeshAsset(
-			InAssetName, Settings, Blob, EString(EBaseSettings::ENGINE_NAV_MESH_PATH), SavedAsset, OutError, bInAllowOverwrite))
-		{
-			delete Provider;
-			LastAssetError = OutError;
-			return FALSE;
-		}
-
-		// Publish the provider that was written, then point the component at the file so the next
-		// load of the level takes the asset path. The flag is set after SetNavMeshAsset because
-		// assigning an asset deliberately clears it to force a republish.
-		PublishProvider(Provider, Stats);
-		SetNavMeshAsset(SavedAsset);
-		NavMeshAssetName = InAssetName;
-		bHasBuilt = TRUE;
-		// The browser only rescans after its own create/rename/delete actions, so a bake has to
-		// ask for one explicitly.
-		EAssetManager::GetManagerSingleton()->RequestContentRefresh();
-		return TRUE;
-	}
-
-	BOOL32 PNavMeshComponent::HasNavMeshAssetFailedToLoad() const
-	{
-		return bAssetLoadFailed;
-	}
-
-	const EString& PNavMeshComponent::GetLastNavMeshAssetError() const
-	{
-		return LastAssetError;
-	}
-
-	BOOL32 PNavMeshComponent::AutoAssignNamedNavMeshAsset(const EString& InLevelStem, EString& OutError)
-	{
-		OutError = EString();
-		// The author named this component's asset themselves; the convention name must not
-		// override an explicit choice.
-		if (NavMeshAssetName.Length() > 0u)
-		{
-			return TRUE;
-		}
-		if (InLevelStem.Length() <= 0u)
-		{
-			return TRUE;
-		}
-		// Nothing published means nothing worth exporting; a fresh checkout loads the level
-		// and bakes, or the author names the asset in the panel.
-		if (!bHasBuilt)
-		{
-			return TRUE;
-		}
-		// Only the primary owner of a group may write the group's asset; a second owner would
-		// otherwise overwrite it with a different bake.
-		if (!IsPrimaryNavMeshOwner())
-		{
-			return TRUE;
-		}
-		// The convention name is generated from this level and group, so re-saving regenerates
-		// it; manual panel saves keep refusing to overwrite.
-		const EString AssetName = MakeNavMeshAssetName(InLevelStem, NavMeshName);
-		if (!SaveBakeAsAsset(AssetName, OutError, TRUE))
-		{
-			return FALSE;
-		}
+		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
+		Manager->RegisterProvider(GetUniqueID(), NavMeshName, Provider, Stats);
+		Manager->SetProviderDebugDrawEnabled(GetUniqueID(), bDebugDrawEnabled);
 		return TRUE;
 	}
 
@@ -1051,7 +784,7 @@ namespace PigeonEngine
 		{
 			return InLevelStem + EString(PE_TEXT("_NavMesh"));
 		}
-		// File name safe form of the group: a name like "Large Agent" must not split the asset
+		// File name safe form of the profile: a name like "Large Agent" must not split the asset
 		// into another directory or lose the suffix.
 		EString Sanitized;
 		for (UINT32 Index = 0u, Num = InNavMeshName.Length(); Index < Num; Index++)
@@ -1074,6 +807,16 @@ namespace PigeonEngine
 		return InLevelStem + EString(PE_TEXT("_")) + Sanitized + EString(PE_TEXT("_NavMesh"));
 	}
 
+	BOOL32 PNavMeshComponent::HasNavMeshAssetFailedToLoad() const
+	{
+		return bAssetLoadFailed;
+	}
+
+	const EString& PNavMeshComponent::GetLastNavMeshAssetError() const
+	{
+		return LastAssetError;
+	}
+
 	void PNavMeshComponent::EditorTick(FLOAT InDeltaTime)
 	{
 		PSceneComponent::EditorTick(InDeltaTime);
@@ -1084,7 +827,7 @@ namespace PigeonEngine
 		}
 		if ((BakeVolumeExtent.x <= 0.0f) || (BakeVolumeExtent.y <= 0.0f) || (BakeVolumeExtent.z <= 0.0f))
 		{
-			// A whole world volume has no box worth drawing.
+			// No own box; the profile's coverage comes from PNavMeshBoundsComponent volumes.
 			return;
 		}
 

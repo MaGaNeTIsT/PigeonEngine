@@ -40,7 +40,9 @@ namespace PigeonEngine
 
 	const ENavigationBuildStats& PNavigationComponent::GetLastBuildStats() const
 	{
-		return LastBuildStats;
+		// The manager owns the published mesh, so it also owns the statistics of the build that
+		// produced it; the component keeps no copy that could go stale after a rebuild.
+		return ENavigationManager::GetManagerSingleton()->GetBuildStats(GetUniqueID());
 	}
 
 	void PNavigationComponent::SetDebugDrawEnabled(const BOOL32& InEnabled)

@@ -14,9 +14,11 @@ namespace PigeonEngine
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PNavMeshBoundsComponent>();
-		AddClassPropertyAccessors<PNavMeshBoundsComponent, EString>(ClassHash, PE_TEXT("NavMeshName"),
-			[](const PNavMeshBoundsComponent* Component) -> EString { return Component->GetNavMeshName(); },
-			[](PNavMeshBoundsComponent* Component, const EString& Value) -> void { Component->SetNavMeshName(Value); },
+		// Empty list = every profile; the usual level never fills this in, so one volume set
+		// serves the default agent and any larger agent profiles.
+		AddClassPropertyAccessors<PNavMeshBoundsComponent, TArray<EString>>(ClassHash, PE_TEXT("SupportedNavMeshes"),
+			[](const PNavMeshBoundsComponent* Component) -> TArray<EString> { return Component->GetSupportedNavMeshes(); },
+			[](PNavMeshBoundsComponent* Component, const TArray<EString>& Value) -> void { Component->SetSupportedNavMeshes(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 		AddClassPropertyAccessors<PNavMeshBoundsComponent, Vector3>(ClassHash, PE_TEXT("Extent"),
 			[](const PNavMeshBoundsComponent* Component) -> Vector3 { return Component->GetExtent(); },
@@ -35,29 +37,43 @@ namespace PigeonEngine
 	PNavMeshBoundsComponent::PNavMeshBoundsComponent()
 	{
 		POBJ_DEBUGNAME_SET(this, "NavMeshBoundsComponent");
-		// The editor wireframe is drawn from a tick, and the change detection in it is what
-		// schedules a rebuild after the volume is moved.
+#if ENGINE_EDITOR_ONLY
+		// The wireframe and the edit-change detection need a tick; a shipped game has neither.
 		SetIsTickable(TRUE);
+#endif
 	}
 
 	PNavMeshBoundsComponent::~PNavMeshBoundsComponent()
 	{
 	}
 
-	const EString& PNavMeshBoundsComponent::GetNavMeshName() const
+	const TArray<EString>& PNavMeshBoundsComponent::GetSupportedNavMeshes() const
 	{
-		return NavMeshName;
+		return SupportedNavMeshes;
 	}
 
-	void PNavMeshBoundsComponent::SetNavMeshName(const EString& InName)
+	void PNavMeshBoundsComponent::SetSupportedNavMeshes(const TArray<EString>& InProfiles)
 	{
-		if (NavMeshName == InName)
-		{
-			return;
-		}
-		NavMeshName = InName;
-		// The volume feeds a different mesh now; its owner has to bake again.
+		SupportedNavMeshes = InProfiles;
+		// The volume may now feed a different set of profiles; every affected one has to bake.
 		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
+	}
+
+	BOOL32 PNavMeshBoundsComponent::SupportsNavMesh(const EString& InNavMeshName) const
+	{
+		if (SupportedNavMeshes.Num<UINT32>() == 0u)
+		{
+			// The common case: one volume set for every agent profile.
+			return TRUE;
+		}
+		for (UINT32 Index = 0u, Num = SupportedNavMeshes.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (SupportedNavMeshes[Index] == InNavMeshName)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
 	}
 
 	const Vector3& PNavMeshBoundsComponent::GetExtent() const

@@ -248,7 +248,7 @@ namespace PigeonEngine
 		}
 
 		const PNavMeshBoundsComponent* VolumeComponent = dynamic_cast<const PNavMeshBoundsComponent*>(&InComponent);
-		if ((!!VolumeComponent) && (VolumeComponent->GetNavMeshName() == InNavMeshName))
+		if ((!!VolumeComponent) && (VolumeComponent->SupportsNavMesh(InNavMeshName)))
 		{
 			const EBoundAABB WorldBound = VolumeComponent->MakeWorldBound();
 			if (WorldBound.IsValid)

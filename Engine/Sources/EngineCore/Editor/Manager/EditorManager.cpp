@@ -337,6 +337,41 @@ namespace PigeonEngine
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Build"))
+			{
+				PWorld* EditorWorld = WorldManager->GetWorld();
+				ENavigationManager* Navigation = ENavigationManager::GetManagerSingleton();
+				const BOOL32 bBuilding = ((EditorWorld) && (Navigation->IsWorldBuildRunning(*EditorWorld) != FALSE)) ? TRUE : FALSE;
+				// One action for the whole level: every navmesh profile (default agent, large
+				// agent, ...) is baked together. No actor has to be selected or clicked.
+				if (ImGui::MenuItem("Build Navigation", nullptr, false, ((EditorWorld) && (!bBuilding)) ? true : false))
+				{
+					Navigation->RequestWorldBuild(*EditorWorld, ENavigationManager::ENavigationWorldBuildReason::EDITOR);
+				}
+				if (bBuilding)
+				{
+					ImGui::MenuItem("Building navigation...", nullptr, false, false);
+				}
+				else if (EditorWorld)
+				{
+					const ENavigationManager::FNavigationWorldBuildReport& Report = Navigation->GetWorldBuildReport(*EditorWorld);
+					if (Report.bHasRun)
+					{
+						UINT32 Built = 0u;
+						for (UINT32 Index = 0u, Num = Report.Profiles.Num<UINT32>(); Index < Num; Index++)
+						{
+							if (Report.Profiles[Index].bSucceeded)
+							{
+								Built++;
+							}
+						}
+						const EString Label = EString(PE_TEXT("Last build: ")) + EString::FromInt(Built)
+							+ EString(PE_TEXT("/")) + EString::FromInt(Report.Profiles.Num<UINT32>()) + EString(PE_TEXT(" profiles"));
+						ImGui::MenuItem(*Label, nullptr, false, false);
+					}
+				}
+				ImGui::EndMenu();
+			}
 			ImGui::EndMainMenuBar();
 		}
 

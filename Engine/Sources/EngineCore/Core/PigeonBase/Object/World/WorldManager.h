@@ -57,11 +57,6 @@ namespace PigeonEngine
 #if ENGINE_EDITOR_ONLY
 	private:
 		void ExecutePendingDiscardAction();
-	private:
-		// Before a save serializes the world: every baked, unnamed navmesh component picks
-		// up the convention asset name <LevelStem>_NavMesh, so the saved file carries the
-		// reference and the asset travels with the level across checkouts.
-		void AutoAssignNavMeshAssetsOnSave(const EString& InLevelPath);
 	public:
 		// Unsaved-changes prompt answers, driven by the Level panel: the pending New/Load
 		// request that raised the prompt executes after the save, or directly, or drops.

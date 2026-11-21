@@ -1,10 +1,36 @@
 #include <Navigation/NavigationManager.h>
 
+#include <AssetLoadManager.h>
 #include <Development/EditorLogManager.h>
 #include <Navigation/NavigationProviderInterface.h>
+#include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
+#include <PigeonBase/Object/World/World.h>
 
 namespace PigeonEngine
 {
+
+	// The asset queue gates the first bake: cold mesh data is null until its request finishes, and a
+	// LOAD pass must not import/bake before the level's assets settled. One wait now covers the
+	// whole level instead of one per component.
+	PE_CONSTEXPR_STATIC FLOAT NavigationWorldBuildAssetWaitSeconds = 30.0f;
+	// Editor input changes (a volume drag bumps the revision every frame) rebuild once they settle.
+	PE_CONSTEXPR_STATIC FLOAT NavigationWorldBuildDebounceSeconds = 0.5f;
+
+	// A runtime pass waits only for the profiles' own navmesh assets, not for the whole asset
+	// queue: a level's textures may still be streaming in while the navmesh is ready to import.
+	static BOOL32 HasOutstandingProfileAssets(const PWorld& InWorld)
+	{
+		TArray<PNavMeshComponent*> Owners;
+		PNavMeshComponent::CollectPrimaryOwnersInWorld(InWorld, Owners);
+		for (UINT32 Index = 0u, Num = Owners.Num<UINT32>(); Index < Num; Index++)
+		{
+			if ((!!Owners[Index]) && (Owners[Index]->HasOutstandingAssetRequest() != FALSE))
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
 
 	static void RegisterClassTypes()
 	{
@@ -60,7 +86,15 @@ namespace PigeonEngine
 
 	void ENavigationManager::Tick(FLOAT InDeltaTime)
 	{
+		// A LOAD/RUNTIME pass waiting for the asset queue: this is the one wait for the whole level.
+		TickPendingWorldBuilds(InDeltaTime);
+
 		PublishFinishedBakes();
+
+#if ENGINE_EDITOR_ONLY
+		// Authored inputs changed: one debounced pass for the whole level.
+		TickWorldBuildInputs(InDeltaTime);
+#endif
 
 		// Per provider work: dynamic obstacles rebuild tiles here, and later local avoidance steps
 		// its agents. It runs after publishing so a provider that became ready this frame is already
@@ -75,7 +109,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void ENavigationManager::RegisterProvider(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider)
+	void ENavigationManager::RegisterProvider(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats)
 	{
 		if (!InProvider)
 		{
@@ -98,6 +132,7 @@ namespace PigeonEngine
 			Entry.Provider = InProvider;
 			Entry.GroupName = InNavMeshName;
 			Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_READY;
+			Entry.Stats = InStats;
 			// A bake queued before this publish is older than what is being installed now.
 			Entry.Serial++;
 			Serial = Entry.Serial;
@@ -110,6 +145,7 @@ namespace PigeonEngine
 			Entry.Provider = InProvider;
 			Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_READY;
 			Entry.Serial = 1u;
+			Entry.Stats = InStats;
 			Serial = Entry.Serial;
 			Providers.Add(Entry);
 		}
@@ -121,6 +157,11 @@ namespace PigeonEngine
 	}
 
 	BOOL32 ENavigationManager::RequestBuild(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry)
+	{
+		return RequestBuildInternal(InOwnerId, InNavMeshName, InProvider, static_cast<ENavigationSourceGeometry&&>(InGeometry), 0u);
+	}
+
+	BOOL32 ENavigationManager::RequestBuildInternal(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry, const UINT32& InBatchId)
 	{
 		if (!InProvider)
 		{
@@ -139,14 +180,14 @@ namespace PigeonEngine
 		else
 		{
 			// The owner may have been renamed between requests; the next publish has to answer
-			// for the group the caller asked for now.
+			// for the profile the caller asked for now.
 			Providers[static_cast<UINT32>(EntryIndex)].GroupName = InNavMeshName;
 		}
 
 		FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(EntryIndex)];
 		if (Entry.State == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
 		{
-			// Already baking this volume: the caller keeps its provider and the running job wins.
+			// Already baking this profile: the caller keeps its provider and the running job wins.
 			return FALSE;
 		}
 
@@ -157,7 +198,9 @@ namespace PigeonEngine
 			EScopedLock Lock(BakeMutex);
 			FBakeJob Job;
 			Job.OwnerId = InOwnerId;
+			Job.NavMeshName = InNavMeshName;
 			Job.Serial = Entry.Serial;
+			Job.BatchId = InBatchId;
 			Job.Provider = InProvider;
 			Job.Geometry = static_cast<ENavigationSourceGeometry&&>(InGeometry);
 			BakeJobs.Add(Job);
@@ -330,6 +373,526 @@ namespace PigeonEngine
 		}
 		return 1u;
 	}
+
+	ENavigationManager::FNavigationWorldBuildState* ENavigationManager::FindWorldBuild(const PWorld* InWorld)
+	{
+		for (UINT32 Index = 0u, Num = WorldBuilds.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (WorldBuilds[Index].World == InWorld)
+			{
+				return &WorldBuilds[Index];
+			}
+		}
+		return nullptr;
+	}
+
+	const ENavigationManager::FNavigationWorldBuildState* ENavigationManager::FindWorldBuild(const PWorld* InWorld) const
+	{
+		for (UINT32 Index = 0u, Num = WorldBuilds.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (WorldBuilds[Index].World == InWorld)
+			{
+				return &WorldBuilds[Index];
+			}
+		}
+		return nullptr;
+	}
+
+	BOOL32 ENavigationManager::IsWorldBuildRunning(PWorld& InWorld) const
+	{
+		const FNavigationWorldBuildState* State = FindWorldBuild(&InWorld);
+		return ((State) && (State->Pending > 0u)) ? TRUE : FALSE;
+	}
+
+	const ENavigationManager::FNavigationWorldBuildReport& ENavigationManager::GetWorldBuildReport(PWorld& InWorld) const
+	{
+		static const FNavigationWorldBuildReport EmptyReport;
+		const FNavigationWorldBuildState* State = FindWorldBuild(&InWorld);
+		return (!!State) ? State->Report : EmptyReport;
+	}
+
+	void ENavigationManager::NotifyWorldDestroyed(PWorld* InWorld)
+	{
+		for (UINT32 Index = WorldBuilds.Num<UINT32>(); Index > 0u; Index--)
+		{
+			if (WorldBuilds[Index - 1u].World == InWorld)
+			{
+				WorldBuilds.RemoveAt(Index - 1u);
+			}
+		}
+		for (UINT32 Index = PendingWorldBuilds.Num<UINT32>(); Index > 0u; Index--)
+		{
+			if (PendingWorldBuilds[Index - 1u].World == InWorld)
+			{
+				PendingWorldBuilds.RemoveAt(Index - 1u);
+			}
+		}
+		for (UINT32 Index = WorldInputRevisions.Num<UINT32>(); Index > 0u; Index--)
+		{
+			if (WorldInputRevisions[Index - 1u].World == InWorld)
+			{
+				WorldInputRevisions.RemoveAt(Index - 1u);
+			}
+		}
+	}
+
+	BOOL32 ENavigationManager::RequestWorldBuild(PWorld& InWorld, ENavigationWorldBuildReason InReason, const EString& InLevelStem)
+	{
+		if (FNavigationWorldBuildState* State = FindWorldBuild(&InWorld))
+		{
+			if (State->Pending > 0u)
+			{
+				// A pass is running; repeat once with the latest world state when it finishes.
+				State->bDirtyDuringBuild = TRUE;
+				return TRUE;
+			}
+		}
+
+		// An explicit bake cancels a pending load wait: it deliberately bakes from the world and
+		// has no reason to wait for the asset queue.
+		for (UINT32 Index = 0u, Num = PendingWorldBuilds.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (PendingWorldBuilds[Index].World != (&InWorld))
+			{
+				continue;
+			}
+			if ((InReason == ENavigationWorldBuildReason::EDITOR) || (InReason == ENavigationWorldBuildReason::SAVE))
+			{
+				PendingWorldBuilds.RemoveAt(Index);
+			}
+			else
+			{
+				PendingWorldBuilds[Index].Reason = InReason;
+				PendingWorldBuilds[Index].LevelStem = InLevelStem;
+				return TRUE;
+			}
+			break;
+		}
+
+		if (((InReason == ENavigationWorldBuildReason::LOAD)
+				&& (EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum() > 0u))
+			|| ((InReason == ENavigationWorldBuildReason::RUNTIME) && (HasOutstandingProfileAssets(InWorld) != FALSE)))
+		{
+			// One wait for the whole level; the manager tick starts the pass once it is resolved.
+			FPendingWorldBuild Pending;
+			Pending.World = &InWorld;
+			Pending.Reason = InReason;
+			Pending.LevelStem = InLevelStem;
+			PendingWorldBuilds.Add(Pending);
+			return TRUE;
+		}
+
+		return StartWorldBuild(InWorld, InReason, InLevelStem);
+	}
+
+	void ENavigationManager::TickPendingWorldBuilds(FLOAT InDeltaTime)
+	{
+		for (UINT32 Index = 0u; Index < PendingWorldBuilds.Num<UINT32>(); )
+		{
+			FPendingWorldBuild& Pending = PendingWorldBuilds[Index];
+			Pending.WaitedSeconds += InDeltaTime;
+			BOOL32 bReady = FALSE;
+			if (Pending.Reason == ENavigationWorldBuildReason::LOAD)
+			{
+				const BOOL32 bQueueDrained = (EAssetLoadManager::GetManagerSingleton()->GetPendingRequestNum() == 0u) ? TRUE : FALSE;
+				// The deferred asset apply can run a frame after the queue drains; wait a moment
+				// past the drain so an assigned asset is visible before the import decision.
+				bReady = ((bQueueDrained) && (Pending.WaitedSeconds >= 0.2f)) ? TRUE : FALSE;
+			}
+			else
+			{
+				// Runtime: only the profiles' own navmesh assets gate the pass.
+				bReady = (HasOutstandingProfileAssets(*Pending.World) == FALSE) ? TRUE : FALSE;
+			}
+			if ((!bReady) && (Pending.WaitedSeconds < NavigationWorldBuildAssetWaitSeconds))
+			{
+				Index++;
+				continue;
+			}
+			PWorld* World = Pending.World;
+			const ENavigationWorldBuildReason Reason = Pending.Reason;
+			const EString Stem = Pending.LevelStem;
+			PendingWorldBuilds.RemoveAt(Index);
+			StartWorldBuild(*World, Reason, Stem);
+		}
+	}
+
+	BOOL32 ENavigationManager::StartWorldBuild(PWorld& InWorld, ENavigationWorldBuildReason InReason, const EString& InLevelStem)
+	{
+		TArray<PNavMeshComponent*> Owners;
+		PNavMeshComponent::CollectPrimaryOwnersInWorld(InWorld, Owners);
+		if (Owners.Num<UINT32>() == 0u)
+		{
+			return FALSE;
+		}
+
+		FNavigationWorldBuildState* Existing = FindWorldBuild(&InWorld);
+		if (!Existing)
+		{
+			FNavigationWorldBuildState NewState;
+			NewState.World = &InWorld;
+			WorldBuilds.Add(NewState);
+			Existing = &WorldBuilds[WorldBuilds.Num<UINT32>() - 1u];
+		}
+		FNavigationWorldBuildState& State = *Existing;
+		const UINT32 BatchId = NextWorldBuildBatchId++;
+		State.BatchId = BatchId;
+		State.Pending = 0u;
+		State.bDirtyDuringBuild = FALSE;
+		State.LevelStem = InLevelStem;
+		State.Reason = InReason;
+		State.Report = FNavigationWorldBuildReport();
+		State.Report.BatchId = BatchId;
+		State.RebuildCountdown = 0.0f;
+
+		PE_LOG_LOG(EString(PE_TEXT("Navigation: building ")) + EString::FromInt(Owners.Num<UINT32>())
+			+ EString(PE_TEXT(" navmesh profile(s) for the level.")));
+
+		UINT32 Considered = 0u;
+		for (UINT32 OwnerIndex = 0u, OwnerNum = Owners.Num<UINT32>(); OwnerIndex < OwnerNum; OwnerIndex++)
+		{
+			PNavMeshComponent* Owner = Owners[OwnerIndex];
+			if (!Owner)
+			{
+				continue;
+			}
+			if ((InReason == ENavigationWorldBuildReason::RUNTIME) && (!Owner->GetBuildOnBeginPlay()))
+			{
+				continue;
+			}
+			Considered++;
+
+			FNavigationProfileBuildResult Result;
+			Result.OwnerId = Owner->GetUniqueID();
+			Result.NavMeshName = Owner->GetNavMeshName();
+
+			// A loaded level takes the shipped path first: an assigned asset is a memory copy. A
+			// rejected asset falls through to a world bake instead of leaving the profile empty.
+			if (((InReason == ENavigationWorldBuildReason::LOAD) || (InReason == ENavigationWorldBuildReason::RUNTIME))
+				&& (!!Owner->GetNavMeshAsset()))
+			{
+				ENavigationBuildStats ImportStats;
+				if (Owner->ImportAssignedAsset(ImportStats))
+				{
+					Result.bSucceeded = TRUE;
+					Result.Stats = ImportStats;
+					State.Report.Profiles.Add(Result);
+					continue;
+				}
+			}
+
+			const TArray<EBoundAABB> Volumes = Owner->CollectBakeVolumesInWorld();
+			if ((Volumes.Num<UINT32>() == 0u) && (Result.NavMeshName.Length() > 0u))
+			{
+				Result.Error = EString(PE_TEXT("no bounds volume supports this navmesh"));
+				State.Report.Profiles.Add(Result);
+				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh '")) + Result.NavMeshName
+					+ EString(PE_TEXT("' has no bounds volume that supports it; the profile was skipped.")));
+				continue;
+			}
+
+			ENavigationSourceGeometry Geometry;
+			ENavigationGeometryCollector::CollectStaticMeshTriangles(InWorld, Volumes, Owner->GetBuildSettings().bFlipTriangleWinding, Geometry);
+			Geometry.Links = Owner->GetNavigationLinks();
+
+			ERecastNavigationProvider* Provider = Owner->CreateConfiguredProvider();
+			if (!Provider)
+			{
+				Result.Error = EString(PE_TEXT("the provider registry refused the navigation backend"));
+				State.Report.Profiles.Add(Result);
+				continue;
+			}
+			if (!RequestBuildInternal(Result.OwnerId, Result.NavMeshName, Provider, static_cast<ENavigationSourceGeometry&&>(Geometry), BatchId))
+			{
+				delete Provider;
+				Result.Error = EString(PE_TEXT("a bake for this profile is already running"));
+				State.Report.Profiles.Add(Result);
+				continue;
+			}
+			State.Pending++;
+			// Success and stats are filled in when the job reports back.
+			State.Report.Profiles.Add(Result);
+		}
+
+		if (Considered == 0u)
+		{
+			// Every profile opted out of a runtime build; leave no half-filled report behind.
+			State.Report = FNavigationWorldBuildReport();
+			return FALSE;
+		}
+
+		if (State.Pending == 0u)
+		{
+			FinishWorldBuild(State);
+		}
+		return TRUE;
+	}
+
+	void ENavigationManager::CompleteWorldBuildJob(const FBakeResult& InResult, BOOL32 bSucceeded, BOOL32 bDiscarded)
+	{
+		if (InResult.BatchId == 0u)
+		{
+			return;
+		}
+		FNavigationWorldBuildState* State = nullptr;
+		for (UINT32 Index = 0u, Num = WorldBuilds.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (WorldBuilds[Index].BatchId == InResult.BatchId)
+			{
+				State = &WorldBuilds[Index];
+				break;
+			}
+		}
+		if (!State)
+		{
+			return;
+		}
+
+		FNavigationProfileBuildResult* Profile = nullptr;
+		for (UINT32 Index = 0u, Num = State->Report.Profiles.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (State->Report.Profiles[Index].OwnerId == InResult.OwnerId)
+			{
+				Profile = &State->Report.Profiles[Index];
+				break;
+			}
+		}
+		if (!Profile)
+		{
+			FNavigationProfileBuildResult NewProfile;
+			NewProfile.OwnerId = InResult.OwnerId;
+			NewProfile.NavMeshName = InResult.NavMeshName;
+			State->Report.Profiles.Add(NewProfile);
+			Profile = &State->Report.Profiles[State->Report.Profiles.Num<UINT32>() - 1u];
+		}
+
+		if (bSucceeded != FALSE)
+		{
+			Profile->bSucceeded = TRUE;
+			Profile->Stats = InResult.Stats;
+			Profile->Error = EString();
+		}
+		else
+		{
+			Profile->bSucceeded = FALSE;
+			Profile->Error = (bDiscarded != FALSE)
+				? EString(PE_TEXT("superseded by a newer build"))
+				: EString(PE_TEXT("the bake produced no navmesh"));
+		}
+
+		if (State->Pending > 0u)
+		{
+			State->Pending--;
+		}
+		if (State->Pending == 0u)
+		{
+			FinishWorldBuild(*State);
+		}
+	}
+
+	void ENavigationManager::FinishWorldBuild(FNavigationWorldBuildState& InOutState)
+	{
+		FNavigationWorldBuildReport& Report = InOutState.Report;
+		Report.bHasRun = TRUE;
+		Report.bAllSucceeded = TRUE;
+		UINT32 Succeeded = 0u;
+		for (UINT32 Index = 0u, Num = Report.Profiles.Num<UINT32>(); Index < Num; Index++)
+		{
+			const FNavigationProfileBuildResult& Profile = Report.Profiles[Index];
+			if (Profile.bSucceeded)
+			{
+				Succeeded++;
+				if (Profile.Stats.SkippedMeshCount > 0u)
+				{
+					PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
+						+ ((Profile.NavMeshName.Length() > 0u) ? Profile.NavMeshName : EString(PE_TEXT("Default")))
+						+ EString(PE_TEXT("' was built with "))
+						+ EString::FromInt(Profile.Stats.SkippedMeshCount)
+						+ EString(PE_TEXT(" static mesh components skipped; build again once they load.")));
+				}
+				continue;
+			}
+			Report.bAllSucceeded = FALSE;
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
+				+ ((Profile.NavMeshName.Length() > 0u) ? Profile.NavMeshName : EString(PE_TEXT("Default")))
+				+ EString(PE_TEXT("' was not built: ")) + Profile.Error);
+		}
+		PE_LOG_LOG(EString(PE_TEXT("Navigation: level build finished: "))
+			+ EString::FromInt(Succeeded) + EString(PE_TEXT("/")) + EString::FromInt(Report.Profiles.Num<UINT32>())
+			+ EString(PE_TEXT(" navmesh profiles built.")));
+
+		const BOOL32 bRestart = InOutState.bDirtyDuringBuild;
+		PWorld* World = InOutState.World;
+		const ENavigationWorldBuildReason Reason = InOutState.Reason;
+		const EString Stem = InOutState.LevelStem;
+		InOutState.bDirtyDuringBuild = FALSE;
+		InOutState.LastSeenInputRevision = GetNavigationInputRevision(World);
+		InOutState.RebuildCountdown = 0.0f;
+		InOutState.bWatchingInput = TRUE;
+		if (bRestart)
+		{
+			// Inputs changed while this pass baked; run one more for the latest world state.
+			RequestWorldBuild(*World, (Reason == ENavigationWorldBuildReason::SAVE) ? ENavigationWorldBuildReason::EDITOR : Reason, Stem);
+		}
+	}
+
+	void ENavigationManager::TickWorldBuildInputs(FLOAT InDeltaTime)
+	{
+		for (UINT32 Index = 0u; Index < WorldBuilds.Num<UINT32>(); Index++)
+		{
+			FNavigationWorldBuildState& State = WorldBuilds[Index];
+			if ((!State.bWatchingInput) || (!State.World) || (State.Pending > 0u))
+			{
+				continue;
+			}
+			const UINT32 Revision = GetNavigationInputRevision(State.World);
+			if (Revision != State.LastSeenInputRevision)
+			{
+				State.LastSeenInputRevision = Revision;
+				// Restart the countdown on every change, so a volume drag bakes once at its end.
+				State.RebuildCountdown = NavigationWorldBuildDebounceSeconds;
+				continue;
+			}
+			if (State.RebuildCountdown <= 0.0f)
+			{
+				continue;
+			}
+			State.RebuildCountdown -= InDeltaTime;
+			if (State.RebuildCountdown > 0.0f)
+			{
+				continue;
+			}
+			State.RebuildCountdown = 0.0f;
+			PWorld* World = State.World;
+			RequestWorldBuild(*World, ENavigationWorldBuildReason::EDITOR);
+		}
+	}
+
+#if ENGINE_EDITOR_ONLY
+	BOOL32 ENavigationManager::BuildWorldSynchronously(PWorld& InWorld, const EString& InLevelStem, FNavigationWorldBuildReport& OutReport)
+	{
+		OutReport = FNavigationWorldBuildReport();
+		OutReport.bHasRun = TRUE;
+		OutReport.BatchId = NextWorldBuildBatchId++;
+
+		TArray<PNavMeshComponent*> Owners;
+		PNavMeshComponent::CollectPrimaryOwnersInWorld(InWorld, Owners);
+		OutReport.bAllSucceeded = TRUE;
+		for (UINT32 OwnerIndex = 0u; OwnerIndex < Owners.Num<UINT32>(); OwnerIndex++)
+		{
+			PNavMeshComponent* Owner = Owners[OwnerIndex];
+			if (!Owner)
+			{
+				continue;
+			}
+			FNavigationProfileBuildResult Result;
+			Result.OwnerId = Owner->GetUniqueID();
+			Result.NavMeshName = Owner->GetNavMeshName();
+
+			const TArray<EBoundAABB> Volumes = Owner->CollectBakeVolumesInWorld();
+			if ((Volumes.Num<UINT32>() == 0u) && (Result.NavMeshName.Length() > 0u))
+			{
+				Result.Error = EString(PE_TEXT("no bounds volume supports this navmesh"));
+				OutReport.Profiles.Add(Result);
+				OutReport.bAllSucceeded = FALSE;
+				continue;
+			}
+
+			ERecastNavigationProvider* Provider = Owner->CreateConfiguredProvider();
+			if (!Provider)
+			{
+				Result.Error = EString(PE_TEXT("the provider registry refused the navigation backend"));
+				OutReport.Profiles.Add(Result);
+				OutReport.bAllSucceeded = FALSE;
+				continue;
+			}
+
+			ENavigationSourceGeometry Geometry;
+			ENavigationGeometryCollector::CollectStaticMeshTriangles(InWorld, Volumes, Owner->GetBuildSettings().bFlipTriangleWinding, Geometry);
+			Geometry.Links = Owner->GetNavigationLinks();
+
+			ENavigationBuildStats Stats;
+			if (!Provider->Build(Geometry, Stats))
+			{
+				delete Provider;
+				Result.Error = EString(PE_TEXT("the bake produced no navmesh"));
+				OutReport.Profiles.Add(Result);
+				OutReport.bAllSucceeded = FALSE;
+				continue;
+			}
+			if (Stats.SkippedMeshCount > 0u)
+			{
+				// Saving while static meshes are still loading would bake holes and overwrite a
+				// good asset with them. Keep the file and report; a save after loading fixes it.
+				delete Provider;
+				Result.Error = EString(PE_TEXT("static mesh data was still loading; the existing asset was kept"));
+				OutReport.Profiles.Add(Result);
+				OutReport.bAllSucceeded = FALSE;
+				continue;
+			}
+
+			// Named assets keep their name; unnamed profiles get the level convention name,
+			// including the profile so two agent sizes cannot overwrite each other's file.
+			EString AssetName = Owner->GetNavMeshAssetName();
+			if (AssetName.Length() == 0u)
+			{
+				AssetName = PNavMeshComponent::MakeNavMeshAssetName(InLevelStem, Result.NavMeshName);
+			}
+			EString SaveError;
+			if (!Owner->SaveProviderAsAsset(*Provider, AssetName, Stats, SaveError, TRUE))
+			{
+				delete Provider;
+				Result.Error = SaveError;
+				OutReport.Profiles.Add(Result);
+				OutReport.bAllSucceeded = FALSE;
+				continue;
+			}
+
+			// The provider is published only after its asset was written, so a failed write does
+			// not leave the level referencing a file that does not exist.
+			RegisterProvider(Result.OwnerId, Result.NavMeshName, Provider, Stats);
+			Result.bSucceeded = TRUE;
+			Result.Stats = Stats;
+			OutReport.Profiles.Add(Result);
+		}
+
+		// Save builds do not need a batch record, but the panel and the input watch should see the
+		// result, and the level is about to be serialized right after this.
+		FNavigationWorldBuildState* State = FindWorldBuild(&InWorld);
+		if (!State)
+		{
+			FNavigationWorldBuildState NewState;
+			NewState.World = &InWorld;
+			WorldBuilds.Add(NewState);
+			State = &WorldBuilds[WorldBuilds.Num<UINT32>() - 1u];
+		}
+		State->Report = OutReport;
+		State->Pending = 0u;
+		State->bDirtyDuringBuild = FALSE;
+		State->LastSeenInputRevision = GetNavigationInputRevision(&InWorld);
+		State->RebuildCountdown = 0.0f;
+		State->bWatchingInput = TRUE;
+
+		UINT32 Succeeded = 0u;
+		for (UINT32 Index = 0u, Num = OutReport.Profiles.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (OutReport.Profiles[Index].bSucceeded)
+			{
+				Succeeded++;
+			}
+			else
+			{
+				PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh profile '"))
+					+ ((OutReport.Profiles[Index].NavMeshName.Length() > 0u) ? OutReport.Profiles[Index].NavMeshName : EString(PE_TEXT("Default")))
+					+ EString(PE_TEXT("' was not built for save: ")) + OutReport.Profiles[Index].Error);
+			}
+		}
+		PE_LOG_LOG(EString(PE_TEXT("Navigation: save build finished: "))
+			+ EString::FromInt(Succeeded) + EString(PE_TEXT("/")) + EString::FromInt(OutReport.Profiles.Num<UINT32>())
+			+ EString(PE_TEXT(" navmesh profiles written.")));
+		return OutReport.bAllSucceeded;
+	}
+#endif
 
 	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath, const EString& InNavMeshName) const
 	{
@@ -810,6 +1373,8 @@ namespace PigeonEngine
 		Obstacles.Empty(0u);
 		CrowdBindings.Empty(0u);
 		WorldInputRevisions.Empty(0u);
+		WorldBuilds.Empty(0u);
+		PendingWorldBuilds.Empty(0u);
 		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
 		{
 			delete Providers[Index].Provider;
@@ -839,6 +1404,7 @@ namespace PigeonEngine
 				// The component left the world or asked again while this was baking.
 				delete Result.Provider;
 				Result.Provider = nullptr;
+				CompleteWorldBuildJob(Result, FALSE, TRUE);
 				continue;
 			}
 
@@ -848,6 +1414,7 @@ namespace PigeonEngine
 				Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_FAILED;
 				delete Result.Provider;
 				Result.Provider = nullptr;
+				CompleteWorldBuildJob(Result, FALSE, FALSE);
 				continue;
 			}
 
@@ -860,10 +1427,11 @@ namespace PigeonEngine
 			Result.Provider = nullptr;
 			// The old provider's tile cache and crowd died with it, so the obstacles have to be
 			// re-registered and the crowd bindings rebuilt by their owners. Only this provider's
-			// records are touched; other groups keep their agents and obstacles.
+			// records are touched; other profiles keep their agents and obstacles.
 			InvalidateCrowdBindings(Entry.OwnerId);
 			ReplayObstacles(Entry.OwnerId, Entry.GroupName, Entry.Serial, *Entry.Provider);
 			InvalidateDebugLines();
+			CompleteWorldBuildJob(Result, TRUE, FALSE);
 		}
 	}
 
@@ -894,7 +1462,9 @@ namespace PigeonEngine
 				// the mutex guarded logger; it never touches the world.
 				FBakeResult Result;
 				Result.OwnerId = Job.OwnerId;
+				Result.NavMeshName = Job.NavMeshName;
 				Result.Serial = Job.Serial;
+				Result.BatchId = Job.BatchId;
 				Result.Provider = Job.Provider;
 				Result.bSucceeded = (!!Job.Provider) ? Job.Provider->Build(Job.Geometry, Result.Stats) : FALSE;
 

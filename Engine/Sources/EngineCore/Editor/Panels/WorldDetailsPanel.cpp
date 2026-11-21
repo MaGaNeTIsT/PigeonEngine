@@ -157,7 +157,7 @@ namespace PigeonEngine
 			ImGui::TreePop();
 		}
 
-		void DrawNavMeshComponentExtras(PActorComponent* InComponent, PWorld* /*InWorld*/)
+		void DrawNavMeshComponentExtras(PActorComponent* InComponent, PWorld* InWorld)
 		{
 			PNavMeshComponent* Component = dynamic_cast<PNavMeshComponent*>(InComponent);
 			if (!Component)
@@ -165,22 +165,17 @@ namespace PigeonEngine
 				return;
 			}
 
-			if (!ImGui::TreeNodeEx("NavMesh Bake", ImGuiTreeNodeFlags_DefaultOpen))
+			if (!ImGui::TreeNodeEx("NavMesh Profile", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				return;
 			}
 
+			const EString& ProfileName = Component->GetNavMeshName();
+			ImGui::Text("Profile: %s%s", (ProfileName.Length() > 0u) ? (*ProfileName) : "Default"
+				, (ProfileName.Length() > 0u) ? "" : " (all agents without a profile name)");
 			ImGui::TextDisabled("Build settings are editable in the Details grid above.");
-			const EString& GroupName = Component->GetNavMeshName();
-			ImGui::Text("Group: %s", (GroupName.Length() > 0u) ? (*GroupName) : "Default");
-			if (!Component->IsPrimaryNavMeshOwner())
-			{
-				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Another owner of this group publishes; this component is inert.");
-			}
-			if (Component->IsRebuildPending())
-			{
-				ImGui::TextDisabled("Waiting for edited volumes/settings to settle, then rebuilding...");
-			}
+			ImGui::TextDisabled("Coverage comes from PNavMeshBoundsComponent volumes that support this profile.");
+
 			const ENavMeshAsset* LoadedAsset = Component->GetNavMeshAsset();
 			const EString& AssetName = Component->GetNavMeshAssetName();
 			if (LoadedAsset && (LoadedAsset->GetAssetName() == AssetName))
@@ -189,7 +184,7 @@ namespace PigeonEngine
 			}
 			else if (Component->HasNavMeshAssetFailedToLoad())
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Asset '%s' failed to load; using the world bake.", *AssetName);
+				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Asset '%s' failed to load; the level build bakes this profile from the world.", *AssetName);
 			}
 			else if (AssetName.Length() > 0u)
 			{
@@ -197,21 +192,56 @@ namespace PigeonEngine
 			}
 			else
 			{
-				ImGui::TextDisabled("No navmesh asset assigned; using the world bake.");
+				ImGui::TextDisabled("No navmesh asset assigned; the level build bakes this profile from the world.");
 			}
 			ImGui::Separator();
-			const ENavigationBuildStateType BuildState = ENavigationManager::GetManagerSingleton()->GetBuildState(Component->GetUniqueID());
-			if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
+
+			// One pass builds every profile of the level; this panel only reports this profile's
+			// slice of the last pass and offers the same entry point as the Build menu.
+			ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
+			if (InWorld && (Manager->IsWorldBuildRunning(*InWorld) != FALSE))
 			{
-				ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "Baking on the worker...");
+				ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "Building all navmesh profiles of the level...");
 			}
-			else if (BuildState == ENavigationBuildStateType::NAVIGATION_BUILD_FAILED)
+			else if (InWorld)
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Last bake produced no navmesh.");
+				const ENavigationManager::FNavigationWorldBuildReport& Report = Manager->GetWorldBuildReport(*InWorld);
+				const ENavigationManager::FNavigationProfileBuildResult* ProfileResult = nullptr;
+				for (UINT32 Index = 0u, Num = Report.Profiles.Num<UINT32>(); Index < Num; Index++)
+				{
+					if (Report.Profiles[Index].NavMeshName == ProfileName)
+					{
+						ProfileResult = &Report.Profiles[Index];
+						break;
+					}
+				}
+				if (!Report.bHasRun)
+				{
+					ImGui::TextDisabled("The level has not been built yet.");
+				}
+				else if (!ProfileResult)
+				{
+					ImGui::TextDisabled("The last level build did not include this profile.");
+				}
+				else if (ProfileResult->bSucceeded)
+				{
+					ImGui::Text("Last build: %u polygons, %.2f ms", ProfileResult->Stats.PolygonCount, ProfileResult->Stats.Milliseconds);
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Last build failed: %s", *(ProfileResult->Error));
+				}
+				if (Report.bHasRun && (Report.bAllSucceeded == FALSE))
+				{
+					ImGui::TextColored(ImVec4(0.9f, 0.6f, 0.2f, 1.0f), "Some profiles of this level failed; see the log.");
+				}
 			}
-			if (ImGui::Button("Rebuild From World"))
+			if (ImGui::Button("Build Navigation (All Profiles)"))
 			{
-				Component->RequestBuildNavigation();
+				if (InWorld)
+				{
+					Manager->RequestWorldBuild(*InWorld, ENavigationManager::ENavigationWorldBuildReason::EDITOR);
+				}
 			}
 			ImGui::SameLine();
 			const BOOL32 bCanReload = (AssetName.Length() > 0u) ? TRUE : FALSE;
@@ -236,9 +266,9 @@ namespace PigeonEngine
 			{
 				ImGui::BeginDisabled();
 			}
-			if (ImGui::Button("Bake & Save As Asset"))
+			if (ImGui::Button("Bake & Save This Profile"))
 			{
-				// Same self-recording contract as the reload above.
+				// Manual authoring shortcut; the level-wide path is Build Navigation / Save.
 				EString SaveError;
 				Component->SaveBakeAsAsset(EString(g_NavMeshAssetNameBuffer), SaveError);
 			}
