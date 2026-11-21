@@ -16,7 +16,7 @@
 #include <Development/EditorLogManager.h>
 #include <Editor/AssetImporter/ImportManager.h>
 #include <PigeonBase/Object/Actor.h>
-#include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
+#include <PigeonBase/Object/Actor/NavMeshActor.h>
 #include <PigeonBase/Object/World/World.h>
 #include <PigeonBase/Object/World/WorldManager.h>
 
@@ -983,27 +983,23 @@ namespace PigeonEngine
 			}
 		}
 	}
-	else if (InType == EAssetType::ASSET_TYPE_NAV_MESH)
+		else if (InType == EAssetType::ASSET_TYPE_NAV_MESH)
 		{
-			// Navmesh assets are referenced by name from world components, so the users are
-			// the scene objects of the currently open level.
+			// Navmesh assets are referenced by the agent profiles of the open level, so the
+			// users are its navmesh actors.
 			PWorld* World = EWorldManager::GetManagerSingleton()->GetWorld();
 			if (World)
 			{
 				for (PActor* Actor : World->GetAllActors())
 				{
-					const TArray<PNavMeshComponent*> NavComponents = Actor->GetComponents<PNavMeshComponent>();
-					for (INT32 ComponentIndex = 0; ComponentIndex < NavComponents.Num(); ComponentIndex++)
+					const PNavMeshActor* NavMeshActor = dynamic_cast<const PNavMeshActor*>(Actor);
+					if ((!!NavMeshActor) && (NavMeshActor->GetNavMeshAssetName() == AssetName))
 					{
-						const PNavMeshComponent* NavComponent = NavComponents[ComponentIndex];
-						if ((NavComponent) && (NavComponent->GetNavMeshAssetName() == AssetName))
-						{
-							AddUser(POBJ_DEBUGNAME_GET(Actor) + EString(PE_TEXT("/")) + POBJ_DEBUGNAME_GET(NavComponent));
-						}
-					}
+						AddUser(POBJ_DEBUGNAME_GET(Actor));
 					}
 				}
 			}
+		}
 	}
 
 	BOOL32 EAssetManager::RenameSelectedAsset(const EString& InNewName, EString& OutError)

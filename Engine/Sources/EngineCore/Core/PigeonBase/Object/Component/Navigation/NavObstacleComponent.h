@@ -23,8 +23,8 @@ namespace PigeonEngine
 	* the obstacle once the move passes FollowThreshold, because Detour has no way to move an obstacle
 	* in place.
 	*
-	* Only a tiled volume (PNavMeshComponent with TileSizeCells > 0) supports obstacles. On a single
-	* tile volume the registration is refused; that is reported once rather than every frame.
+	* Only a tiled navmesh (TileSizeCells > 0) supports obstacles. On a single tile mesh the
+	* registration is refused; that is reported once rather than every frame.
 	*/
 	class PNavObstacleComponent final : public PSceneComponent
 	{

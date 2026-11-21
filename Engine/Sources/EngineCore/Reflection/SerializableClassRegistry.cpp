@@ -25,8 +25,6 @@
 #include <PigeonBase/Object/Component/Physics/TriggerComponent.h>
 #include <PigeonBase/Object/Component/Character/MovementComponent.h>
 #include <PigeonBase/Object/Component/Character/CharacterInputComponent.h>
-#include <PigeonBase/Object/Component/Navigation/NavigationComponent.h>
-#include <PigeonBase/Object/Component/Navigation/NavMeshComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavMeshBoundsComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavObstacleComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavAgentComponent.h>
@@ -58,7 +56,6 @@ namespace PigeonEngine
 		RegisterSerializableClassType<PMeshComponent, PPrimitiveComponent>(PE_TEXT("PMeshComponent"));
 		RegisterSerializableClassType<PLightComponent, PSceneComponent>(PE_TEXT("PLightComponent"));
 		RegisterSerializableClassType<PLocalLightComponent, PLightComponent>(PE_TEXT("PLocalLightComponent"));
-		RegisterSerializableClassType<PNavigationComponent, PSceneComponent>(PE_TEXT("PNavigationComponent"));
 
 		// Actors.
 		SaveDefaultClassFactory<PLevelActor>();
@@ -104,8 +101,6 @@ namespace PigeonEngine
 		RegisterSerializableClassType<PMovementComponent, PActorComponent>(PE_TEXT("PMovementComponent"));
 		SaveDefaultClassFactory<PCharacterInputComponent>();
 		RegisterSerializableClassType<PCharacterInputComponent, PActorComponent>(PE_TEXT("PCharacterInputComponent"));
-		SaveDefaultClassFactory<PNavMeshComponent>();
-		RegisterSerializableClassType<PNavMeshComponent, PNavigationComponent>(PE_TEXT("PNavMeshComponent"));
 		SaveDefaultClassFactory<PNavMeshBoundsComponent>();
 		RegisterSerializableClassType<PNavMeshBoundsComponent, PSceneComponent>(PE_TEXT("PNavMeshBoundsComponent"));
 		SaveDefaultClassFactory<PNavObstacleComponent>();

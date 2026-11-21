@@ -342,8 +342,8 @@ namespace PigeonEngine
 				PWorld* EditorWorld = WorldManager->GetWorld();
 				ENavigationManager* Navigation = ENavigationManager::GetManagerSingleton();
 				const BOOL32 bBuilding = ((EditorWorld) && (Navigation->IsWorldBuildRunning(*EditorWorld) != FALSE)) ? TRUE : FALSE;
-				// One action for the whole level: every navmesh profile (default agent, large
-				// agent, ...) is baked together. No actor has to be selected or clicked.
+				// One action for the whole level: every navmesh agent (default, large, ...) is
+				// baked together. No actor has to be selected or clicked.
 				if (ImGui::MenuItem("Build Navigation", nullptr, false, ((EditorWorld) && (!bBuilding)) ? true : false))
 				{
 					Navigation->RequestWorldBuild(*EditorWorld, ENavigationManager::ENavigationWorldBuildReason::EDITOR);
@@ -366,7 +366,7 @@ namespace PigeonEngine
 							}
 						}
 						const EString Label = EString(PE_TEXT("Last build: ")) + EString::FromInt(Built)
-							+ EString(PE_TEXT("/")) + EString::FromInt(Report.Profiles.Num<UINT32>()) + EString(PE_TEXT(" profiles"));
+							+ EString(PE_TEXT("/")) + EString::FromInt(Report.Profiles.Num<UINT32>()) + EString(PE_TEXT(" agents"));
 						ImGui::MenuItem(*Label, nullptr, false, false);
 					}
 				}

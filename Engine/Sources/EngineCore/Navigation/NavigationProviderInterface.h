@@ -15,8 +15,8 @@ namespace PigeonEngine
 	* Everything crossing this interface is an engine type: no Recast, Detour or other
 	* library type appears here, which is what lets gameplay and editor code stay unaware of
 	* which backend is behind a navmesh. A second backend only has to implement this
-	* interface, register a factory under its name in ENavigationProviderRegistry, and derive
-	* a component from PNavigationComponent.
+	* interface, register a factory under its name in ENavigationProviderRegistry, and let a
+	* navmesh agent use it.
 	*
 	* Thread affinity: a provider is built and queried on the game thread. Bake is expected
 	* to be synchronous; a provider that moves work to a worker reports IsReady() == FALSE

@@ -10,7 +10,7 @@
 #include <Editor/Panels/WorldDetailsPanel.h>
 #include <Editor/Manager/EditorWorldContext.h>
 #include <Editor/Panels/LevelPanel.h>
-#include "PigeonBase/Object/Component/Navigation/NavMeshComponent.h"
+#include <Editor/Panels/NavigationPanel.h>
 #endif
 
 namespace PigeonEngine
@@ -390,6 +390,13 @@ namespace PigeonEngine
 		ImGui::SetNextWindowPos(ImVec2(10, 440), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Details");
 		EWorldDetailsPanel::GenerateDetails(this->GetWorld());
+		ImGui::End();
+
+		// ---- Navigation panel: every navmesh agent of the level in one place ----
+		ImGui::SetNextWindowSize(ImVec2(380, 300), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(300, 380), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Navigation");
+		EWorldNavigationPanel::GenerateNavigation(this->GetWorld());
 		ImGui::End();
 	}
 #endif

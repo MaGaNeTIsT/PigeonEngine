@@ -18,10 +18,10 @@
 #include "PigeonBase/Object/Component/Primitive/SkyLightComponent.h"
 #include "PigeonBase/Object/Component/Physics/PhysicsComponent.h"
 #include "PigeonBase/Object/Component/Physics/TriggerComponent.h"
-#include "PigeonBase/Object/Component/Navigation/NavMeshComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavMeshBoundsComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavObstacleComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavAgentComponent.h"
+#include <Asset/NavMeshAsset/NavMeshAsset.h>
 #include <Navigation/NavigationGeometry.h>
 #include <Navigation/NavigationManager.h>
 #include <Navigation/RecastNavigationProvider.h>
@@ -1383,18 +1383,6 @@ namespace PigeonEngine
 		Trigger->SetShape(new FSphereShape(42.f), TRUE);
 		Actor->AddComponent(Trigger);
 
-		PNavMeshComponent* NavMesh = new PNavMeshComponent();
-		NavMesh->SetBuildOnBeginPlay(FALSE);
-		NavMesh->SetBakeVolumeExtent(Vector3(100.f, 200.f, 300.f));
-		{
-			ENavMeshBuildSettings BuildSettings;
-			BuildSettings.CellSize = 21.f;
-			BuildSettings.TileSizeCells = 64u;
-			BuildSettings.MaxCrowdAgents = 8u;
-			NavMesh->SetBuildSettings(BuildSettings);
-		}
-		Actor->AddComponent(NavMesh);
-
 		PNavObstacleComponent* Obstacle = new PNavObstacleComponent();
 		Obstacle->SetShapeType(NAVIGATION_OBSTACLE_BOX);
 		Obstacle->SetBoxHalfExtents(Vector3(40.f, 75.f, 40.f));
@@ -1443,7 +1431,6 @@ namespace PigeonEngine
 			PSkyLightComponent* LoadedSky = Loaded->FindComponent<PSkyLightComponent>();
 			PPhysicsComponent* LoadedPhysics = Loaded->FindComponent<PPhysicsComponent>();
 			PTriggerComponent* LoadedTrigger = Loaded->FindComponent<PTriggerComponent>();
-			PNavMeshComponent* LoadedNavMesh = Loaded->FindComponent<PNavMeshComponent>();
 			PNavObstacleComponent* LoadedObstacle = Loaded->FindComponent<PNavObstacleComponent>();
 			PNavAgentComponent* LoadedAgent = Loaded->FindComponent<PNavAgentComponent>();
 			PWaterSimulationComponent* LoadedWater = Loaded->FindComponent<PWaterSimulationComponent>();
@@ -1498,12 +1485,7 @@ namespace PigeonEngine
 					Sphere && (EMath::Abs(Sphere->Raidus - 42.f) <= 1.0e-4f);
 			}
 
-			const BOOL32 bNavOk = LoadedNavMesh && LoadedObstacle && LoadedAgent &&
-				(LoadedNavMesh->GetBuildOnBeginPlay() == FALSE) &&
-				IsVectorNearlyEqual(LoadedNavMesh->GetBakeVolumeExtent(), Vector3(100.f, 200.f, 300.f), 1.0e-4f) &&
-				(EMath::Abs(LoadedNavMesh->GetBuildSettings().CellSize - 21.f) <= 1.0e-4f) &&
-				(LoadedNavMesh->GetBuildSettings().TileSizeCells == 64u) &&
-				(LoadedNavMesh->GetBuildSettings().MaxCrowdAgents == 8u) &&
+			const BOOL32 bNavOk = LoadedObstacle && LoadedAgent &&
 				(LoadedObstacle->GetShapeType() == NAVIGATION_OBSTACLE_BOX) &&
 				IsVectorNearlyEqual(LoadedObstacle->GetBoxHalfExtents(), Vector3(40.f, 75.f, 40.f), 1.0e-4f) &&
 				(EMath::Abs(LoadedObstacle->FollowThreshold - 7.f) <= 1.0e-5f) &&
@@ -1817,15 +1799,6 @@ namespace PigeonEngine
 		Trigger->SetBackend(ETriggerBackendType::SENSOR);
 		Trigger->SetShape(new FSphereShape(44.f), TRUE);
 		ContentActor->AddComponent(Trigger);
-		PNavMeshComponent* NavMesh = new PNavMeshComponent();
-		{
-			ENavMeshBuildSettings Settings = NavMesh->GetBuildSettings();
-			Settings.CellSize = 31.f;
-			Settings.MaxCrowdAgents = 7u;
-			NavMesh->SetBuildSettings(Settings);
-		}
-		ContentActor->AddComponent(NavMesh);
-
 		PActor* ChildActor = new PActor();
 		POBJ_DEBUGNAME_SET(ChildActor, "SanityAcceptanceChild");
 		SaveWorld->AddActor(ChildActor);
@@ -1894,7 +1867,6 @@ namespace PigeonEngine
 				PDirectionalLightComponent* LoadedDirectional = LoadedContent->FindComponent<PDirectionalLightComponent>();
 				PPhysicsComponent* LoadedPhysics = LoadedContent->FindComponent<PPhysicsComponent>();
 				PTriggerComponent* LoadedTrigger = LoadedContent->FindComponent<PTriggerComponent>();
-				PNavMeshComponent* LoadedNavMesh = LoadedContent->FindComponent<PNavMeshComponent>();
 				PWaterSurfaceComponent* LoadedSurface = LoadedSurfaceActor->FindComponent<PWaterSurfaceComponent>();
 				PWaterSimulationComponent* LoadedSimulation = LoadedSimulationActor->FindComponent<PWaterSimulationComponent>();
 				PStaticMeshComponent* LoadedStaticMesh = LoadedContent->FindComponent<PStaticMeshComponent>();
@@ -1910,8 +1882,6 @@ namespace PigeonEngine
 					LoadedDirectional && (EMath::Abs(LoadedDirectional->GetIlluminanceLux() - 12345.f) <= 1.0e-2f) &&
 					LoadedBox && IsVectorNearlyEqual(LoadedBox->HalfExtent, Vector3(11.f, 22.f, 33.f), 1.0e-4f) &&
 					LoadedSphere && (EMath::Abs(LoadedSphere->Raidus - 44.f) <= 1.0e-4f) &&
-					LoadedNavMesh && (EMath::Abs(LoadedNavMesh->GetBuildSettings().CellSize - 31.f) <= 1.0e-4f) &&
-					(LoadedNavMesh->GetBuildSettings().MaxCrowdAgents == 7u) &&
 					(LoadedChild->GetAttachedParentActor() == LoadedContent) &&
 					LoadedSimulation && (EMath::Abs(LoadedSimulation->GetInitialDepth() - 4.5f) <= 1.0e-4f) &&
 					LoadedSurface && LoadedSurface->GetSimulationHandle().IsValid() &&
@@ -2100,9 +2070,9 @@ namespace PigeonEngine
 		// its base before drawing its own extras.
 		const BOOL32 bActorEditorCounted = (EEditorCustomization::CountActorEditorsForClass(GetClassHashCode<PActor>()) >= 1u) ? TRUE : FALSE;
 
-		// PNavMeshComponent's chain composes PSceneComponent + PNavigationComponent +
-		// PNavMeshComponent; the exact three-block layout the old override chain produced.
-		const BOOL32 bNavMeshChainCounted = (EEditorCustomization::CountComponentEditorsForClass(GetClassHashCode<PNavMeshComponent>()) == 3u) ? TRUE : FALSE;
+		// A bounds volume inherits the one scene editor; navigation components no longer register
+		// extras of their own, so the chain stays exactly one block.
+		const BOOL32 bNavMeshChainCounted = (EEditorCustomization::CountComponentEditorsForClass(GetClassHashCode<PNavMeshBoundsComponent>()) == 1u) ? TRUE : FALSE;
 
 		// A class with no builtin registration anywhere on its chain counts zero - its
 		// details are the bare reflection grid - and picks up editors when one registers.
@@ -2751,34 +2721,34 @@ namespace PigeonEngine
 		const BOOL32 bTiledBuilt = TiledProvider.Build(MakeSanityNavigationLinkGeometry(TRUE), TiledStats);
 		const BOOL32 bTiledLink = (bTiledBuilt && (TiledStats.TileCount >= 2u) && SanityPathCrossesGap(TiledProvider)) ? TRUE : FALSE;
 
-		// The component's link array is the level format for the connections, so the reflected
+		// The agent profile's link array is the level format for the connections, so the reflected
 		// property has to round trip a link exactly.
-		PNavMeshComponent* SourceComponent = new PNavMeshComponent();
+		PNavMeshActor* SourceActor = new PNavMeshActor();
+		FNavMeshProfile SourceProfile;
 		ENavigationLink SourceLink;
 		SourceLink.Start = Vector3(-150.0f, 20.0f, 10.0f);
 		SourceLink.End = Vector3(150.0f, 20.0f, -10.0f);
 		SourceLink.Radius = 75.0f;
 		SourceLink.bDirectional = TRUE;
 		SourceLink.Area = ENavigationAreaFlagType::NAVIGATION_AREA_DOOR;
-		TArray<ENavigationLink> SourceLinks;
-		SourceLinks.Add(SourceLink);
-		SourceComponent->SetNavigationLinks(SourceLinks);
+		SourceProfile.NavLinks.Add(SourceLink);
+		SourceActor->SetProfile(SourceProfile);
 
 		CJsonObject Document;
 		EJsonArchiveWriter Writer(Document);
-		EClassPropertyRegistry::SerializeObject(Writer, GetClassHashCode<PNavMeshComponent>(), SourceComponent);
-		PNavMeshComponent* LoadedComponent = new PNavMeshComponent();
+		EClassPropertyRegistry::SerializeObject(Writer, GetClassHashCode<PNavMeshActor>(), SourceActor);
+		PNavMeshActor* LoadedActor = new PNavMeshActor();
 		EJsonArchiveReader Reader(Document);
-		EClassPropertyRegistry::SerializeObject(Reader, GetClassHashCode<PNavMeshComponent>(), LoadedComponent);
-		const TArray<ENavigationLink>& LoadedLinks = LoadedComponent->GetNavigationLinks();
+		EClassPropertyRegistry::SerializeObject(Reader, GetClassHashCode<PNavMeshActor>(), LoadedActor);
+		const TArray<ENavigationLink>& LoadedLinks = LoadedActor->GetNavigationLinks();
 		const BOOL32 bRoundTrip = ((LoadedLinks.Num<UINT32>() == 1u)
 			&& IsVectorNearlyEqual(LoadedLinks[0].Start, SourceLink.Start, 1.0e-4f)
 			&& IsVectorNearlyEqual(LoadedLinks[0].End, SourceLink.End, 1.0e-4f)
 			&& (EMath::Abs(LoadedLinks[0].Radius - SourceLink.Radius) <= 1.0e-4f)
 			&& (LoadedLinks[0].bDirectional == TRUE)
 			&& (LoadedLinks[0].Area == ENavigationAreaFlagType::NAVIGATION_AREA_DOOR)) ? TRUE : FALSE;
-		SourceComponent->Destroy();
-		LoadedComponent->Destroy();
+		SourceActor->Destroy();
+		LoadedActor->Destroy();
 
 		const BOOL32 bOk = (bDisconnected && bSingleLink && bTiledLink && bRoundTrip) ? TRUE : FALSE;
 		if (!bOk)
