@@ -1,10 +1,10 @@
 #include "NavMeshBoundsComponent.h"
 
 #include <Navigation/NavigationGeometry.h>
+#include <Navigation/NavigationManager.h>
 #include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
-#include <Navigation/NavigationManager.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 
@@ -51,7 +51,13 @@ namespace PigeonEngine
 
 	void PNavMeshBoundsComponent::SetNavMeshName(const EString& InName)
 	{
+		if (NavMeshName == InName)
+		{
+			return;
+		}
 		NavMeshName = InName;
+		// The volume feeds a different mesh now; its owner has to bake again.
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
 	}
 
 	const Vector3& PNavMeshBoundsComponent::GetExtent() const
@@ -61,7 +67,25 @@ namespace PigeonEngine
 
 	void PNavMeshBoundsComponent::SetExtent(const Vector3& InExtent)
 	{
-		Extent = Vector3(EMath::Max(InExtent.x, 0.0f), EMath::Max(InExtent.y, 0.0f), EMath::Max(InExtent.z, 0.0f));
+		const Vector3 NewExtent(EMath::Max(InExtent.x, 0.0f), EMath::Max(InExtent.y, 0.0f), EMath::Max(InExtent.z, 0.0f));
+		if ((NewExtent.x == Extent.x) && (NewExtent.y == Extent.y) && (NewExtent.z == Extent.z))
+		{
+			return;
+		}
+		Extent = NewExtent;
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
+	}
+
+	void PNavMeshBoundsComponent::BeginAddedToScene(PWorld* InWorld)
+	{
+		PSceneComponent::BeginAddedToScene(InWorld);
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
+	}
+
+	void PNavMeshBoundsComponent::RemovedFromScene()
+	{
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
+		PSceneComponent::RemovedFromScene();
 	}
 
 	EBoundAABB PNavMeshBoundsComponent::MakeWorldBound() const
@@ -79,6 +103,24 @@ namespace PigeonEngine
 	{
 		PSceneComponent::EditorTick(InDeltaTime);
 
+		// Moving or rotating the volume has no other notification hook, so the editor tick is
+		// where the owner's debounced rebuild is triggered from.
+		const Vector3 Location = GetComponentWorldLocation();
+		const Quaternion Rotation = GetComponentWorldRotation();
+		const Vector3 Scale = GetComponentWorldScale();
+		if ((!bHasLastTickTransform)
+			|| (Location.x != LastTickLocation.x) || (Location.y != LastTickLocation.y) || (Location.z != LastTickLocation.z)
+			|| (Rotation.x != LastTickRotation.x) || (Rotation.y != LastTickRotation.y)
+			|| (Rotation.z != LastTickRotation.z) || (Rotation.w != LastTickRotation.w)
+			|| (Scale.x != LastTickScale.x) || (Scale.y != LastTickScale.y) || (Scale.z != LastTickScale.z))
+		{
+			bHasLastTickTransform = TRUE;
+			LastTickLocation = Location;
+			LastTickRotation = Rotation;
+			LastTickScale = Scale;
+			ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
+		}
+
 		if (!ENavigationManager::GetManagerSingleton()->IsDebugDrawEnabled())
 		{
 			return;
@@ -87,9 +129,8 @@ namespace PigeonEngine
 		// Red when the volume bakes nothing: it is the only signal an author needs, and the
 		// bake skips invalid volumes instead of guessing what an axis at zero meant.
 		const BOOL32 bValid = (MakeWorldBound().IsValid != FALSE) ? TRUE : FALSE;
-		const Vector3 Scale = GetComponentWorldScale();
 		RDebugWireframePrimitiveManager* WireframeManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
-		WireframeManager->DrawCuboid(GetComponentWorldLocation(), GetComponentWorldRotation(),
+		WireframeManager->DrawCuboid(Location, Rotation,
 			Extent.x * 2.0f * Scale.x, Extent.y * 2.0f * Scale.y, Extent.z * 2.0f * Scale.z,
 			bValid ? Color4::Green() : Color4::Red());
 	}

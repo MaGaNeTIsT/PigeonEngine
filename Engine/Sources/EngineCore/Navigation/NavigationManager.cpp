@@ -303,6 +303,34 @@ namespace PigeonEngine
 		return Providers[static_cast<UINT32>(ExistingIndex)].Stats;
 	}
 
+	void ENavigationManager::BumpNavigationInputRevision(const PWorld* InWorld)
+	{
+		for (UINT32 Index = 0u, Num = WorldInputRevisions.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (WorldInputRevisions[Index].World == InWorld)
+			{
+				WorldInputRevisions[Index].Revision++;
+				return;
+			}
+		}
+		FNavigationWorldRevision Entry;
+		Entry.World = InWorld;
+		Entry.Revision = 2u;
+		WorldInputRevisions.Add(Entry);
+	}
+
+	UINT32 ENavigationManager::GetNavigationInputRevision(const PWorld* InWorld) const
+	{
+		for (UINT32 Index = 0u, Num = WorldInputRevisions.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (WorldInputRevisions[Index].World == InWorld)
+			{
+				return WorldInputRevisions[Index].Revision;
+			}
+		}
+		return 1u;
+	}
+
 	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath, const EString& InNavMeshName) const
 	{
 		const ENavigationQueryFilter DefaultFilter;
@@ -779,6 +807,7 @@ namespace PigeonEngine
 	{
 		Obstacles.Empty(0u);
 		CrowdBindings.Empty(0u);
+		WorldInputRevisions.Empty(0u);
 		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
 		{
 			delete Providers[Index].Provider;

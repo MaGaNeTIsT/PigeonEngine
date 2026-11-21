@@ -69,6 +69,16 @@ namespace PigeonEngine
 		PE_NODISCARD const ENavigationBuildStats&	GetBuildStats(const ObjectIdentityType& InOwnerId) const;
 
 		/*
+		* Authored navigation input changed: a bounds volume was added, moved or resized, or an
+		* owner edited its bake settings or links. The revision is per world, so a test or preview
+		* world editing its volumes never schedules a rebuild in the level that is open next to it.
+		* Owners compare this against the revision of their last build and schedule a debounced
+		* rebuild in the editor; runtime builds stay explicit.
+		*/
+		void				BumpNavigationInputRevision(const PWorld* InWorld);
+		PE_NODISCARD UINT32	GetNavigationInputRevision(const PWorld* InWorld) const;
+
+		/*
 		* Runtime obstacles. The description is retained, so a provider that is rebuilt or reloaded
 		* gets its obstacles back on its own: gameplay adds an obstacle once and then only moves it.
 		* InNavMeshName selects the group; the obstacle lands on the provider of that group whose
@@ -226,6 +236,14 @@ namespace PigeonEngine
 		TArray<FCrowdBinding>				CrowdBindings;
 		// Handed out to gameplay so its handle survives a provider rebuild.
 		ENavigationObstacleHandle			NextObstacleId = 1;
+		// Authored bake input revision per world; see BumpNavigationInputRevision. Keyed by world
+		// identity only, so a destroyed world's entry is a dead key, never dereferenced.
+		struct FNavigationWorldRevision
+		{
+			const PWorld*	World = nullptr;
+			UINT32			Revision = 1u;
+		};
+		TArray<FNavigationWorldRevision>	WorldInputRevisions;
 
 		EThread					BakeThread;
 		EEvent					BakeWakeEvent;

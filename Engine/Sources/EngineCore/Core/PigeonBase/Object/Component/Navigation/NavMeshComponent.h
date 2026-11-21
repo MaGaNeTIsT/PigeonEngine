@@ -68,6 +68,10 @@ namespace PigeonEngine
 		PE_NODISCARD const TArray<ENavigationLink>&	GetNavigationLinks() const;
 		void										SetNavigationLinks(const TArray<ENavigationLink>& InLinks);
 
+		// One owner per group: the oldest component of a group publishes, the others warn once
+		// and stay inert instead of shadowing it or overwriting its asset.
+		PE_NODISCARD BOOL32	IsPrimaryNavMeshOwner() const;
+
 	public:
 		// Baked mesh to use instead of a runtime bake. Assigning one drops the current provider and
 		// republishes from the asset on the next tick.
@@ -92,9 +96,6 @@ namespace PigeonEngine
 		// Regions of this component's group plus the owner's own box. An empty result is valid
 		// only for the default group, which then bakes the whole world.
 		PE_NODISCARD TArray<EBoundAABB>	CollectBakeVolumesInWorld() const;
-		// One owner per group: the oldest component of a group publishes, the others warn once
-		// and stay inert instead of shadowing it or overwriting its asset.
-		PE_NODISCARD BOOL32	IsPrimaryNavMeshOwner() const;
 
 		// Creates the Recast provider this component talks to and copies the bake settings over.
 		// The caller owns it until it is published or deleted.
@@ -133,6 +134,10 @@ namespace PigeonEngine
 		BOOL32					bBakeFailed = FALSE;
 		// The non-primary warning is one shot per component, not per tick.
 		mutable BOOL32			bWarnedNotPrimary = FALSE;
+		// Authored-input revision the last build saw, and the debounce countdown (editor only).
+		UINT32					LastSeenInputRevision = 0u;
+		BOOL32					bHasSeenInputRevision = FALSE;
+		FLOAT					PendingRebuildSeconds = 0.0f;
 
 		// Whether the component currently holds a published provider (baked here, or imported
 		// from its asset). The level-save auto-assign uses it to skip components with nothing
@@ -163,6 +168,9 @@ namespace PigeonEngine
 		// The last error recorded by SaveBakeAsAsset/ReloadNavMeshAsset; both clear it at entry.
 		PE_NODISCARD const EString&	GetLastNavMeshAssetError() const;
 
+		// TRUE while a debounced automatic rebuild is waiting for the authored input to settle.
+		PE_NODISCARD BOOL32			IsRebuildPending() const;
+
 		// Level-save auto-assign. A component the author already named is left alone; one with a
 		// published provider but no name gets the generated convention name <InLevelStem>_NavMesh,
 		// re-baked from the world being saved and written with overwrite allowed (the convention
@@ -172,6 +180,8 @@ namespace PigeonEngine
 
 	private:
 		EString	LastAssetError;
+		// Editor only: turns a changed navigation input revision into a debounced world bake.
+		void	UpdateAutoRebuild(FLOAT InDeltaTime);
 #endif
 	};
 

@@ -213,6 +213,9 @@ namespace PigeonEngine
 	// A failed automatic attempt (no ground yet, for example) is retried at this interval
 	// rather than every frame: a bake walks the whole world.
 	PE_CONSTEXPR_STATIC FLOAT NavigationAutoBuildRetrySeconds = 1.0f;
+	// An edit bumps the input revision on every frame of a drag; the owner waits this long after
+	// the last change, so dragging a volume produces one bake instead of dozens.
+	PE_CONSTEXPR_STATIC FLOAT NavigationAutoRebuildDebounceSeconds = 0.5f;
 
 	// Walks the same actor/component tree the geometry collector walks to find an owner of the
 	// same group that was created before InComponent. Object ids are allocated in creation
@@ -292,6 +295,7 @@ namespace PigeonEngine
 	void PNavMeshComponent::SetBuildSettings(const ENavMeshBuildSettings& InSettings)
 	{
 		BuildSettings = InSettings;
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
 	}
 
 	const Vector3& PNavMeshComponent::GetBakeVolumeExtent() const
@@ -302,6 +306,7 @@ namespace PigeonEngine
 	void PNavMeshComponent::SetBakeVolumeExtent(const Vector3& InExtent)
 	{
 		BakeVolumeExtent = Vector3(EMath::Max(InExtent.x, 0.0f), EMath::Max(InExtent.y, 0.0f), EMath::Max(InExtent.z, 0.0f));
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
 	}
 
 	const EString& PNavMeshComponent::GetNavMeshName() const
@@ -311,7 +316,13 @@ namespace PigeonEngine
 
 	void PNavMeshComponent::SetNavMeshName(const EString& InName)
 	{
+		if (NavMeshName == InName)
+		{
+			return;
+		}
+		// A different group means a different set of volumes and possibly a different asset.
 		NavMeshName = InName;
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
 	}
 
 	void PNavMeshComponent::RequestBuildNavigation()
@@ -337,6 +348,7 @@ namespace PigeonEngine
 	void PNavMeshComponent::SetNavigationLinks(const TArray<ENavigationLink>& InLinks)
 	{
 		NavigationLinks = InLinks;
+		ENavigationManager::GetManagerSingleton()->BumpNavigationInputRevision(GetWorld());
 	}
 
 	const ENavMeshAsset* PNavMeshComponent::GetNavMeshAsset() const
@@ -694,7 +706,63 @@ namespace PigeonEngine
 		{
 			TryBuildOnBeginPlay(InDeltaTime);
 		}
+
+#if ENGINE_EDITOR_ONLY
+		// Authored inputs (bounds volumes, settings, links) changed. The debounce turns a drag
+		// into a single rebuild; runtime builds stay on the explicit paths above.
+		UpdateAutoRebuild(InDeltaTime);
+#endif
 	}
+
+#if ENGINE_EDITOR_ONLY
+	void PNavMeshComponent::UpdateAutoRebuild(FLOAT InDeltaTime)
+	{
+		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
+		const UINT32 Revision = Manager->GetNavigationInputRevision(GetWorld());
+		if (!bHasSeenInputRevision)
+		{
+			// The first tick only records the revision: loading a level adds volumes, and that
+			// must not schedule a rebuild of the mesh the level is about to import.
+			bHasSeenInputRevision = TRUE;
+			LastSeenInputRevision = Revision;
+			return;
+		}
+		if (Revision != LastSeenInputRevision)
+		{
+			LastSeenInputRevision = Revision;
+			// Restart the countdown on every change, so a drag produces one bake at its end.
+			PendingRebuildSeconds = NavigationAutoRebuildDebounceSeconds;
+			return;
+		}
+		if (PendingRebuildSeconds <= 0.0f)
+		{
+			return;
+		}
+		PendingRebuildSeconds -= InDeltaTime;
+		if (PendingRebuildSeconds > 0.0f)
+		{
+			return;
+		}
+		PendingRebuildSeconds = 0.0f;
+
+		// Begin-play owns the first build, and a non-primary owner publishes nothing at all.
+		if ((!bHasBuilt) || (!IsPrimaryNavMeshOwner()))
+		{
+			return;
+		}
+		if (Manager->GetBuildState(GetUniqueID()) == ENavigationBuildStateType::NAVIGATION_BUILD_RUNNING)
+		{
+			// Let the running bake finish; the next input change schedules the following one.
+			return;
+		}
+		StartBakeFromWorld();
+	}
+
+	BOOL32 PNavMeshComponent::IsRebuildPending() const
+	{
+		return (PendingRebuildSeconds > 0.0f) ? TRUE : FALSE;
+	}
+#endif
 
 	void PNavMeshComponent::TryBuildOnBeginPlay(FLOAT InDeltaTime)
 	{

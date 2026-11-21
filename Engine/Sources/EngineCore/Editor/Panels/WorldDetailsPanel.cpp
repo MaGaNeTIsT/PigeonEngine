@@ -171,6 +171,16 @@ namespace PigeonEngine
 			}
 
 			ImGui::TextDisabled("Build settings are editable in the Details grid above.");
+			const EString& GroupName = Component->GetNavMeshName();
+			ImGui::Text("Group: %s", (GroupName.Length() > 0u) ? (*GroupName) : "Default");
+			if (!Component->IsPrimaryNavMeshOwner())
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Another owner of this group publishes; this component is inert.");
+			}
+			if (Component->IsRebuildPending())
+			{
+				ImGui::TextDisabled("Waiting for edited volumes/settings to settle, then rebuilding...");
+			}
 			const ENavMeshAsset* LoadedAsset = Component->GetNavMeshAsset();
 			const EString& AssetName = Component->GetNavMeshAssetName();
 			if (LoadedAsset && (LoadedAsset->GetAssetName() == AssetName))
