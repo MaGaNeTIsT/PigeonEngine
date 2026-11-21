@@ -92,6 +92,9 @@ namespace PigeonEngine
 		// Regions of this component's group plus the owner's own box. An empty result is valid
 		// only for the default group, which then bakes the whole world.
 		PE_NODISCARD TArray<EBoundAABB>	CollectBakeVolumesInWorld() const;
+		// One owner per group: the oldest component of a group publishes, the others warn once
+		// and stay inert instead of shadowing it or overwriting its asset.
+		PE_NODISCARD BOOL32	IsPrimaryNavMeshOwner() const;
 
 		// Creates the Recast provider this component talks to and copies the bake settings over.
 		// The caller owns it until it is published or deleted.
@@ -128,6 +131,8 @@ namespace PigeonEngine
 		// Set when the last queued bake reported failure, so the retry policy can react without
 		// re-requesting blindly.
 		BOOL32					bBakeFailed = FALSE;
+		// The non-primary warning is one shot per component, not per tick.
+		mutable BOOL32			bWarnedNotPrimary = FALSE;
 
 		// Whether the component currently holds a published provider (baked here, or imported
 		// from its asset). The level-save auto-assign uses it to skip components with nothing
@@ -147,6 +152,11 @@ namespace PigeonEngine
 		// panel after an external bake/replace, without restarting the editor.
 		BOOL32						ReloadNavMeshAsset(EString& OutError);
 		ERecastNavigationProvider*	BakeProviderSynchronously(ENavigationBuildStats& OutStats);
+
+		// <LevelStem>_NavMesh for the default group, <LevelStem>_<group>_NavMesh otherwise, with
+		// characters a file name cannot hold replaced by '_'. Static so the naming rule is
+		// testable without a world.
+		static EString				MakeNavMeshAssetName(const EString& InLevelStem, const EString& InNavMeshName);
 
 		// The single queued asset request failed to load; the component fell back to the world bake.
 		PE_NODISCARD BOOL32			HasNavMeshAssetFailedToLoad() const;

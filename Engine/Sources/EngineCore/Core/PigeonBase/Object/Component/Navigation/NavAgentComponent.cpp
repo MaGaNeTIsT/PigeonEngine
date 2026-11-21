@@ -83,6 +83,10 @@ namespace PigeonEngine
 			[](const PNavAgentComponent* Component) -> BOOL32 { return Component->GetUseCrowd(); },
 			[](PNavAgentComponent* Component, const BOOL32& Value) -> void { Component->SetUseCrowd(Value); },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavAgentComponent, EString>(ClassHash, PE_TEXT("NavMeshName"),
+			[](const PNavAgentComponent* Component) -> EString { return Component->GetNavMeshName(); },
+			[](PNavAgentComponent* Component, const EString& Value) -> void { Component->SetNavMeshName(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 		AddClassPropertyAccessors<PNavAgentComponent, Vector3>(ClassHash, PE_TEXT("TargetLocation"),
 			[](const PNavAgentComponent* Component) -> Vector3 { return Component->GetTargetLocation(); },
 			[](PNavAgentComponent* Component, const Vector3& Value) -> void { Component->SetTargetLocation(Value); },
@@ -196,6 +200,16 @@ namespace PigeonEngine
 		Settings = InSettings;
 	}
 
+	const EString& PNavAgentComponent::GetNavMeshName() const
+	{
+		return NavMeshName;
+	}
+
+	void PNavAgentComponent::SetNavMeshName(const EString& InName)
+	{
+		NavMeshName = InName;
+	}
+
 	BOOL32 PNavAgentComponent::MoveToLocation(const Vector3& InTarget)
 	{
 		MoveTarget = InTarget;
@@ -306,7 +320,7 @@ namespace PigeonEngine
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
 		// Idempotent: it recreates the agent after its volume was rebuilt, which is what keeps a
 		// crowd agent walking when the navmesh is rebuilt underneath it.
-		if (!Manager->RegisterCrowdAgent(GetUniqueID(), OwnerActor->GetActorWorldLocation(), Settings))
+		if (!Manager->RegisterCrowdAgent(GetUniqueID(), NavMeshName, OwnerActor->GetActorWorldLocation(), Settings))
 		{
 			return;
 		}
@@ -355,7 +369,7 @@ namespace PigeonEngine
 		}
 
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		if (!Manager->GetDefaultProvider())
+		if (!Manager->GetDefaultProvider(NavMeshName))
 		{
 			// The level has no navmesh yet: the bake may still be waiting for its assets.
 			// Keeping the request pending is what lets an agent spawned in the same frame as
@@ -365,7 +379,7 @@ namespace PigeonEngine
 
 		ENavigationPath Path;
 		const ENavigationQueryFilter Filter = MakeAgentQueryFilter(Settings);
-		if ((!Manager->FindPath(OwnerActor->GetActorWorldLocation(), InTarget, Filter, Path)) || (!Path.IsValid()))
+		if ((!Manager->FindPath(OwnerActor->GetActorWorldLocation(), InTarget, Filter, Path, NavMeshName)) || (!Path.IsValid()))
 		{
 			bHasMoveRequest = FALSE;
 			FinishMove(ENavigationPathStatusType::NAVIGATION_PATH_INVALID);

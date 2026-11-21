@@ -75,7 +75,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void ENavigationManager::RegisterProvider(const ObjectIdentityType& InOwnerId, ENavigationProviderInterface* InProvider)
+	void ENavigationManager::RegisterProvider(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider)
 	{
 		if (!InProvider)
 		{
@@ -83,33 +83,44 @@ namespace PigeonEngine
 			return;
 		}
 
+		UINT32 Serial = 1u;
 		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
 		if (ExistingIndex >= 0)
 		{
 			// A replacement releases the old provider here rather than at the call site so
-			// ownership never depends on who built what.
+			// ownership never depends on who built what. Republishing the same object is a
+			// state refresh, not a replacement: deleting it would leave the entry dangling.
 			FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ExistingIndex)];
-			delete Entry.Provider;
+			if (Entry.Provider != InProvider)
+			{
+				delete Entry.Provider;
+			}
 			Entry.Provider = InProvider;
+			Entry.GroupName = InNavMeshName;
 			Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_READY;
 			// A bake queued before this publish is older than what is being installed now.
 			Entry.Serial++;
+			Serial = Entry.Serial;
 		}
 		else
 		{
 			FNavigationProviderEntry Entry;
 			Entry.OwnerId = InOwnerId;
+			Entry.GroupName = InNavMeshName;
 			Entry.Provider = InProvider;
 			Entry.State = ENavigationBuildStateType::NAVIGATION_BUILD_READY;
 			Entry.Serial = 1u;
+			Serial = Entry.Serial;
 			Providers.Add(Entry);
 		}
-		ReplayObstacles();
-		InvalidateCrowdBindings();
+		// The replaced provider took its crowd agents and obstacles with it, so both are
+		// restored on the new one before any query can reach it.
+		InvalidateCrowdBindings(InOwnerId);
+		ReplayObstacles(InOwnerId, InNavMeshName, Serial, *InProvider);
 		InvalidateDebugLines();
 	}
 
-	BOOL32 ENavigationManager::RequestBuild(const ObjectIdentityType& InOwnerId, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry)
+	BOOL32 ENavigationManager::RequestBuild(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry)
 	{
 		if (!InProvider)
 		{
@@ -121,8 +132,15 @@ namespace PigeonEngine
 		{
 			FNavigationProviderEntry Entry;
 			Entry.OwnerId = InOwnerId;
+			Entry.GroupName = InNavMeshName;
 			Providers.Add(Entry);
 			EntryIndex = static_cast<INT32>(Providers.Num<UINT32>() - 1u);
+		}
+		else
+		{
+			// The owner may have been renamed between requests; the next publish has to answer
+			// for the group the caller asked for now.
+			Providers[static_cast<UINT32>(EntryIndex)].GroupName = InNavMeshName;
 		}
 
 		FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(EntryIndex)];
@@ -159,6 +177,20 @@ namespace PigeonEngine
 		delete Providers[static_cast<UINT32>(ExistingIndex)].Provider;
 		Providers[static_cast<UINT32>(ExistingIndex)].Provider = nullptr;
 		Providers.RemoveAt(static_cast<UINT32>(ExistingIndex));
+
+		// Obstacles and crowd handles are namespaces of the dead provider; keeping them would
+		// let a later provider interpret a handle it never issued. Obstacles stay retained and
+		// unowned so a replacement provider of the same group can adopt them.
+		for (UINT32 Index = 0u, Num = Obstacles.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (Obstacles[Index].ProviderOwnerId == InOwnerId)
+			{
+				Obstacles[Index].ProviderHandle = NavigationInvalidObstacleHandle;
+				Obstacles[Index].ProviderOwnerId = 0;
+				Obstacles[Index].ProviderSerial = 0u;
+			}
+		}
+		InvalidateCrowdBindings(InOwnerId);
 		InvalidateDebugLines();
 	}
 
@@ -183,33 +215,66 @@ namespace PigeonEngine
 		return (ExistingIndex >= 0) ? Providers[static_cast<UINT32>(ExistingIndex)].Provider : nullptr;
 	}
 
-	ENavigationProviderInterface* ENavigationManager::GetDefaultProvider() const
+	ENavigationProviderInterface* ENavigationManager::GetDefaultProvider(const EString& InNavMeshName) const
 	{
 		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
 		{
-			ENavigationProviderInterface* Provider = Providers[Index].Provider;
-			if ((!!Provider) && (Provider->IsReady()))
+			const FNavigationProviderEntry& Entry = Providers[Index];
+			if ((Entry.GroupName != InNavMeshName) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
 			{
-				return Provider;
+				continue;
 			}
+			return Entry.Provider;
 		}
 		return nullptr;
 	}
 
-	ENavigationProviderInterface* ENavigationManager::FindProviderForLocation(const Vector3& InLocation) const
+	INT32 ENavigationManager::FindProviderIndexForLocation(const Vector3& InLocation, const EString& InNavMeshName) const
 	{
+		INT32 FirstReady = -1;
 		for (UINT32 Index = 0u, Num = Providers.Num<UINT32>(); Index < Num; Index++)
 		{
-			ENavigationProviderInterface* Provider = Providers[Index].Provider;
-			if ((!!Provider) && (Provider->IsReady()) && (BoundsContainLocation(Provider->GetBounds(), InLocation)))
+			const FNavigationProviderEntry& Entry = Providers[Index];
+			if ((Entry.GroupName != InNavMeshName) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
 			{
-				return Provider;
+				continue;
+			}
+			if (FirstReady < 0)
+			{
+				FirstReady = static_cast<INT32>(Index);
+			}
+			if (BoundsContainLocation(Entry.Provider->GetBounds(), InLocation))
+			{
+				return static_cast<INT32>(Index);
 			}
 		}
-		// Outside every baked volume the default provider is still the best answer: it
-		// projects the point onto its own mesh, which is what a caller with a stray start
-		// position expects.
-		return GetDefaultProvider();
+		return FirstReady;
+	}
+
+	ENavigationProviderInterface* ENavigationManager::FindProviderForLocation(const Vector3& InLocation, const EString& InNavMeshName) const
+	{
+		// A group never falls back to another group's mesh: an agent configured for one navmesh
+		// must not silently walk on a different one. Inside the group the covering provider
+		// wins, and outside every volume of it the group's first ready provider projects the
+		// stray point onto its own mesh.
+		const INT32 Index = FindProviderIndexForLocation(InLocation, InNavMeshName);
+		return (Index >= 0) ? Providers[static_cast<UINT32>(Index)].Provider : nullptr;
+	}
+
+	ENavigationProviderInterface* ENavigationManager::GetProviderForOwner(const ObjectIdentityType& InOwnerId, const UINT32& InSerial) const
+	{
+		const INT32 ExistingIndex = FindProviderIndex(InOwnerId);
+		if (ExistingIndex < 0)
+		{
+			return nullptr;
+		}
+		const FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ExistingIndex)];
+		if ((Entry.Serial != InSerial) || (!Entry.Provider) || (!Entry.Provider->IsReady()))
+		{
+			// A rebuild replaced the provider the caller's handle belonged to.
+			return nullptr;
+		}
+		return Entry.Provider;
 	}
 
 	UINT32 ENavigationManager::GetProviderNum() const
@@ -238,15 +303,15 @@ namespace PigeonEngine
 		return Providers[static_cast<UINT32>(ExistingIndex)].Stats;
 	}
 
-	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath) const
+	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath, const EString& InNavMeshName) const
 	{
 		const ENavigationQueryFilter DefaultFilter;
-		return FindPath(InStart, InEnd, DefaultFilter, OutPath);
+		return FindPath(InStart, InEnd, DefaultFilter, OutPath, InNavMeshName);
 	}
 
-	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, ENavigationPath& OutPath) const
+	BOOL32 ENavigationManager::FindPath(const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, ENavigationPath& OutPath, const EString& InNavMeshName) const
 	{
-		ENavigationProviderInterface* Provider = FindProviderForLocation(InStart);
+		ENavigationProviderInterface* Provider = FindProviderForLocation(InStart, InNavMeshName);
 		if (!Provider)
 		{
 			return FALSE;
@@ -254,9 +319,9 @@ namespace PigeonEngine
 		return Provider->FindPath(InStart, InEnd, InFilter, OutPath);
 	}
 
-	BOOL32 ENavigationManager::ProjectPoint(const Vector3& InLocation, Vector3& OutLocation) const
+	BOOL32 ENavigationManager::ProjectPoint(const Vector3& InLocation, Vector3& OutLocation, const EString& InNavMeshName) const
 	{
-		ENavigationProviderInterface* Provider = FindProviderForLocation(InLocation);
+		ENavigationProviderInterface* Provider = FindProviderForLocation(InLocation, InNavMeshName);
 		if (!Provider)
 		{
 			return FALSE;
@@ -271,55 +336,110 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	ENavigationObstacleHandle ENavigationManager::AttachObstacle(FNavigationObstacleDesc& InOutDesc, const ObjectIdentityType& InOwnerId, const UINT32& InSerial, ENavigationProviderInterface& InProvider)
+	{
+		const ENavigationObstacleHandle Handle = InOutDesc.bBox
+			? InProvider.AddBoxObstacle(InOutDesc.Center, InOutDesc.HalfExtents, InOutDesc.YawRadians)
+			: InProvider.AddCylinderObstacle(InOutDesc.Center, InOutDesc.Radius, InOutDesc.Height);
+		if (Handle == NavigationInvalidObstacleHandle)
+		{
+			// The provider cannot take obstacles at all (a single tile bake has no tile cache).
+			// The description stays unowned so a later tiled provider of the group can adopt it.
+			InOutDesc.ProviderHandle = NavigationInvalidObstacleHandle;
+			InOutDesc.ProviderOwnerId = 0;
+			InOutDesc.ProviderSerial = 0u;
+			return NavigationInvalidObstacleHandle;
+		}
+		InOutDesc.ProviderHandle = Handle;
+		InOutDesc.ProviderOwnerId = InOwnerId;
+		InOutDesc.ProviderSerial = InSerial;
+		return Handle;
+	}
+
 	ENavigationObstacleHandle ENavigationManager::PublishObstacle(FNavigationObstacleDesc& InOutDesc)
 	{
-		ENavigationProviderInterface* Provider = FindProviderForLocation(InOutDesc.Center);
-		if (!Provider)
+		const INT32 ProviderIndex = FindProviderIndexForLocation(InOutDesc.Center, InOutDesc.GroupName);
+		if (ProviderIndex < 0)
 		{
-			// No volume covers the obstacle yet. The description stays retained and is replayed when
-			// one is published, which is what makes an obstacle added before the bake survive it.
+			// No volume of the group covers the obstacle yet. The description stays retained and
+			// is replayed when one is published, which is what makes an obstacle added before
+			// the bake survive it.
 			InOutDesc.ProviderHandle = NavigationInvalidObstacleHandle;
+			InOutDesc.ProviderOwnerId = 0;
+			InOutDesc.ProviderSerial = 0u;
 			return InOutDesc.Id;
 		}
-		InOutDesc.ProviderHandle = InOutDesc.bBox
-			? Provider->AddBoxObstacle(InOutDesc.Center, InOutDesc.HalfExtents, InOutDesc.YawRadians)
-			: Provider->AddCylinderObstacle(InOutDesc.Center, InOutDesc.Radius, InOutDesc.Height);
+		const FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ProviderIndex)];
+		if (!Entry.Provider)
+		{
+			return InOutDesc.Id;
+		}
+		if (AttachObstacle(InOutDesc, Entry.OwnerId, Entry.Serial, *Entry.Provider) == NavigationInvalidObstacleHandle)
+		{
+			// A provider exists but refused the obstacle: report it instead of handing back an
+			// id for something that is not live.
+			return NavigationInvalidObstacleHandle;
+		}
 		return InOutDesc.Id;
 	}
 
-	void ENavigationManager::ReplayObstacles()
+	void ENavigationManager::ReplayObstacles(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, const UINT32& InSerial, ENavigationProviderInterface& InProvider)
 	{
 		for (UINT32 Index = 0u, Num = Obstacles.Num<UINT32>(); Index < Num; Index++)
 		{
-			PublishObstacle(Obstacles[Index]);
+			FNavigationObstacleDesc& Desc = Obstacles[Index];
+			const BOOL32 bOwnedHere = (Desc.ProviderOwnerId == InOwnerId) ? TRUE : FALSE;
+			if ((!bOwnedHere) && (Desc.ProviderOwnerId != 0))
+			{
+				// Belongs to another live provider; touching it here would duplicate it there.
+				continue;
+			}
+			if ((!bOwnedHere) && (Desc.GroupName != InNavMeshName))
+			{
+				continue;
+			}
+			if ((!bOwnedHere) && (!BoundsContainLocation(InProvider.GetBounds(), Desc.Center)))
+			{
+				// Still outside this provider's coverage; the provider that covers it adopts it.
+				continue;
+			}
+			AttachObstacle(Desc, InOwnerId, InSerial, InProvider);
 		}
 	}
 
-	ENavigationObstacleHandle ENavigationManager::AddCylinderObstacle(const ObjectIdentityType& InRequesterId, const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight)
+	ENavigationObstacleHandle ENavigationManager::AddCylinderObstacle(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight)
 	{
 		FNavigationObstacleDesc Desc;
 		Desc.Id = NextObstacleId++;
 		Desc.RequesterId = InRequesterId;
+		Desc.GroupName = InNavMeshName;
 		Desc.bBox = FALSE;
 		Desc.Center = InCenter;
 		Desc.Radius = InRadius;
 		Desc.Height = InHeight;
 		// Retained even when no volume covers it yet: the replay after the next build picks it up.
-		PublishObstacle(Desc);
+		if (PublishObstacle(Desc) == NavigationInvalidObstacleHandle)
+		{
+			return NavigationInvalidObstacleHandle;
+		}
 		Obstacles.Add(Desc);
 		return Desc.Id;
 	}
 
-	ENavigationObstacleHandle ENavigationManager::AddBoxObstacle(const ObjectIdentityType& InRequesterId, const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians)
+	ENavigationObstacleHandle ENavigationManager::AddBoxObstacle(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians)
 	{
 		FNavigationObstacleDesc Desc;
 		Desc.Id = NextObstacleId++;
 		Desc.RequesterId = InRequesterId;
+		Desc.GroupName = InNavMeshName;
 		Desc.bBox = TRUE;
 		Desc.Center = InCenter;
 		Desc.HalfExtents = InHalfExtents;
 		Desc.YawRadians = InYawRadians;
-		PublishObstacle(Desc);
+		if (PublishObstacle(Desc) == NavigationInvalidObstacleHandle)
+		{
+			return NavigationInvalidObstacleHandle;
+		}
 		Obstacles.Add(Desc);
 		return Desc.Id;
 	}
@@ -336,9 +456,11 @@ namespace PigeonEngine
 			{
 				continue;
 			}
+			// Remove through the provider that accepted the obstacle. Resolving by position
+			// could hand the handle to a different provider after a rebuild.
 			if (Obstacles[Index].ProviderHandle != NavigationInvalidObstacleHandle)
 			{
-				ENavigationProviderInterface* Provider = FindProviderForLocation(Obstacles[Index].Center);
+				ENavigationProviderInterface* Provider = GetProviderForOwner(Obstacles[Index].ProviderOwnerId, Obstacles[Index].ProviderSerial);
 				if (!!Provider)
 				{
 					Provider->RemoveObstacle(Obstacles[Index].ProviderHandle);
@@ -373,15 +495,23 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
-	void ENavigationManager::InvalidateCrowdBindings()
+	void ENavigationManager::InvalidateCrowdBindings(const ObjectIdentityType& InOwnerId)
 	{
+		// Only the bindings of the provider that was replaced or removed lose their handle;
+		// agents living on other providers keep steering in place.
 		for (UINT32 Index = 0u, Num = CrowdBindings.Num<UINT32>(); Index < Num; Index++)
 		{
+			if (CrowdBindings[Index].ProviderOwnerId != InOwnerId)
+			{
+				continue;
+			}
 			CrowdBindings[Index].ProviderHandle = NavigationInvalidCrowdAgentHandle;
+			CrowdBindings[Index].ProviderOwnerId = 0;
+			CrowdBindings[Index].ProviderSerial = 0u;
 		}
 	}
 
-	BOOL32 ENavigationManager::RegisterCrowdAgent(const ObjectIdentityType& InRequesterId, const Vector3& InPosition, const ENavigationAgentSettings& InSettings)
+	BOOL32 ENavigationManager::RegisterCrowdAgent(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InPosition, const ENavigationAgentSettings& InSettings)
 	{
 		FCrowdBinding* Binding = FindCrowdBinding(InRequesterId);
 		if (!Binding)
@@ -391,29 +521,43 @@ namespace PigeonEngine
 			CrowdBindings.Add(NewBinding);
 			Binding = &CrowdBindings[CrowdBindings.Num<UINT32>() - 1u];
 		}
+		Binding->GroupName = InNavMeshName;
 		Binding->Settings = InSettings;
 		Binding->LastPosition = InPosition;
 
 		if (Binding->ProviderHandle != NavigationInvalidCrowdAgentHandle)
 		{
-			// Already registered with a live provider.
-			return TRUE;
+			// Already registered, but only while the provider is still the build that issued it.
+			if (!!GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial))
+			{
+				return TRUE;
+			}
+			Binding->ProviderHandle = NavigationInvalidCrowdAgentHandle;
+			Binding->ProviderOwnerId = 0;
+			Binding->ProviderSerial = 0u;
 		}
 
-		ENavigationProviderInterface* Provider = FindProviderForLocation(InPosition);
-		if (!Provider)
+		const INT32 ProviderIndex = FindProviderIndexForLocation(InPosition, Binding->GroupName);
+		if (ProviderIndex < 0)
 		{
 			return FALSE;
 		}
-		Binding->ProviderHandle = Provider->AddCrowdAgent(InPosition, InSettings);
+		const FNavigationProviderEntry& Entry = Providers[static_cast<UINT32>(ProviderIndex)];
+		if (!Entry.Provider)
+		{
+			return FALSE;
+		}
+		Binding->ProviderHandle = Entry.Provider->AddCrowdAgent(InPosition, InSettings);
 		if (Binding->ProviderHandle == NavigationInvalidCrowdAgentHandle)
 		{
 			return FALSE;
 		}
+		Binding->ProviderOwnerId = Entry.OwnerId;
+		Binding->ProviderSerial = Entry.Serial;
 		if (Binding->bHasTarget)
 		{
 			// The agent was re-created, so the target has to be handed over again.
-			Provider->RequestCrowdAgentMove(Binding->ProviderHandle, Binding->Target);
+			Entry.Provider->RequestCrowdAgentMove(Binding->ProviderHandle, Binding->Target);
 		}
 		return TRUE;
 	}
@@ -432,9 +576,12 @@ namespace PigeonEngine
 			// No agent yet; RegisterCrowdAgent hands the retained target over once there is one.
 			return FALSE;
 		}
-		ENavigationProviderInterface* Provider = FindProviderForLocation(Binding->LastPosition);
+		ENavigationProviderInterface* Provider = GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial);
 		if (!Provider)
 		{
+			Binding->ProviderHandle = NavigationInvalidCrowdAgentHandle;
+			Binding->ProviderOwnerId = 0;
+			Binding->ProviderSerial = 0u;
 			return FALSE;
 		}
 		return Provider->RequestCrowdAgentMove(Binding->ProviderHandle, InTarget);
@@ -452,10 +599,16 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		ENavigationProviderInterface* Provider = FindProviderForLocation(Binding->LastPosition);
+		ENavigationProviderInterface* Provider = GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial);
 		if (!!Provider)
 		{
 			Provider->StopCrowdAgent(Binding->ProviderHandle);
+		}
+		else
+		{
+			Binding->ProviderHandle = NavigationInvalidCrowdAgentHandle;
+			Binding->ProviderOwnerId = 0;
+			Binding->ProviderSerial = 0u;
 		}
 	}
 
@@ -469,7 +622,7 @@ namespace PigeonEngine
 			}
 			if (CrowdBindings[Index].ProviderHandle != NavigationInvalidCrowdAgentHandle)
 			{
-				ENavigationProviderInterface* Provider = FindProviderForLocation(CrowdBindings[Index].LastPosition);
+				ENavigationProviderInterface* Provider = GetProviderForOwner(CrowdBindings[Index].ProviderOwnerId, CrowdBindings[Index].ProviderSerial);
 				if (!!Provider)
 				{
 					Provider->RemoveCrowdAgent(CrowdBindings[Index].ProviderHandle);
@@ -487,7 +640,7 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		ENavigationProviderInterface* Provider = FindProviderForLocation(Binding->LastPosition);
+		ENavigationProviderInterface* Provider = GetProviderForOwner(Binding->ProviderOwnerId, Binding->ProviderSerial);
 		if (!Provider)
 		{
 			return FALSE;
@@ -675,9 +828,10 @@ namespace PigeonEngine
 			Entry.Stats = Result.Stats;
 			Result.Provider = nullptr;
 			// The old provider's tile cache and crowd died with it, so the obstacles have to be
-			// re-registered and the crowd bindings rebuilt by their owners.
-			ReplayObstacles();
-			InvalidateCrowdBindings();
+			// re-registered and the crowd bindings rebuilt by their owners. Only this provider's
+			// records are touched; other groups keep their agents and obstacles.
+			InvalidateCrowdBindings(Entry.OwnerId);
+			ReplayObstacles(Entry.OwnerId, Entry.GroupName, Entry.Serial, *Entry.Provider);
 			InvalidateDebugLines();
 		}
 	}

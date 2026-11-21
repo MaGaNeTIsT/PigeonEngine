@@ -42,6 +42,11 @@ namespace PigeonEngine
 		PE_NODISCARD const Vector3&	GetBoxHalfExtents() const;
 		void						SetBoxHalfExtents(const Vector3& InHalfExtents);
 
+		// Navmesh group the obstacle belongs to. Empty is the level's default navmesh; the
+		// obstacle registers with the provider of this group that covers its position.
+		PE_NODISCARD const EString&	GetNavMeshName() const;
+		void						SetNavMeshName(const EString& InName);
+
 	public:
 		// Re-register after the component moved further than this, in centimeters.
 		FLOAT	FollowThreshold = 5.0f;
@@ -60,6 +65,7 @@ namespace PigeonEngine
 		FLOAT							CylinderRadius = 40.0f;
 		FLOAT							CylinderHeight = 150.0f;
 		Vector3							BoxHalfExtents = Vector3(40.0f, 75.0f, 40.0f);
+		EString							NavMeshName;
 		// The id the manager handed out; stable across provider rebuilds.
 		ENavigationObstacleHandle		ObstacleId = NavigationInvalidObstacleHandle;
 		Vector3							LastCenter = Vector3::Zero();

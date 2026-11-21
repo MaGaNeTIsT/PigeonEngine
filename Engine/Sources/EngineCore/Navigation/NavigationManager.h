@@ -42,22 +42,27 @@ namespace PigeonEngine
 
 	public:
 		// Publishes a provider immediately. Used by the asset import path, which is a memory copy,
-		// and by any provider that does not need a bake.
-		void	RegisterProvider(const ObjectIdentityType& InOwnerId, ENavigationProviderInterface* InProvider);
+		// and by any provider that does not need a bake. InNavMeshName is the group the provider
+		// answers for: an empty name is the level's default navmesh.
+		void	RegisterProvider(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider);
 		// Queues a bake of InProvider with InGeometry on the worker. Ownership of the provider
 		// transfers when this returns TRUE; on FALSE the caller still owns it. A second request
 		// while one is running is refused, so a caller spamming rebuild is harmless.
-		BOOL32	RequestBuild(const ObjectIdentityType& InOwnerId, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry);
+		BOOL32	RequestBuild(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, ENavigationProviderInterface* InProvider, ENavigationSourceGeometry&& InGeometry);
 		void	UnregisterProvider(const ObjectIdentityType& InOwnerId);
 		// Per provider overlay switch. A level can hold several navigation volumes and only
 		// the one under construction needs to be drawn.
 		void	SetProviderDebugDrawEnabled(const ObjectIdentityType& InOwnerId, const BOOL32& InEnabled);
 
 		PE_NODISCARD ENavigationProviderInterface* GetProvider(const ObjectIdentityType& InOwnerId) const;
-		// First provider that finished a build. Null while nothing has been baked yet.
-		PE_NODISCARD ENavigationProviderInterface* GetDefaultProvider() const;
-		// Provider whose bounds contain InLocation, or the default one when none does.
-		PE_NODISCARD ENavigationProviderInterface* FindProviderForLocation(const Vector3& InLocation) const;
+		// First provider of the group that finished a build. Null while that group has nothing.
+		PE_NODISCARD ENavigationProviderInterface* GetDefaultProvider(const EString& InNavMeshName = EString()) const;
+		/*
+		* Provider of the group whose bounds contain InLocation, or that group's first ready
+		* provider when none does. Groups never answer for each other: an agent configured for
+		* one navmesh must not silently walk on another one.
+		*/
+		PE_NODISCARD ENavigationProviderInterface* FindProviderForLocation(const Vector3& InLocation, const EString& InNavMeshName = EString()) const;
 		PE_NODISCARD UINT32 GetProviderNum() const;
 		// Build state of one volume, for the component that requested it.
 		PE_NODISCARD ENavigationBuildStateType		GetBuildState(const ObjectIdentityType& InOwnerId) const;
@@ -66,14 +71,15 @@ namespace PigeonEngine
 		/*
 		* Runtime obstacles. The description is retained, so a provider that is rebuilt or reloaded
 		* gets its obstacles back on its own: gameplay adds an obstacle once and then only moves it.
-		* The volume is the one whose bounds contain the obstacle.
+		* InNavMeshName selects the group; the obstacle lands on the provider of that group whose
+		* bounds contain the obstacle.
 		*
 		* A cylinder sits with its base at InCenter; a box is centred on InCenter. Detour has no
 		* "move", so a moving obstacle is removed and re-added, which is what the obstacle component
 		* does when its threshold is crossed.
 		*/
-		ENavigationObstacleHandle	AddCylinderObstacle(const ObjectIdentityType& InRequesterId, const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight);
-		ENavigationObstacleHandle	AddBoxObstacle(const ObjectIdentityType& InRequesterId, const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians);
+		ENavigationObstacleHandle	AddCylinderObstacle(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InCenter, const FLOAT& InRadius, const FLOAT& InHeight);
+		ENavigationObstacleHandle	AddBoxObstacle(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InCenter, const Vector3& InHalfExtents, const FLOAT& InYawRadians);
 		void						RemoveObstacle(const ObjectIdentityType& InRequesterId, ENavigationObstacleHandle InHandle);
 
 		/*
@@ -83,18 +89,19 @@ namespace PigeonEngine
 		* rebuild. The requester drives its own transform from GetCrowdAgentState; the manager never
 		* writes to game objects.
 		*/
-		BOOL32	RegisterCrowdAgent(const ObjectIdentityType& InRequesterId, const Vector3& InPosition, const ENavigationAgentSettings& InSettings);
+		BOOL32	RegisterCrowdAgent(const ObjectIdentityType& InRequesterId, const EString& InNavMeshName, const Vector3& InPosition, const ENavigationAgentSettings& InSettings);
 		BOOL32	RequestCrowdAgentMove(const ObjectIdentityType& InRequesterId, const Vector3& InTarget);
 		void	StopCrowdAgent(const ObjectIdentityType& InRequesterId);
 		void	UnregisterCrowdAgent(const ObjectIdentityType& InRequesterId);
 		PE_NODISCARD BOOL32	GetCrowdAgentState(const ObjectIdentityType& InRequesterId, ENavigationCrowdAgentState& OutState) const;
 
 	public:
-		// Shortcuts used by gameplay: they resolve a provider and answer with engine types.
-		// Both return FALSE when no provider is ready; OutPath keeps its previous contents.
-		BOOL32	FindPath(const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath) const;
-		BOOL32	FindPath(const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, ENavigationPath& OutPath) const;
-		BOOL32	ProjectPoint(const Vector3& InLocation, Vector3& OutLocation) const;
+		// Shortcuts used by gameplay: they resolve a provider of InNavMeshName and answer with
+		// engine types. Both return FALSE when that group has no provider ready; OutPath keeps
+		// its previous contents.
+		BOOL32	FindPath(const Vector3& InStart, const Vector3& InEnd, ENavigationPath& OutPath, const EString& InNavMeshName = EString()) const;
+		BOOL32	FindPath(const Vector3& InStart, const Vector3& InEnd, const ENavigationQueryFilter& InFilter, ENavigationPath& OutPath, const EString& InNavMeshName = EString()) const;
+		BOOL32	ProjectPoint(const Vector3& InLocation, Vector3& OutLocation, const EString& InNavMeshName = EString()) const;
 
 	public:
 		void						SetDebugDrawEnabled(const BOOL32& InEnabled);
@@ -122,6 +129,8 @@ namespace PigeonEngine
 		struct FNavigationProviderEntry
 		{
 			ObjectIdentityType				OwnerId = 0;
+			// Group this provider answers for; empty is the level's default navmesh.
+			EString							GroupName;
 			ENavigationProviderInterface*	Provider = nullptr;
 			BOOL32							bDebugDrawEnabled = TRUE;
 			ENavigationBuildStateType		State = ENavigationBuildStateType::NAVIGATION_BUILD_IDLE;
@@ -143,14 +152,15 @@ namespace PigeonEngine
 		/*
 		* What gameplay asked for, kept so a rebuilt provider can be restored.
 		*
-		* Id is what gameplay holds and never changes. ProviderHandle belongs to whichever provider
-		* currently holds the obstacle, and is reassigned when a rebuild replaces that provider; that
-		* is what keeps a caller's handle valid across a rebuild.
+		* Id is what gameplay holds and never changes. ProviderHandle belongs to the provider
+		* recorded by ProviderOwnerId/ProviderSerial; storing the identity (not just the handle)
+		* is what keeps a handle from being interpreted by a provider that did not create it.
 		*/
 		struct FNavigationObstacleDesc
 		{
 			ENavigationObstacleHandle	Id = NavigationInvalidObstacleHandle;
 			ObjectIdentityType			RequesterId = 0;
+			EString						GroupName;
 			BOOL32						bBox = FALSE;
 			Vector3						Center = Vector3::Zero();
 			Vector3						HalfExtents = Vector3::Zero();
@@ -158,12 +168,17 @@ namespace PigeonEngine
 			FLOAT						Height = 0.0f;
 			FLOAT						YawRadians = 0.0f;
 			ENavigationObstacleHandle	ProviderHandle = NavigationInvalidObstacleHandle;
+			ObjectIdentityType			ProviderOwnerId = 0;
+			UINT32						ProviderSerial = 0u;
 		};
 		// One agent registered for local avoidance, kept so a rebuilt provider gets it back.
 		struct FCrowdBinding
 		{
 			ObjectIdentityType			RequesterId = 0;
+			EString						GroupName;
 			ENavigationCrowdAgentHandle	ProviderHandle = NavigationInvalidCrowdAgentHandle;
+			ObjectIdentityType			ProviderOwnerId = 0;
+			UINT32						ProviderSerial = 0u;
 			ENavigationAgentSettings	Settings;
 			Vector3						Target = Vector3::Zero();
 			BOOL32						bHasTarget = FALSE;
@@ -180,17 +195,28 @@ namespace PigeonEngine
 
 	private:
 		PE_NODISCARD INT32	FindProviderIndex(const ObjectIdentityType& InOwnerId) const;
+		// Index of the group's provider covering InLocation, or of the group's first ready one.
+		// -1 when the group has no ready provider at all.
+		PE_NODISCARD INT32	FindProviderIndexForLocation(const Vector3& InLocation, const EString& InNavMeshName) const;
+		// Provider of InOwnerId, but only while it is still the build recorded by InSerial.
+		PE_NODISCARD ENavigationProviderInterface* GetProviderForOwner(const ObjectIdentityType& InOwnerId, const UINT32& InSerial) const;
 		void				InvalidateDebugLines();
 		// Refills both cached debug lists from every ready provider when anything changed.
 		void				RebuildDebugSegments();
 		void				ReleaseAllProviders();
 		void				PublishFinishedBakes();
+		// Adds the description to InProvider and records owner and serial, so removal goes back
+		// to the provider that accepted it. Returns the gameplay handle, or invalid when the
+		// provider cannot take obstacles.
+		ENavigationObstacleHandle	AttachObstacle(FNavigationObstacleDesc& InOutDesc, const ObjectIdentityType& InOwnerId, const UINT32& InSerial, ENavigationProviderInterface& InProvider);
 		ENavigationObstacleHandle	PublishObstacle(FNavigationObstacleDesc& InOutDesc);
-		void						ReplayObstacles();
+		// Re-adds the obstacles that belonged to InOwnerId, and adopts unowned ones of the group
+		// that this provider now covers.
+		void						ReplayObstacles(const ObjectIdentityType& InOwnerId, const EString& InNavMeshName, const UINT32& InSerial, ENavigationProviderInterface& InProvider);
 		PE_NODISCARD FCrowdBinding*			FindCrowdBinding(const ObjectIdentityType& InRequesterId);
 		PE_NODISCARD const FCrowdBinding*	FindCrowdBinding(const ObjectIdentityType& InRequesterId) const;
-		// The crowd died with the provider that owned it, so every binding needs a new agent.
-		void						InvalidateCrowdBindings();
+		// The provider died with the old build, so its bindings need a new agent.
+		void						InvalidateCrowdBindings(const ObjectIdentityType& InOwnerId);
 		void				BakeWorkerLoop();
 		void				StopBakeWorker();
 

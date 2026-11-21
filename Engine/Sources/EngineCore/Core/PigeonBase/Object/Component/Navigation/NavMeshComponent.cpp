@@ -6,6 +6,8 @@
 #include <Navigation/NavigationManager.h>
 #include <Navigation/NavigationProviderInterface.h>
 #include <Navigation/NavigationProviderRegistry.h>
+#include <PigeonBase/Object/Actor.h>
+#include <PigeonBase/Object/World/World.h>
 #include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
@@ -211,6 +213,55 @@ namespace PigeonEngine
 	// A failed automatic attempt (no ground yet, for example) is retried at this interval
 	// rather than every frame: a bake walks the whole world.
 	PE_CONSTEXPR_STATIC FLOAT NavigationAutoBuildRetrySeconds = 1.0f;
+
+	// Walks the same actor/component tree the geometry collector walks to find an owner of the
+	// same group that was created before InComponent. Object ids are allocated in creation
+	// order, so the oldest owner is the deterministic one.
+	static const PNavMeshComponent* FindOlderNavMeshOwnerInComponent(const PActor& InActor
+		, const PSceneComponent& InSceneComponent, const PNavMeshComponent& InComponent)
+	{
+		if (InSceneComponent.GetOwnerActor() != (&InActor))
+		{
+			return nullptr;
+		}
+		const PNavMeshComponent* Other = dynamic_cast<const PNavMeshComponent*>(&InSceneComponent);
+		if ((!!Other) && (Other != (&InComponent)) && (Other->GetNavMeshName() == InComponent.GetNavMeshName())
+			&& (Other->GetUniqueID() < InComponent.GetUniqueID()))
+		{
+			return Other;
+		}
+		const TArray<PSceneComponent*> Children = InSceneComponent.GetChildrenComponents();
+		for (UINT32 ChildIndex = 0u, ChildNum = Children.Num<UINT32>(); ChildIndex < ChildNum; ChildIndex++)
+		{
+			const PSceneComponent* ChildComponent = Children[ChildIndex];
+			if (!!ChildComponent)
+			{
+				if (const PNavMeshComponent* Found = FindOlderNavMeshOwnerInComponent(InActor, *ChildComponent, InComponent))
+				{
+					return Found;
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	static const PNavMeshComponent* FindOlderNavMeshOwner(const PWorld& InWorld, const PNavMeshComponent& InComponent)
+	{
+		const TArray<PActor*> Actors = InWorld.GetAllActors();
+		for (UINT32 ActorIndex = 0u, ActorNum = Actors.Num<UINT32>(); ActorIndex < ActorNum; ActorIndex++)
+		{
+			const PActor* Actor = Actors[ActorIndex];
+			if ((!Actor) || (!Actor->GetRootComponent()))
+			{
+				continue;
+			}
+			if (const PNavMeshComponent* Found = FindOlderNavMeshOwnerInComponent(*Actor, *Actor->GetRootComponent(), InComponent))
+			{
+				return Found;
+			}
+		}
+		return nullptr;
+	}
 
 	static void RegisterClassTypes()
 	{
@@ -424,10 +475,34 @@ namespace PigeonEngine
 		return Volumes;
 	}
 
+	BOOL32 PNavMeshComponent::IsPrimaryNavMeshOwner() const
+	{
+		const PWorld* World = GetWorld();
+		if (!World)
+		{
+			// Not in a world; the manager refuses the publish anyway.
+			return TRUE;
+		}
+		const PNavMeshComponent* OlderOwner = FindOlderNavMeshOwner(*World, *this);
+		if (!OlderOwner)
+		{
+			return TRUE;
+		}
+		if (!bWarnedNotPrimary)
+		{
+			bWarnedNotPrimary = TRUE;
+			PE_LOG_WARN(EString(PE_TEXT("Navigation: navmesh group '")) + NavMeshName
+				+ EString(PE_TEXT("' is owned by '")) + POBJ_DEBUGNAME_GET(OlderOwner)
+				+ EString(PE_TEXT("'), so '")) + POBJ_DEBUGNAME_GET(this)
+				+ EString(PE_TEXT("' will not publish a mesh; one owner per group publishes.")));
+		}
+		return FALSE;
+	}
+
 	void PNavMeshComponent::PublishProvider(ENavigationProviderInterface* InProvider, const ENavigationBuildStats& InStats)
 	{
 		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
-		Manager->RegisterProvider(GetUniqueID(), InProvider);
+		Manager->RegisterProvider(GetUniqueID(), NavMeshName, InProvider);
 		Manager->SetProviderDebugDrawEnabled(GetUniqueID(), bDebugDrawEnabled);
 		LastBuildStats = InStats;
 	}
@@ -466,6 +541,10 @@ namespace PigeonEngine
 			PE_LOG_WARN(EString(PE_TEXT("Navigation: build requested for a navmesh component that is not in a world.")));
 			return FALSE;
 		}
+		if (!IsPrimaryNavMeshOwner())
+		{
+			return FALSE;
+		}
 
 		ERecastNavigationProvider* Provider = CreateProvider();
 		if (!Provider)
@@ -490,7 +569,7 @@ namespace PigeonEngine
 		// collection.
 		Geometry.Links = NavigationLinks;
 
-		if (!ENavigationManager::GetManagerSingleton()->RequestBuild(GetUniqueID(), Provider, static_cast<ENavigationSourceGeometry&&>(Geometry)))
+		if (!ENavigationManager::GetManagerSingleton()->RequestBuild(GetUniqueID(), NavMeshName, Provider, static_cast<ENavigationSourceGeometry&&>(Geometry)))
 		{
 			// Either a bake is already running for this volume (nothing to do) or the provider was
 			// refused; in both cases this one is not needed.
@@ -504,6 +583,13 @@ namespace PigeonEngine
 	BOOL32 PNavMeshComponent::BuildFromAsset(ENavigationBuildStats& OutStats)
 	{
 		OutStats = ENavigationBuildStats();
+
+		// A second owner of the same group must not import its own copy and shadow the primary's
+		// mesh; it stays inert like it does on the bake path.
+		if (!IsPrimaryNavMeshOwner())
+		{
+			return FALSE;
+		}
 
 		const ENavMeshData* Data = (!!NavMeshAsset) ? NavMeshAsset->GetStoragedResource() : nullptr;
 		if ((!Data) || (!Data->IsResourceValid()))
@@ -709,6 +795,10 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
+		if (!IsPrimaryNavMeshOwner())
+		{
+			return nullptr;
+		}
 		ERecastNavigationProvider* Provider = CreateProvider();
 		if (!Provider)
 		{
@@ -859,14 +949,49 @@ namespace PigeonEngine
 		{
 			return TRUE;
 		}
-		// The convention name is generated from this level, so re-saving regenerates it;
-		// manual panel saves keep refusing to overwrite.
-		const EString AssetName = InLevelStem + EString(PE_TEXT("_NavMesh"));
+		// Only the primary owner of a group may write the group's asset; a second owner would
+		// otherwise overwrite it with a different bake.
+		if (!IsPrimaryNavMeshOwner())
+		{
+			return TRUE;
+		}
+		// The convention name is generated from this level and group, so re-saving regenerates
+		// it; manual panel saves keep refusing to overwrite.
+		const EString AssetName = MakeNavMeshAssetName(InLevelStem, NavMeshName);
 		if (!SaveBakeAsAsset(AssetName, OutError, TRUE))
 		{
 			return FALSE;
 		}
 		return TRUE;
+	}
+
+	EString PNavMeshComponent::MakeNavMeshAssetName(const EString& InLevelStem, const EString& InNavMeshName)
+	{
+		if (InNavMeshName.Length() == 0u)
+		{
+			return InLevelStem + EString(PE_TEXT("_NavMesh"));
+		}
+		// File name safe form of the group: a name like "Large Agent" must not split the asset
+		// into another directory or lose the suffix.
+		EString Sanitized;
+		for (UINT32 Index = 0u, Num = InNavMeshName.Length(); Index < Num; Index++)
+		{
+			const CHAR Character = InNavMeshName[Index];
+			const BOOL32 bAllowed = (((Character >= 'A') && (Character <= 'Z'))
+				|| ((Character >= 'a') && (Character <= 'z'))
+				|| ((Character >= '0') && (Character <= '9'))
+				|| (Character == '_') || (Character == '-')) ? TRUE : FALSE;
+			if (bAllowed)
+			{
+				const CHAR CharacterBuffer[2] = { Character, '\0' };
+				Sanitized += CharacterBuffer;
+			}
+			else
+			{
+				Sanitized += EString(PE_TEXT("_"));
+			}
+		}
+		return InLevelStem + EString(PE_TEXT("_")) + Sanitized + EString(PE_TEXT("_NavMesh"));
 	}
 
 	void PNavMeshComponent::EditorTick(FLOAT InDeltaTime)

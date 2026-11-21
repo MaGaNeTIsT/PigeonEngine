@@ -37,6 +37,11 @@ namespace PigeonEngine
 		PE_NODISCARD const ENavigationAgentSettings&	GetSettings() const;
 		void											SetSettings(const ENavigationAgentSettings& InSettings);
 
+		// Navmesh group this agent paths on. Empty is the level's default navmesh; a group
+		// never answers for another one, so two navmeshes can coexist in one level.
+		PE_NODISCARD const EString&	GetNavMeshName() const;
+		void						SetNavMeshName(const EString& InName);
+
 		/*
 		* When on, the agent is registered with the backend's local avoidance and steered there
 		* instead of following a path here. The radius, height, acceleration and avoidance settings
@@ -73,6 +78,7 @@ namespace PigeonEngine
 
 	private:
 		ENavigationAgentSettings	Settings;
+		EString						NavMeshName;
 		ENavigationPath				CurrentPath;
 		Vector3						MoveTarget = Vector3::Zero();
 		Vector3						RequestedTarget = Vector3::Zero();

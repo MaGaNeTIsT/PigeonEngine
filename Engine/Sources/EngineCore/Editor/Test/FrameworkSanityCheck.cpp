@@ -22,6 +22,7 @@
 #include "PigeonBase/Object/Component/Navigation/NavObstacleComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavAgentComponent.h"
 #include <Navigation/NavigationGeometry.h>
+#include <Navigation/NavigationManager.h>
 #include <Navigation/RecastNavigationProvider.h>
 #include "PigeonBase/Object/Component/Water/WaterSurfaceComponent.h"
 #include "PigeonBase/Object/Component/Water/WaterSimulationComponent.h"
@@ -3003,6 +3004,76 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	// One flat rectangle as a standalone bake, for the group routing test.
+	static ENavigationSourceGeometry MakeSanityFlatGeometry(const FLOAT InMinX, const FLOAT InMaxX, const FLOAT InMinZ, const FLOAT InMaxZ)
+	{
+		ENavigationSourceGeometry Geometry;
+		Geometry.Bounds = EBoundAABB(Vector3(InMinX, -50.0f, InMinZ), Vector3(InMaxX, 400.0f, InMaxZ), TRUE);
+		AddSanityNavigationQuad(Geometry, InMinX, InMaxX, InMinZ, InMaxZ, ENavigationAreaFlagType::NAVIGATION_AREA_GROUND);
+		return Geometry;
+	}
+
+	// Two providers of different groups must answer only their own group, and the composed
+	// asset name must stay a valid file name.
+	static BOOL32 CheckNavMeshGroupRouting()
+	{
+		const BOOL32 bDefaultName = (PNavMeshComponent::MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString())
+			== EString(PE_TEXT("Demo_NavMesh"))) ? TRUE : FALSE;
+		const BOOL32 bGroupName = (PNavMeshComponent::MakeNavMeshAssetName(EString(PE_TEXT("Demo")), EString(PE_TEXT("Large Agent")))
+			== EString(PE_TEXT("Demo_Large_Agent_NavMesh"))) ? TRUE : FALSE;
+
+		ENavigationManager* Manager = ENavigationManager::GetManagerSingleton();
+
+		ERecastNavigationProvider* ProviderA = new ERecastNavigationProvider();
+		ENavigationBuildStats StatsA;
+		const BOOL32 bBuiltA = ProviderA->Build(MakeSanityFlatGeometry(-300.0f, -100.0f, -100.0f, 100.0f), StatsA);
+
+		ERecastNavigationProvider* ProviderB = new ERecastNavigationProvider();
+		ENavigationBuildStats StatsB;
+		BOOL32 bBuiltB = ProviderB->Build(MakeSanityFlatGeometry(100.0f, 300.0f, -100.0f, 100.0f), StatsB);
+
+		// Unique owner ids without a world: two plain components are enough identity.
+		PSceneComponent* OwnerA = new PSceneComponent();
+		PSceneComponent* OwnerB = new PSceneComponent();
+		const ObjectIdentityType OwnerAId = OwnerA->GetUniqueID();
+		const ObjectIdentityType OwnerBId = OwnerB->GetUniqueID();
+		Manager->RegisterProvider(OwnerAId, EString(PE_TEXT("GroupA")), ProviderA);
+		Manager->RegisterProvider(OwnerBId, EString(PE_TEXT("GroupB")), ProviderB);
+
+		ENavigationQueryFilter Filter;
+		ENavigationPath PathA;
+		const BOOL32 bOwnGroup = (Manager->FindPath(Vector3(-200.0f, 0.0f, 0.0f), Vector3(-150.0f, 0.0f, 0.0f), Filter, PathA, EString(PE_TEXT("GroupA")))
+			&& (PathA.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)) ? TRUE : FALSE;
+		// The same start asked on the other group has no polygon within the projection box.
+		ENavigationPath PathB;
+		const BOOL32 bOtherGroup = (Manager->FindPath(Vector3(-200.0f, 0.0f, 0.0f), Vector3(-150.0f, 0.0f, 0.0f), Filter, PathB, EString(PE_TEXT("GroupB"))) == FALSE) ? TRUE : FALSE;
+		// A path whose destination lives on another group's mesh cannot complete either.
+		ENavigationPath CrossPath;
+		const BOOL32 bNoCross = (Manager->FindPath(Vector3(-200.0f, 0.0f, 0.0f), Vector3(200.0f, 0.0f, 0.0f), Filter, CrossPath, EString(PE_TEXT("GroupA"))) == FALSE) ? TRUE : FALSE;
+		const BOOL32 bDefaults = ((Manager->GetDefaultProvider(EString(PE_TEXT("GroupA"))) != nullptr)
+			&& (Manager->GetDefaultProvider(EString(PE_TEXT("GroupB"))) != nullptr)
+			&& (Manager->GetDefaultProvider(EString(PE_TEXT("Missing"))) == nullptr)) ? TRUE : FALSE;
+
+		Manager->UnregisterProvider(OwnerAId);
+		Manager->UnregisterProvider(OwnerBId);
+		OwnerA->Destroy();
+		OwnerB->Destroy();
+
+		const BOOL32 bOk = (bDefaultName && bGroupName && bBuiltA && bBuiltB && bOwnGroup && bOtherGroup && bNoCross && bDefaults) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh group detail: defaultName=")) + EString::FromInt(bDefaultName)
+				+ EString(PE_TEXT(" groupName=")) + EString::FromInt(bGroupName)
+				+ EString(PE_TEXT(" builtA=")) + EString::FromInt(bBuiltA)
+				+ EString(PE_TEXT(" builtB=")) + EString::FromInt(bBuiltB)
+				+ EString(PE_TEXT(" ownGroup=")) + EString::FromInt(bOwnGroup)
+				+ EString(PE_TEXT(" otherGroup=")) + EString::FromInt(bOtherGroup)
+				+ EString(PE_TEXT(" noCross=")) + EString::FromInt(bNoCross)
+				+ EString(PE_TEXT(" defaults=")) + EString::FromInt(bDefaults));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckContainerPropertySerialization()
 	{
 		static BOOL32 bPropertiesRegistered = FALSE;
@@ -3774,6 +3845,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshVolumeCollection = CheckNavMeshVolumeCollection();
 		ReportSanityResult(EString(PE_TEXT("navmesh bounds volume collection")), bNavMeshVolumeCollection);
 		if (!bNavMeshVolumeCollection)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshGroupRouting = CheckNavMeshGroupRouting();
+		ReportSanityResult(EString(PE_TEXT("navmesh group routing")), bNavMeshGroupRouting);
+		if (!bNavMeshGroupRouting)
 		{
 			FailedCount += 1u;
 		}

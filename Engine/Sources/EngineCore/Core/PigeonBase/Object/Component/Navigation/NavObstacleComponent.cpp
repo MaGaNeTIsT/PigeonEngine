@@ -39,6 +39,10 @@ namespace PigeonEngine
 			[](const PNavObstacleComponent* Component) -> BOOL32 { return Component->bFollowTransform; },
 			[](PNavObstacleComponent* Component, const BOOL32& Value) -> void { Component->bFollowTransform = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyAccessors<PNavObstacleComponent, EString>(ClassHash, PE_TEXT("NavMeshName"),
+			[](const PNavObstacleComponent* Component) -> EString { return Component->GetNavMeshName(); },
+			[](PNavObstacleComponent* Component, const EString& Value) -> void { Component->SetNavMeshName(Value); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 
 	static void RegisterClassTypes()
@@ -109,6 +113,26 @@ namespace PigeonEngine
 		UnregisterObstacle();
 	}
 
+	const EString& PNavObstacleComponent::GetNavMeshName() const
+	{
+		return NavMeshName;
+	}
+
+	void PNavObstacleComponent::SetNavMeshName(const EString& InName)
+	{
+		if (NavMeshName == InName)
+		{
+			return;
+		}
+		// The old provider holds the obstacle; re-register it on the group the author named.
+		UnregisterObstacle();
+		NavMeshName = InName;
+		if (IsAddedToScene())
+		{
+			RegisterObstacle();
+		}
+	}
+
 	void PNavObstacleComponent::BeginAddedToScene(PWorld* InWorld)
 	{
 		PSceneComponent::BeginAddedToScene(InWorld);
@@ -134,11 +158,11 @@ namespace PigeonEngine
 		ENavigationObstacleHandle NewId = NavigationInvalidObstacleHandle;
 		if (ShapeType == ENavigationObstacleShapeType::NAVIGATION_OBSTACLE_BOX)
 		{
-			NewId = Manager->AddBoxObstacle(GetUniqueID(), Center, BoxHalfExtents, EMath::DegreesToRadians(YawDegrees));
+			NewId = Manager->AddBoxObstacle(GetUniqueID(), NavMeshName, Center, BoxHalfExtents, EMath::DegreesToRadians(YawDegrees));
 		}
 		else
 		{
-			NewId = Manager->AddCylinderObstacle(GetUniqueID(), Center, CylinderRadius, CylinderHeight);
+			NewId = Manager->AddCylinderObstacle(GetUniqueID(), NavMeshName, Center, CylinderRadius, CylinderHeight);
 		}
 
 		if (NewId == NavigationInvalidObstacleHandle)
