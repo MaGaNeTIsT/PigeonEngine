@@ -3074,6 +3074,58 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	// Tiled bake coverage: a volume over half of a wide floor must keep the other half out of
+	// the mesh, while the same geometry without volumes bakes everywhere.
+	static BOOL32 CheckNavMeshVolumeCoverage()
+	{
+		const ENavigationSourceGeometry CoveredGeometry = []() -> ENavigationSourceGeometry
+		{
+			ENavigationSourceGeometry Geometry = MakeSanityFlatGeometry(-500.0f, 500.0f, -100.0f, 100.0f);
+			Geometry.Volumes.Add(EBoundAABB(Vector3(-500.0f, -50.0f, -100.0f), Vector3(0.0f, 400.0f, 100.0f), TRUE));
+			Geometry.Bounds = Geometry.Volumes[0];
+			return Geometry;
+		}();
+
+		ENavMeshBuildSettings Settings;
+		// Two tiles along x: the tile seam sits at x = 140.
+		Settings.TileSizeCells = 32u;
+
+		ERecastNavigationProvider CoveredProvider;
+		CoveredProvider.SetSettings(Settings);
+		ENavigationBuildStats CoveredStats;
+		const BOOL32 bCoveredBuilt = CoveredProvider.Build(CoveredGeometry, CoveredStats);
+
+		ENavigationQueryFilter Filter;
+		ENavigationPath CoveredPath;
+		const BOOL32 bCoveredPath = (bCoveredBuilt
+			&& CoveredProvider.FindPath(Vector3(-400.0f, 0.0f, 0.0f), Vector3(-100.0f, 0.0f, 0.0f), Filter, CoveredPath)
+			&& (CoveredPath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)) ? TRUE : FALSE;
+		// The right half has no polygon at all: its tile was never rasterized.
+		ENavigationPath UncoveredPath;
+		const BOOL32 bUncovered = (bCoveredBuilt
+			&& (!CoveredProvider.FindPath(Vector3(300.0f, 0.0f, 0.0f), Vector3(400.0f, 0.0f, 0.0f), Filter, UncoveredPath))) ? TRUE : FALSE;
+
+		ERecastNavigationProvider OpenProvider;
+		OpenProvider.SetSettings(Settings);
+		ENavigationBuildStats OpenStats;
+		ENavigationPath OpenPath;
+		const BOOL32 bOpen = (OpenProvider.Build(MakeSanityFlatGeometry(-500.0f, 500.0f, -100.0f, 100.0f), OpenStats)
+			&& OpenProvider.FindPath(Vector3(300.0f, 0.0f, 0.0f), Vector3(400.0f, 0.0f, 0.0f), Filter, OpenPath)
+			&& (OpenPath.Status == ENavigationPathStatusType::NAVIGATION_PATH_COMPLETE)) ? TRUE : FALSE;
+
+		const BOOL32 bOk = (bCoveredBuilt && bCoveredPath && bUncovered && bOpen) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh volume coverage detail: built=")) + EString::FromInt(bCoveredBuilt)
+				+ EString(PE_TEXT(" coveredPath=")) + EString::FromInt(bCoveredPath)
+				+ EString(PE_TEXT(" uncovered=")) + EString::FromInt(bUncovered)
+				+ EString(PE_TEXT(" open=")) + EString::FromInt(bOpen)
+				+ EString(PE_TEXT(" coveredTiles=")) + EString::FromInt(CoveredStats.TileCount)
+				+ EString(PE_TEXT(" openTiles=")) + EString::FromInt(OpenStats.TileCount));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckContainerPropertySerialization()
 	{
 		static BOOL32 bPropertiesRegistered = FALSE;
@@ -3851,6 +3903,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshGroupRouting = CheckNavMeshGroupRouting();
 		ReportSanityResult(EString(PE_TEXT("navmesh group routing")), bNavMeshGroupRouting);
 		if (!bNavMeshGroupRouting)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshVolumeCoverage = CheckNavMeshVolumeCoverage();
+		ReportSanityResult(EString(PE_TEXT("navmesh volume coverage")), bNavMeshVolumeCoverage);
+		if (!bNavMeshVolumeCoverage)
 		{
 			FailedCount += 1u;
 		}
