@@ -127,6 +127,13 @@ configure_file(
 	${CONFIGS_BINARY_DIR}/ImGUIEngine.ini
 	COPYONLY
 )
+# Settings templates are copied for runs whose working directory is the build tree;
+# the runtime only writes the *.user.json sibling, never the template.
+configure_file(
+	${BASE_CONFIG_SOURCE_DIR}/EditorSettings.default.json
+	${CONFIGS_BINARY_DIR}/EditorSettings.default.json
+	COPYONLY
+)
 
 #Pigeon Engine Platform Settings
 option(PLATFORM_WINDOWS "Build on WindowsPlatform" ON)

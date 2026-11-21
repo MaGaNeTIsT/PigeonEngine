@@ -53,6 +53,23 @@ namespace PigeonEngine
 
 		BOOL8 GetObjectField(const EString& FieldName, CJsonObject& Out);
 
+		/*Dotted path access ("Group.Key"): settings files use nested objects without
+		having to copy the group out of the document. Set creates missing groups.*/
+		BOOL8 GetBoolFieldByPath  (const EString& InPath, BOOL8& Out);
+		BOOL8 GetIntFieldByPath   (const EString& InPath, INT32& Out);
+		BOOL8 GetFloatFieldByPath (const EString& InPath, FLOAT& Out);
+		BOOL8 GetStringFieldByPath(const EString& InPath, EString& Out);
+		void  SetBoolFieldByPath  (const EString& InPath, const BOOL8& In);
+		void  SetIntFieldByPath   (const EString& InPath, const INT32& In);
+		void  SetFloatFieldByPath (const EString& InPath, const FLOAT& In);
+		void  SetStringFieldByPath(const EString& InPath, const EString& In);
+
+		// Copies the value at InPath from InSource (creating groups); FALSE when absent.
+		BOOL8 CopyFieldByPath(const EString& InPath, const CJsonObject& InSource);
+		// TRUE when both documents hold the same value at InPath; both missing counts equal.
+		PE_NODISCARD BOOL8 IsFieldEqualByPath(const EString& InPath, const CJsonObject& InOther)const;
+		PE_NODISCARD BOOL8 IsEmpty()const;
+
 		BOOL8 GetIntArrayField   (const EString& FieldName, TArray<INT32>& Out);
 		BOOL8 GetInt64ArrayField (const EString& FieldName, TArray<INT64>& Out);
 		BOOL8 GetUIntArrayField  (const EString& FieldName, TArray<UINT32>& Out);
@@ -89,6 +106,12 @@ namespace PigeonEngine
 		void SetObjectArrayField(const EString& FieldName, const TArray<CJsonObject*>& In);
 
 	private:
+
+		rapidjson::Value*		FindValueByPath(const EString& InPath);
+		const rapidjson::Value*	FindValueByPath(const EString& InPath)const;
+		// Returns the object that owns the last path segment, creating missing groups.
+		rapidjson::Value*		EnsureObjectParent(const EString& InPath, EString& OutLeaf);
+		void					SetValueByPath(const EString& InPath, rapidjson::Value& InValue);
 
 		rapidjson::Document* Doc;
 

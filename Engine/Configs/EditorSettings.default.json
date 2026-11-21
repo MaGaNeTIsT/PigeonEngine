@@ -1,0 +1,13 @@
+{
+    "Panels": {
+        "Level": false,
+        "Navigation": false
+    },
+    "Display": {
+        "ShowCollision": true,
+        "ShowDebugWireframe": false,
+        "ShowNavigation": true,
+        "FullNavMeshPolygons": false,
+        "ShowNavMeshTriangulation": true
+    }
+}

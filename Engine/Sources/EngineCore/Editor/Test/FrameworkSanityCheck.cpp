@@ -22,6 +22,9 @@
 #include "PigeonBase/Object/Component/Navigation/NavObstacleComponent.h"
 #include "PigeonBase/Object/Component/Navigation/NavAgentComponent.h"
 #include <Asset/NavMeshAsset/NavMeshAsset.h>
+#include <Config/EngineConfig.h>
+#include <IO/FileHelper.h>
+#include <IO/JsonConfigFile.h>
 #include <Navigation/NavigationGeometry.h>
 #include <Navigation/NavigationManager.h>
 #include <Navigation/RecastNavigationProvider.h>
@@ -3866,6 +3869,71 @@ namespace PigeonEngine
 		return (bSaved && bLoaded && bBodyOk && bMovementOk && bHeightOk) ? TRUE : FALSE;
 	}
 
+	// Settings files: schema defaults, tracked-default overrides, user overrides, and the
+	// override-only user document that disappears once every value is back at its default.
+	static BOOL32 CheckJsonConfigFile()
+	{
+		const EString Name(PE_TEXT("SanitySettings"));
+		const EString DefaultPath(PE_TEXT("./Engine/Configs/SanitySettings.default.json"));
+		const EString UserPath(PE_TEXT("./Engine/Configs/SanitySettings.user.json"));
+		EFileHelper::DeleteFile(UserPath);
+		EFileHelper::DeleteFile(DefaultPath);
+		EFileHelper::SaveStringToFile(DefaultPath
+			, EString(PE_TEXT("{\"Panels\":{\"Level\":true},\"Display\":{\"Mode\":9}}")));
+
+		auto Declare = [](EJsonConfigFile& File) -> void
+		{
+			File.AddBool(PE_TEXT("Panels.Level"), FALSE);
+			File.AddBool(PE_TEXT("Panels.Navigation"), TRUE);
+			File.AddInt(PE_TEXT("Display.Mode"), 3);
+			File.AddFloat(PE_TEXT("Camera.Speed"), 12.5f);
+			File.AddString(PE_TEXT("General.Name"), EString(PE_TEXT("Pigeon")));
+		};
+
+		BOOL32 bDefaults = FALSE;
+		{
+			EJsonConfigFile File(Name);
+			Declare(File);
+			File.Load();
+			bDefaults = ((File.GetBool(PE_TEXT("Panels.Level")) != FALSE)          // default file beats the schema
+				&& (File.GetBool(PE_TEXT("Panels.Navigation")) != FALSE)       // schema default for a missing key
+				&& (File.GetInt(PE_TEXT("Display.Mode")) == 9)
+				&& (EMath::Abs(File.GetFloat(PE_TEXT("Camera.Speed")) - 12.5f) <= 1.0e-5f)
+				&& (File.GetString(PE_TEXT("General.Name")) == EString(PE_TEXT("Pigeon")))) ? TRUE : FALSE;
+			File.SetInt(PE_TEXT("Display.Mode"), 7);
+		}
+
+		EString UserText;
+		const BOOL32 bUserOnlyOverrides = ((EFileHelper::ReadFileAsString(UserPath, UserText) != FALSE)
+			&& (UserText.Contains(EString(PE_TEXT("\"Mode\""))) != FALSE)
+			&& (UserText.Contains(EString(PE_TEXT("\"Level\""))) == FALSE)) ? TRUE : FALSE;
+
+		BOOL32 bReloaded = FALSE;
+		{
+			EJsonConfigFile File(Name);
+			Declare(File);
+			File.Load();
+			bReloaded = ((File.GetInt(PE_TEXT("Display.Mode")) == 7)
+				&& (File.GetBool(PE_TEXT("Panels.Level")) != FALSE)) ? TRUE : FALSE;
+			// Back to the value in the tracked default file: the override is dropped.
+			File.SetInt(PE_TEXT("Display.Mode"), 9);
+		}
+		const BOOL32 bOverrideRemoved = (EFileHelper::IsFileExists(UserPath) == FALSE) ? TRUE : FALSE;
+
+		EFileHelper::DeleteFile(UserPath);
+		EFileHelper::DeleteFile(DefaultPath);
+
+		const BOOL32 bOk = (bDefaults && bUserOnlyOverrides && bReloaded && bOverrideRemoved) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("json config detail: defaults=")) + EString::FromInt(bDefaults)
+				+ EString(PE_TEXT(" userOnlyOverrides=")) + EString::FromInt(bUserOnlyOverrides)
+				+ EString(PE_TEXT(" reloaded=")) + EString::FromInt(bReloaded)
+				+ EString(PE_TEXT(" overrideRemoved=")) + EString::FromInt(bOverrideRemoved));
+		}
+		return bOk;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -4015,6 +4083,12 @@ namespace PigeonEngine
 		ReportSanityResult(EString(PE_TEXT("editor customization registry")), bEditorCustomization);
 		const BOOL32 bEditorWorldContext = CheckEditorWorldContextSelection();
 		ReportSanityResult(EString(PE_TEXT("editor world context selection")), bEditorWorldContext);
+		const BOOL32 bJsonConfigFile = CheckJsonConfigFile();
+		ReportSanityResult(EString(PE_TEXT("json config file")), bJsonConfigFile);
+		if (!bJsonConfigFile)
+		{
+			FailedCount += 1u;
+		}
 		const BOOL32 bLevelFileState = CheckLevelFileStateTransitions();
 		ReportSanityResult(EString(PE_TEXT("level file state transitions")), bLevelFileState);
 		if (!bWorldEditorCommands)

@@ -3,5 +3,5 @@ Build/
 Engine/ThirdParty/assimp/lib/Debug/
 Engine/ThirdParty/assimp/lib/Release/
 
-# editor-local preferences (panel visibility, debug switches)
-Engine/Configs/EditorSettings.json
+# editor-local overrides (the *.default.json template is tracked)
+Engine/Configs/*.user.json

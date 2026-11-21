@@ -16,9 +16,8 @@ namespace PigeonEngine
 	*/
 	namespace EEditorSettings
 	{
-		// Loads the file and creates it with defaults when it is missing or invalid.
+		// Loads the default and user files and creates the default when it is missing.
 		void Initialize();
-		void Save();
 
 		// Optional panels. A missing file keeps both closed on a fresh checkout.
 		PE_NODISCARD BOOL32 IsLevelPanelVisible();

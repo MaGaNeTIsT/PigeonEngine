@@ -1,6 +1,7 @@
 #include "../Headers/JsonObject.h"
 #include "../../../ThirdParty/rapidjson/writer.h"
 #include "../../../ThirdParty/rapidjson/stringbuffer.h"
+#include <cstring>
 using namespace rapidjson;
 
 namespace PigeonEngine
@@ -601,6 +602,284 @@ namespace PigeonEngine
 		}
 		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
 		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
+	}
+
+	namespace
+	{
+		void SplitPath(const EString& InPath, TArray<EString>& OutSegments)
+		{
+			UINT32 Start = 0u;
+			for (UINT32 Index = 0u; Index <= InPath.Length(); Index++)
+			{
+				if ((Index == InPath.Length()) || (InPath[Index] == '.'))
+				{
+					OutSegments.Add(InPath.Substring(Start, Index - Start));
+					Start = Index + 1u;
+				}
+			}
+		}
+
+		BOOL8 JsonValueEquals(const Value& InLeft, const Value& InRight)
+		{
+			if (InLeft.GetType() != InRight.GetType())
+			{
+				return FALSE;
+			}
+			switch (InLeft.GetType())
+			{
+			case kNullType:
+				return TRUE;
+			case kFalseType:
+			case kTrueType:
+				return TRUE;
+			case kObjectType:
+			{
+				if (InLeft.MemberCount() != InRight.MemberCount())
+				{
+					return FALSE;
+				}
+				for (Value::ConstMemberIterator It = InLeft.MemberBegin(); It != InLeft.MemberEnd(); ++It)
+				{
+					Value::ConstMemberIterator Other = InRight.FindMember(It->name.GetString());
+					if ((Other == InRight.MemberEnd()) || (!JsonValueEquals(It->value, Other->value)))
+					{
+						return FALSE;
+					}
+				}
+				return TRUE;
+			}
+			case kArrayType:
+			{
+				if (InLeft.Size() != InRight.Size())
+				{
+					return FALSE;
+				}
+				for (SizeType Index = 0u; Index < InLeft.Size(); Index++)
+				{
+					if (!JsonValueEquals(InLeft[Index], InRight[Index]))
+					{
+						return FALSE;
+					}
+				}
+				return TRUE;
+			}
+			case kStringType:
+				return ((InLeft.GetStringLength() == InRight.GetStringLength())
+					&& (memcmp(InLeft.GetString(), InRight.GetString(), InLeft.GetStringLength()) == 0)) ? TRUE : FALSE;
+			case kNumberType:
+				return (InLeft.GetDouble() == InRight.GetDouble()) ? TRUE : FALSE;
+			default:
+				return FALSE;
+			}
+		}
+	}
+
+	rapidjson::Value* CJsonObject::FindValueByPath(const EString& InPath)
+	{
+		TArray<EString> Segments;
+		SplitPath(InPath, Segments);
+		rapidjson::Value* Current = Doc;
+		for (UINT32 Index = 0u; Index < Segments.Num<UINT32>(); Index++)
+		{
+			if ((!Current) || (!Current->IsObject()))
+			{
+				return nullptr;
+			}
+			rapidjson::Value::MemberIterator It = Current->FindMember(*Segments[Index]);
+			if (It == Current->MemberEnd())
+			{
+				return nullptr;
+			}
+			Current = &(It->value);
+		}
+		return Current;
+	}
+
+	const rapidjson::Value* CJsonObject::FindValueByPath(const EString& InPath) const
+	{
+		TArray<EString> Segments;
+		SplitPath(InPath, Segments);
+		const rapidjson::Value* Current = Doc;
+		for (UINT32 Index = 0u; Index < Segments.Num<UINT32>(); Index++)
+		{
+			if ((!Current) || (!Current->IsObject()))
+			{
+				return nullptr;
+			}
+			rapidjson::Value::ConstMemberIterator It = Current->FindMember(*Segments[Index]);
+			if (It == Current->MemberEnd())
+			{
+				return nullptr;
+			}
+			Current = &(It->value);
+		}
+		return Current;
+	}
+
+	rapidjson::Value* CJsonObject::EnsureObjectParent(const EString& InPath, EString& OutLeaf)
+	{
+		TArray<EString> Segments;
+		SplitPath(InPath, Segments);
+		if (Segments.Num<UINT32>() == 0u)
+		{
+			return nullptr;
+		}
+		rapidjson::Value* Current = Doc;
+		for (UINT32 Index = 0u; (Index + 1u) < Segments.Num<UINT32>(); Index++)
+		{
+			if (!Current->IsObject())
+			{
+				Current->SetObject();
+			}
+			rapidjson::Value::MemberIterator It = Current->FindMember(*Segments[Index]);
+			if (It == Current->MemberEnd())
+			{
+				rapidjson::Value NewObject(rapidjson::kObjectType);
+				rapidjson::Value Name(*Segments[Index], Doc->GetAllocator());
+				Current->AddMember(Name, NewObject, Doc->GetAllocator());
+				It = Current->FindMember(*Segments[Index]);
+			}
+			if (!It->value.IsObject())
+			{
+				It->value.SetObject();
+			}
+			Current = &(It->value);
+		}
+		OutLeaf = Segments[Segments.Num<UINT32>() - 1u];
+		return Current;
+	}
+
+	void CJsonObject::SetValueByPath(const EString& InPath, rapidjson::Value& InValue)
+	{
+		EString Leaf;
+		rapidjson::Value* Parent = EnsureObjectParent(InPath, Leaf);
+		if (!Parent)
+		{
+			return;
+		}
+		rapidjson::Value::MemberIterator It = Parent->FindMember(*Leaf);
+		if (It != Parent->MemberEnd())
+		{
+			It->value.CopyFrom(InValue, Doc->GetAllocator());
+			return;
+		}
+		rapidjson::Value Name(*Leaf, Doc->GetAllocator());
+		Parent->AddMember(Name, InValue, Doc->GetAllocator());
+	}
+
+	BOOL8 CJsonObject::GetBoolFieldByPath(const EString& InPath, BOOL8& Out)
+	{
+		rapidjson::Value* Value = FindValueByPath(InPath);
+		if ((!Value) || (!Value->IsBool()))
+		{
+			return FALSE;
+		}
+		Out = Value->GetBool() ? TRUE : FALSE;
+		return TRUE;
+	}
+
+	BOOL8 CJsonObject::GetIntFieldByPath(const EString& InPath, INT32& Out)
+	{
+		rapidjson::Value* Value = FindValueByPath(InPath);
+		if ((!Value) || (!Value->IsInt()))
+		{
+			return FALSE;
+		}
+		Out = Value->GetInt();
+		return TRUE;
+	}
+
+	BOOL8 CJsonObject::GetFloatFieldByPath(const EString& InPath, FLOAT& Out)
+	{
+		rapidjson::Value* Value = FindValueByPath(InPath);
+		if ((!Value) || (!Value->IsNumber()))
+		{
+			return FALSE;
+		}
+		Out = static_cast<FLOAT>(Value->GetDouble());
+		return TRUE;
+	}
+
+	BOOL8 CJsonObject::GetStringFieldByPath(const EString& InPath, EString& Out)
+	{
+		rapidjson::Value* Value = FindValueByPath(InPath);
+		if ((!Value) || (!Value->IsString()))
+		{
+			return FALSE;
+		}
+		Out = EString(Value->GetString());
+		return TRUE;
+	}
+
+	void CJsonObject::SetBoolFieldByPath(const EString& InPath, const BOOL8& In)
+	{
+		rapidjson::Value Value(In != 0);
+		SetValueByPath(InPath, Value);
+	}
+
+	void CJsonObject::SetIntFieldByPath(const EString& InPath, const INT32& In)
+	{
+		rapidjson::Value Value(In);
+		SetValueByPath(InPath, Value);
+	}
+
+	void CJsonObject::SetFloatFieldByPath(const EString& InPath, const FLOAT& In)
+	{
+		rapidjson::Value Value(static_cast<DOUBLE>(In));
+		SetValueByPath(InPath, Value);
+	}
+
+	void CJsonObject::SetStringFieldByPath(const EString& InPath, const EString& In)
+	{
+		rapidjson::Value Value;
+		Value.SetString(*In, Doc->GetAllocator());
+		SetValueByPath(InPath, Value);
+	}
+
+	BOOL8 CJsonObject::CopyFieldByPath(const EString& InPath, const CJsonObject& InSource)
+	{
+		const rapidjson::Value* Source = InSource.FindValueByPath(InPath);
+		if (!Source)
+		{
+			return FALSE;
+		}
+		EString Leaf;
+		rapidjson::Value* Parent = EnsureObjectParent(InPath, Leaf);
+		if (!Parent)
+		{
+			return FALSE;
+		}
+		rapidjson::Value::MemberIterator It = Parent->FindMember(*Leaf);
+		if (It != Parent->MemberEnd())
+		{
+			It->value.CopyFrom(*Source, Doc->GetAllocator());
+			return TRUE;
+		}
+		rapidjson::Value Copy;
+		Copy.CopyFrom(*Source, Doc->GetAllocator());
+		rapidjson::Value Name(*Leaf, Doc->GetAllocator());
+		Parent->AddMember(Name, Copy, Doc->GetAllocator());
+		return TRUE;
+	}
+
+	BOOL8 CJsonObject::IsFieldEqualByPath(const EString& InPath, const CJsonObject& InOther) const
+	{
+		const rapidjson::Value* Left = FindValueByPath(InPath);
+		const rapidjson::Value* Right = InOther.FindValueByPath(InPath);
+		if ((!Left) && (!Right))
+		{
+			return TRUE;
+		}
+		if ((!Left) || (!Right))
+		{
+			return FALSE;
+		}
+		return JsonValueEquals(*Left, *Right);
+	}
+
+	BOOL8 CJsonObject::IsEmpty() const
+	{
+		return (Doc->MemberCount() == 0u) ? TRUE : FALSE;
 	}
 
 };
