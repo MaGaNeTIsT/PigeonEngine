@@ -504,6 +504,9 @@ namespace PigeonEngine
 
 		OutStats.PolygonCount = AssetSettings.PolygonCount;
 		OutStats.TileCount = AssetSettings.TileCount;
+		// An imported mesh never runs the bake path, so its size comes from the blob it was
+		// copied out of. It covers the same tile bytes plus the container header.
+		OutStats.NavMeshBytes = Blob.Num<UINT32>();
 		PublishProvider(Provider, OutStats);
 		PE_LOG_LOG(EString(PE_TEXT("Navigation: imported navmesh asset '")) + NavMeshAsset->GetAssetFullPathName()
 			+ EString(PE_TEXT("' (")) + EString::FromInt(AssetSettings.PolygonCount)

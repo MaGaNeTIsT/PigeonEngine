@@ -2885,7 +2885,8 @@ namespace PigeonEngine
 		SingleProvider.SetSettings(SingleSettings);
 		ENavigationBuildStats SingleStats;
 		const BOOL32 bSingleBuilt = SingleProvider.Build(Geometry, SingleStats);
-		const BOOL32 bSingle = (bSingleBuilt && (SingleStats.PolygonCount > 0u) && CheckNavigationAreaProvider(SingleProvider)) ? TRUE : FALSE;
+		const BOOL32 bSingle = (bSingleBuilt && (SingleStats.PolygonCount > 0u) && (SingleStats.NavMeshBytes > 0u)
+			&& CheckNavigationAreaProvider(SingleProvider)) ? TRUE : FALSE;
 
 		ENavMeshBuildSettings TiledSettings;
 		TiledSettings.TileSizeCells = 32u;
@@ -2893,16 +2894,19 @@ namespace PigeonEngine
 		TiledProvider.SetSettings(TiledSettings);
 		ENavigationBuildStats TiledStats;
 		const BOOL32 bTiledBuilt = TiledProvider.Build(Geometry, TiledStats);
-		const BOOL32 bTiled = (bTiledBuilt && (TiledStats.PolygonCount > 0u) && CheckNavigationAreaProvider(TiledProvider)) ? TRUE : FALSE;
+		const BOOL32 bTiled = (bTiledBuilt && (TiledStats.PolygonCount > 0u) && (TiledStats.NavMeshBytes > 0u)
+			&& CheckNavigationAreaProvider(TiledProvider)) ? TRUE : FALSE;
 
 		const BOOL32 bOk = (bSingle && bTiled) ? TRUE : FALSE;
 		if (!bOk)
 		{
 			PE_LOG_ERROR(EString(PE_TEXT("navmesh area bake detail: singleBuilt=")) + EString::FromInt(bSingleBuilt)
 				+ EString(PE_TEXT(" singlePolys=")) + EString::FromInt(SingleStats.PolygonCount)
+				+ EString(PE_TEXT(" singleBytes=")) + EString::FromInt(SingleStats.NavMeshBytes)
 				+ EString(PE_TEXT(" singleQueries=")) + EString::FromInt(bSingle)
 				+ EString(PE_TEXT(" tiledBuilt=")) + EString::FromInt(bTiledBuilt)
 				+ EString(PE_TEXT(" tiledPolys=")) + EString::FromInt(TiledStats.PolygonCount)
+				+ EString(PE_TEXT(" tiledBytes=")) + EString::FromInt(TiledStats.NavMeshBytes)
 				+ EString(PE_TEXT(" tiledQueries=")) + EString::FromInt(bTiled));
 		}
 		return bOk;

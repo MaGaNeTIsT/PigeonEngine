@@ -139,6 +139,11 @@ namespace PigeonEngine
 				{
 					ImGui::TextDisabled("Imported from navmesh asset.");
 				}
+				if (LastBuildStats.NavMeshBytes > 0u)
+				{
+					// Tile bytes for a bake, the asset blob for an import.
+					ImGui::Text("Navmesh: %.1f KB", static_cast<FLOAT>(LastBuildStats.NavMeshBytes) / 1024.0f);
+				}
 			}
 			else
 			{

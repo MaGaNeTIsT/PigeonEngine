@@ -242,6 +242,9 @@ namespace PigeonEngine
 		// Static mesh components inside the bake bounds whose cold data was not ready, or
 		// whose asset produced no triangles. Non zero means the mesh is incomplete.
 		UINT32	SkippedMeshCount	= 0;
+		// Bytes the published mesh occupies: the Detour tile data for a bake, the asset blob
+		// for an imported asset. Reported so the panel can show what the mesh costs.
+		UINT32	NavMeshBytes		= 0;
 		FLOAT	Milliseconds		= 0.0f;
 	};
 

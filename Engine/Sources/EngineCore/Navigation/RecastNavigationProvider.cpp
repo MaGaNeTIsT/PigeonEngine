@@ -798,6 +798,19 @@ namespace PigeonEngine
 			}
 		}
 
+		// The bytes every tile allocated; the tile cache's layers are scratch and are not part
+		// of what a query needs in memory. The read only getTile is selected through a const
+		// pointer, the mutating overload is private.
+		const dtNavMesh* TileDataNavMesh = NavMesh;
+		for (int TileIndex = 0; TileIndex < TileDataNavMesh->getMaxTiles(); TileIndex++)
+		{
+			const dtMeshTile* Tile = TileDataNavMesh->getTile(TileIndex);
+			if ((Tile) && (Tile->dataSize > 0))
+			{
+				OutStats.NavMeshBytes += static_cast<UINT32>(Tile->dataSize);
+			}
+		}
+
 		dtNavMeshQuery* NavQuery = dtAllocNavMeshQuery();
 		if (!NavQuery)
 		{
@@ -1892,6 +1905,7 @@ namespace PigeonEngine
 		NavMeshQuery = NewNavMeshQuery;
 		OutStats.PolygonCount = static_cast<UINT32>(Build.PolyMesh->npolys);
 		OutStats.TileCount = 1u;
+		OutStats.NavMeshBytes = static_cast<UINT32>(NavDataSize);
 		Bounds = EBoundAABB(Vector3(Config.bmin[0], Config.bmin[1], Config.bmin[2]), Vector3(Config.bmax[0], Config.bmax[1], Config.bmax[2]), TRUE);
 		bReady = TRUE;
 		OutStats.Milliseconds = static_cast<FLOAT>((EBaseTimer::GetClockSeconds() - StartSeconds) * 1000.0);
