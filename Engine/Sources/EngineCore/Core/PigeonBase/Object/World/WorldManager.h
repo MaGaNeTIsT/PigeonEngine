@@ -57,39 +57,21 @@ namespace PigeonEngine
 #if ENGINE_EDITOR_ONLY
 	private:
 		void ExecutePendingDiscardAction();
+	public:
+		// Unsaved-changes prompt answers, driven by the Level panel: the pending New/Load
+		// request that raised the prompt executes after the save, or directly, or drops.
+		BOOL32 ConfirmUnsavedPromptWithSave(const EString& InSavePath);
+		void ConfirmUnsavedPromptWithDiscard();
+		void CancelPendingDiscardAction();
+		// State fixups from the Level panel's file operations: the current path follows a
+		// renamed level file, and deleting the current file queues a new empty level.
+		void NotifyLevelFileRenamed(const EString& InOldPath, const EString& InNewPath);
+		void NotifyLevelFileDeleted(const EString& InPath);
 	private:
 		// A New/Load request that is waiting for the unsaved-changes prompt.
 		ELevelRequestType	PendingDiscardRequest = ELevelRequestType::NONE;
 		EString				PendingDiscardPath;
-		BOOL32				bUnsavedPromptRequested = FALSE;
 #endif
-#if ENGINE_EDITOR_ONLY
-	private:
-		void RefreshLevelList();
-		void DrawLevelPanelContents();
-		enum class ELevelFileOperationType : UINT8
-		{
-			NONE,
-			RENAME,
-			DUPLICATE,
-			REMOVE,
-		};
-		void RequestRenameLevel(const EString& InPath);
-		void RequestDuplicateLevel(const EString& InPath);
-		void RequestDeleteLevel(const EString& InPath);
-		void DrawLevelFileOperationPopup();
-	private:
-		TArray<EString>		LevelFiles;
-		BOOL32				bLevelListDirty = TRUE;
-		BOOL32				bOpenLevelPopupRequested = FALSE;
-		BOOL32				bSaveAsPopupRequested = FALSE;
-		CHAR				SaveAsNameBuffer[256] = {};
-		ELevelFileOperationType	PendingLevelFileOperation = ELevelFileOperationType::NONE;
-		EString				PendingLevelFilePath;
-		EString				LevelFileOperationError;
-		BOOL32				bLevelFileOperationPopupRequested = FALSE;
-		CHAR				LevelFileNameBuffer[256] = {};
-	#endif
 	private:
 		PWorld*  World;
 

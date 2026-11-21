@@ -30,6 +30,7 @@
 #include <Reflection/JsonArchive.h>
 #include <Editor/EditorCustomization.h>
 #include <Editor/EditorWorldContext.h>
+#include "PigeonBase/Object/World/WorldManager.h"
 #include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <Editor/EditorLogManager.h>
@@ -2161,6 +2162,33 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	static BOOL32 CheckLevelFileStateTransitions()
+	{
+		// These run against the live world manager, so the scenario only exercises the
+		// no-op contract: a rename/delete notification for some other file must not touch
+		// the current level state, and cancelling a pending discard action is pure state.
+		EWorldManager* Manager = EWorldManager::GetManagerSingleton();
+		const EString PathBefore = Manager->GetCurrentLevelPath();
+
+		Manager->NotifyLevelFileRenamed(EString(PE_TEXT("__sanity_missing__.PLevel")), EString(PE_TEXT("__sanity_other__.PLevel")));
+		const BOOL32 bRenameNoop = (Manager->GetCurrentLevelPath() == PathBefore) ? TRUE : FALSE;
+
+		Manager->NotifyLevelFileDeleted(EString(PE_TEXT("__sanity_missing__.PLevel")));
+		const BOOL32 bDeleteNoop = (Manager->GetCurrentLevelPath() == PathBefore) ? TRUE : FALSE;
+
+		Manager->CancelPendingDiscardAction();
+		const BOOL32 bCancelClean = (Manager->GetCurrentLevelPath() == PathBefore) ? TRUE : FALSE;
+
+		const BOOL32 bOk = (bRenameNoop && bDeleteNoop && bCancelClean) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("level file state detail: renameNoop=")) + EString::FromInt(bRenameNoop) +
+				EString(PE_TEXT(" deleteNoop=")) + EString::FromInt(bDeleteNoop) +
+				EString(PE_TEXT(" cancelClean=")) + EString::FromInt(bCancelClean));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckWorldEditorCommands()
 	{
 #if ENGINE_DEBUG_MODE
@@ -3256,6 +3284,8 @@ namespace PigeonEngine
 		ReportSanityResult(EString(PE_TEXT("editor customization registry")), bEditorCustomization);
 		const BOOL32 bEditorWorldContext = CheckEditorWorldContextSelection();
 		ReportSanityResult(EString(PE_TEXT("editor world context selection")), bEditorWorldContext);
+		const BOOL32 bLevelFileState = CheckLevelFileStateTransitions();
+		ReportSanityResult(EString(PE_TEXT("level file state transitions")), bLevelFileState);
 		if (!bWorldEditorCommands)
 		{
 			FailedCount += 1u;
