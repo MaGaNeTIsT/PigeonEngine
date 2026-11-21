@@ -4,6 +4,7 @@
 
 #include "PigeonBase/Object/Actor.h"
 #include "PigeonBase/Object/Actor/LevelCharacter.h"
+#include "PigeonBase/Object/Actor/NavMeshActor.h"
 #include "PigeonBase/Object/Component/Character/MovementComponent.h"
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/Component/ActorComponent.h"
@@ -3077,6 +3078,82 @@ namespace PigeonEngine
 
 	// Writing an already built provider is the save path: the file and the component's asset
 	// reference appear in one step, without a second bake.
+	// The navmesh actor is one agent's authoring data: profile defaults, a JSON round trip, and
+	// the first-wins rule for duplicate agent names.
+	static BOOL32 CheckNavMeshActorProfile()
+	{
+		PNavMeshActor* Source = new PNavMeshActor();
+		const BOOL32 bDefaults = ((Source->GetAgentName().Length() == 0u) && (Source->GetBuildOnBeginPlay() != FALSE)) ? TRUE : FALSE;
+
+		FNavMeshProfile Profile;
+		Profile.Name = EString(PE_TEXT("LargeAgent"));
+		Profile.BuildSettings.AgentRadius = 80.0f;
+		Profile.BuildSettings.AgentHeight = 250.0f;
+		Profile.BuildSettings.TileSizeCells = 64u;
+		Profile.NavMeshAsset = EString(PE_TEXT("Sanity_ActorAsset"));
+		ENavigationLink Link;
+		Link.Start = Vector3(-150.0f, 0.0f, 0.0f);
+		Link.End = Vector3(150.0f, 0.0f, 0.0f);
+		Link.Radius = 60.0f;
+		Link.Area = ENavigationAreaFlagType::NAVIGATION_AREA_JUMP;
+		Profile.NavLinks.Add(Link);
+		Source->SetProfile(Profile);
+
+		CJsonObject Document;
+		EJsonArchiveWriter Writer(Document);
+		EClassPropertyRegistry::SerializeObject(Writer, GetClassHashCode<PNavMeshActor>(), Source);
+		PNavMeshActor* Loaded = new PNavMeshActor();
+		EJsonArchiveReader Reader(Document);
+		EClassPropertyRegistry::SerializeObject(Reader, GetClassHashCode<PNavMeshActor>(), Loaded);
+		const FNavMeshProfile& LoadedProfile = Loaded->GetProfile();
+		const BOOL32 bRoundTrip = ((LoadedProfile.Name == EString(PE_TEXT("LargeAgent")))
+			&& (EMath::Abs(LoadedProfile.BuildSettings.AgentRadius - 80.0f) <= 1.0e-4f)
+			&& (EMath::Abs(LoadedProfile.BuildSettings.AgentHeight - 250.0f) <= 1.0e-4f)
+			&& (LoadedProfile.BuildSettings.TileSizeCells == 64u)
+			&& (LoadedProfile.NavMeshAsset == EString(PE_TEXT("Sanity_ActorAsset")))
+			&& (LoadedProfile.NavLinks.Num<UINT32>() == 1u)
+			&& (LoadedProfile.NavLinks[0].Area == ENavigationAreaFlagType::NAVIGATION_AREA_JUMP)
+			&& (LoadedProfile.NavLinks[0].bDirectional == FALSE)) ? TRUE : FALSE;
+
+		// Duplicate agent names: the earliest created actor wins, one entry per name.
+		PSanityLevelWorld* World = new PSanityLevelWorld();
+		World->Init();
+		PNavMeshActor* DefaultActor = new PNavMeshActor();
+		POBJ_DEBUGNAME_SET(DefaultActor, "SanityNavActorDefault");
+		World->AddActor(DefaultActor);
+		PNavMeshActor* DuplicateDefault = new PNavMeshActor();
+		POBJ_DEBUGNAME_SET(DuplicateDefault, "SanityNavActorDuplicate");
+		World->AddActor(DuplicateDefault);
+		PNavMeshActor* LargeActor = new PNavMeshActor();
+		FNavMeshProfile LargeProfile;
+		LargeProfile.Name = EString(PE_TEXT("LargeAgent"));
+		LargeActor->SetProfile(LargeProfile);
+		World->AddActor(LargeActor);
+
+		TArray<PNavMeshActor*> Primaries;
+		PNavMeshActor::CollectPrimaryActorsInWorld(*World, Primaries);
+		const BOOL32 bPrimary = ((Primaries.Num<UINT32>() == 2u)
+			&& (Primaries[0] == DefaultActor) && (Primaries[1] == LargeActor)) ? TRUE : FALSE;
+
+		World->DestroyActor(DefaultActor);
+		World->DestroyActor(DuplicateDefault);
+		World->DestroyActor(LargeActor);
+		World->FlushPendingDestroy();
+		World->Destroy();
+		Source->Destroy();
+		Loaded->Destroy();
+
+		const BOOL32 bOk = (bDefaults && bRoundTrip && bPrimary) ? TRUE : FALSE;
+		if (!bOk)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("navmesh actor detail: defaults=")) + EString::FromInt(bDefaults)
+				+ EString(PE_TEXT(" roundTrip=")) + EString::FromInt(bRoundTrip)
+				+ EString(PE_TEXT(" primary=")) + EString::FromInt(bPrimary)
+				+ EString(PE_TEXT(" primaries=")) + EString::FromInt(Primaries.Num<UINT32>()));
+		}
+		return bOk;
+	}
+
 	static BOOL32 CheckNavMeshAssetWrite()
 	{
 		ERecastNavigationProvider* Provider = new ERecastNavigationProvider();
@@ -4064,6 +4141,12 @@ namespace PigeonEngine
 		const BOOL32 bNavMeshProfileCoverage = CheckNavMeshProfileCoverage();
 		ReportSanityResult(EString(PE_TEXT("navmesh profile coverage")), bNavMeshProfileCoverage);
 		if (!bNavMeshProfileCoverage)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bNavMeshActorProfile = CheckNavMeshActorProfile();
+		ReportSanityResult(EString(PE_TEXT("navmesh actor profile")), bNavMeshActorProfile);
+		if (!bNavMeshActorProfile)
 		{
 			FailedCount += 1u;
 		}

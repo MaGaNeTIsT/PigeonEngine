@@ -3,6 +3,7 @@
 #include <AssetLoadManager.h>
 #include <Development/EditorLogManager.h>
 #include <Navigation/NavigationGeometry.h>
+#include <Navigation/NavMeshProfile.h>
 #include <Navigation/NavigationManager.h>
 #include <Navigation/NavigationProviderInterface.h>
 #include <Navigation/NavigationProviderRegistry.h>
@@ -17,29 +18,6 @@
 
 namespace PigeonEngine
 {
-
-	static void SerializeNavMeshBuildSettings(EArchive& InArchive, const CHAR* InName, ENavMeshBuildSettings& InOutValue)
-	{
-		InArchive.BeginObject(InName);
-		InArchive.SerializeFloat(PE_TEXT("CellSize"), InOutValue.CellSize);
-		InArchive.SerializeFloat(PE_TEXT("CellHeight"), InOutValue.CellHeight);
-		InArchive.SerializeFloat(PE_TEXT("AgentRadius"), InOutValue.AgentRadius);
-		InArchive.SerializeFloat(PE_TEXT("AgentHeight"), InOutValue.AgentHeight);
-		InArchive.SerializeFloat(PE_TEXT("AgentMaxClimb"), InOutValue.AgentMaxClimb);
-		InArchive.SerializeFloat(PE_TEXT("AgentMaxSlopeAngle"), InOutValue.AgentMaxSlopeAngle);
-		InArchive.SerializeFloat(PE_TEXT("MaxEdgeLength"), InOutValue.MaxEdgeLength);
-		InArchive.SerializeFloat(PE_TEXT("MaxSimplificationError"), InOutValue.MaxSimplificationError);
-		InArchive.SerializeFloat(PE_TEXT("DetailSampleDistance"), InOutValue.DetailSampleDistance);
-		InArchive.SerializeFloat(PE_TEXT("DetailSampleMaxError"), InOutValue.DetailSampleMaxError);
-		InArchive.SerializeUInt32(PE_TEXT("MinRegionArea"), InOutValue.MinRegionArea);
-		InArchive.SerializeUInt32(PE_TEXT("MergeRegionArea"), InOutValue.MergeRegionArea);
-		InArchive.SerializeUInt32(PE_TEXT("MaxVertsPerPoly"), InOutValue.MaxVertsPerPoly);
-		InArchive.SerializeUInt32(PE_TEXT("TileSizeCells"), InOutValue.TileSizeCells);
-		InArchive.SerializeUInt32(PE_TEXT("MaxLayersPerTile"), InOutValue.MaxLayersPerTile);
-		InArchive.SerializeUInt32(PE_TEXT("MaxCrowdAgents"), InOutValue.MaxCrowdAgents);
-		InArchive.SerializeBool(PE_TEXT("FlipTriangleWinding"), InOutValue.bFlipTriangleWinding);
-		InArchive.EndObject();
-	}
 
 	static void AddNavMeshFloatProperty(const size_t& InClassHash, const CHAR* InName,
 		FLOAT ENavMeshBuildSettings::* InMember)
@@ -92,56 +70,12 @@ namespace PigeonEngine
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE) | static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY));
 	}
 
-	// Authored off-mesh connections, kept as one indexed array of objects so a level file stays
-	// readable and an older file without the field simply loads no links.
-	static void SerializeNavigationLinks(EArchive& InArchive, const CHAR* InName, TArray<ENavigationLink>& InOutLinks)
-	{
-		UINT32 Count = InOutLinks.Num<UINT32>();
-		InArchive.BeginArray(InName, Count);
-		if (!InArchive.IsSaving())
-		{
-			InOutLinks.Empty();
-		}
-		for (UINT32 Index = 0u; Index < Count; Index++)
-		{
-			const EString IndexKey = EString::FromInt(Index);
-			ENavigationLink Link;
-			if (InArchive.IsSaving())
-			{
-				Link = InOutLinks[Index];
-			}
-			InArchive.BeginObject(*IndexKey);
-			SerializeValue(InArchive, PE_TEXT("Start"), Link.Start);
-			SerializeValue(InArchive, PE_TEXT("End"), Link.End);
-			InArchive.SerializeFloat(PE_TEXT("Radius"), Link.Radius);
-			InArchive.SerializeBool(PE_TEXT("Directional"), Link.bDirectional);
-			INT32 AreaValue = static_cast<INT32>(Link.Area);
-			SerializeEnumValue(InArchive, PE_TEXT("Area"), AreaValue, GetClassHashCode<ENavigationAreaFlagType>());
-			Link.Area = static_cast<ENavigationAreaFlagType>(AreaValue);
-			InArchive.EndObject();
-			if (!InArchive.IsSaving())
-			{
-				InOutLinks.Add(Link);
-			}
-		}
-		InArchive.EndArray();
-	}
-
-	static void RegisterNavigationLinkStruct()
-	{
-		const size_t StructHash = GetClassHashCode<ENavigationLink>();
-		const EString StructName(PE_TEXT("ENavigationLink"));
-		const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
-		AddStructProperty(StructHash, StructName, PE_TEXT("Start"), &ENavigationLink::Start, EditFlags);
-		AddStructProperty(StructHash, StructName, PE_TEXT("End"), &ENavigationLink::End, EditFlags);
-		AddStructProperty(StructHash, StructName, PE_TEXT("Radius"), &ENavigationLink::Radius, EditFlags);
-		AddStructProperty(StructHash, StructName, PE_TEXT("Directional"), &ENavigationLink::bDirectional, EditFlags);
-		AddStructProperty(StructHash, StructName, PE_TEXT("Area"), &ENavigationLink::Area, EditFlags);
-	}
-
 	static void RegisterClassProperties()
 	{
 		const size_t ClassHash = GetClassHashCode<PNavMeshComponent>();
+		// The shared descriptor registration also covers ENavigationLink, which the NavLinks
+		// property below needs at registration time.
+		RegisterNavMeshProfileTypes();
 		AddClassAssetPropertyAccessors<PNavMeshComponent>(ClassHash, PE_TEXT("NavMeshAsset"),
 			[](const PNavMeshComponent* Component) -> EString { return Component->GetNavMeshAssetName(); },
 			[](PNavMeshComponent* Component, const EString& Value) -> void
@@ -177,7 +111,6 @@ namespace PigeonEngine
 
 		// Off-mesh connections: a struct array edited inline by the generic Details grid, so
 		// authoring a jump needs no dedicated panel.
-		RegisterNavigationLinkStruct();
 		AddClassPropertyStructCustom<PNavMeshComponent, TArray<ENavigationLink>>(ClassHash, PE_TEXT("NavLinks"),
 			[](const PNavMeshComponent* Component) -> TArray<ENavigationLink> { return Component->GetNavigationLinks(); },
 			[](PNavMeshComponent* Component, const TArray<ENavigationLink>& Value) -> void { Component->SetNavigationLinks(Value); },

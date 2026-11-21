@@ -3,6 +3,7 @@
 #include <PigeonBase/Object/Actor/LevelActor.h>
 #include <PigeonBase/Object/Actor/Pawn.h>
 #include <PigeonBase/Object/Actor/LevelCharacter.h>
+#include <PigeonBase/Object/Actor/NavMeshActor.h>
 #include <PigeonBase/Object/Controller/Controller.h>
 #include <PigeonBase/Object/Controller/CharacterController.h>
 #include <PigeonBase/Object/Component/Component.h>
@@ -66,6 +67,8 @@ namespace PigeonEngine
 		RegisterSerializableClassType<PPawn, PActor>(PE_TEXT("PPawn"));
 		SaveDefaultClassFactory<PCharacter>();
 		RegisterSerializableClassType<PCharacter, PPawn>(PE_TEXT("PCharacter"));
+		SaveDefaultClassFactory<PNavMeshActor>();
+		RegisterSerializableClassType<PNavMeshActor, PActor>(PE_TEXT("PNavMeshActor"));
 		SaveDefaultClassFactory<PController>();
 		RegisterSerializableClassType<PController, PActor>(PE_TEXT("PController"));
 		SaveDefaultClassFactory<PCharacterController>();
