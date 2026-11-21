@@ -4,7 +4,7 @@
 #include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
 #if ENGINE_EDITOR_ONLY
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #endif
 
 

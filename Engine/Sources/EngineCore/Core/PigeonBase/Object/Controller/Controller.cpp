@@ -1,6 +1,6 @@
 #include "Controller.h"
 
-#include "../../../../Editor/EditorLogManager.h"
+#include <Development/EditorLogManager.h>
 #include "../../../../HID/Input/InputType.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #include "PigeonBase/Object/World/World.h"

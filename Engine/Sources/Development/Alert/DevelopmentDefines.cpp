@@ -1,6 +1,6 @@
 #include "DevelopmentDefines.h"
 
-#include "../../EngineCore/Editor/EditorLogManager.h"
+#include <Development/EditorLogManager.h>
 #include "../../EngineCore/Main/MainManager.h"
 #include "../../EngineCore/Core/Base/DataStructure/Text/String.h"
 

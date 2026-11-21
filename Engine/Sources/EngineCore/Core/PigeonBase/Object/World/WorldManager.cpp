@@ -2,13 +2,13 @@
 
 #include "World.h"
 #include "../../Development/Message/Message.h"
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #if ENGINE_EDITOR_ONLY
 #include <imgui.h>
-#include <Editor/WorldOutlinePanel.h>
-#include <Editor/WorldDetailsPanel.h>
-#include <Editor/EditorWorldContext.h>
-#include <Editor/LevelPanel.h>
+#include <Editor/Panels/WorldOutlinePanel.h>
+#include <Editor/Panels/WorldDetailsPanel.h>
+#include <Editor/Manager/EditorWorldContext.h>
+#include <Editor/Panels/LevelPanel.h>
 #endif
 
 namespace PigeonEngine

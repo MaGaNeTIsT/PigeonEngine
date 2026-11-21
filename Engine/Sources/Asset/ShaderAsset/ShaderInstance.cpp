@@ -3,7 +3,7 @@
 #include <Shader/ShaderParameterBuffers.h>
 #include <ShaderAsset/ShaderAsset.h>
 #include <Main/MainManager.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

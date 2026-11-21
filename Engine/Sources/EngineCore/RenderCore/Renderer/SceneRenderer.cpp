@@ -26,7 +26,7 @@
 // The diagnostics this file reports are written from code that runs in every configuration, and
 // the header itself is a no-op under ENGINE_SHIPPING_MODE, which is what keeps this include out of the
 // editor-only block below.
-#include <EngineCore/Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #if ENGINE_EDITOR_ONLY
 #include <cstdio>
 #include <RenderDevice/D3D12Native.h>

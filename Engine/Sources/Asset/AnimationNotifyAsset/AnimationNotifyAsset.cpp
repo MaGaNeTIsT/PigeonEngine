@@ -1,6 +1,6 @@
 #include "AnimationNotifyAsset.h"
 
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <IO/FileHelper.h>
 #include <RapidJson/Headers/JsonObject.h>
 

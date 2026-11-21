@@ -2,7 +2,7 @@
 
 #include <ShaderAsset/ShaderAsset.h>
 #include <IO/FileHelper.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Config/EngineConfig.h>
 
 #if ENGINE_EDITOR_ONLY

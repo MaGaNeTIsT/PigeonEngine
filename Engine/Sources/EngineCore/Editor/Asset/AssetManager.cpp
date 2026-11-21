@@ -1,4 +1,4 @@
-#include "AssetManager.h"
+#include <Editor/Asset/AssetManager.h>
 #if ENGINE_EDITOR_ONLY
 #include <IO/FileHelper.h>
 #include <Editor/AnimationEditorCore/AnimationWorkspace.h>
@@ -13,7 +13,7 @@
 #include <TextureAsset/TextureAsset.h>
 
 #include <imGUI/Headers/imGUIManager.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Editor/AssetImporter/ImportManager.h>
 
 namespace PigeonEngine

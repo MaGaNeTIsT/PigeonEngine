@@ -5,7 +5,7 @@
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
 #if ENGINE_EDITOR_ONLY
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #endif
 
 namespace PigeonEngine

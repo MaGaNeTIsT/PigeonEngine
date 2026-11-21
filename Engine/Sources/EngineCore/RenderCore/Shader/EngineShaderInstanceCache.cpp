@@ -8,7 +8,7 @@
 #include <ShaderAsset/ShaderAsset.h>
 #include <ShaderAsset/ShaderInstance.h>
 #include <RenderResourceLifetime.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

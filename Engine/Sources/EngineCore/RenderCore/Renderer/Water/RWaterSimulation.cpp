@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Main/MainManager.h>
 #include <Renderer/ScenePass.h>
 #include <Renderer/SceneRenderer.h>

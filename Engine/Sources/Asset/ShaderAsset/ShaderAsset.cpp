@@ -3,7 +3,7 @@
 
 #include <RapidJson/Headers/JsonObject.h>
 #include <IO/FileHelper.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Config/ErrorCaption.h>
 #include <Shader/EngineShaderInstanceCache.h>
 

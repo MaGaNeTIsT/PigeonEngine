@@ -1,7 +1,7 @@
 #include "RenderResourceLifetime.h"
 
 #include <Main/MainManager.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

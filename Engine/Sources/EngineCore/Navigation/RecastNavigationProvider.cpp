@@ -1,6 +1,6 @@
 #include <Navigation/RecastNavigationProvider.h>
 
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Development/Profiler.h>
 #include <Navigation/NavigationGeometry.h>
 #include <Navigation/NavigationProviderRegistry.h>

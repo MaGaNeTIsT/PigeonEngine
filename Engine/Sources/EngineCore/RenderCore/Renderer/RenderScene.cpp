@@ -19,7 +19,7 @@
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/BezierGrassComponent.h>
 #if ENGINE_EDITOR_ONLY
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #endif
 
 

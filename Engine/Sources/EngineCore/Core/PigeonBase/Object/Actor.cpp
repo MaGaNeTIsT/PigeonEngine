@@ -5,7 +5,7 @@
 #include "Component/Character/CharacterInputComponent.h"
 #include "Component/Character/MovementComponent.h"
 #include "World/World.h"
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 
 namespace PigeonEngine

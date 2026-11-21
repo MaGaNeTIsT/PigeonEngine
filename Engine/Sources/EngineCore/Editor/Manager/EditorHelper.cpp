@@ -1,4 +1,4 @@
-#include "EditorHelper.h"
+#include <Editor/Manager/EditorHelper.h>
 
 #if ENGINE_EDITOR_ONLY
 

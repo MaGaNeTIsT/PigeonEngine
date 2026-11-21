@@ -5,7 +5,7 @@
 #include <RHI/IRRHIDevice.h>
 #include <RHI/IRCommandList.h>
 #include <Main/MainManager.h>
-#include <EngineCore/Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

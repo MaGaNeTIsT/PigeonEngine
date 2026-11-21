@@ -1,7 +1,7 @@
 #include <Shader/ShaderParameterBuffers.h>
 
 #include <RHI/IRRHIDevice.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

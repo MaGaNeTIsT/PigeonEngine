@@ -1,4 +1,4 @@
-#include <Editor/WorldOutlinePanel.h>
+#include <Editor/Panels/WorldOutlinePanel.h>
 
 #if ENGINE_EDITOR_ONLY
 
@@ -13,8 +13,8 @@
 #include <PigeonBase/Object/Component/Character/CharacterInputComponent.h>
 #include <PigeonBase/Object/Component/Character/MovementComponent.h>
 #include <PigeonBase/Object/World/World.h>
-#include <Editor/WorldEditorCommand.h>
-#include <Editor/EditorWorldContext.h>
+#include <Editor/Commands/WorldEditorCommand.h>
+#include <Editor/Manager/EditorWorldContext.h>
 
 namespace PigeonEngine
 {

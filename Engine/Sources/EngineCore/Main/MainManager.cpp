@@ -24,10 +24,10 @@
 #if ENGINE_EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
-#include "../Editor/EditorManager.h"
-#include "../Editor/EditorGlobalPanel.h"
-#include "../Editor/EditorProfilerPanel.h"
-#include "../Editor/FrameworkSanityCheck.h"
+#include <Editor/Manager/EditorManager.h>
+#include <Editor/Panels/EditorGlobalPanel.h>
+#include <Editor/Panels/EditorProfilerPanel.h>
+#include <Editor/Test/FrameworkSanityCheck.h>
 #endif
 
 #if ENGINE_EDITOR_ONLY

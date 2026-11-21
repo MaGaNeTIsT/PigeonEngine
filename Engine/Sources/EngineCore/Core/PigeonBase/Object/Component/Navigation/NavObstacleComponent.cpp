@@ -1,6 +1,6 @@
 #include "NavObstacleComponent.h"
 
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Navigation/NavigationManager.h>
 #include <PigeonBase/Object/Actor.h>
 #include <Reflection/Property.h>

@@ -6,7 +6,7 @@
 #include <Config/EngineConfig.h>
 #include <RenderConfig/RenderConfig.h>
 #if ENGINE_EDITOR_ONLY
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
 #include <Shader/ShaderParameter.h>

@@ -1,6 +1,6 @@
 #include <Navigation/NavigationManager.h>
 
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Navigation/NavigationProviderInterface.h>
 
 namespace PigeonEngine

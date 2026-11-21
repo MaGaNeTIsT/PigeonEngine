@@ -16,7 +16,7 @@
 #include <ShaderAsset/ShaderInstance.h>
 #include <Shader/EngineShaderInstanceCache.h>
 #include <ShaderAsset/ShaderJobBuilder.h>
-#include "../../Editor/EditorLogManager.h"
+#include <Development/EditorLogManager.h>
 #include <RenderProxy/ViewProxy.h>
 #endif
 

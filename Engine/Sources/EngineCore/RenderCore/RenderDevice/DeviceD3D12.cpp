@@ -7,7 +7,7 @@
 #include <RHI/RRHIBindlessManager.h>
 // Unconditional on purpose: the header defines PE_LOG_* as no-ops outside editor builds, and
 // this file logs from paths that are compiled in every configuration.
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

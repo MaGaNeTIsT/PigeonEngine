@@ -4,7 +4,7 @@
 #include "SkeletonBinding.h"
 
 #include <AnimationAsset/AnimationAsset.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 
 namespace PigeonEngine

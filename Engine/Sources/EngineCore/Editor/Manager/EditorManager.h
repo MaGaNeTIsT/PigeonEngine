@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Base/DataStructure/ObjectBase.h>
-#include "EditorHelper.h"
-#include "WorldEditorCommand.h"
+#include <Editor/Manager/EditorHelper.h>
+#include <Editor/Commands/WorldEditorCommand.h>
 
 namespace PigeonEngine
 {

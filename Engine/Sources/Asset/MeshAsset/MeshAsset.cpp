@@ -5,7 +5,7 @@
 #include <Main/MainManager.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #if ENGINE_EDITOR_ONLY
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #include "../../../EngineThirdParty/RapidJson/Headers/JsonManager.h"
 #endif

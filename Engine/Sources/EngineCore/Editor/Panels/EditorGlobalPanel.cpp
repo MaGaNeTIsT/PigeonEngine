@@ -1,4 +1,4 @@
-#include "EditorGlobalPanel.h"
+#include <Editor/Panels/EditorGlobalPanel.h>
 
 #if ENGINE_EDITOR_ONLY
 

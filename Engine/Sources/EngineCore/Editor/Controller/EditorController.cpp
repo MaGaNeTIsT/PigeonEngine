@@ -1,4 +1,4 @@
-#include <Editor/EditorController.h>
+#include <Editor/Controller/EditorController.h>
 
 #if ENGINE_EDITOR_ONLY
 

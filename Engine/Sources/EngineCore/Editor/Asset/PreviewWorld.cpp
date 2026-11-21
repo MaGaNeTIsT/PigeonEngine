@@ -1,4 +1,4 @@
-#include "PreviewWorld.h"
+#include <Editor/Asset/PreviewWorld.h>
 
 #if ENGINE_EDITOR_ONLY
 

@@ -1,6 +1,6 @@
 #include "NavAgentComponent.h"
 
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Navigation/NavigationManager.h>
 #include <Navigation/NavigationProviderInterface.h>
 #include <PigeonBase/Object/Actor.h>

@@ -1,4 +1,4 @@
-#include "PropertyEditor.h"
+#include <Editor/Panels/PropertyEditor.h>
 
 #if ENGINE_EDITOR_ONLY
 

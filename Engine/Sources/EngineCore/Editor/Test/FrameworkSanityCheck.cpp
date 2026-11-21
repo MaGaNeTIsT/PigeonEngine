@@ -1,4 +1,4 @@
-#include "FrameworkSanityCheck.h"
+#include <Editor/Test/FrameworkSanityCheck.h>
 
 #if ENGINE_EDITOR_ONLY
 
@@ -28,15 +28,15 @@
 #include "Development/Message/Message.h"
 #include <Reflection/Property.h>
 #include <Reflection/JsonArchive.h>
-#include <Editor/EditorCustomization.h>
-#include <Editor/EditorWorldContext.h>
+#include <Editor/Customization/EditorCustomization.h>
+#include <Editor/Manager/EditorWorldContext.h>
 #include "PigeonBase/Object/World/WorldManager.h"
 #include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
-#include <Editor/EditorLogManager.h>
-#include <Editor/WorldEditorCommand.h>
-#include "EditorHelper.h"
-#include "PropertyEditor.h"
+#include <Development/EditorLogManager.h>
+#include <Editor/Commands/WorldEditorCommand.h>
+#include <Editor/Manager/EditorHelper.h>
+#include <Editor/Panels/PropertyEditor.h>
 
 namespace PigeonEngine
 {

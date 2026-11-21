@@ -5,7 +5,7 @@
 #include <Shader/ShaderAssetBinding.h>
 #include <RHI/IRRHIDevice.h>
 #include <RHI/IRCommandList.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

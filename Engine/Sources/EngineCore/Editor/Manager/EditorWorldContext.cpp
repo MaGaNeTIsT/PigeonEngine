@@ -1,4 +1,4 @@
-#include <Editor/EditorWorldContext.h>
+#include <Editor/Manager/EditorWorldContext.h>
 
 #if ENGINE_EDITOR_ONLY
 
@@ -6,7 +6,7 @@
 #include <PigeonBase/Object/Component/ActorComponent.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <PigeonBase/Object/World/World.h>
-#include <Editor/WorldEditorCommand.h>
+#include <Editor/Commands/WorldEditorCommand.h>
 
 namespace PigeonEngine
 {

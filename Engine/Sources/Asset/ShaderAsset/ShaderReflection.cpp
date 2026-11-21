@@ -2,7 +2,7 @@
 
 #include <RapidJson/Headers/JsonObject.h>
 #include <IO/FileHelper.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Config/EngineShaderConfig.h>
 
 namespace PigeonEngine

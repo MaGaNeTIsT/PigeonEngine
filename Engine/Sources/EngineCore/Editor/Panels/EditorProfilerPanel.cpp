@@ -1,4 +1,4 @@
-#include "EditorProfilerPanel.h"
+#include <Editor/Panels/EditorProfilerPanel.h>
 
 #if ENGINE_EDITOR_ONLY
 
@@ -8,7 +8,7 @@
 #include <Base/DataStructure/Text/Name.h>
 #include <Base/Timer/Timer.h>
 #include <Development/GPUProfiler.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <PigeonBase/Object/World/World.h>

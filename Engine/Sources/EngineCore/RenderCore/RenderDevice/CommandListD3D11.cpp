@@ -3,7 +3,7 @@
 #include "PipelineStateD3D11.h"
 #include "D3D11Native.h"
 #include <RenderResource.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Development/GPUProfiler.h>
 
 namespace PigeonEngine

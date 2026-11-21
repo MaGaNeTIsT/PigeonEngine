@@ -16,7 +16,7 @@
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
-#include <Editor/PreviewWorld.h>
+#include <Editor/Asset/PreviewWorld.h>
 #include <Main/MainManager.h>
 #include <Development/GPUProfiler.h>
 #include <RHI/IRRHIDevice.h>

@@ -1,8 +1,8 @@
-#include "WorldEditorCommand.h"
+#include <Editor/Commands/WorldEditorCommand.h>
 
 #if ENGINE_EDITOR_ONLY
 
-#include <Editor/EditorWorldContext.h>
+#include <Editor/Manager/EditorWorldContext.h>
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <PigeonBase/Object/Controller/Controller.h>
@@ -10,7 +10,7 @@
 #include <Reflection/LevelSerializer.h>
 #include <Reflection/Property.h>
 #include <RapidJson/Headers/JsonObject.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

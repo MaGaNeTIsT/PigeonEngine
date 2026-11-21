@@ -2,7 +2,7 @@
 #include "DeviceD3D12.h"
 #include "D3D12Native.h"
 #include <CoreMinimal.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Development/GPUProfiler.h>
 
 namespace PigeonEngine

@@ -1,4 +1,4 @@
-#include <Editor/LevelPanel.h>
+#include <Editor/Panels/LevelPanel.h>
 
 #if ENGINE_EDITOR_ONLY
 

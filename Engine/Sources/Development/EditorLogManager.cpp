@@ -1,4 +1,4 @@
-#include "EditorLogManager.h"
+#include <Development/EditorLogManager.h>
 #if !(ENGINE_SHIPPING_MODE)
 #include "Base/Timer/Timer.h"
 #include <filesystem>

@@ -1,7 +1,7 @@
 #include "NavMeshComponent.h"
 
 #include <AssetLoadManager.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <Navigation/NavigationGeometry.h>
 #include <Navigation/NavigationManager.h>
 #include <Navigation/NavigationProviderInterface.h>
@@ -9,7 +9,7 @@
 #include <Reflection/Property.h>
 
 #if ENGINE_EDITOR_ONLY
-#include <Editor/AssetManager.h>
+#include <Editor/Asset/AssetManager.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 

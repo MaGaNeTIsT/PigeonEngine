@@ -10,7 +10,7 @@
 #include <RHI/RRHIBindlessManager.h>
 #include <Core/Config/EngineConfig.h>
 #include <Config/EngineShaderConfig.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <IO/FileHelper.h>
 #include <ShaderAsset/ShaderCompileJob.h>
 #include <ShaderAsset/ShaderInstance.h>

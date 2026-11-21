@@ -8,7 +8,7 @@
 #include <Shader/EngineShaderInstanceCache.h>
 #include <Base/DataStructure/Text/Path.h>
 #include <Config/EngineConfig.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <IO/FileHelper.h>
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/World/World.h>

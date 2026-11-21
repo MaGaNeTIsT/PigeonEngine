@@ -6,7 +6,7 @@
 #include <Shader/ShaderAssetBinding.h>
 #include <Shader/ShaderRenderTraits.h>
 #include <ShaderAsset/ShaderProgram.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 
 namespace PigeonEngine
 {

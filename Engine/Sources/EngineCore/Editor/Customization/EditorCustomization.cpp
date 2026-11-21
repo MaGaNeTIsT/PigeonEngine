@@ -1,10 +1,10 @@
-#include <Editor/EditorCustomization.h>
+#include <Editor/Customization/EditorCustomization.h>
 
 #if ENGINE_EDITOR_ONLY
 
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/ActorComponent.h>
-#include <Editor/PropertyEditor.h>
+#include <Editor/Panels/PropertyEditor.h>
 
 namespace PigeonEngine
 {

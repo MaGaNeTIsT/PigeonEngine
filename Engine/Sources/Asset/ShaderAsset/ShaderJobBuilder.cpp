@@ -3,7 +3,7 @@
 #include <Config/EngineConfig.h>
 #include <Config/ErrorCaption.h>
 #include <IO/FileHelper.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <MeshAsset/MeshAsset.h>
 #include <ShaderAsset/ShaderAsset.h>
 

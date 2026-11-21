@@ -3,7 +3,7 @@
 #include <RHI/IRRHIResource.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
-#include <Editor/EditorLogManager.h>
+#include <Development/EditorLogManager.h>
 #include <MultiThread/Atomic.h>
 
 namespace PigeonEngine
