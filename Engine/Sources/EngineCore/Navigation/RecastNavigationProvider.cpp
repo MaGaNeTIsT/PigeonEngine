@@ -1,22 +1,55 @@
 #include <Navigation/RecastNavigationProvider.h>
 
+#include <Base/Memory/Memory.h>
 #include <Development/EditorLogManager.h>
 #include <Development/Profiler.h>
 #include <Navigation/NavigationGeometry.h>
 #include <Navigation/NavigationProviderRegistry.h>
 
 #include <Recast/Include/Recast.h>
+#include <Recast/Include/RecastAlloc.h>
 #include <Detour/Include/DetourCommon.h>
 #include <Detour/Include/DetourNavMesh.h>
 #include <Detour/Include/DetourNavMeshBuilder.h>
 #include <Detour/Include/DetourNavMeshQuery.h>
 #include <Detour/Include/DetourStatus.h>
+#include <Detour/Include/DetourAlloc.h>
 #include <DetourCrowd/Include/DetourCrowd.h>
 #include <DetourTileCache/Include/DetourTileCache.h>
 #include <DetourTileCache/Include/DetourTileCacheBuilder.h>
 
 namespace PigeonEngine
 {
+	namespace
+	{
+		// Route Recast/Detour allocations through the engine allocator so navmesh memory sits
+		// on the same bookkeeping as everything else. The hook shapes match (size plus a
+		// lifetime hint this allocator ignores) but the hint enums are distinct types, so one
+		// shim per library; installed once from a static initializer, before any bake can run.
+		// The libraries store plain function pointers, so the install is permanent by design.
+		void* NavigationRcAllocate(size_t InSize, rcAllocHint /*InHint*/)
+		{
+			return EMemory::Allocate(InSize);
+		}
+
+		void* NavigationDtAllocate(size_t InSize, dtAllocHint /*InHint*/)
+		{
+			return EMemory::Allocate(InSize);
+		}
+
+		void NavigationLibraryDeallocate(void* InPointer)
+		{
+			EMemory::Deallocate(InPointer);
+		}
+
+		const BOOL32 bNavigationAllocatorsInstalled = []() -> BOOL32
+		{
+			rcAllocSetCustom(NavigationRcAllocate, NavigationLibraryDeallocate);
+			dtAllocSetCustom(NavigationDtAllocate, NavigationLibraryDeallocate);
+			return TRUE;
+		}();
+	}
+
 
 	// Sanity limit on the voxel grid. A cell size typed one digit too small can ask for a
 	// heightfield that would exhaust memory before any diagnostic is printed, so the build
