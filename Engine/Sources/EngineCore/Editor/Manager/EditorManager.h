@@ -7,6 +7,8 @@
 namespace PigeonEngine
 {
 #if ENGINE_EDITOR_ONLY
+	class FOutputLogPanel;
+
 	class EEditorManager : public EManagerBase
 	{
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EEditorManager)
@@ -34,6 +36,7 @@ namespace PigeonEngine
 		class EImportManager*		ImportManager		= nullptr;
 		class EEditorGlobalPanel*	EditorGlobalPanel	= nullptr;
 		class EEditorProfilerPanel*	EditorProfilerPanel = nullptr;
+		class FOutputLogPanel*		OutputLogPanel		= nullptr;
 
 		// Currently selected component (gizmo target), mirrored from PWorld's handle
 		// selection every frame; the world remains the authority.

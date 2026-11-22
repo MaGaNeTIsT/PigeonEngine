@@ -21,6 +21,10 @@
 
 #include "Development/Message/Message.h"
 
+#if !(ENGINE_SHIPPING_MODE)
+#include <Development/EditorLogManager.h>
+#endif
+
 #if ENGINE_EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
@@ -112,6 +116,12 @@ namespace PigeonEngine
 		ClassFactoryRegisterManager->DoRegister();
 
 		MessageManager->Initialize();
+
+		// The log service exists in every non-shipping build. Initialize it before the
+		// device/renderer start so the first diagnostic already has a session file.
+#if !(ENGINE_SHIPPING_MODE)
+		EEditorLogManager::GetManagerSingleton()->Initialize();
+#endif
 
 		EInput::Initialize(WindowHandle);
 
@@ -280,6 +290,12 @@ namespace PigeonEngine
 		EInput::ShutDown();
 
 		MessageManager->ShutDown();
+
+		// Last, after every teardown above: the asset/device shutdown logs belong in this
+		// session's file, and ShutDown flushes the tail unconditionally.
+#if !(ENGINE_SHIPPING_MODE)
+		EEditorLogManager::GetManagerSingleton()->ShutDown();
+#endif
 
 		// Closes the lifetime window last: everything above is still allowed to release
 		// resources, anything after this point is not.

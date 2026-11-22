@@ -1,6 +1,7 @@
 #include <Editor/Manager/EditorManager.h>
 #include <Editor/Panels/EditorGlobalPanel.h>
 #include <Editor/Panels/EditorProfilerPanel.h>
+#include <Editor/Panels/OutputLogPanel.h>
 #include <Base/RTTI/RTTIManager.h>
 #include "PigeonBase/Object/World/WorldManager.h"
 #include <Editor/Asset/AssetManager.h>
@@ -104,7 +105,13 @@ namespace PigeonEngine
 	{
 		EPropertyEditor::SetPropertyCommittedCallback(EPropertyEditor::FOnPropertyCommitted());
 		WorldCommands.Clear();
-		LogsManager->ShutDown();
+		if (OutputLogPanel)
+		{
+			delete OutputLogPanel;
+			OutputLogPanel = nullptr;
+		}
+		// The log service flushes after the asset/render teardown in EMainManager::ShutDown,
+		// so its shutdown is not tied to the editor lifetime.
 		AssetManager->ShutDown();
 		ImportManager->ShutDown();
 	}
@@ -125,7 +132,10 @@ namespace PigeonEngine
 		ImportManager    = EImportManager::GetManagerSingleton();
 		EditorGlobalPanel = EEditorGlobalPanel::GetManagerSingleton();
 		EditorProfilerPanel = EEditorProfilerPanel::GetManagerSingleton();
-		LogsManager->EditorInit();
+		if (!OutputLogPanel)
+		{
+			OutputLogPanel = new FOutputLogPanel();
+		}
 		AssetManager->EditorInit();
 		WorldManager->EditorInit();
 		ImportManager->EditorInit();
@@ -422,7 +432,11 @@ namespace PigeonEngine
 
 		WorldManager->EditorUpdate();
 		AssetManager->EditorUpdate();
-		LogsManager->EditorUpdate();
+		LogsManager->Tick();
+		if (OutputLogPanel)
+		{
+			OutputLogPanel->Draw();
+		}
 		ImportManager->EditorUpdate();
 		if (EditorGlobalPanel)
 		{
