@@ -199,13 +199,19 @@ namespace PigeonEngine
 		}
 		for (const std::filesystem::directory_entry& Entry : std::filesystem::directory_iterator(dirPath))
 		{
+			// The flag is part of the contract: callers that only want a file name (the
+			// level list, a batch scan) must not receive a path that they would prefix
+			// again. AssetCatalog asks for full paths and keeps getting them.
+			const EString EntryName = (OutWithFullPath != FALSE)
+				? EString(Entry.path().string())
+				: EString(Entry.path().filename().string());
 			if (std::filesystem::is_directory(Entry))
 			{
-				OutFolders.Add(Entry.path().string());
+				OutFolders.Add(EntryName);
 			}
 			else if (std::filesystem::is_regular_file(Entry))
 			{
-				OutFiles.Add(Entry.path().string());
+				OutFiles.Add(EntryName);
 			}
 		}
 		return TRUE;

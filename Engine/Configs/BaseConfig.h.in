@@ -20,6 +20,9 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SHADER_GENERATED_DIRECTORY	= "${TEMP_BINARY_DIR}/ShaderGenerated/";
 
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SHADER_SOURCE_DIRECTORY					= "${ASSETS_SOURCE_DIR}/ShaderSources/";
+		// Project-level asset source registry: asset name/family -> raw source + import options.
+		// The editor consults it when a level references an asset that has not been imported yet.
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_ASSET_SOURCE_REGISTRY					= "${ASSETS_SOURCE_DIR}/AssetSources.json";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MESH_PATH					= "${TEMP_BINARY_DIR}/MeshAssetes/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_TEXTURE_PATH					= "${TEMP_BINARY_DIR}/TextureAssets/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SKELETON_PATH				= "${TEMP_BINARY_DIR}/SkeletonAssets/";

@@ -1,0 +1,408 @@
+{
+  "Sources": [
+    {
+      "Family": "Mesh",
+      "Asset": "Sponza",
+      "OutputPrefix": "Sponza",
+      "Path": "EngineModels/SceneModels/Sponza/",
+      "Name": "sponza",
+      "Type": "obj",
+      "CombineSubmeshes": false,
+      "OptimizeMeshes": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_column_b_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_column_b_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_column_b_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_column_b_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_curtain_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_curtain_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_curtain_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_curtain_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_curtain_blue_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_curtain_blue_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_flagpole_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_flagpole_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_flagpole_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_flagpole_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_column_c_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_column_c_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_column_c_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_column_c_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_curtain_green_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_curtain_green_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_floor_a_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_floor_a_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_floor_a_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_floor_a_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "spnza_bricks_a_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "spnza_bricks_a_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "spnza_bricks_a_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "spnza_bricks_a_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_column_a_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_column_a_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_column_a_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_column_a_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_details_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_details_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_details_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_details_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "vase_hanging",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "vase_hanging",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "vase_hanging_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "vase_hanging_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_arch_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_arch_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_arch_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_arch_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_ceiling_a_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_ceiling_a_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_ceiling_a_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_ceiling_a_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_fabric_green_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_fabric_green_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_fabric_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_fabric_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_fabric_blue_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_fabric_blue_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_thorn_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_thorn_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_thorn_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_thorn_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "vase_round",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "vase_round",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "vase_round_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "vase_round_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "vase_plant",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "vase_plant",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "background",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "background",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "background_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "background_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_fabric_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_fabric_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "lion",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "lion",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "lion_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "lion_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "vase_dif",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "vase_dif",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "vase_ddn",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "vase_ddn",
+      "Type": "tga",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "sponza_roof_diff",
+      "Path": "EngineModels/SceneModels/Sponza/textures/",
+      "Name": "sponza_roof_diff",
+      "Type": "tga",
+      "FallbackSRGB": true
+    },
+    {
+      "Family": "Mesh",
+      "Asset": "WaterPlane",
+      "Path": "EngineModels/SceneModels/Water/",
+      "Name": "WaterPlane",
+      "Type": "obj",
+      "CombineSubmeshes": true,
+      "OptimizeMeshes": true
+    },
+    {
+      "Family": "Mesh",
+      "Asset": "Cube",
+      "Path": "EngineModels/BaseShapes/",
+      "Name": "Cube",
+      "Type": "obj"
+    },
+    {
+      "Family": "Mesh",
+      "Asset": "Robot",
+      "Path": "EngineModels/SceneModels/Robot/",
+      "Name": "Robot",
+      "Type": "obj"
+    },
+    {
+      "Family": "Texture2D",
+      "Asset": "M_DemoUnlit_Emissive",
+      "Path": "ShaderSources/Projects/Demo/M_DemoUnlit/",
+      "Name": "M_DemoUnlit_Emissive",
+      "Type": "jpg",
+      "FallbackSRGB": false
+    },
+    {
+      "Family": "SkinnedMesh",
+      "Asset": "SK_Mannequin_UE4_WithWeapon_Mesh",
+      "Path": "EngineModels/SceneModels/UnrealCharacter/",
+      "Name": "SK_Mannequin_UE4_WithWeapon",
+      "Type": "FBX"
+    },
+    {
+      "Family": "Skeleton",
+      "Asset": "SK_Mannequin_UE4_WithWeapon_Skeleton",
+      "Path": "EngineModels/SceneModels/UnrealCharacter/",
+      "Name": "SK_Mannequin_UE4_WithWeapon",
+      "Type": "FBX"
+    },
+    {
+      "Family": "Animation",
+      "Asset": "Boss_Idle",
+      "Path": "EngineModels/SceneModels/UnrealCharacter/",
+      "Name": "Boss_Idle",
+      "Type": "FBX"
+    },
+    {
+      "Family": "StateMachine",
+      "Asset": "Boss_StateMachine",
+      "Path": "EngineModels/SceneModels/UnrealCharacter/",
+      "Name": "Boss_StateMachine",
+      "Type": "json"
+    },
+    {
+      "Family": "TextureCube",
+      "Asset": "SkyBox001",
+      "Path": "EngineTextures/DefaultSkyBox/Sky_001/",
+      "Names": [
+        "Sky_001_Right",
+        "Sky_001_Left",
+        "Sky_001_Top",
+        "Sky_001_Bottom",
+        "Sky_001_Forward",
+        "Sky_001_Back"
+      ],
+      "Type": "png",
+      "FallbackSRGB": true
+    }
+  ]
+}

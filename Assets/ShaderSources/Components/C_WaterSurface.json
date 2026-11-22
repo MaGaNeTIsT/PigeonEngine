@@ -27,6 +27,7 @@
 		{ "Name": "WaterHeightWetTex", "Type": "2D", "Format": "float2", "SamplerName": "SamplerLinearClamp", "Slot": 0 },
 		{ "Name": "WaterStateTex", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 1 },
 		{ "Name": "WaterGroundTex", "Type": "2D", "Format": "float", "SamplerName": "SamplerLinearClamp", "Slot": 2 },
-		{ "Name": "WaterRefractionColor", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 3 }
+		{ "Name": "WaterRefractionColor", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 3 },
+		{ "Name": "DirectionalShadowMask0", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 4 }
 	]
 }

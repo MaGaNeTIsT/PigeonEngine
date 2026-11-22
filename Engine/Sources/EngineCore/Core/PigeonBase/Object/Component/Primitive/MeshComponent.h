@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <ShaderAsset/MaterialParameterOverride.h>
 #include "PrimitiveComponent.h"
 
 namespace PigeonEngine
@@ -20,6 +21,10 @@ namespace PigeonEngine
 		EString MaterialName;
 		EString ShaderName;
 		EString ProgramName;
+		// Values this slot overrides on top of the material asset. A level uses them for the
+		// per-object look (texture set, tint, mask threshold) without creating a material
+		// asset per object; an empty array keeps the material's own defaults.
+		TArray<FMaterialParameterOverride> ParameterOverrides;
 	};
 
 	/*

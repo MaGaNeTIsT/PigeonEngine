@@ -111,6 +111,14 @@ namespace PigeonEngine
 			}
 		}
 
+		// Icon textures are loaded during EditorInit, but their render proxies are created
+		// on the render thread. Resolve the ImGui texture ids once they are valid; the panel
+		// draws a placeholder until then.
+		if (Icons)
+		{
+			Icons->Tick();
+		}
+
 		if (BrowserPanel)
 		{
 			EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("ContentBrowser")));

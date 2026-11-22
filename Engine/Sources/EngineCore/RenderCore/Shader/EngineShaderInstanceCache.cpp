@@ -1,5 +1,6 @@
 #include "EngineShaderInstanceCache.h"
 
+#include <cstring>
 #include <Asset/AssetLoadManager.h>
 #include <Main/MainManager.h>
 #include <Renderer/ScenePass.h>
@@ -7,6 +8,8 @@
 #include <Shader/ShaderAssetBinding.h>
 #include <ShaderAsset/ShaderAsset.h>
 #include <ShaderAsset/ShaderInstance.h>
+#include <ShaderAsset/ShaderParameterSet.h>
+#include <TextureAsset/TextureAsset.h>
 #include <RenderResourceLifetime.h>
 #include <Development/EditorLogManager.h>
 
@@ -78,6 +81,10 @@ namespace PigeonEngine
 			// instance is owned by an entry now, including the copies of a material.
 			InstanceIndicesByHash.Empty();
 			EntryIndexByInstance.Empty();
+			// A variant's instance is also in Instances, so the release below retires it. The
+			// variant table only holds the lookup keys, which go with the table.
+			Variants.Empty();
+			VariantIndicesByHash.Empty();
 			// A cache that comes back up starts its clone keys over. Nothing from the previous
 			// table can survive to collide with them.
 			NextOwnedInstanceKey = 1ull;
@@ -171,6 +178,54 @@ namespace PigeonEngine
 			&& (InLeft.InstanceKey == InRight.InstanceKey)) ? TRUE : FALSE;
 	}
 
+	UINT64 REngineShaderInstanceCache::ComputeMaterialVariantHash(const EShaderAssemblyRequest& InRequest
+		, const TArray<FMaterialParameterOverride>& InOverrides) noexcept
+	{
+		UINT64 Hash = ComputeAssemblyRequestHash(InRequest);
+		Hash = MixRequestHash(Hash, InOverrides.Num<UINT64>());
+		for (UINT32 OverrideIndex = 0u, OverrideNum = InOverrides.Num<UINT32>(); OverrideIndex < OverrideNum; OverrideIndex++)
+		{
+			const FMaterialParameterOverride& Override = InOverrides[OverrideIndex];
+			Hash = HashRequestString(Hash, Override.BlockName);
+			Hash = HashRequestString(Hash, Override.FieldName);
+			Hash = MixRequestHash(Hash, static_cast<UINT64>(Override.Kind));
+			Hash = HashRequestString(Hash, Override.TextureAssetName);
+			Hash = MixRequestHash(Hash, Override.Values.Num<UINT64>());
+			for (UINT32 ValueIndex = 0u, ValueNum = Override.Values.Num<UINT32>(); ValueIndex < ValueNum; ValueIndex++)
+			{
+				const FLOAT Value = Override.Values[ValueIndex];
+				UINT32 Bits = 0u;
+				static_assert(sizeof(Bits) == sizeof(Value), "A float and its bit pattern must have the same size.");
+				memcpy(&Bits, &Value, sizeof(Bits));
+				Hash = MixRequestHash(Hash, static_cast<UINT64>(Bits));
+			}
+		}
+		return Hash;
+	}
+
+	const EShaderInstance* REngineShaderInstanceCache::TryFindMaterialVariant(const EShaderAssemblyRequest& InRequest
+		, const TArray<FMaterialParameterOverride>& InOverrides) const
+	{
+		const UINT64 VariantHash = ComputeMaterialVariantHash(InRequest, InOverrides);
+		EScopedLock ScopedLock(TableMutex);
+		const TArray<UINT32>* Bucket = VariantIndicesByHash.FindValuePtr(VariantHash);
+		if (!Bucket)
+		{
+			return nullptr;
+		}
+		for (UINT32 Index = 0u, Num = Bucket->Num<UINT32>(); Index < Num; Index++)
+		{
+			const FVariantEntry& Variant = Variants[(*Bucket)[Index]];
+			if ((Variant.Instance != nullptr)
+				&& (IsSameAssemblyRequest(Variant.Request, InRequest) != FALSE)
+				&& (IsSameMaterialParameterOverrides(Variant.Overrides, InOverrides) != FALSE))
+			{
+				return Variant.Instance;
+			}
+		}
+		return nullptr;
+	}
+
 	BOOL32 REngineShaderInstanceCache::FindEntryIndexLocked(const EShaderInstance* InInstance, UINT32& OutIndex) const
 	{
 		if (!InInstance)
@@ -261,6 +316,37 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
+	const EShaderInstance* REngineShaderInstanceCache::RequireMaterialVariant(const EShaderAssemblyRequest& InRequest
+		, const TArray<FMaterialParameterOverride>& InOverrides)
+	{
+		if (InOverrides.Num<UINT32>() == 0u)
+		{
+			return RequireMaterialInstance(InRequest);
+		}
+		if (const EShaderInstance* Cached = TryFindMaterialVariant(InRequest, InOverrides))
+		{
+			return Cached;
+		}
+		// One request per distinct variant. The key carries the hash so two slots that ask for
+		// the same material with the same values share the queued job as well as the instance.
+		const UINT64 VariantHash = ComputeMaterialVariantHash(InRequest, InOverrides);
+		EString RequestKey = MakeInstanceRequestKey(InRequest);
+		RequestKey = RequestKey + EString(PE_TEXT("|Variant|")) + ToString(VariantHash);
+		EAssetLoadManager::GetManagerSingleton()->RequestLoad(RequestKey,
+			[InRequest, InOverrides]() -> BOOL32
+			{
+				return ((REngineShaderInstanceCache::GetManagerSingleton()->CreateMaterialVariantForRequest(InRequest, InOverrides) != nullptr) ? TRUE : FALSE);
+			},
+			[InRequest](const BOOL32 InIsLoaded) -> void
+			{
+				if (InIsLoaded != FALSE)
+				{
+					REngineShaderInstanceCache::GetManagerSingleton()->PublishShaderAssetSwap(InRequest.ShaderName);
+				}
+			});
+		return nullptr;
+	}
+
 	const EShaderInstance* REngineShaderInstanceCache::RequirePassInstance(const EShaderInstance& InPrimary, const EName& InPassName)
 	{
 		// Fast path: the primary's entry and the pass instances already derived from it are both
@@ -295,6 +381,10 @@ namespace PigeonEngine
 			// The request is what the derived assembly is built from. Copied here, under the lock
 			// that guards the entry, and only on the miss path that is about to build a key.
 			PrimaryRequest = PrimaryEntry.Request;
+			// Owned material variants carry a unique InstanceKey so they are not looked up by
+			// request. That key is private to the value copy; pass shaders are shared by every
+			// copy of the material, so the derived assembly must use the source key (0).
+			PrimaryRequest.InstanceKey = 0ull;
 		}
 		const FRenderPassDesc* PassDesc = FRenderPassRegistry::FindDescByPassName(InPassName);
 		if ((!PassDesc) || (!PassDesc->ProgramName))
@@ -602,6 +692,120 @@ namespace PigeonEngine
 				+ EString(PE_TEXT("'; objects using it are drawn with M_EngineError.")));
 		}
 		return ErrorInstance;
+	}
+
+	const EShaderInstance* REngineShaderInstanceCache::CreateMaterialVariantForRequest(const EShaderAssemblyRequest& InRequest
+		, const TArray<FMaterialParameterOverride>& InOverrides)
+	{
+		if (const EShaderInstance* Existing = TryFindMaterialVariant(InRequest, InOverrides))
+		{
+			return Existing;
+		}
+
+		// The base material is assembled first: a variant differs from it only in values, and a
+		// broken material is still substituted by the engine error material here.
+		const EShaderInstance* BaseInstance = FindOrCreateMaterial(InRequest);
+		if (!BaseInstance)
+		{
+			return nullptr;
+		}
+
+		// Resolve every texture override before creating the copy. A texture that is still
+		// being imported is not an error - the caller retries next frame - and creating the
+		// copy before this check would leave an unused instance behind on every retry.
+		TArray<const IRRHITexture*> OverrideTextures;
+		OverrideTextures.SetNum(InOverrides.Num<UINT32>());
+		for (UINT32 OverrideIndex = 0u, OverrideNum = InOverrides.Num<UINT32>(); OverrideIndex < OverrideNum; OverrideIndex++)
+		{
+			OverrideTextures[OverrideIndex] = nullptr;
+			const FMaterialParameterOverride& Override = InOverrides[OverrideIndex];
+			if (Override.Kind != EMaterialParameterOverrideKindType::TEXTURE)
+			{
+				continue;
+			}
+			if (Override.TextureAssetName.Length() == 0u)
+			{
+				PE_LOG_WARN(EString(PE_TEXT("[EngineShaderInstanceCache] A material texture override names no asset: "))
+					+ Override.BlockName + EString(PE_TEXT(".")) + Override.FieldName);
+				return nullptr;
+			}
+			const ETexture2DAsset* TextureAsset = nullptr;
+			if (!ETextureAssetManager::GetManagerSingleton()->RequireLoadTexture2DAsset(
+				EBaseSettings::ENGINE_TEXTURE_PATH, Override.TextureAssetName, TextureAsset))
+			{
+				return nullptr;
+			}
+			const RTexture2DResource* TextureResource = (TextureAsset ? TextureAsset->GetRenderResource() : nullptr);
+			if (!TextureResource)
+			{
+				return nullptr;
+			}
+			OverrideTextures[OverrideIndex] = TextureResource->GetResolvedRHITexture();
+		}
+
+		EShaderInstance* OwnedInstance = CreateOwnedInstance(*BaseInstance);
+		if (!OwnedInstance)
+		{
+			return nullptr;
+		}
+		EShaderParameterSet& Parameters = OwnedInstance->GetParameters();
+		for (UINT32 OverrideIndex = 0u, OverrideNum = InOverrides.Num<UINT32>(); OverrideIndex < OverrideNum; OverrideIndex++)
+		{
+			const FMaterialParameterOverride& Override = InOverrides[OverrideIndex];
+			const EName BlockName(Override.BlockName);
+			const EName FieldName(Override.FieldName);
+			switch (Override.Kind)
+			{
+			case EMaterialParameterOverrideKindType::TEXTURE:
+				if (OverrideTextures[OverrideIndex])
+				{
+					Parameters.SetTexture(BlockName, FieldName, OverrideTextures[OverrideIndex]);
+				}
+				break;
+			case EMaterialParameterOverrideKindType::SCALAR:
+				if (Override.Values.Num<UINT32>() > 0u)
+				{
+					Parameters.SetScalar(BlockName, FieldName, Override.Values[0u]);
+				}
+				break;
+			case EMaterialParameterOverrideKindType::VECTOR:
+				if (Override.Values.Num<UINT32>() > 0u)
+				{
+					Parameters.SetFloatArray(BlockName, FieldName, &Override.Values[0u], Override.Values.Num<UINT32>());
+				}
+				break;
+			default:
+				break;
+			}
+		}
+
+		const UINT64 VariantHash = ComputeMaterialVariantHash(InRequest, InOverrides);
+		{
+			EScopedLock ScopedLock(TableMutex);
+			const TArray<UINT32>* Bucket = VariantIndicesByHash.FindValuePtr(VariantHash);
+			if (Bucket)
+			{
+				for (UINT32 Index = 0u, Num = Bucket->Num<UINT32>(); Index < Num; Index++)
+				{
+					const FVariantEntry& Existing = Variants[(*Bucket)[Index]];
+					if ((Existing.Instance != nullptr)
+						&& (IsSameAssemblyRequest(Existing.Request, InRequest) != FALSE)
+						&& (IsSameMaterialParameterOverrides(Existing.Overrides, InOverrides) != FALSE))
+					{
+						return Existing.Instance;
+					}
+				}
+			}
+			FVariantEntry Entry;
+			Entry.Hash = VariantHash;
+			Entry.Request = InRequest;
+			Entry.Instance = OwnedInstance;
+			Entry.Overrides = InOverrides;
+			const UINT32 EntryIndex = Variants.Num<UINT32>();
+			Variants.Add(Entry);
+			VariantIndicesByHash[VariantHash].Add(EntryIndex);
+		}
+		return OwnedInstance;
 	}
 
 }	// PigeonEngine

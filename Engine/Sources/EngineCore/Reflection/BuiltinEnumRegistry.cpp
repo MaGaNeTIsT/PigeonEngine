@@ -2,6 +2,7 @@
 #include "../../../EngineThirdParty/JoltPhysics/Headers/JoltPhysicsLayer.h"
 #include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsUtility.h"
 #include <PigeonBase/Object/Component/Physics/TriggerComponent.h>
+#include <PigeonBase/Object/Component/Primitive/MeshComponent.h>
 #include <PigeonBase/Object/Component/Navigation/NavObstacleComponent.h>
 #include <PigeonBase/Object/Component/Water/WaterSimulationTypes.h>
 #include <Navigation/NavigationTypes.h>
@@ -67,6 +68,12 @@ namespace PigeonEngine
 			{ static_cast<INT32>(ANIMATION_LOOP_REPEAT),   EString(PE_TEXT("REPEAT")) },
 			{ static_cast<INT32>(ANIMATION_LOOP_PINGPONG), EString(PE_TEXT("PINGPONG")) },
 			{ static_cast<INT32>(ANIMATION_LOOP_CLAMP),    EString(PE_TEXT("CLAMP")) },
+		});
+
+		RegisterEnumType<EMaterialParameterOverrideKindType>(PE_TEXT("EMaterialParameterOverrideKindType"), {
+			{ static_cast<INT32>(EMaterialParameterOverrideKindType::SCALAR),  EString(PE_TEXT("SCALAR")) },
+			{ static_cast<INT32>(EMaterialParameterOverrideKindType::VECTOR),  EString(PE_TEXT("VECTOR")) },
+			{ static_cast<INT32>(EMaterialParameterOverrideKindType::TEXTURE), EString(PE_TEXT("TEXTURE")) },
 		});
 	}
 

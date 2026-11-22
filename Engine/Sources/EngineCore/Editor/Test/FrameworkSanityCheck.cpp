@@ -1790,6 +1790,20 @@ namespace PigeonEngine
 		MaterialReference.MaterialName = EString(PE_TEXT("M_EngineFallback"));
 		MaterialReference.ShaderName = EString(PE_TEXT("M_EngineFallback"));
 		MaterialReference.ProgramName = EString(PE_TEXT("BasePass"));
+		{
+			FMaterialParameterOverride TextureOverride;
+			TextureOverride.BlockName = EString(PE_TEXT("MaterialParams"));
+			TextureOverride.FieldName = EString(PE_TEXT("BaseColorMap"));
+			TextureOverride.Kind = EMaterialParameterOverrideKindType::TEXTURE;
+			TextureOverride.TextureAssetName = EString(PE_TEXT("SanityOverrideTexture"));
+			MaterialReference.ParameterOverrides.Add(TextureOverride);
+			FMaterialParameterOverride ScalarOverride;
+			ScalarOverride.BlockName = EString(PE_TEXT("MaterialParams"));
+			ScalarOverride.FieldName = EString(PE_TEXT("Roughness"));
+			ScalarOverride.Kind = EMaterialParameterOverrideKindType::SCALAR;
+			ScalarOverride.Values.Add(0.35f);
+			MaterialReference.ParameterOverrides.Add(ScalarOverride);
+		}
 		StaticMesh->SetMaterialSlotReference(0u, MaterialReference);
 		ContentActor->AddComponent(StaticMesh);
 		PSkeletalMeshComponent* SkeletalMesh = new PSkeletalMeshComponent();
@@ -1821,6 +1835,16 @@ namespace PigeonEngine
 		SimulationActor->AddComponent(new PMovementComponent());
 		PWaterSimulationComponent* Simulation = new PWaterSimulationComponent();
 		Simulation->SetInitialDepth(4.5f);
+		{
+			FWaterImpulseDescription Impulse;
+			Impulse.WorldLocation = Vector3(1.f, 2.f, 3.f);
+			Impulse.Radius = 12.f;
+			Impulse.Volume = 34.f;
+			Impulse.Mode = 2.f;
+			TArray<FWaterImpulseDescription> Impulses;
+			Impulses.Add(Impulse);
+			Simulation->SetInitialImpulses(Impulses);
+		}
 		SimulationActor->AddComponent(Simulation);
 
 		PActor* SurfaceActor = new PActor();
@@ -1886,12 +1910,19 @@ namespace PigeonEngine
 					(LoadedStaticMesh->GetMaterialSlotReference(0u).MaterialName == EString(PE_TEXT("M_EngineFallback"))) &&
 					(LoadedStaticMesh->GetMaterialSlotReference(0u).ShaderName == EString(PE_TEXT("M_EngineFallback"))) &&
 					(LoadedStaticMesh->GetMaterialSlotReference(0u).ProgramName == EString(PE_TEXT("BasePass"))) &&
+					(LoadedStaticMesh->GetMaterialSlotReference(0u).ParameterOverrides.Num<UINT32>() == 2u) &&
+					(LoadedStaticMesh->GetMaterialSlotReference(0u).ParameterOverrides[0u].TextureAssetName == EString(PE_TEXT("SanityOverrideTexture"))) &&
+					(LoadedStaticMesh->GetMaterialSlotReference(0u).ParameterOverrides[1u].Values.Num<UINT32>() == 1u) &&
+					(EMath::Abs(LoadedStaticMesh->GetMaterialSlotReference(0u).ParameterOverrides[1u].Values[0u] - 0.35f) <= 1.0e-5f) &&
 					LoadedCamera && (EMath::Abs(LoadedCamera->GetCameraViewInfo().FovAngleY - 83.f) <= 1.0e-3f) &&
 					LoadedDirectional && (EMath::Abs(LoadedDirectional->GetIlluminanceLux() - 12345.f) <= 1.0e-2f) &&
 					LoadedBox && IsVectorNearlyEqual(LoadedBox->HalfExtent, Vector3(11.f, 22.f, 33.f), 1.0e-4f) &&
 					LoadedSphere && (EMath::Abs(LoadedSphere->Raidus - 44.f) <= 1.0e-4f) &&
 					(LoadedChild->GetAttachedParentActor() == LoadedContent) &&
 					LoadedSimulation && (EMath::Abs(LoadedSimulation->GetInitialDepth() - 4.5f) <= 1.0e-4f) &&
+					(LoadedSimulation->GetInitialImpulses().Num<UINT32>() == 1u) &&
+					(EMath::Abs(LoadedSimulation->GetInitialImpulses()[0u].Radius - 12.f) <= 1.0e-4f) &&
+					(EMath::Abs(LoadedSimulation->GetInitialImpulses()[0u].Volume - 34.f) <= 1.0e-4f) &&
 					LoadedSurface && LoadedSurface->GetSimulationHandle().IsValid() &&
 					(LoadedSurface->GetSimulation() == LoadedSimulation) ? TRUE : FALSE;
 			}
@@ -3748,7 +3779,7 @@ namespace PigeonEngine
 			MaterialSlots && MaterialSlots->ValueType == EPropertyValueType::ARRAY &&
 			(MaterialSlots->ElementType == EPropertyValueType::STRUCT) &&
 			(MaterialSlots->ElementStructHash == GetClassHashCode<FMaterialSlotReference>()) &&
-			MaterialDescriptor && MaterialDescriptor->Fields.Num<UINT32>() == 3u) ? TRUE : FALSE;
+			MaterialDescriptor && MaterialDescriptor->Fields.Num<UINT32>() == 4u) ? TRUE : FALSE;
 		if (bMigratedMetadataOk)
 		{
 			const FProperty* AnimationAsset = FindStructField(*AnimationDescriptor, EString(PE_TEXT("Asset")));

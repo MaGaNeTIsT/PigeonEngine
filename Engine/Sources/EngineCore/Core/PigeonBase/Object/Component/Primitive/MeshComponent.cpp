@@ -8,6 +8,54 @@
 
 namespace PigeonEngine
 {
+	namespace
+	{
+		void SerializeMaterialParameterOverrides(EArchive& InArchive, const CHAR* InName, TArray<FMaterialParameterOverride>& InOutOverrides)
+		{
+			UINT32 OverrideNum = InOutOverrides.Num<UINT32>();
+			InArchive.BeginArray(InName, OverrideNum);
+			if (!InArchive.IsSaving())
+			{
+				InOutOverrides.Empty();
+			}
+			for (UINT32 OverrideIndex = 0u; OverrideIndex < OverrideNum; OverrideIndex++)
+			{
+				const EString OverrideKey = EString::FromInt(OverrideIndex);
+				InArchive.BeginObject(*OverrideKey);
+				FMaterialParameterOverride Override = InArchive.IsSaving() ? InOutOverrides[OverrideIndex] : FMaterialParameterOverride();
+				InArchive.SerializeString(PE_TEXT("BlockName"), Override.BlockName);
+				InArchive.SerializeString(PE_TEXT("FieldName"), Override.FieldName);
+				INT32 Kind = static_cast<INT32>(Override.Kind);
+				InArchive.SerializeInt32(PE_TEXT("Kind"), Kind);
+				Override.Kind = static_cast<EMaterialParameterOverrideKindType>(Kind);
+				UINT32 ValueNum = Override.Values.Num<UINT32>();
+				InArchive.BeginArray(PE_TEXT("Values"), ValueNum);
+				if (!InArchive.IsSaving())
+				{
+					Override.Values.Empty();
+				}
+				for (UINT32 ValueIndex = 0u; ValueIndex < ValueNum; ValueIndex++)
+				{
+					const EString ValueKey = EString::FromInt(ValueIndex);
+					FLOAT Value = InArchive.IsSaving() ? Override.Values[ValueIndex] : 0.f;
+					InArchive.SerializeFloat(*ValueKey, Value);
+					if (!InArchive.IsSaving())
+					{
+						Override.Values.Add(Value);
+					}
+				}
+				InArchive.EndArray();
+				InArchive.SerializeString(PE_TEXT("TextureAssetName"), Override.TextureAssetName);
+				InArchive.EndObject();
+				if (!InArchive.IsSaving())
+				{
+					InOutOverrides.Add(Override);
+				}
+			}
+			InArchive.EndArray();
+		}
+	}
+
 	static void SerializeMaterialSlotReferences(EArchive& InArchive, const CHAR* InName, TArray<FMaterialSlotReference>& InOutReferences)
 	{
 		UINT32 Count = InOutReferences.Num<UINT32>();
@@ -21,13 +69,14 @@ namespace PigeonEngine
 			const EString IndexKey = EString::FromInt(Index);
 			InArchive.BeginObject(*IndexKey);
 			FMaterialSlotReference Reference = InArchive.IsSaving() ? InOutReferences[Index] : FMaterialSlotReference();
-			InArchive.SerializeString(PE_TEXT("MaterialName"), Reference.MaterialName);
-			InArchive.SerializeString(PE_TEXT("ShaderName"), Reference.ShaderName);
-			InArchive.SerializeString(PE_TEXT("ProgramName"), Reference.ProgramName);
-			if (!InArchive.IsSaving())
-			{
-				InOutReferences.Add(Reference);
-			}
+				InArchive.SerializeString(PE_TEXT("MaterialName"), Reference.MaterialName);
+				InArchive.SerializeString(PE_TEXT("ShaderName"), Reference.ShaderName);
+				InArchive.SerializeString(PE_TEXT("ProgramName"), Reference.ProgramName);
+				SerializeMaterialParameterOverrides(InArchive, PE_TEXT("ParameterOverrides"), Reference.ParameterOverrides);
+				if (!InArchive.IsSaving())
+				{
+					InOutReferences.Add(Reference);
+				}
 			InArchive.EndObject();
 		}
 		InArchive.EndArray();
@@ -37,6 +86,21 @@ namespace PigeonEngine
 	{
 		const size_t StructHash = GetClassHashCode<FMaterialSlotReference>();
 		const EString StructName(PE_TEXT("FMaterialSlotReference"));
+
+		// The override struct is registered first: the slot's ParameterOverrides field is an
+		// array of it, and the Details panel (and the property editor's copy path) needs the
+		// element fields to keep them when a slot is edited there.
+		const size_t OverrideHash = GetClassHashCode<FMaterialParameterOverride>();
+		const EString OverrideName(PE_TEXT("FMaterialParameterOverride"));
+		AddStructProperty<FMaterialParameterOverride, EString>(OverrideHash, OverrideName, PE_TEXT("BlockName"), &FMaterialParameterOverride::BlockName);
+		AddStructProperty<FMaterialParameterOverride, EString>(OverrideHash, OverrideName, PE_TEXT("FieldName"), &FMaterialParameterOverride::FieldName);
+		AddStructEnumProperty<FMaterialParameterOverride, EMaterialParameterOverrideKindType>(OverrideHash, OverrideName, PE_TEXT("Kind"),
+			[](const FMaterialParameterOverride* Value) -> EMaterialParameterOverrideKindType { return Value->Kind; },
+			[](FMaterialParameterOverride* Value, const EMaterialParameterOverrideKindType& InKind) -> void { Value->Kind = InKind; });
+		AddStructProperty<FMaterialParameterOverride, TArray<FLOAT>>(OverrideHash, OverrideName, PE_TEXT("Values"), &FMaterialParameterOverride::Values);
+		AddStructAssetProperty<FMaterialParameterOverride>(OverrideHash, OverrideName, PE_TEXT("TextureAssetName"),
+			&FMaterialParameterOverride::TextureAssetName, EPropertyAssetType::TEXTURE_2D);
+
 		const UINT32 EditFlags = static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE);
 		// Picking a different material invalidates the derived shader/program names. Clear
 		// them through the field setter so SetMaterialSlotReferences recomputes the triple
@@ -54,6 +118,10 @@ namespace PigeonEngine
 		// shown but never edited directly.
 		AddStructReadOnlyProperty(StructHash, StructName, PE_TEXT("ShaderName"), &FMaterialSlotReference::ShaderName);
 		AddStructReadOnlyProperty(StructHash, StructName, PE_TEXT("ProgramName"), &FMaterialSlotReference::ProgramName);
+		// Last, so the three authoring fields keep their established order in the Details
+		// panel and in the property-value tree the editor commands copy.
+		AddStructProperty<FMaterialSlotReference, TArray<FMaterialParameterOverride>>(StructHash, StructName, PE_TEXT("ParameterOverrides"),
+			&FMaterialSlotReference::ParameterOverrides);
 	}
 
 	static void RegisterClassProperties()
@@ -267,7 +335,9 @@ namespace PigeonEngine
 		Request.ProgramName = EName(Reference.ProgramName);
 		Request.VertexFactory = VertexFactory;
 		Request.Profile = Profile;
-		const EShaderInstance* Instance = REngineShaderInstanceCache::GetManagerSingleton()->RequireMaterialInstance(Request);
+		const EShaderInstance* Instance = (Reference.ParameterOverrides.Num<UINT32>() > 0u)
+			? REngineShaderInstanceCache::GetManagerSingleton()->RequireMaterialVariant(Request, Reference.ParameterOverrides)
+			: REngineShaderInstanceCache::GetManagerSingleton()->RequireMaterialInstance(Request);
 		if (!Instance)
 		{
 			return FALSE;

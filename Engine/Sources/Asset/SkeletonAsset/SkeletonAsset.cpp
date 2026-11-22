@@ -1,5 +1,6 @@
 #include "SkeletonAsset.h"
 #include <Asset/AssetLoadManager.h>
+#include <Asset/AssetSourceRegistry.h>
 #include <Development/Profiler.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
@@ -1146,6 +1147,12 @@ namespace PigeonEngine
 		{
 			ImportSource = *InImportSource;
 		}
+#if ENGINE_EDITOR_ONLY
+		if (!ImportSource.IsValid())
+		{
+			(void)EAssetSourceRegistry::Resolve(EAssetSourceFamilyType::SKELETON, InLoadName, ImportSource);
+		}
+#endif
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("Skeleton"), FullPathName),
 			[InLoadPath, InLoadName, ImportSource]() -> BOOL32

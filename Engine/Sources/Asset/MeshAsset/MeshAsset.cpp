@@ -1,5 +1,6 @@
 #include "MeshAsset.h"
 #include <Asset/AssetLoadManager.h>
+#include <Asset/AssetSourceRegistry.h>
 #include <RenderDevice/DeviceD3D11.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
@@ -2051,12 +2052,40 @@ namespace PigeonEngine
 		{
 			ImportSource = *InImportSource;
 		}
+		// Editor: a level stores asset names only. When the caller supplied no source of its own,
+		// the project registry may know where this asset comes from - either directly, or through
+		// a scene root whose import writes this asset and its siblings.
+		BOOL32 bUseSceneRoot = FALSE;
+		EString SceneRootName;
+		FAssetImportSource SceneRootSource;
+#if ENGINE_EDITOR_ONLY
+		// A caller may pass a pointer to an empty source (PStaticMeshComponent::RequestMeshAsset
+		// always does); what matters is whether the source carries an import request.
+		if (!ImportSource.IsValid())
+		{
+			if (!EAssetSourceRegistry::ResolveMesh(InLoadName, ImportSource))
+			{
+				bUseSceneRoot = EAssetSourceRegistry::ResolveMeshSceneRoot(InLoadName, SceneRootName, SceneRootSource);
+			}
+		}
+#endif
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("StaticMesh"), FullPathName),
-			[InLoadPath, InLoadName, ImportSource]() -> BOOL32
+			[InLoadPath, InLoadName, ImportSource, bUseSceneRoot, SceneRootName, SceneRootSource]() -> BOOL32
 			{
 				const EStaticMeshAsset* LoadedAsset = nullptr;
-				if (ImportSource.IsValid())
+				if (bUseSceneRoot != FALSE)
+				{
+					// A scene import writes every sibling asset and the manifest in one call. The
+					// child is loaded after it, without an import source: importing the source
+					// again under the child's name would create a second, wrong family.
+					const EStaticMeshAsset* RootAsset = nullptr;
+					TryLoadStaticMesh(InLoadPath, SceneRootName, RootAsset, &SceneRootSource.ImportPath
+						, &SceneRootSource.ImportName, &SceneRootSource.ImportFileType
+						, SceneRootSource.bIsCombineSubmeshes, SceneRootSource.bIsOptimizeMeshes);
+					EMeshAssetManager::GetManagerSingleton()->LoadStaticMeshAsset(InLoadPath, InLoadName, LoadedAsset, TRUE);
+				}
+				else if (ImportSource.IsValid())
 				{
 					// The editor form: load, and when the PAsset is not on disk yet, import from the
 					// raw source and load again. Both halves run here, on the load thread.
@@ -2090,6 +2119,14 @@ namespace PigeonEngine
 		{
 			ImportSource = *InImportSource;
 		}
+#if ENGINE_EDITOR_ONLY
+		// A serialized SkeletalMeshComponent carries asset names only; the project registry
+		// supplies the FBX source when the PAsset is not in the fresh checkout's cache.
+		if (!ImportSource.IsValid())
+		{
+			(void)EAssetSourceRegistry::Resolve(EAssetSourceFamilyType::SKINNED_MESH, InLoadName, ImportSource);
+		}
+#endif
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("SkinnedMesh"), FullPathName),
 			[InLoadPath, InLoadName, ImportSource]() -> BOOL32

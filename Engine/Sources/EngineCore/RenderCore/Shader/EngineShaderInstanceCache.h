@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 #include <MultiThread/Mutex.h>
+#include <ShaderAsset/MaterialParameterOverride.h>
 #include <ShaderAsset/ShaderJobBuilder.h>
 
 namespace PigeonEngine
@@ -109,6 +110,20 @@ namespace PigeonEngine
 		// substitution and the once-per-material failure report.
 		PE_NODISCARD const EShaderInstance* RequireMaterialInstance(const EShaderAssemblyRequest& InRequest);
 		/*
+		* Any thread: the material variant for InRequest with InOverrides applied.
+		*
+		* A level stores per-object material differences (texture set, tint, mask threshold) as
+		* material slot overrides. This is where they become an instance: one owned copy per
+		* distinct (request, overrides) pair, built on the load thread, cached for the process and
+		* reused across level loads. Null while the material or one of the override textures is
+		* still being produced; the caller asks again next frame.
+		*
+		* An empty override list is answered by RequireMaterialInstance, so the shared instance is
+		* used instead of a needless copy.
+		*/
+		PE_NODISCARD const EShaderInstance* RequireMaterialVariant(const EShaderAssemblyRequest& InRequest
+			, const TArray<FMaterialParameterOverride>& InOverrides);
+		/*
 		* Any thread: the instance of an already assembled material for another pass.
 		*
 		* A material is assembled once, for the pass that authored it; a pass that draws the same
@@ -175,11 +190,26 @@ namespace PigeonEngine
 			// a request lookup, which is what keeps every clone from resolving to the first one.
 			BOOL32					bIsLookupable = TRUE;
 		};
+
+		// One material variant: an owned copy of a material with parameter overrides applied.
+		// Kept beside Instances rather than in them because a variant shares its source's
+		// assembly request and is addressed by (request, overrides), not by the request alone.
+		struct FVariantEntry
+		{
+			UINT64							Hash = 0ull;
+			EShaderAssemblyRequest			Request;
+			const EShaderInstance*			Instance = nullptr;
+			TArray<FMaterialParameterOverride>	Overrides;
+		};
 	private:
 		// The load thread's bodies. Shared by the synchronous and the requested form so the two
 		// cannot drift apart.
 		const EShaderInstance*	CreateInstanceForRequest(const EShaderAssemblyRequest& InRequest);
 		const EShaderInstance*	CreateMaterialInstanceForRequest(const EShaderAssemblyRequest& InRequest);
+		// Load thread: builds the owned copy behind one material variant, or null while a
+		// dependency (the material itself, an override texture) is not there yet.
+		const EShaderInstance*	CreateMaterialVariantForRequest(const EShaderAssemblyRequest& InRequest
+			, const TArray<FMaterialParameterOverride>& InOverrides);
 		// Hands every instance back through the render resource manager's retirement. Shared by
 		// ShutDown and Uninit so the two paths cannot drift apart.
 		void	ReleaseAllInstances();
@@ -191,6 +221,13 @@ namespace PigeonEngine
 		// Field for field comparison of the same fields, used to reject a hash bucket collision.
 		PE_NODISCARD static BOOL32	IsSameAssemblyRequest(const EShaderAssemblyRequest& InLeft
 			, const EShaderAssemblyRequest& InRight) noexcept;
+		// Variant hash: the request hash mixed with every override field, so two slots share a
+		// variant exactly when they would produce the same parameter values.
+		PE_NODISCARD static UINT64	ComputeMaterialVariantHash(const EShaderAssemblyRequest& InRequest
+			, const TArray<FMaterialParameterOverride>& InOverrides) noexcept;
+		// Variant lookup. The caller does not hold the table lock.
+		PE_NODISCARD const EShaderInstance*	TryFindMaterialVariant(const EShaderAssemblyRequest& InRequest
+			, const TArray<FMaterialParameterOverride>& InOverrides) const;
 		// The entry that owns an instance, or FALSE when the instance did not come from this cache.
 		// The caller holds TableMutex.
 		PE_NODISCARD BOOL32	FindEntryIndexLocked(const EShaderInstance* InInstance, UINT32& OutIndex) const;
@@ -202,6 +239,11 @@ namespace PigeonEngine
 		// Instance pointer -> entry index. This is what turns RequirePassInstance's search for
 		// the primary from a linear scan into one hash lookup, owned copies included.
 		THashMap<const EShaderInstance*, UINT32>	EntryIndexByInstance;
+		// Material variants, addressed by the (request, overrides) hash. The instance pointer is
+		// also an entry in Instances, so ReleaseAllInstances owns it; this table only answers
+		// "has this exact variant been built".
+		TArray<FVariantEntry>	Variants;
+		THashMap<UINT64, TArray<UINT32>>	VariantIndicesByHash;
 		// Distinguishes owned copies of one material. Zero is reserved for a shared instance;
 		// a clone takes the next value so the pass instance derived from it cannot collide
 		// with its source's or with another clone's.

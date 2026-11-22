@@ -1,5 +1,6 @@
 #include "WaterSimulationComponent.h"
 
+#include <Development/EditorLogManager.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Reflection/Property.h>
 #include <Renderer/RenderInterface.h>
@@ -22,6 +23,99 @@ namespace PigeonEngine
 				Component->SetSimulationParameters(Parameters);
 			},
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+	}
+
+	static void SerializeWaterImpulseDescription(EArchive& InArchive, const CHAR* InName, FWaterImpulseDescription& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		SerializeVector3(InArchive, PE_TEXT("WorldLocation"), InOutValue.WorldLocation);
+		InArchive.SerializeFloat(PE_TEXT("Radius"), InOutValue.Radius);
+		InArchive.SerializeFloat(PE_TEXT("Volume"), InOutValue.Volume);
+		InArchive.SerializeFloat(PE_TEXT("YOffset"), InOutValue.YOffset);
+		SerializeVector2(InArchive, PE_TEXT("Velocity"), InOutValue.Velocity);
+		InArchive.SerializeFloat(PE_TEXT("Mode"), InOutValue.Mode);
+		InArchive.SerializeFloat(PE_TEXT("Intensity"), InOutValue.Intensity);
+		InArchive.SerializeFloat(PE_TEXT("Hardness"), InOutValue.Hardness);
+		InArchive.SerializeFloat(PE_TEXT("ForwardAngle"), InOutValue.ForwardAngle);
+		InArchive.EndObject();
+	}
+
+	static void SerializeWaterWhirlpoolDescription(EArchive& InArchive, const CHAR* InName, FWaterWhirlpoolDescription& InOutValue)
+	{
+		InArchive.BeginObject(InName);
+		SerializeVector3(InArchive, PE_TEXT("WorldLocation"), InOutValue.WorldLocation);
+		InArchive.SerializeFloat(PE_TEXT("Radius"), InOutValue.Radius);
+		InArchive.SerializeFloat(PE_TEXT("Radial"), InOutValue.Radial);
+		InArchive.SerializeFloat(PE_TEXT("Suction"), InOutValue.Suction);
+		InArchive.SerializeFloat(PE_TEXT("Translucency"), InOutValue.Translucency);
+		InArchive.SerializeFloat(PE_TEXT("Duration"), InOutValue.Duration);
+		InArchive.EndObject();
+	}
+
+	static void SerializeWaterImpulseArray(EArchive& InArchive, const CHAR* InName, TArray<FWaterImpulseDescription>& InOutValues)
+	{
+		UINT32 ValueNum = InOutValues.Num<UINT32>();
+		InArchive.BeginArray(InName, ValueNum);
+		if (!InArchive.IsSaving())
+		{
+			InOutValues.Empty();
+		}
+		for (UINT32 ValueIndex = 0u; ValueIndex < ValueNum; ValueIndex++)
+		{
+			const EString ValueKey = EString::FromInt(ValueIndex);
+			FWaterImpulseDescription Value = InArchive.IsSaving() ? InOutValues[ValueIndex] : FWaterImpulseDescription();
+			SerializeWaterImpulseDescription(InArchive, *ValueKey, Value);
+			if (!InArchive.IsSaving())
+			{
+				InOutValues.Add(Value);
+			}
+		}
+		InArchive.EndArray();
+	}
+
+	static void SerializeWaterWhirlpoolArray(EArchive& InArchive, const CHAR* InName, TArray<FWaterWhirlpoolDescription>& InOutValues)
+	{
+		UINT32 ValueNum = InOutValues.Num<UINT32>();
+		InArchive.BeginArray(InName, ValueNum);
+		if (!InArchive.IsSaving())
+		{
+			InOutValues.Empty();
+		}
+		for (UINT32 ValueIndex = 0u; ValueIndex < ValueNum; ValueIndex++)
+		{
+			const EString ValueKey = EString::FromInt(ValueIndex);
+			FWaterWhirlpoolDescription Value = InArchive.IsSaving() ? InOutValues[ValueIndex] : FWaterWhirlpoolDescription();
+			SerializeWaterWhirlpoolDescription(InArchive, *ValueKey, Value);
+			if (!InArchive.IsSaving())
+			{
+				InOutValues.Add(Value);
+			}
+		}
+		InArchive.EndArray();
+	}
+
+	static void RegisterWaterInitialConditionStructs()
+	{
+		const size_t ImpulseHash = GetClassHashCode<FWaterImpulseDescription>();
+		const EString ImpulseName(PE_TEXT("FWaterImpulseDescription"));
+		AddStructProperty<FWaterImpulseDescription, Vector3>(ImpulseHash, ImpulseName, PE_TEXT("WorldLocation"), &FWaterImpulseDescription::WorldLocation);
+		AddStructProperty<FWaterImpulseDescription, FLOAT>(ImpulseHash, ImpulseName, PE_TEXT("Radius"), &FWaterImpulseDescription::Radius);
+		AddStructProperty<FWaterImpulseDescription, FLOAT>(ImpulseHash, ImpulseName, PE_TEXT("Volume"), &FWaterImpulseDescription::Volume);
+		AddStructProperty<FWaterImpulseDescription, FLOAT>(ImpulseHash, ImpulseName, PE_TEXT("YOffset"), &FWaterImpulseDescription::YOffset);
+		AddStructProperty<FWaterImpulseDescription, Vector2>(ImpulseHash, ImpulseName, PE_TEXT("Velocity"), &FWaterImpulseDescription::Velocity);
+		AddStructProperty<FWaterImpulseDescription, FLOAT>(ImpulseHash, ImpulseName, PE_TEXT("Mode"), &FWaterImpulseDescription::Mode);
+		AddStructProperty<FWaterImpulseDescription, FLOAT>(ImpulseHash, ImpulseName, PE_TEXT("Intensity"), &FWaterImpulseDescription::Intensity);
+		AddStructProperty<FWaterImpulseDescription, FLOAT>(ImpulseHash, ImpulseName, PE_TEXT("Hardness"), &FWaterImpulseDescription::Hardness);
+		AddStructProperty<FWaterImpulseDescription, FLOAT>(ImpulseHash, ImpulseName, PE_TEXT("ForwardAngle"), &FWaterImpulseDescription::ForwardAngle);
+
+		const size_t WhirlpoolHash = GetClassHashCode<FWaterWhirlpoolDescription>();
+		const EString WhirlpoolName(PE_TEXT("FWaterWhirlpoolDescription"));
+		AddStructProperty<FWaterWhirlpoolDescription, Vector3>(WhirlpoolHash, WhirlpoolName, PE_TEXT("WorldLocation"), &FWaterWhirlpoolDescription::WorldLocation);
+		AddStructProperty<FWaterWhirlpoolDescription, FLOAT>(WhirlpoolHash, WhirlpoolName, PE_TEXT("Radius"), &FWaterWhirlpoolDescription::Radius);
+		AddStructProperty<FWaterWhirlpoolDescription, FLOAT>(WhirlpoolHash, WhirlpoolName, PE_TEXT("Radial"), &FWaterWhirlpoolDescription::Radial);
+		AddStructProperty<FWaterWhirlpoolDescription, FLOAT>(WhirlpoolHash, WhirlpoolName, PE_TEXT("Suction"), &FWaterWhirlpoolDescription::Suction);
+		AddStructProperty<FWaterWhirlpoolDescription, FLOAT>(WhirlpoolHash, WhirlpoolName, PE_TEXT("Translucency"), &FWaterWhirlpoolDescription::Translucency);
+		AddStructProperty<FWaterWhirlpoolDescription, FLOAT>(WhirlpoolHash, WhirlpoolName, PE_TEXT("Duration"), &FWaterWhirlpoolDescription::Duration);
 	}
 
 	static void RegisterClassProperties()
@@ -141,6 +235,18 @@ namespace PigeonEngine
 		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineFallingSpeed"), &FWaterSimulationParameters::OutlineFallingSpeed);
 		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineMinOutline"), &FWaterSimulationParameters::OutlineMinOutline);
 		AddWaterSimulationFloatProperty(ClassHash, PE_TEXT("OutlineAverage"), &FWaterSimulationParameters::OutlineAverage);
+
+		RegisterWaterInitialConditionStructs();
+		AddClassPropertyStructCustom<PWaterSimulationComponent, TArray<FWaterImpulseDescription>>(ClassHash, PE_TEXT("InitialImpulses"),
+			[](const PWaterSimulationComponent* Component) -> TArray<FWaterImpulseDescription> { return Component->GetInitialImpulses(); },
+			[](PWaterSimulationComponent* Component, const TArray<FWaterImpulseDescription>& Value) -> void { Component->SetInitialImpulses(Value); },
+			SerializeWaterImpulseArray,
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		AddClassPropertyStructCustom<PWaterSimulationComponent, TArray<FWaterWhirlpoolDescription>>(ClassHash, PE_TEXT("InitialWhirlpools"),
+			[](const PWaterSimulationComponent* Component) -> TArray<FWaterWhirlpoolDescription> { return Component->GetInitialWhirlpools(); },
+			[](PWaterSimulationComponent* Component, const TArray<FWaterWhirlpoolDescription>& Value) -> void { Component->SetInitialWhirlpools(Value); },
+			SerializeWaterWhirlpoolArray,
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 
 	static void RegisterClassTypes()
@@ -242,6 +348,53 @@ namespace PigeonEngine
 		MaxSubsteps = EMath::Max(1u, InMaxSubsteps);
 		TimeScale = EMath::Max(InTimeScale, 0.f);
 		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_VALUES);
+	}
+
+	void PWaterSimulationComponent::SetInitialImpulses(const TArray<FWaterImpulseDescription>& InImpulses)
+	{
+		InitialImpulses = InImpulses;
+	}
+
+	void PWaterSimulationComponent::SetInitialWhirlpools(const TArray<FWaterWhirlpoolDescription>& InWhirlpools)
+	{
+		InitialWhirlpools = InWhirlpools;
+	}
+
+	void PWaterSimulationComponent::BeginAddedToScene(PWorld* InWorld)
+	{
+		PPrimitiveComponent::BeginAddedToScene(InWorld);
+		if (bInitialConditionsApplied != FALSE)
+		{
+			return;
+		}
+		// Once per scene entry. The interactions go through the same pending queue as a runtime
+		// call, so the render proxy consumes them on its first snapshot exactly as if gameplay
+		// had injected them.
+		for (UINT32 ImpulseIndex = 0u, ImpulseNum = InitialImpulses.Num<UINT32>(); ImpulseIndex < ImpulseNum; ImpulseIndex++)
+		{
+			AddImpulse(InitialImpulses[ImpulseIndex]);
+		}
+		for (UINT32 WhirlpoolIndex = 0u, WhirlpoolNum = InitialWhirlpools.Num<UINT32>(); WhirlpoolIndex < WhirlpoolNum; WhirlpoolIndex++)
+		{
+			AddWhirlpool(InitialWhirlpools[WhirlpoolIndex]);
+		}
+		bInitialConditionsApplied = TRUE;
+		if ((InitialImpulses.Num<UINT32>() > 0u) || (InitialWhirlpools.Num<UINT32>() > 0u))
+		{
+			PE_LOG_LOG(EString(PE_TEXT("[WaterSimulation] Applied ")) + ToString(InitialImpulses.Num<UINT32>())
+				+ EString(PE_TEXT(" initial impulse(s) and ")) + ToString(InitialWhirlpools.Num<UINT32>())
+				+ EString(PE_TEXT(" whirlpool(s) from the level.")));
+		}
+	}
+
+	void PWaterSimulationComponent::RemovedFromScene()
+	{
+		PPrimitiveComponent::RemovedFromScene();
+		// A re-add replays the level's initial conditions. Anything still queued for the old
+		// proxy goes with it, so the replay cannot deliver a duplicate of the previous batch.
+		PendingInteractions.Empty();
+		bResetRequested = FALSE;
+		bInitialConditionsApplied = FALSE;
 	}
 
 	void PWaterSimulationComponent::AddImpulse(const FWaterImpulseDescription& InImpulse)

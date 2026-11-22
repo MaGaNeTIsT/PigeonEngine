@@ -64,6 +64,10 @@ namespace PigeonEngine
 		CUBE_MAP,
 		NAV_MESH,
 		MATERIAL,
+		// Appended: the values above are part of the editor's property metadata and are
+		// never renumbered.
+		TEXTURE_2D,
+		STATE_MACHINE,
 	};
 
 	/*

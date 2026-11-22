@@ -2,6 +2,11 @@
 
 #include "World.h"
 #include "../../Development/Message/Message.h"
+#include <PigeonBase/Object/Actor/LevelCharacter.h>
+#include <PigeonBase/Object/Controller/CharacterController.h>
+#if ENGINE_EDITOR_ONLY
+#include <Asset/ContentCook.h>
+#endif
 #include <Development/EditorLogManager.h>
 #include <Navigation/NavigationManager.h>
 #if ENGINE_EDITOR_ONLY
@@ -228,6 +233,12 @@ namespace PigeonEngine
 
 	void EWorldManager::ProcessPendingLevelRequest()
 	{
+#if ENGINE_EDITOR_ONLY
+		if (this->World && EContentCook::Tick(*this->World))
+		{
+			return;
+		}
+#endif
 		if ((!this->World) || (PendingLevelRequest == ELevelRequestType::NONE))
 		{
 			return;

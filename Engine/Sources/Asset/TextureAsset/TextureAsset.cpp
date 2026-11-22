@@ -1,5 +1,6 @@
 #include "TextureAsset.h"
 #include <Asset/AssetLoadManager.h>
+#include <Asset/AssetSourceRegistry.h>
 #include <Base/DataStructure/Text/Path.h>
 #include <RenderDevice/DeviceD3D11.h>
 #include <RHI/IRRHIDevice.h>
@@ -1714,6 +1715,17 @@ namespace PigeonEngine
 		{
 			ImportSource = *InImportSource;
 		}
+		// Editor: a level stores texture names only; the project registry knows the raw source
+		// when the caller has none of its own (a material override, a level's material slot).
+#if ENGINE_EDITOR_ONLY
+		// A caller may pass a pointer to an empty source; what matters is whether the source
+		// carries an import request.
+		if (!ImportSource.IsValid())
+		{
+			const BOOL32 bResolved = EAssetSourceRegistry::ResolveTexture2D(InLoadName, ImportSource);
+			(void)bResolved;
+		}
+#endif
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("Texture2D"), FullPathName),
 			[InLoadPath, InLoadName, ImportSource]() -> BOOL32
@@ -1752,6 +1764,13 @@ namespace PigeonEngine
 		{
 			ImportSource = *InImportSource;
 		}
+#if ENGINE_EDITOR_ONLY
+		if (!ImportSource.IsValid())
+		{
+			const BOOL32 bResolved = EAssetSourceRegistry::ResolveTextureCube(InLoadName, ImportSource);
+			(void)bResolved;
+		}
+#endif
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("TextureCube"), FullPathName),
 			[InLoadPath, InLoadName, ImportSource]() -> BOOL32

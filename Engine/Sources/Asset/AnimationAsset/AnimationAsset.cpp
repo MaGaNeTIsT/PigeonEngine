@@ -1,5 +1,6 @@
 #include "AnimationAsset.h"
 #include <Asset/AssetLoadManager.h>
+#include <Asset/AssetSourceRegistry.h>
 #include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <Development/EditorLogManager.h>
 #if ENGINE_EDITOR_ONLY
@@ -464,6 +465,12 @@ namespace PigeonEngine
 		{
 			ImportSource = *InImportSource;
 		}
+#if ENGINE_EDITOR_ONLY
+		if (!ImportSource.IsValid())
+		{
+			(void)EAssetSourceRegistry::Resolve(EAssetSourceFamilyType::ANIMATION, InLoadName, ImportSource);
+		}
+#endif
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("SkeletonAnimation"), FullPathName),
 			[InLoadPath, InLoadName, ImportSource]() -> BOOL32

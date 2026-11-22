@@ -36,7 +36,10 @@ namespace PigeonEngine
 				return EBaseSettings::ENGINE_SKELETON_PATH;
 			case EPropertyAssetType::ANIMATION:
 				return EBaseSettings::ENGINE_ANIMATION_PATH;
+			case EPropertyAssetType::STATE_MACHINE:
+				return EBaseSettings::ENGINE_STATE_MACHINE_PATH;
 			case EPropertyAssetType::CUBE_MAP:
+			case EPropertyAssetType::TEXTURE_2D:
 				return EBaseSettings::ENGINE_TEXTURE_PATH;
 			case EPropertyAssetType::NAV_MESH:
 				return EBaseSettings::ENGINE_NAV_MESH_PATH;

@@ -4,6 +4,7 @@
 
 #include <Base/DataStructure/Text/Path.h>
 #include <Config/EngineConfig.h>
+#include <Development/EditorLogManager.h>
 #include <TextureAsset/TextureAsset.h>
 #include <imGUI/Headers/imGUIManager.h>
 
@@ -11,7 +12,11 @@ namespace PigeonEngine
 {
 	namespace
 	{
-		ImTextureID LoadEditorIcon(const CHAR* InIconName)
+		// Long enough for the render thread to finish the first frame's queued texture
+		// creations; a warning after this is a real readiness failure, not a startup race.
+		PE_CONSTEXPR_STATIC UINT32 EDITOR_ICON_PENDING_WARN_FRAMES = 120u;
+
+		const ETexture2DAsset* LoadEditorIcon(const CHAR* InIconName)
 		{
 			EString ImportPath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
 			ImportPath += "EngineTextures/Editor/";
@@ -22,7 +27,11 @@ namespace PigeonEngine
 			const ETexture2DAsset* Asset = nullptr;
 			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, LoadName, Asset
 				, &ImportPath, &ImportName, &ImportFileType);
-			return (Asset ? EngineTextureToImgui(Asset) : static_cast<ImTextureID>(0));
+			if (!Asset)
+			{
+				PE_LOG_WARN(EString("AssetIconRegistry: failed to load icon texture: ") + InIconName);
+			}
+			return Asset;
 		}
 	}
 
@@ -30,58 +39,106 @@ namespace PigeonEngine
 	{
 		ShutDown();
 
-		FolderIcon = LoadEditorIcon("Icon_ContentBrowser_Folder");
+		FolderIcon.Asset = LoadEditorIcon("Icon_ContentBrowser_Folder");
 
-		const ImTextureID MeshIcon = LoadEditorIcon("Icon_ContentBrowser_Mesh");
-		const ImTextureID ShaderIcon = LoadEditorIcon("Icon_ContentBrowser_Shader");
-		const ImTextureID SkeletonIcon = LoadEditorIcon("Icon_ContentBrowser_Skeleton");
-		const ImTextureID AnimationIcon = LoadEditorIcon("Icon_ContentBrowser_Animation");
-		const ImTextureID UnknownIcon = LoadEditorIcon("Icon_ContentBrowser_No");
+		const ETexture2DAsset* MeshAsset = LoadEditorIcon("Icon_ContentBrowser_Mesh");
+		const ETexture2DAsset* ShaderAsset = LoadEditorIcon("Icon_ContentBrowser_Shader");
+		const ETexture2DAsset* SkeletonAsset = LoadEditorIcon("Icon_ContentBrowser_Skeleton");
+		const ETexture2DAsset* AnimationAsset = LoadEditorIcon("Icon_ContentBrowser_Animation");
+		const ETexture2DAsset* UnknownAsset = LoadEditorIcon("Icon_ContentBrowser_No");
 
-		MapType(ASSET_TYPE_MESH, MeshIcon);
+		MapType(ASSET_TYPE_MESH, MeshAsset);
 		// A navigation mesh is geometry; no dedicated icon exists, so it reuses the mesh one.
-		MapType(ASSET_TYPE_NAV_MESH, MeshIcon);
-		MapType(ASSET_TYPE_SHADER, ShaderIcon);
-		MapType(ASSET_TYPE_SKELETON, SkeletonIcon);
-		MapType(ASSET_TYPE_ANIMATION, AnimationIcon);
+		MapType(ASSET_TYPE_NAV_MESH, MeshAsset);
+		MapType(ASSET_TYPE_SHADER, ShaderAsset);
+		MapType(ASSET_TYPE_SKELETON, SkeletonAsset);
+		MapType(ASSET_TYPE_ANIMATION, AnimationAsset);
 		// Montage/state machine/notify share the animation icon until dedicated editor
-		// icons exist; without this the asset grids render a blank image.
-		MapType(ASSET_TYPE_ANIM_MONTAGE, AnimationIcon);
-		MapType(ASSET_TYPE_ANIM_STATE_MACHINE, AnimationIcon);
-		MapType(ASSET_TYPE_ANIM_NOTIFY, AnimationIcon);
-		MapType(ASSET_TYPE_TEXTURE, UnknownIcon);
-		MapType(ASSET_TYPE_UNKNOWN, UnknownIcon);
+		// icons exist.
+		MapType(ASSET_TYPE_ANIM_MONTAGE, AnimationAsset);
+		MapType(ASSET_TYPE_ANIM_STATE_MACHINE, AnimationAsset);
+		MapType(ASSET_TYPE_ANIM_NOTIFY, AnimationAsset);
+		MapType(ASSET_TYPE_TEXTURE, UnknownAsset);
+		MapType(ASSET_TYPE_UNKNOWN, UnknownAsset);
+	}
+
+	void FAssetIconRegistry::Tick()
+	{
+		UINT32 PendingNum = 0u;
+		if ((FolderIcon.Asset) && (ResolveIcon(FolderIcon) == FALSE))
+		{
+			PendingNum++;
+		}
+		for (TMap<EAssetType, FAssetIcon>::TIterator Iterator = TypeIcons.Begin()
+			; Iterator != TypeIcons.End(); Iterator++)
+		{
+			FAssetIcon& Icon = Iterator->second;
+			if ((Icon.Asset) && (ResolveIcon(Icon) == FALSE))
+			{
+				PendingNum++;
+			}
+		}
+
+		if (PendingNum == 0u)
+		{
+			PendingFrameNum = 0u;
+			return;
+		}
+
+		PendingFrameNum++;
+		if ((bReportedPending == FALSE) && (PendingFrameNum >= EDITOR_ICON_PENDING_WARN_FRAMES))
+		{
+			bReportedPending = TRUE;
+			PE_LOG_WARN(EString("AssetIconRegistry: ") + EString::FromInt(PendingNum)
+				+ EString(" icon texture(s) still have no render resource; the Content Browser shows placeholders."));
+		}
 	}
 
 	void FAssetIconRegistry::ShutDown()
 	{
-		FolderIcon = static_cast<ImTextureID>(0);
+		FolderIcon = FAssetIcon();
 		TypeIcons.Empty();
+		PendingFrameNum = 0u;
+		bReportedPending = FALSE;
 	}
 
 	ImTextureID FAssetIconRegistry::GetFolderIcon() const
 	{
-		return FolderIcon;
+		return FolderIcon.TextureId;
 	}
 
 	ImTextureID FAssetIconRegistry::GetTypeIcon(const EAssetType& InType) const
 	{
-		if (const ImTextureID* Found = TypeIcons.FindValueAsPtr(InType))
+		if (const FAssetIcon* Found = TypeIcons.FindValueAsPtr(InType))
 		{
-			return *Found;
+			return Found->TextureId;
 		}
-		if (const ImTextureID* Unknown = TypeIcons.FindValueAsPtr(ASSET_TYPE_UNKNOWN))
+		if (const FAssetIcon* Unknown = TypeIcons.FindValueAsPtr(ASSET_TYPE_UNKNOWN))
 		{
-			return *Unknown;
+			return Unknown->TextureId;
 		}
 		return static_cast<ImTextureID>(0);
 	}
 
-	void FAssetIconRegistry::MapType(const EAssetType& InType, const ImTextureID& InIcon)
+	void FAssetIconRegistry::MapType(const EAssetType& InType, const ETexture2DAsset* InAsset)
 	{
-		// Keep a zero entry too: the lookup then never inserts a default in the middle of
-		// a draw, and the panel can test for 0 before issuing a texture draw.
-		TypeIcons.Add(InType, InIcon);
+		FAssetIcon Icon;
+		Icon.Asset = InAsset;
+		TypeIcons.Add(InType, Icon);
+	}
+
+	BOOL32 FAssetIconRegistry::ResolveIcon(FAssetIcon& InIcon)
+	{
+		if (InIcon.TextureId != static_cast<ImTextureID>(0))
+		{
+			return TRUE;
+		}
+		if (!InIcon.Asset)
+		{
+			return FALSE;
+		}
+		InIcon.TextureId = EngineTextureToImgui(InIcon.Asset);
+		return (InIcon.TextureId != static_cast<ImTextureID>(0)) ? TRUE : FALSE;
 	}
 }
 
