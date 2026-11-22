@@ -9,6 +9,7 @@ A game engine for Windows
 | rapidjson | A fast JSON parser/generator for C++ with both SAX/DOM style API. | [rapidjson](https://github.com/Tencent/rapidjson/) |
 | JoltPhysics | A multi core friendly rigid body physics and collision detection library. | [JoltPhysics](https://github.com/jrouwe/JoltPhysics) |
 | recastnavigation | Navigation mesh generation (Recast) and pathfinding (Detour) toolkit. | [recastnavigation](https://github.com/recastnavigation/recastnavigation) |
+| DirectXShaderCompiler | HLSL compiler used by the standalone `ShaderCompiler.exe` tool. | [DirectXShaderCompiler](https://github.com/microsoft/DirectXShaderCompiler) |
 
 ## Engine Preview
 ![Image Example](./Assets/Development/Preview/PigeonEnginePreview.png)
@@ -28,20 +29,23 @@ A game engine for Windows
 | ---- | ---- |
 | ENGINE_DEBUG_MODE | This mode will run with **complete** log and **complete** other profiler options. |
 | ENGINE_DEVELOP_MODE | This mode will run with **complete** log and **selectional** other profiler options. |
-| ENGINE_TEST_MODE | This mode will run with **selectional** log and **few** other profiler options. |
 | ENGINE_SHIPPING_MODE | This mode will run with **few** log and **NO** other profiler options. |
-| ENGINE_EDITOR_ONLY | This define makes a distinction between **Editor** and **Runtime**. |
+| ENGINE_EDITOR_ONLY | This define makes a distinction between **Editor** and **Runtime** (set for `DebugEditor` and `DevelopEditor`). |
+
+Build configurations: `Debug`, `DebugEditor`, `Develop`, `DevelopEditor`, `Shipping`.
+`PIGEON_ENABLE_PROFILER` is forced off in `Shipping`.
 
 ## Engine System
 
 ### Asset System
 Asset System :\
-  Texture Asset(Texture2D Texture3D TextureCube PNG JPEG... -> PAsset)\
-  Mesh Asset(FBX OBJ... -> PAsset)\
+  Texture Asset(Texture2D TextureCube PNG JPEG... -> PAsset)\
+  Mesh Asset(FBX OBJ... -> PAsset, static and skinned)\
   Skeleton Asset(FBX... -> PAsset)\
-  Animation Asset(FBX... -> PAsset)\
-  NavMesh Asset(baked Recast tiles and tile cache layers -> PAsset)\
-  Shader Asset(HLSL CSO... -> PAsset)
+  Animation Asset(FBX... -> PAsset; Clip, StateMachine, Montage, Notify)\
+  NavMesh Asset(baked Recast tiles and tile cache layers -> PAsset, committed under `Assets/NavMeshAssets`)\
+  Shader Asset(HLSL -> DXC -> bytecode + reflection -> PAsset)\
+  Level Asset(`Assets/Levels/*.PLevel`, stable class names + property metadata)
 
 ### Actor System
 Actor Component System :\
@@ -58,8 +62,9 @@ JoltPhysic :\
 ### Navigation System
 Navigation :\
   ENavigationProviderInterface(backend contract: build, queries, persistence, obstacles, crowd)\
-  ENavigationManager(provider lifetime, async bake worker, obstacle and crowd replay)\
-  PNavMeshComponent(tiled or single tile Recast bake, dynamic obstacles, asset save/load, overlay)\
+  ENavigationManager(per-world state, async bake worker, obstacle and crowd replay)\
+  PNavMeshActor(one agent profile + the navmesh built for it; level-level build)\
+  PNavMeshBoundsComponent(bake volume bounds and supported agent profiles)\
   PNavAgentComponent(path following, or crowd steering for local avoidance)\
   PNavObstacleComponent(dynamic obstacle for a tiled volume)
 
@@ -67,11 +72,11 @@ Navigation :\
 RenderScene :\
   ViewProxy(Culling)\
   LightProxy(Culling)\
-  PrimitiveProxy\
-  StaticMeshProxy\
-  SkeletonMeshProxy\
+  PrimitiveSceneProxy(snapshot + factory; static mesh, skeletal mesh, grass, water)\
+  RenderThread(1-frame lockstep: GameThread publishes command slots, RenderThread records and presents)\
 Deferred Rendering :
-  PBR GBuffer(GBufferA GBufferB GBufferC)
+  PBR GBuffer(GBufferA GBufferB GBufferC)\
+  RHI backends: D3D11 (default, `ENGINE_GRAPHICS_API = 1`) and D3D12 (`= 2`)
 
 #### Material System
 TODO
