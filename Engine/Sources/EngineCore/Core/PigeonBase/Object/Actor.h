@@ -60,10 +60,14 @@ namespace PigeonEngine
 		// Every component in insertion order, including the root (serializer/editor
 		// enumeration; the returned array is a copy).
 		PE_NODISCARD TArray<PActorComponent*> GetAllComponents() const;
-		// FALSE keeps this actor out of level files. The world owns its controller, and a
-		// character's physics setup is created by InitCharacter rather than by the factory,
-		// so both are out of the level format until their init hooks are serializable.
+		// FALSE keeps this actor out of level files. The base rule requires a stable on-disk
+		// class name; controllers override it because the world owns them.
 		PE_NODISCARD virtual BOOL32    ShouldSerializeToLevel() const;
+		// Runtime-only actors (editor preview helpers, gameplay-spawned temporary objects) stay
+		// out of level files even though their class has a stable on-disk identity. The flag is
+		// deliberately not serialized: it describes this instance, not the class.
+		void                           SetIsTransientForLevel(const BOOL32& InIsTransient);
+		PE_NODISCARD BOOL32            IsTransientForLevel() const;
 		// Deserialization lifecycle: the class factory constructs a default actor, including
 		// its root component and any constructor-created components. The level loader calls
 		// this after construction and before installing the file's component set, so those
@@ -102,6 +106,8 @@ namespace PigeonEngine
 		// is cleared at the start of TickRenderTree, so work added during the walk survives
 		// to the next frame.
 		BOOL32 bRenderTreeDirty = TRUE;
+		// Runtime-only actor: never written to a level file. See SetIsTransientForLevel.
+		BOOL32 bIsTransientForLevel = FALSE;
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;
 

@@ -24,6 +24,10 @@ namespace PigeonEngine
 		class FShape* GetCrouchingShape();
 		class FCharacterVirtual* GetPhysicsCharacter();
 		class PMovementComponent* GetMovementComponent();
+		// Changing this on a live character rebuilds its physics body at the same transform,
+		// because Jolt takes the layer from the settings it was created with.
+		void SetCharacterLayer(const FPhysicsObjectLayer& InLayer);
+		PE_NODISCARD const FPhysicsObjectLayer& GetCharacterLayer() const;
 
 #if ENGINE_EDITOR_ONLY
 		void EditorTick(FLOAT deltaTime) override;
@@ -50,6 +54,7 @@ namespace PigeonEngine
 		virtual void OnContactSolve(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, const Vector3& inContactVelocity, const Vector3& inCharacterVelocity, Vector3& ioNewCharacterVelocity) override;
 
 	public:
+		FPhysicsObjectLayer CharacterLayer = FPhysicsObjectLayer(Layers::MOVING);
 		FLOAT CharacterHeightStanding = 135.f;
 		FLOAT CharacterRadiusStanding = 30.f;
 		FLOAT CharacterHeightCrouching = 80.f;

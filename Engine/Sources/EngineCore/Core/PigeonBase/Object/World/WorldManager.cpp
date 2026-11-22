@@ -49,6 +49,53 @@ namespace PigeonEngine
 		return LevelStem;
 	}
 
+	// The level the engine opens on startup. It is an ordinary level asset: everything it
+	// needs is serialized, so there is no demo-specific content reconstruction after load.
+	static EString MakeDefaultDemoLevelPath()
+	{
+		return (EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("Demo.PLevel")));
+	}
+
+	// A level owns its PCharacter; the controller is world-owned, matching the existing
+	// "controllers are never level actors" rule. This is the generic default-possession step:
+	// any level that places a character becomes playable without demo-specific code.
+	static void EnsureDefaultCharacterController(PWorld& InWorld)
+	{
+		PCharacter* Character = nullptr;
+		PCharacterController* ExistingController = nullptr;
+		const TArray<PActor*> Actors = InWorld.GetAllActors();
+		for (UINT32 ActorIndex = 0u; ActorIndex < Actors.Num<UINT32>(); ActorIndex++)
+		{
+			PActor* Actor = Actors[ActorIndex];
+			if ((!Character) && (dynamic_cast<PCharacter*>(Actor) != nullptr))
+			{
+				Character = static_cast<PCharacter*>(Actor);
+			}
+			if ((!ExistingController) && (dynamic_cast<PCharacterController*>(Actor) != nullptr))
+			{
+				ExistingController = static_cast<PCharacterController*>(Actor);
+			}
+		}
+		if (!Character)
+		{
+			return;
+		}
+		if (ExistingController)
+		{
+			ExistingController->SetCharacter(Character);
+			return;
+		}
+
+		PCharacterController* Controller = new PCharacterController();
+		Controller->SetIsTickable(TRUE);
+#if ENGINE_EDITOR_ONLY
+		POBJ_DEBUGNAME_SET(Controller, EString(PE_TEXT("PlayableCharacterController")));
+#endif
+		InWorld.AddActor(Controller);
+		Controller->SetCharacter(Character);
+		PE_LOG_LOG(EString(PE_TEXT("World: created the default character controller.")));
+	}
+
 	// A loaded level builds all of its navmesh agents in one pass. The manager waits for the
 	// asset queue once, then imports assigned assets and bakes the agents without one.
 	static void RequestNavigationBuildOnLevelLoad(PWorld* InWorld)
@@ -120,11 +167,14 @@ namespace PigeonEngine
 
 		// The default demo is a level asset now. A missing file is a warning, not a fallback:
 		// the world stays empty and the editor can create content or load another level.
-		const EString DefaultLevelPath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + EString(PE_TEXT("Demo.PLevel"));
+		const EString DefaultLevelPath = MakeDefaultDemoLevelPath();
 		if (this->World->LoadLevel(DefaultLevelPath))
 		{
 			CurrentLevelPath = DefaultLevelPath;
 			LevelRevision += 1u;
+			// The level owns its content, including the character and the state machine asset
+			// reference. The controller is world-owned by the same generic rule every level uses.
+			EnsureDefaultCharacterController(*this->World);
 			RequestNavigationBuildOnLevelLoad(this->World);
 		}
 		else
@@ -289,6 +339,8 @@ namespace PigeonEngine
 				// The new level's profiles replace whatever the previous one left behind; one
 				// pass imports their assets and bakes the profiles without one.
 				ENavigationManager::GetManagerSingleton()->NotifyWorldDestroyed(this->World);
+				// Any level that placed a character gets the world-owned default controller.
+				EnsureDefaultCharacterController(*this->World);
 				RequestNavigationBuildOnLevelLoad(this->World);
 #if ENGINE_EDITOR_ONLY
 				ELevelPanel::MarkLevelListDirty();

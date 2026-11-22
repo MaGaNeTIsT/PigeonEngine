@@ -3866,6 +3866,8 @@ namespace PigeonEngine
 	{
 		PCharacter* Character = new PCharacter();
 		Character->CharacterHeightStanding = 150.f;
+		// A non-default layer proves the reflected property survives the level round trip.
+		Character->SetCharacterLayer(FPhysicsObjectLayer(static_cast<FPhysicsObjectLayer::Type>(3)));
 		{
 			FCharacterVirtualSettings Settings;
 			Character->InitCharacter(Settings);
@@ -3893,6 +3895,8 @@ namespace PigeonEngine
 			(LoadedCharacter->GetMovementComponent()->GetOwnerActor() == LoadedCharacter)) ? TRUE : FALSE;
 		const BOOL32 bHeightOk = (LoadedCharacter &&
 			(EMath::Abs(LoadedCharacter->CharacterHeightStanding - 150.f) <= 1.0e-4f)) ? TRUE : FALSE;
+		const BOOL32 bLayerOk = (LoadedCharacter &&
+			(LoadedCharacter->GetCharacterLayer() == FPhysicsObjectLayer(static_cast<FPhysicsObjectLayer::Type>(3)))) ? TRUE : FALSE;
 
 		for (UINT32 Index = 0u, Num = LoadedActors.Num<UINT32>(); Index < Num; Index++)
 		{
@@ -3902,7 +3906,7 @@ namespace PigeonEngine
 			}
 		}
 		InWorld->FlushPendingDestroy();
-		return (bSaved && bLoaded && bBodyOk && bMovementOk && bHeightOk) ? TRUE : FALSE;
+		return (bSaved && bLoaded && bBodyOk && bMovementOk && bHeightOk && bLayerOk) ? TRUE : FALSE;
 	}
 
 	// Settings files: schema defaults, tracked-default overrides, user overrides, and the

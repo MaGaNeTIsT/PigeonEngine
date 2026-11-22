@@ -116,6 +116,10 @@ namespace PigeonEngine
 		BOOL32                                      SetStateMachine(const EAnimStateMachine* InMachine);
 		void                                        ClearStateMachine();
 		PE_NODISCARD EAnimStateMachineInstance*     GetStateMachineInstance() const;
+		// Serialized asset reference: waits for the state machine PAsset, the component's
+		// skeleton and its animation asset, then binds the instance. An empty name clears it.
+		void                                        RequestStateMachine(const EString& InStateMachineAssetName);
+		PE_NODISCARD EString                        GetStateMachineAssetName() const;
 		// State machine END
 
 		// Montage START
@@ -161,6 +165,12 @@ namespace PigeonEngine
 		EString                         RequestedAnimationClipName;
 		EAnimationLoopMode              RequestedAnimationLoopMode = ANIMATION_LOOP_REPEAT;
 		FLOAT                           RequestedAnimationPlayRate = 1.0f;
+		// State machine asset name as stored in the level, plus the last name that actually
+		// bound. Binding the same machine twice would restart its instance on every property
+		// application, so the two are compared.
+		EString                         RequestedStateMachineAssetName;
+		EString                         BoundStateMachineAssetName;
+		BOOL32                          bStateMachineImportAttempted = FALSE;
 		// The EGameTimer frame animation last advanced in. An editor build walks the same
 		// component tree from World::Tick and again from World::EditorTick, so without this
 		// stamp a clip would run at twice its authored speed there.

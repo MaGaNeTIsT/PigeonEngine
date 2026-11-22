@@ -1,7 +1,10 @@
 #include "SkeletalMeshComponent.h"
 #include <Animation/AnimInstance.h>
 #include <AnimationAsset/AnimationAsset.h>
+#include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
 #include <Asset/AssetLoadManager.h>
+#include <Asset/AssetSourceRegistry.h>
+#include <IO/FileHelper.h>
 #include <Base/Timer/Timer.h>
 #include <Development/Profiler.h>
 #include <MeshAsset/MeshAsset.h>
@@ -109,6 +112,13 @@ namespace PigeonEngine
 					}
 				},
 				SerializeAnimationRequest,
+				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+			// The graph itself is an asset; the level stores only its name, like UE's AnimClass
+			// or Unity's AnimatorController. Runtime state (current state/time) is not persisted.
+			AddClassAssetPropertyAccessors<PSkeletalMeshComponent>(ClassHash, PE_TEXT("StateMachineAsset"),
+				[](const PSkeletalMeshComponent* Component) -> EString { return Component->GetStateMachineAssetName(); },
+				[](PSkeletalMeshComponent* Component, const EString& Value) -> void { Component->RequestStateMachine(Value); },
+				EPropertyAssetType::STATE_MACHINE,
 				static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 			AddClassBoolPropertyAccessors<PSkeletalMeshComponent>(ClassHash, PE_TEXT("RootMotionEnabled"),
 				[](const PSkeletalMeshComponent* Component) -> BOOL32 { return Component->IsRootMotionEnabled(); },
@@ -567,6 +577,7 @@ BOOL32 PSkeletalMeshComponent::ResolveMaterialVertexAxis(EShaderVertexFactoryTyp
 	}
 	void PSkeletalMeshComponent::ClearStateMachine()
 	{
+		BoundStateMachineAssetName = EString();
 		if (AnimInstance)
 		{
 			AnimInstance->ClearStateMachine();
@@ -575,6 +586,80 @@ BOOL32 PSkeletalMeshComponent::ResolveMaterialVertexAxis(EShaderVertexFactoryTyp
 	EAnimStateMachineInstance* PSkeletalMeshComponent::GetStateMachineInstance() const
 	{
 		return (AnimInstance ? AnimInstance->GetStateMachineInstance() : nullptr);
+	}
+	void PSkeletalMeshComponent::RequestStateMachine(const EString& InStateMachineAssetName)
+	{
+		RequestedStateMachineAssetName = InStateMachineAssetName;
+		BoundStateMachineAssetName = EString();
+		bStateMachineImportAttempted = FALSE;
+		if (InStateMachineAssetName.Length() == 0u)
+		{
+			ClearStateMachine();
+			return;
+		}
+
+		PSkeletalMeshComponent* Component = this;
+		TFunction<BOOL32()> Step = [Component, InStateMachineAssetName]() -> BOOL32
+		{
+			const EAnimStateMachineAsset* StateMachineAsset = nullptr;
+			BOOL32 bLoaded = EAnimStateMachineManager::GetManagerSingleton()->LoadStateMachineAsset(
+				EBaseSettings::ENGINE_STATE_MACHINE_PATH, InStateMachineAssetName, StateMachineAsset);
+#if ENGINE_EDITOR_ONLY
+			if ((bLoaded == FALSE) && (Component->bStateMachineImportAttempted == FALSE))
+			{
+				const EString AssetPath = EString(EBaseSettings::ENGINE_STATE_MACHINE_PATH)
+					+ InStateMachineAssetName + EString(PE_TEXT(".PAsset"));
+				if (!EFileHelper::IsFileExists(AssetPath))
+				{
+					Component->bStateMachineImportAttempted = TRUE;
+					FAssetImportSource ImportSource;
+					if (EAssetSourceRegistry::Resolve(EAssetSourceFamilyType::STATE_MACHINE, InStateMachineAssetName, ImportSource))
+					{
+						// The registry stores ImportPath already rooted at ENGINE_ASSET_DIRECTORY.
+						const EString JsonPath = ImportSource.ImportPath + ImportSource.ImportName
+							+ EString(PE_TEXT(".")) + ImportSource.ImportFileType;
+						if (EAnimStateMachineManager::GetManagerSingleton()->ImportStateMachine(
+							InStateMachineAssetName, JsonPath, EBaseSettings::ENGINE_STATE_MACHINE_PATH))
+						{
+							bLoaded = EAnimStateMachineManager::GetManagerSingleton()->LoadStateMachineAsset(
+								EBaseSettings::ENGINE_STATE_MACHINE_PATH, InStateMachineAssetName, StateMachineAsset);
+						}
+					}
+				}
+			}
+#endif
+			if ((bLoaded == FALSE) || (!StateMachineAsset))
+			{
+				PE_LOG_WARN(EString(PE_TEXT("Skeletal mesh: state machine asset missing: ")) + InStateMachineAssetName);
+				return TRUE;	// retrying an asset that is not on disk would only spam the log
+			}
+			// The component's Animation property may still be binding; the graph's clip names are
+			// resolved against it, so wait for that side first.
+			if (!Component->GetAnimationAsset())
+			{
+				return FALSE;
+			}
+			if ((Component->GetStateMachineInstance() != nullptr) && (Component->BoundStateMachineAssetName == InStateMachineAssetName))
+			{
+				return TRUE;
+			}
+			if (!Component->SetStateMachine(StateMachineAsset->GetStoragedResource()))
+			{
+				PE_LOG_WARN(EString(PE_TEXT("Skeletal mesh: state machine did not bind: ")) + InStateMachineAssetName);
+				return TRUE;
+			}
+			Component->BoundStateMachineAssetName = InStateMachineAssetName;
+			PE_LOG_LOG(EString(PE_TEXT("Skeletal mesh: state machine bound: ")) + InStateMachineAssetName);
+			return TRUE;
+		};
+		if (Step() == FALSE)
+		{
+			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
+		}
+	}
+	EString PSkeletalMeshComponent::GetStateMachineAssetName() const
+	{
+		return (RequestedStateMachineAssetName.Length() > 0u) ? RequestedStateMachineAssetName : BoundStateMachineAssetName;
 	}
 	// State machine END
 

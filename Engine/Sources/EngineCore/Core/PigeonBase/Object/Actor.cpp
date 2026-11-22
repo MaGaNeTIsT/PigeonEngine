@@ -358,10 +358,24 @@ namespace PigeonEngine
 
 	BOOL32 PActor::ShouldSerializeToLevel() const
 	{
+		if (bIsTransientForLevel != FALSE)
+		{
+			return FALSE;
+		}
 		// Only classes with an on-disk identity can be created again on load. Concrete actors
 		// are registered in SerializableClassRegistry; editor-only helpers are not.
 		const CHAR* StableName = GetClassStableName(GetClassHashCode(this));
 		return ((StableName) && (StableName[0] != '\0')) ? TRUE : FALSE;
+	}
+
+	void PActor::SetIsTransientForLevel(const BOOL32& InIsTransient)
+	{
+		bIsTransientForLevel = InIsTransient;
+	}
+
+	BOOL32 PActor::IsTransientForLevel() const
+	{
+		return bIsTransientForLevel;
 	}
 
 	void PActor::PrepareForDeserialize()

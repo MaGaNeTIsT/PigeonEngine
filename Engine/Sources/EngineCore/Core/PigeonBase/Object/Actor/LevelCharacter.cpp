@@ -45,6 +45,13 @@ namespace PigeonEngine
 			[](const PCharacter* Character) -> FLOAT { return Character->JumpSpeed; },
 			[](PCharacter* Character, const FLOAT& Value) -> void { Character->JumpSpeed = Value; },
 			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
+		// The physics layer a Jolt character is created with. It is serialized because a level
+		// character otherwise falls back to the settings default (NON_MOVING) and ignores static
+		// floors; the member default is MOVING for levels saved before this property existed.
+		AddClassEnumValuePropertyAccessors<PCharacter>(ClassHash, PE_TEXT("Layer"), GetClassHashCode<FPhysicsObjectLayer>(),
+			[](const PCharacter* Character) -> INT32 { return static_cast<INT32>(Character->GetCharacterLayer().GetValue()); },
+			[](PCharacter* Character, const INT32& Value) -> void { Character->SetCharacterLayer(FPhysicsObjectLayer(static_cast<FPhysicsObjectLayer::Type>(Value))); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE));
 	}
 
 	static void RegisterClassTypes()
@@ -67,10 +74,13 @@ PigeonEngine::PCharacter::~PCharacter()
 
 void PigeonEngine::PCharacter::InitCharacter(FCharacterVirtualSettings& InCharacterSettings)
 {
-	StandingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightStanding, CharacterRadiusStanding));
-	CrouchingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
-	InCharacterSettings.Shape = StandingShape;
-	Character = new FCharacterVirtual(InCharacterSettings);
+		StandingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightStanding, CharacterRadiusStanding));
+		CrouchingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
+		InCharacterSettings.Shape = StandingShape;
+		// The serialized property is authoritative for every creation path, including the
+		// level loader's PostDeserialize and the sanity round trip.
+		InCharacterSettings.Layer = CharacterLayer;
+		Character = new FCharacterVirtual(InCharacterSettings);
 	// A loaded character may already carry a serialized movement component. Reuse and link
 	// it instead of adding a second one; for a freshly launched character this creates it.
 	if (!MovementComponent)
@@ -87,6 +97,42 @@ void PigeonEngine::PCharacter::InitCharacter(FCharacterVirtualSettings& InCharac
 		this->AddComponent(MovementComponent);
 	}
 	FPhysicsManager::GetManagerSingleton()->AddCharacter(Character);
+}
+
+void PigeonEngine::PCharacter::SetCharacterLayer(const FPhysicsObjectLayer& InLayer)
+{
+	if (CharacterLayer == InLayer)
+	{
+		return;
+	}
+	CharacterLayer = InLayer;
+	if (!Character)
+	{
+		return;
+	}
+
+	// Jolt takes the object layer from CharacterVirtualSettings at creation; changing it means
+	// rebuilding the body. Preserve the solved transform and re-register it if the actor is
+	// already in a world.
+	const Vector3 Position = Character->GetPosition();
+	const Quaternion Rotation = Character->GetRotation();
+	PWorld* World = GetWorld();
+	Character->RemoveListener(this);
+	UninitCharacter();
+	FCharacterVirtualSettings Settings;
+	InitCharacter(Settings);
+	Character->AddListener(this);
+	if (World)
+	{
+		Character->AddToPhysicsSystem(EActivate::Activate, Position, Rotation, GetUniqueID());
+		Character->Activate();
+		HandleWorldUpVectorChanged(World->GetUpVector());
+	}
+}
+
+const PigeonEngine::FPhysicsObjectLayer& PigeonEngine::PCharacter::GetCharacterLayer() const
+{
+	return CharacterLayer;
 }
 
 void PigeonEngine::PCharacter::UninitCharacter()
@@ -117,8 +163,8 @@ void PigeonEngine::PCharacter::PostDeserialize()
 	PActor::PostDeserialize();
 	if (!Character)
 	{
-		// The serialized height/radius properties are already applied; InitCharacter reads
-		// them when it builds the standing and crouching shapes.
+		// The serialized height/radius/Layer properties are already applied; InitCharacter
+		// reads them when it builds the standing and crouching shapes.
 		FCharacterVirtualSettings Settings;
 		InitCharacter(Settings);
 	}

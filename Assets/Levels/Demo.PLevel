@@ -1,1 +1,1488 @@
-{"FormatVersion":2,"Level":{"Name":"Demo","GravityDirection":{"X":-0.0,"Y":-1.0,"Z":-0.0},"GravityStrength":981.0,"UseUpVector":true,"UpVector":{"X":0.0,"Y":1.0,"Z":0.0}},"Actors":{"Count":15,"0":{"Class":"PActor","ClassVersion":1,"Name":"StaticMeshActor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":-500.0,"Y":100.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":true,"MaterialSlots":{"Count":0},"MeshAsset":"Robot"}}}},"1":{"Class":"PActor","ClassVersion":1,"Name":"SkeletalMeshActor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":500.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PSkeletalMeshComponent","ClassVersion":1,"Name":"SkeletalMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.7071067690849304,"Y":0.0,"Z":0.0,"W":0.7071067690849304},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":true,"MaterialSlots":{"Count":0},"MeshAssets":{"Mesh":"SK_Mannequin_UE4_WithWeapon_Mesh","Skeleton":"SK_Mannequin_UE4_WithWeapon_Skeleton"},"Animation":{"Asset":"Boss_Idle","Clip":"Unreal Take","LoopMode":"REPEAT","PlayRate":1.0},"RootMotionEnabled":false,"RootMotionBoneIndex":0}}}},"2":{"Class":"PActor","ClassVersion":1,"Name":"LightActor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":-0.3662445843219757,"Y":-0.5807998180389404,"Z":-0.3278045952320099,"W":0.6489073038101196},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PDirectionalLightComponent","ClassVersion":1,"Name":"DirectionalLightComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","LightColor":{"R":1.0,"G":1.0,"B":1.0},"CastShadow":true,"ShadowMapSize":{"X":2048,"Y":2048},"IlluminanceLux":100000.0,"SourceAngleDegrees":0.5299999713897705,"CascadeShadowData":{"UseShadow":true,"Layers":{"Count":3,"0":3000.0,"1":7000.0,"2":10000.0},"Borders":{"Count":2,"0":500.0,"1":2000.0}}}}}},"3":{"Class":"PActor","ClassVersion":1,"Name":"PointLightActor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":300.0,"Y":220.0,"Z":220.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PPointLightComponent","ClassVersion":1,"Name":"PointLightComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","LightColor":{"R":1.0,"G":0.8500000238418579,"B":0.6000000238418579},"CastShadow":true,"ShadowMapSize":{"X":512,"Y":512},"LuminousIntensityCandela":999.970458984375,"AttenuationRadiusMeters":600.0,"SourceRadiusMeters":0.05000000074505806}}}},"4":{"Class":"PActor","ClassVersion":1,"Name":"SpotLightActor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":-300.0,"Y":250.0,"Z":100.0},"Rotation":{"X":0.0,"Y":0.8665211796760559,"Z":-0.499140202999115,"W":0.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PSpotLightComponent","ClassVersion":1,"Name":"SpotLightComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","LightColor":{"R":0.699999988079071,"G":0.8500000238418579,"B":1.0},"CastShadow":true,"ShadowMapSize":{"X":1024,"Y":1024},"LuminousIntensityCandela":14927.7607421875,"AttenuationRadiusMeters":600.0,"SourceRadiusMeters":0.0,"SpotInnerAngleDegrees":20.0,"SpotOuterAngleDegrees":30.0}}}},"5":{"Class":"PActor","ClassVersion":1,"Name":"SkyLightActor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":5000.0,"Y":5000.0,"Z":5000.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PSkyLightComponent","ClassVersion":1,"Name":"SkyLightComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CubeMapAsset":"SkyBox001","LightAdjust":{"R":1.0,"G":1.0,"B":1.0},"Intensity":5000.0,"PrefilterResolutionExponent":8}}}},"6":{"Class":"PActor","ClassVersion":1,"Name":"Plane Actor","ParentActorID":0,"Properties":{},"Components":{"Count":3,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":0.0,"Y":-10.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":2000.0,"Y":20.0,"Z":2000.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":true,"MaterialSlots":{"Count":0},"MeshAsset":"Cube"}},"2":{"Class":"PPhysicsComponent","ClassVersion":1,"Name":"PhysicsComponent","Root":false,"ParentComponentIndex":0,"Properties":{"MotionType":"Static","Layer":"NON_MOVING","Shape":{"ShapeType":1,"HalfExtent":{"X":1000.0,"Y":10.0,"Z":1000.0},"ConvexRadius":0.0}}}}},"7":{"Class":"PActor","ClassVersion":1,"Name":"Physics Floor Actor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PPhysicsComponent","ClassVersion":1,"Name":"PhysicsComponent","Root":false,"ParentComponentIndex":0,"Properties":{"MotionType":"Static","Layer":"NON_MOVING","Shape":{"ShapeType":1,"HalfExtent":{"X":1000.0,"Y":10.0,"Z":1000.0},"ConvexRadius":0.0}}}}},"8":{"Class":"PNavMeshActor","ClassVersion":1,"Name":"Navigation Actor","ParentActorID":0,"Properties":{"Profile":{"Name":"","BuildSettings":{"CellSize":20.0,"CellHeight":10.0,"AgentRadius":35.0,"AgentHeight":150.0,"AgentMaxClimb":40.0,"AgentMaxSlopeAngle":45.0,"MaxEdgeLength":0.0,"MaxSimplificationError":0.0,"DetailSampleDistance":0.0,"DetailSampleMaxError":0.0,"MinRegionArea":0,"MergeRegionArea":0,"MaxVertsPerPoly":6,"TileSizeCells":64,"MaxLayersPerTile":16,"MaxCrowdAgents":64,"FlipTriangleWinding":false},"NavMeshAsset":"Demo_NavMesh","NavLinks":{"Count":0}},"BuildOnBeginPlay":true},"Components":{"Count":1,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC"}}}},"9":{"Class":"PActor","ClassVersion":1,"Name":"Navigation Obstacle Actor","ParentActorID":0,"Properties":{},"Components":{"Count":4,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":-40.0,"Y":0.0,"Z":-321.4938049316406},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":80.0,"Y":150.0,"Z":80.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.5,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":false,"MaterialSlots":{"Count":0},"MeshAsset":"Cube"}},"2":{"Class":"PNavObstacleComponent","ClassVersion":1,"Name":"NavObstacleComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.5,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","ShapeType":"BOX","CylinderRadius":40.0,"CylinderHeight":150.0,"BoxHalfExtents":{"X":40.0,"Y":75.0,"Z":40.0},"FollowThreshold":5.0,"FollowTransform":true}},"3":{"Class":"PDemoObstacleMotionComponent","ClassVersion":1,"Name":"DemoObstacleMotionComponent","Root":false,"ParentComponentIndex":0,"Properties":{"BaseLocation":{"X":-40.0,"Y":0.0,"Z":-300.0},"Amplitude":90.0,"Speed":0.699999988079071,"Axis":{"X":0.0,"Y":0.0,"Z":1.0}}}}},"10":{"Class":"PActor","ClassVersion":1,"Name":"Navigation Agent Actor","ParentActorID":0,"Properties":{},"Components":{"Count":3,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":-162.6785888671875,"Y":10.0,"Z":-395.6342468261719},"Rotation":{"X":0.0,"Y":-0.9825255274772644,"Z":0.0,"W":0.18612800538539886},"Scaling":{"X":60.0,"Y":150.0,"Z":60.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.5,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":false,"MaterialSlots":{"Count":0},"MeshAsset":"Cube"}},"2":{"Class":"PNavAgentComponent","ClassVersion":1,"Name":"NavAgentComponent","Root":false,"ParentComponentIndex":0,"Properties":{"Settings":{"Radius":35.0,"Height":150.0,"MoveSpeed":300.0,"TurnSpeedDegreesPerSecond":240.0,"AcceptanceRadius":20.0,"RepathInterval":0.5,"MaxAcceleration":600.0,"CollisionQueryRange":360.0,"PathOptimizationRange":900.0,"SeparationWeight":2.0,"ObstacleAvoidanceType":3},"UseCrowd":true,"TargetLocation":{"X":-160.0,"Y":0.0,"Z":-390.0},"MoveOnBeginPlay":true}}}},"11":{"Class":"PActor","ClassVersion":1,"Name":"Navigation Agent Actor","ParentActorID":0,"Properties":{},"Components":{"Count":3,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":-12.821449279785156,"Y":10.0,"Z":-420.0},"Rotation":{"X":0.0,"Y":-0.968761682510376,"Z":0.0,"W":0.24799349904060364},"Scaling":{"X":60.0,"Y":150.0,"Z":60.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.5,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":false,"MaterialSlots":{"Count":0},"MeshAsset":"Cube"}},"2":{"Class":"PNavAgentComponent","ClassVersion":1,"Name":"NavAgentComponent","Root":false,"ParentComponentIndex":0,"Properties":{"Settings":{"Radius":35.0,"Height":150.0,"MoveSpeed":300.0,"TurnSpeedDegreesPerSecond":240.0,"AcceptanceRadius":20.0,"RepathInterval":0.5,"MaxAcceleration":600.0,"CollisionQueryRange":360.0,"PathOptimizationRange":900.0,"SeparationWeight":2.0,"ObstacleAvoidanceType":3},"UseCrowd":true,"TargetLocation":{"X":-10.0,"Y":0.0,"Z":-390.0},"MoveOnBeginPlay":true}}}},"12":{"Class":"PActor","ClassVersion":1,"Name":"Navigation Agent Actor","ParentActorID":0,"Properties":{},"Components":{"Count":3,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":-159.22105407714844,"Y":10.0,"Z":-249.4554443359375},"Rotation":{"X":0.0,"Y":0.9960769414901733,"Z":0.0,"W":0.08849085122346878},"Scaling":{"X":60.0,"Y":150.0,"Z":60.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.5,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":false,"MaterialSlots":{"Count":0},"MeshAsset":"Cube"}},"2":{"Class":"PNavAgentComponent","ClassVersion":1,"Name":"NavAgentComponent","Root":false,"ParentComponentIndex":0,"Properties":{"Settings":{"Radius":35.0,"Height":150.0,"MoveSpeed":300.0,"TurnSpeedDegreesPerSecond":240.0,"AcceptanceRadius":20.0,"RepathInterval":0.5,"MaxAcceleration":600.0,"CollisionQueryRange":360.0,"PathOptimizationRange":900.0,"SeparationWeight":2.0,"ObstacleAvoidanceType":3},"UseCrowd":true,"TargetLocation":{"X":-160.0,"Y":0.0,"Z":-240.0},"MoveOnBeginPlay":true}}}},"13":{"Class":"PActor","ClassVersion":1,"Name":"Navigation Agent Actor","ParentActorID":0,"Properties":{},"Components":{"Count":3,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":-313.1690979003906,"Y":10.0,"Z":-396.19183349609375},"Rotation":{"X":0.0,"Y":-0.9737269878387451,"Z":0.0,"W":0.22771842777729034},"Scaling":{"X":60.0,"Y":150.0,"Z":60.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.5,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":false,"MaterialSlots":{"Count":0},"MeshAsset":"Cube"}},"2":{"Class":"PNavAgentComponent","ClassVersion":1,"Name":"NavAgentComponent","Root":false,"ParentComponentIndex":0,"Properties":{"Settings":{"Radius":35.0,"Height":150.0,"MoveSpeed":300.0,"TurnSpeedDegreesPerSecond":240.0,"AcceptanceRadius":20.0,"RepathInterval":0.5,"MaxAcceleration":600.0,"CollisionQueryRange":360.0,"PathOptimizationRange":900.0,"SeparationWeight":2.0,"ObstacleAvoidanceType":3},"UseCrowd":true,"TargetLocation":{"X":-310.0,"Y":0.0,"Z":-390.0},"MoveOnBeginPlay":true}}}},"14":{"Class":"PActor","ClassVersion":1,"Name":"MaterialDemoActor","ParentActorID":0,"Properties":{},"Components":{"Count":2,"0":{"Class":"PSceneComponent","ClassVersion":1,"Name":"SceneComponent(Root)","Root":true,"ParentComponentIndex":0,"Properties":{"Transform":{"Location":{"X":250.0,"Y":50.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":100.0,"Y":100.0,"Z":100.0}},"Mobility":"EMT_DYNAMIC"}},"1":{"Class":"PStaticMeshComponent","ClassVersion":1,"Name":"StaticMeshComponent","Root":false,"ParentComponentIndex":1,"Properties":{"Transform":{"Location":{"X":0.0,"Y":0.0,"Z":0.0},"Rotation":{"X":0.0,"Y":0.0,"Z":0.0,"W":1.0},"Scaling":{"X":1.0,"Y":1.0,"Z":1.0}},"Mobility":"EMT_DYNAMIC","CastShadow":true,"ReceiveShadow":true,"AffectsNavigation":true,"MaterialSlots":{"Count":0},"MeshAsset":"Cube"}}}}}}
+{
+	"FormatVersion": 2,
+	"Level": {
+		"Name": "Demo",
+		"GravityDirection": {
+			"X": -0.0,
+			"Y": -1.0,
+			"Z": -0.0
+		},
+		"GravityStrength": 981.0,
+		"UseUpVector": true,
+		"UpVector": {
+			"X": 0.0,
+			"Y": 1.0,
+			"Z": 0.0
+		}
+	},
+	"Actors": {
+		"Count": 16,
+		"0": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "StaticMeshActor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -500.0,
+								"Y": 100.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": true,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAsset": "Robot",
+						"NavigationArea": "GROUND"
+					}
+				}
+			}
+		},
+		"1": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "SkeletalMeshActor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 500.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PSkeletalMeshComponent",
+					"ClassVersion": 1,
+					"Name": "SkeletalMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.7071067690849304,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 0.7071067690849304
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": true,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAssets": {
+							"Mesh": "SK_Mannequin_UE4_WithWeapon_Mesh",
+							"Skeleton": "SK_Mannequin_UE4_WithWeapon_Skeleton"
+						},
+						"Animation": {
+							"Asset": "Boss_Idle",
+							"Clip": "Unreal Take",
+							"LoopMode": "REPEAT",
+							"PlayRate": 1.0
+						},
+						"StateMachineAsset": "Boss_StateMachine",
+						"RootMotionEnabled": false,
+						"RootMotionBoneIndex": 0
+					}
+				}
+			}
+		},
+		"2": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "LightActor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": -0.3662445843219757,
+								"Y": -0.5807998180389404,
+								"Z": -0.3278045952320099,
+								"W": 0.6489073038101196
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PDirectionalLightComponent",
+					"ClassVersion": 1,
+					"Name": "DirectionalLightComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"LightColor": {
+							"R": 1.0,
+							"G": 1.0,
+							"B": 1.0
+						},
+						"CastShadow": true,
+						"ShadowMapSize": {
+							"X": 2048,
+							"Y": 2048
+						},
+						"IlluminanceLux": 100000.0,
+						"SourceAngleDegrees": 0.5299999713897705,
+						"CascadeShadowData": {
+							"UseShadow": true,
+							"Layers": {
+								"Count": 3,
+								"0": 3000.0,
+								"1": 7000.0,
+								"2": 10000.0
+							},
+							"Borders": {
+								"Count": 2,
+								"0": 500.0,
+								"1": 2000.0
+							}
+						}
+					}
+				}
+			}
+		},
+		"3": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "PointLightActor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 300.0,
+								"Y": 220.0,
+								"Z": 220.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PPointLightComponent",
+					"ClassVersion": 1,
+					"Name": "PointLightComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"LightColor": {
+							"R": 1.0,
+							"G": 0.8500000238418579,
+							"B": 0.6000000238418579
+						},
+						"CastShadow": true,
+						"ShadowMapSize": {
+							"X": 512,
+							"Y": 512
+						},
+						"LuminousIntensityCandela": 999.970458984375,
+						"AttenuationRadiusMeters": 600.0,
+						"SourceRadiusMeters": 0.05000000074505806
+					}
+				}
+			}
+		},
+		"4": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "SpotLightActor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -300.0,
+								"Y": 250.0,
+								"Z": 100.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.8665211796760559,
+								"Z": -0.499140202999115,
+								"W": 0.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PSpotLightComponent",
+					"ClassVersion": 1,
+					"Name": "SpotLightComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"LightColor": {
+							"R": 0.699999988079071,
+							"G": 0.8500000238418579,
+							"B": 1.0
+						},
+						"CastShadow": true,
+						"ShadowMapSize": {
+							"X": 1024,
+							"Y": 1024
+						},
+						"LuminousIntensityCandela": 14927.7607421875,
+						"AttenuationRadiusMeters": 600.0,
+						"SourceRadiusMeters": 0.0,
+						"SpotInnerAngleDegrees": 20.0,
+						"SpotOuterAngleDegrees": 30.0
+					}
+				}
+			}
+		},
+		"5": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "SkyLightActor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 5000.0,
+								"Y": 5000.0,
+								"Z": 5000.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PSkyLightComponent",
+					"ClassVersion": 1,
+					"Name": "SkyLightComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CubeMapAsset": "SkyBox001",
+						"LightAdjust": {
+							"R": 1.0,
+							"G": 1.0,
+							"B": 1.0
+						},
+						"Intensity": 5000.0,
+						"PrefilterResolutionExponent": 8
+					}
+				}
+			}
+		},
+		"6": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "Plane Actor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 3,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 2000.0,
+								"Y": 20.0,
+								"Z": 2000.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": true,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAsset": "Cube",
+						"NavigationArea": "GROUND"
+					}
+				},
+				"2": {
+					"Class": "PPhysicsComponent",
+					"ClassVersion": 1,
+					"Name": "PhysicsComponent",
+					"Root": false,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"MotionType": "Static",
+						"Layer": "NON_MOVING",
+						"Shape": {
+							"ShapeType": 1,
+							"HalfExtent": {
+								"X": 1000.0,
+								"Y": 10.0,
+								"Z": 1000.0
+							},
+							"ConvexRadius": 0.0
+						}
+					}
+				}
+			}
+		},
+		"7": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "Physics Floor Actor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PPhysicsComponent",
+					"ClassVersion": 1,
+					"Name": "PhysicsComponent",
+					"Root": false,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"MotionType": "Static",
+						"Layer": "NON_MOVING",
+						"Shape": {
+							"ShapeType": 1,
+							"HalfExtent": {
+								"X": 1000.0,
+								"Y": 10.0,
+								"Z": 1000.0
+							},
+							"ConvexRadius": 0.0
+						}
+					}
+				}
+			}
+		},
+		"8": {
+			"Class": "PNavMeshActor",
+			"ClassVersion": 1,
+			"Name": "Navigation Actor",
+			"ParentActorID": 0,
+			"Properties": {
+				"Profile": {
+					"Name": "",
+					"BuildSettings": {
+						"CellSize": 20.0,
+						"CellHeight": 10.0,
+						"AgentRadius": 35.0,
+						"AgentHeight": 150.0,
+						"AgentMaxClimb": 40.0,
+						"AgentMaxSlopeAngle": 45.0,
+						"MaxEdgeLength": 0.0,
+						"MaxSimplificationError": 0.0,
+						"DetailSampleDistance": 0.0,
+						"DetailSampleMaxError": 0.0,
+						"MinRegionArea": 0,
+						"MergeRegionArea": 0,
+						"MaxVertsPerPoly": 6,
+						"TileSizeCells": 64,
+						"MaxLayersPerTile": 16,
+						"MaxCrowdAgents": 64,
+						"FlipTriangleWinding": false
+					},
+					"NavMeshAsset": "Demo_NavMesh",
+					"NavLinks": {
+						"Count": 0
+					}
+				},
+				"BuildOnBeginPlay": true
+			},
+			"Components": {
+				"Count": 1,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				}
+			}
+		},
+		"9": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "Navigation Obstacle Actor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 4,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -40.0,
+								"Y": 0.0,
+								"Z": -211.5618896484375
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 80.0,
+								"Y": 150.0,
+								"Z": 80.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.5,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": false,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAsset": "Cube",
+						"NavigationArea": "GROUND"
+					}
+				},
+				"2": {
+					"Class": "PNavObstacleComponent",
+					"ClassVersion": 1,
+					"Name": "NavObstacleComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.5,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"ShapeType": "BOX",
+						"CylinderRadius": 40.0,
+						"CylinderHeight": 150.0,
+						"BoxHalfExtents": {
+							"X": 40.0,
+							"Y": 75.0,
+							"Z": 40.0
+						},
+						"FollowThreshold": 5.0,
+						"FollowTransform": true,
+						"NavMeshName": ""
+					}
+				},
+				"3": {
+					"Class": "PDemoObstacleMotionComponent",
+					"ClassVersion": 1,
+					"Name": "DemoObstacleMotionComponent",
+					"Root": false,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"BaseLocation": {
+							"X": -40.0,
+							"Y": 0.0,
+							"Z": -300.0
+						},
+						"Amplitude": 90.0,
+						"Speed": 0.699999988079071,
+						"Axis": {
+							"X": 0.0,
+							"Y": 0.0,
+							"Z": 1.0
+						}
+					}
+				}
+			}
+		},
+		"10": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "Navigation Agent Actor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 3,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -162.54913330078125,
+								"Y": 10.0,
+								"Z": -395.224609375
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": -0.9461223483085632,
+								"Z": 0.0,
+								"W": 0.32380932569503784
+							},
+							"Scaling": {
+								"X": 60.0,
+								"Y": 150.0,
+								"Z": 60.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.5,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": false,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAsset": "Cube",
+						"NavigationArea": "GROUND"
+					}
+				},
+				"2": {
+					"Class": "PNavAgentComponent",
+					"ClassVersion": 1,
+					"Name": "NavAgentComponent",
+					"Root": false,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Settings": {
+							"Radius": 35.0,
+							"Height": 150.0,
+							"MoveSpeed": 300.0,
+							"TurnSpeedDegreesPerSecond": 240.0,
+							"AcceptanceRadius": 20.0,
+							"RepathInterval": 0.5,
+							"MaxAcceleration": 600.0,
+							"CollisionQueryRange": 360.0,
+							"PathOptimizationRange": 900.0,
+							"SeparationWeight": 2.0,
+							"ObstacleAvoidanceType": 3,
+							"TraverseWater": true,
+							"TraverseDoor": true,
+							"TraverseJump": true,
+							"GroundCost": 1.0,
+							"WaterCost": 1.0,
+							"DoorCost": 1.0,
+							"JumpCost": 1.0
+						},
+						"UseCrowd": true,
+						"NavMeshName": "",
+						"TargetLocation": {
+							"X": -160.0,
+							"Y": 0.0,
+							"Z": -390.0
+						},
+						"MoveOnBeginPlay": true
+					}
+				}
+			}
+		},
+		"11": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "Navigation Agent Actor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 3,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -11.975975036621094,
+								"Y": 10.0,
+								"Z": -420.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": -0.6041301488876343,
+								"Z": 0.0,
+								"W": 0.79688560962677
+							},
+							"Scaling": {
+								"X": 60.0,
+								"Y": 150.0,
+								"Z": 60.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.5,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": false,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAsset": "Cube",
+						"NavigationArea": "GROUND"
+					}
+				},
+				"2": {
+					"Class": "PNavAgentComponent",
+					"ClassVersion": 1,
+					"Name": "NavAgentComponent",
+					"Root": false,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Settings": {
+							"Radius": 35.0,
+							"Height": 150.0,
+							"MoveSpeed": 300.0,
+							"TurnSpeedDegreesPerSecond": 240.0,
+							"AcceptanceRadius": 20.0,
+							"RepathInterval": 0.5,
+							"MaxAcceleration": 600.0,
+							"CollisionQueryRange": 360.0,
+							"PathOptimizationRange": 900.0,
+							"SeparationWeight": 2.0,
+							"ObstacleAvoidanceType": 3,
+							"TraverseWater": true,
+							"TraverseDoor": true,
+							"TraverseJump": true,
+							"GroundCost": 1.0,
+							"WaterCost": 1.0,
+							"DoorCost": 1.0,
+							"JumpCost": 1.0
+						},
+						"UseCrowd": true,
+						"NavMeshName": "",
+						"TargetLocation": {
+							"X": -10.0,
+							"Y": 0.0,
+							"Z": -390.0
+						},
+						"MoveOnBeginPlay": true
+					}
+				}
+			}
+		},
+		"12": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "Navigation Agent Actor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 3,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -159.8167724609375,
+								"Y": 10.0,
+								"Z": -243.54783630371094
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.8328897356987,
+								"Z": 0.0,
+								"W": 0.5534389615058899
+							},
+							"Scaling": {
+								"X": 60.0,
+								"Y": 150.0,
+								"Z": 60.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.5,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": false,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAsset": "Cube",
+						"NavigationArea": "GROUND"
+					}
+				},
+				"2": {
+					"Class": "PNavAgentComponent",
+					"ClassVersion": 1,
+					"Name": "NavAgentComponent",
+					"Root": false,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Settings": {
+							"Radius": 35.0,
+							"Height": 150.0,
+							"MoveSpeed": 300.0,
+							"TurnSpeedDegreesPerSecond": 240.0,
+							"AcceptanceRadius": 20.0,
+							"RepathInterval": 0.5,
+							"MaxAcceleration": 600.0,
+							"CollisionQueryRange": 360.0,
+							"PathOptimizationRange": 900.0,
+							"SeparationWeight": 2.0,
+							"ObstacleAvoidanceType": 3,
+							"TraverseWater": true,
+							"TraverseDoor": true,
+							"TraverseJump": true,
+							"GroundCost": 1.0,
+							"WaterCost": 1.0,
+							"DoorCost": 1.0,
+							"JumpCost": 1.0
+						},
+						"UseCrowd": true,
+						"NavMeshName": "",
+						"TargetLocation": {
+							"X": -160.0,
+							"Y": 0.0,
+							"Z": -240.0
+						},
+						"MoveOnBeginPlay": true
+					}
+				}
+			}
+		},
+		"13": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "Navigation Agent Actor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 3,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -313.7030029296875,
+								"Y": 10.0,
+								"Z": -396.10076904296875
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": -0.9737269878387451,
+								"Z": 0.0,
+								"W": 0.22771842777729034
+							},
+							"Scaling": {
+								"X": 60.0,
+								"Y": 150.0,
+								"Z": 60.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.5,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": false,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAsset": "Cube",
+						"NavigationArea": "GROUND"
+					}
+				},
+				"2": {
+					"Class": "PNavAgentComponent",
+					"ClassVersion": 1,
+					"Name": "NavAgentComponent",
+					"Root": false,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Settings": {
+							"Radius": 35.0,
+							"Height": 150.0,
+							"MoveSpeed": 300.0,
+							"TurnSpeedDegreesPerSecond": 240.0,
+							"AcceptanceRadius": 20.0,
+							"RepathInterval": 0.5,
+							"MaxAcceleration": 600.0,
+							"CollisionQueryRange": 360.0,
+							"PathOptimizationRange": 900.0,
+							"SeparationWeight": 2.0,
+							"ObstacleAvoidanceType": 3,
+							"TraverseWater": true,
+							"TraverseDoor": true,
+							"TraverseJump": true,
+							"GroundCost": 1.0,
+							"WaterCost": 1.0,
+							"DoorCost": 1.0,
+							"JumpCost": 1.0
+						},
+						"UseCrowd": true,
+						"NavMeshName": "",
+						"TargetLocation": {
+							"X": -310.0,
+							"Y": 0.0,
+							"Z": -390.0
+						},
+						"MoveOnBeginPlay": true
+					}
+				}
+			}
+		},
+		"14": {
+			"Class": "PActor",
+			"ClassVersion": 1,
+			"Name": "MaterialDemoActor",
+			"ParentActorID": 0,
+			"Properties": {},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 250.0,
+								"Y": 50.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 100.0,
+								"Y": 100.0,
+								"Z": 100.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PStaticMeshComponent",
+					"ClassVersion": 1,
+					"Name": "StaticMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": false,
+						"ReceiveShadow": true,
+						"AffectsNavigation": true,
+						"MaterialSlots": {
+							"Count": 1,
+							"0": {
+								"MaterialName": "Projects/Demo/M_DemoUnlit",
+								"ShaderName": "M_DemoUnlit",
+								"ProgramName": "BasePass",
+								"ParameterOverrides": {
+									"Count": 1,
+									"0": {
+										"BlockName": "MaterialParams",
+										"FieldName": "EmissiveMap",
+										"Kind": 2,
+										"Values": {
+											"Count": 0
+										},
+										"TextureAssetName": "M_DemoUnlit_Emissive"
+									}
+								}
+							}
+						},
+						"MeshAsset": "Cube",
+						"NavigationArea": "GROUND"
+					}
+				}
+			}
+		},
+		"15": {
+			"Class": "PCharacter",
+			"ClassVersion": 1,
+			"Name": "PlayableCharacter",
+			"ParentActorID": 0,
+			"Properties": {
+				"CharacterHeightStanding": 135.0,
+				"CharacterRadiusStanding": 30.0,
+				"CharacterHeightCrouching": 80.0,
+				"CharacterRadiusCrouching": 30.0,
+				"ControlMovementDuringJump": true,
+				"CharacterSpeed": 6.0,
+				"CharacterRunSpeed": 12.0,
+				"JumpSpeed": 4.0,
+				"Layer": "MOVING"
+			},
+			"Components": {
+				"Count": 2,
+				"0": {
+					"Class": "PSceneComponent",
+					"ClassVersion": 1,
+					"Name": "SceneComponent(Root)",
+					"Root": true,
+					"ParentComponentIndex": 0,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": -60.0,
+								"Y": 10.0,
+								"Z": -39.0
+							},
+							"Rotation": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 1.0
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC"
+					}
+				},
+				"1": {
+					"Class": "PSkeletalMeshComponent",
+					"ClassVersion": 1,
+					"Name": "SkeletalMeshComponent",
+					"Root": false,
+					"ParentComponentIndex": 1,
+					"Properties": {
+						"Transform": {
+							"Location": {
+								"X": 0.0,
+								"Y": 0.0,
+								"Z": 0.0
+							},
+							"Rotation": {
+								"X": 0.7071067690849304,
+								"Y": 0.0,
+								"Z": 0.0,
+								"W": 0.7071067690849304
+							},
+							"Scaling": {
+								"X": 1.0,
+								"Y": 1.0,
+								"Z": 1.0
+							}
+						},
+						"Mobility": "EMT_DYNAMIC",
+						"CastShadow": true,
+						"ReceiveShadow": true,
+						"AffectsNavigation": true,
+						"MaterialSlots": {
+							"Count": 0
+						},
+						"MeshAssets": {
+							"Mesh": "SK_Mannequin_UE4_WithWeapon_Mesh",
+							"Skeleton": "SK_Mannequin_UE4_WithWeapon_Skeleton"
+						},
+						"Animation": {
+							"Asset": "",
+							"Clip": "",
+							"LoopMode": "REPEAT",
+							"PlayRate": 1.0
+						},
+						"StateMachineAsset": "",
+						"RootMotionEnabled": false,
+						"RootMotionBoneIndex": 0
+					}
+				}
+			}
+		}
+	}
+}
