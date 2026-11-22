@@ -56,6 +56,16 @@ namespace PigeonEngine
 			return HasLevelExtension(FileName) ? FileName.Left(FileName.Length() - 7u) : FileName;
 		}
 
+		// SetNextWindowPos only while the popup exists: leaving it queued for a popup that
+		// does not open would leak the position into the next Begin() in this window.
+		void CenterNextModal(const CHAR* InPopupName)
+		{
+			if (ImGui::IsPopupOpen(InPopupName))
+			{
+				ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			}
+		}
+
 		void RefreshLevelList()
 		{
 			g_LevelFiles.Empty();
@@ -151,12 +161,17 @@ namespace PigeonEngine
 			const EString CurrentLevelPath = InManager->GetCurrentLevelPath();
 			const BOOL32 bIsCurrentLevel = (CurrentLevelPath == g_PendingLevelFilePath) ? TRUE : FALSE;
 
+			CenterNextModal("Rename Level");
 			if ((g_PendingLevelFileOperation == ELevelFileOperationType::RENAME) &&
-				ImGui::BeginPopupModal("Rename Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				ImGui::BeginPopupModal("Rename Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 			{
 				ImGui::TextUnformatted("Rename:");
 				ImGui::TextDisabled("%s", *SourceFileName);
 				ImGui::SetNextItemWidth(320.0f);
+				if (ImGui::IsWindowAppearing())
+				{
+					ImGui::SetKeyboardFocusHere();
+				}
 				BOOL32 bConfirm = ImGui::InputText("##RenameLevelName", g_LevelFileNameBuffer, sizeof(g_LevelFileNameBuffer),
 					ImGuiInputTextFlags_EnterReturnsTrue);
 				if (ImGui::Button("Rename"))
@@ -218,13 +233,17 @@ namespace PigeonEngine
 				}
 				ImGui::EndPopup();
 			}
-
+			CenterNextModal("Duplicate Level");
 			if ((g_PendingLevelFileOperation == ELevelFileOperationType::DUPLICATE) &&
-				ImGui::BeginPopupModal("Duplicate Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				ImGui::BeginPopupModal("Duplicate Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 			{
 				ImGui::TextUnformatted("Duplicate:");
 				ImGui::TextDisabled("%s", *SourceFileName);
 				ImGui::SetNextItemWidth(320.0f);
+				if (ImGui::IsWindowAppearing())
+				{
+					ImGui::SetKeyboardFocusHere();
+				}
 				BOOL32 bConfirm = ImGui::InputText("##DuplicateLevelName", g_LevelFileNameBuffer, sizeof(g_LevelFileNameBuffer),
 					ImGuiInputTextFlags_EnterReturnsTrue);
 				if (ImGui::Button("Duplicate"))
@@ -278,8 +297,9 @@ namespace PigeonEngine
 				ImGui::EndPopup();
 			}
 
+			CenterNextModal("Delete Level");
 			if ((g_PendingLevelFileOperation == ELevelFileOperationType::REMOVE) &&
-				ImGui::BeginPopupModal("Delete Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				ImGui::BeginPopupModal("Delete Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 			{
 				ImGui::TextUnformatted("Delete this level file? This cannot be undone.");
 				ImGui::TextDisabled("%s", *SourceFileName);
@@ -419,148 +439,6 @@ namespace PigeonEngine
 				g_bLevelListDirty = TRUE;
 			}
 
-			if (g_bSaveAsPopupRequested)
-			{
-				g_bSaveAsPopupRequested = FALSE;
-				EString InitialName = EString(PE_TEXT("NewLevel.PLevel"));
-				if (CurrentLevelPath.Length() > 0u)
-				{
-					InitialName = GetLevelFileName(CurrentLevelPath);
-				}
-				const UINT32 NameLength = EMath::Min(InitialName.Length(), static_cast<UINT32>(sizeof(g_SaveAsNameBuffer) - 1u));
-				memset(g_SaveAsNameBuffer, 0, sizeof(g_SaveAsNameBuffer));
-				if (NameLength > 0u)
-				{
-					memcpy(g_SaveAsNameBuffer, *InitialName, NameLength);
-				}
-				ImGui::OpenPopup("Save Level As");
-			}
-			if (g_bUnsavedPromptRequested)
-			{
-				g_bUnsavedPromptRequested = FALSE;
-				EString InitialName = EString(PE_TEXT("NewLevel.PLevel"));
-				if (CurrentLevelPath.Length() > 0u)
-				{
-					InitialName = GetLevelFileName(CurrentLevelPath);
-				}
-				const UINT32 NameLength = EMath::Min(InitialName.Length(), static_cast<UINT32>(sizeof(g_SaveAsNameBuffer) - 1u));
-				memset(g_SaveAsNameBuffer, 0, sizeof(g_SaveAsNameBuffer));
-				if (NameLength > 0u)
-				{
-					memcpy(g_SaveAsNameBuffer, *InitialName, NameLength);
-				}
-				ImGui::OpenPopup("Unsaved Level Changes");
-			}
-			if (ImGui::BeginPopupModal("Unsaved Level Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				ImGui::TextUnformatted("The current level has unsaved changes.");
-				if (CurrentLevelPath.Length() > 0u)
-				{
-					ImGui::TextDisabled("%s", *CurrentLevelPath);
-				}
-				else
-				{
-					ImGui::TextUnformatted("Save as:");
-					ImGui::SetNextItemWidth(320.0f);
-					ImGui::InputText("##UnsavedName", g_SaveAsNameBuffer, sizeof(g_SaveAsNameBuffer));
-				}
-
-				if (ImGui::Button("Save"))
-				{
-					EString SavePath = CurrentLevelPath;
-					if (SavePath.Length() == 0u)
-					{
-						EString FileName(g_SaveAsNameBuffer);
-						if ((FileName.Length() > 0u) && (!HasLevelExtension(FileName)))
-						{
-							FileName += EString(PE_TEXT(".PLevel"));
-						}
-						if (FileName.Length() > 0u)
-						{
-							SavePath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName;
-						}
-					}
-					if (InManager->ConfirmUnsavedPromptWithSave(SavePath))
-					{
-						ImGui::CloseCurrentPopup();
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Discard"))
-				{
-					InManager->ConfirmUnsavedPromptWithDiscard();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Cancel"))
-				{
-					InManager->CancelPendingDiscardAction();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
-			if (ImGui::BeginPopupModal("Save Level As", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				ImGui::TextUnformatted("File name (saved under Assets/Levels):");
-				ImGui::SetNextItemWidth(320.0f);
-				ImGui::InputText("##SaveAsName", g_SaveAsNameBuffer, sizeof(g_SaveAsNameBuffer));
-				if (ImGui::Button("Save"))
-				{
-					EString FileName(g_SaveAsNameBuffer);
-					if ((FileName.Length() > 0u) && (!HasLevelExtension(FileName)))
-					{
-						FileName += EString(PE_TEXT(".PLevel"));
-					}
-					if (FileName.Length() > 0u)
-					{
-						InManager->RequestSaveLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
-					}
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Cancel"))
-				{
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
-			DrawLevelFileOperationPopup(InManager);
-
-			if (g_bOpenPopupRequested)
-			{
-				g_bOpenPopupRequested = FALSE;
-				g_bLevelListDirty = TRUE;
-				ImGui::OpenPopup("Open Level");
-			}
-			if (ImGui::BeginPopupModal("Open Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				if (g_bLevelListDirty)
-				{
-					RefreshLevelList();
-				}
-				if (g_LevelFiles.Num<UINT32>() == 0u)
-				{
-					ImGui::TextUnformatted("No .PLevel files under Assets/Levels.");
-				}
-				for (UINT32 Index = 0u, Num = g_LevelFiles.Num<UINT32>(); Index < Num; Index++)
-				{
-					const EString& FileName = g_LevelFiles[Index];
-					ImGui::PushID(Index);
-					if (ImGui::Selectable(*FileName))
-					{
-						InManager->RequestLoadLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::PopID();
-				}
-				ImGui::Separator();
-				if (ImGui::Button("Cancel"))
-				{
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
-
 			ImGui::Separator();
 			ImGui::TextUnformatted("Levels");
 			if (ImGui::BeginChild("LevelList", ImVec2(0.0f, 180.0f), TRUE))
@@ -602,6 +480,176 @@ namespace PigeonEngine
 			}
 			ImGui::EndChild();
 			ImGui::TextDisabled("Right-click a level to rename, duplicate or delete it.");
+		}
+
+		void DrawLevelDialogs(EWorldManager* InManager)
+		{
+			if (!InManager)
+			{
+				return;
+			}
+
+			// Every Level dialog is transient: NoSavedSettings keeps its position/size out of
+			// ImGuiEngine.ini, so a previous session cannot reopen or displace it and stale
+			// tiny first-frame measurements are never reused.
+
+			const EString& CurrentLevelPath = InManager->GetCurrentLevelPath();
+
+			if (g_bSaveAsPopupRequested)
+			{
+				g_bSaveAsPopupRequested = FALSE;
+				EString InitialName = EString(PE_TEXT("NewLevel.PLevel"));
+				if (CurrentLevelPath.Length() > 0u)
+				{
+					InitialName = GetLevelFileName(CurrentLevelPath);
+				}
+				const UINT32 NameLength = EMath::Min(InitialName.Length(), static_cast<UINT32>(sizeof(g_SaveAsNameBuffer) - 1u));
+				memset(g_SaveAsNameBuffer, 0, sizeof(g_SaveAsNameBuffer));
+				if (NameLength > 0u)
+				{
+					memcpy(g_SaveAsNameBuffer, *InitialName, NameLength);
+				}
+				ImGui::OpenPopup("Save Level As");
+			}
+			if (g_bUnsavedPromptRequested)
+			{
+				g_bUnsavedPromptRequested = FALSE;
+				EString InitialName = EString(PE_TEXT("NewLevel.PLevel"));
+				if (CurrentLevelPath.Length() > 0u)
+				{
+					InitialName = GetLevelFileName(CurrentLevelPath);
+				}
+				const UINT32 NameLength = EMath::Min(InitialName.Length(), static_cast<UINT32>(sizeof(g_SaveAsNameBuffer) - 1u));
+				memset(g_SaveAsNameBuffer, 0, sizeof(g_SaveAsNameBuffer));
+				if (NameLength > 0u)
+				{
+					memcpy(g_SaveAsNameBuffer, *InitialName, NameLength);
+				}
+				ImGui::OpenPopup("Unsaved Level Changes");
+			}
+			CenterNextModal("Unsaved Level Changes");
+			if (ImGui::BeginPopupModal("Unsaved Level Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+			{
+				ImGui::TextUnformatted("The current level has unsaved changes.");
+				BOOL32 bConfirmByEnter = FALSE;
+				if (CurrentLevelPath.Length() > 0u)
+				{
+					ImGui::TextDisabled("%s", *CurrentLevelPath);
+				}
+				else
+				{
+					ImGui::TextUnformatted("Save as:");
+					ImGui::SetNextItemWidth(320.0f);
+					if (ImGui::IsWindowAppearing())
+					{
+						ImGui::SetKeyboardFocusHere();
+					}
+					bConfirmByEnter = ImGui::InputText("##UnsavedName", g_SaveAsNameBuffer, sizeof(g_SaveAsNameBuffer),
+						ImGuiInputTextFlags_EnterReturnsTrue);
+				}
+
+				if (ImGui::Button("Save") || (bConfirmByEnter != FALSE))
+				{
+					EString SavePath = CurrentLevelPath;
+					if (SavePath.Length() == 0u)
+					{
+						EString FileName(g_SaveAsNameBuffer);
+						if ((FileName.Length() > 0u) && (!HasLevelExtension(FileName)))
+						{
+							FileName += EString(PE_TEXT(".PLevel"));
+						}
+						if (FileName.Length() > 0u)
+						{
+							SavePath = EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName;
+						}
+					}
+					if (InManager->ConfirmUnsavedPromptWithSave(SavePath))
+					{
+						ImGui::CloseCurrentPopup();
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Discard"))
+				{
+					InManager->ConfirmUnsavedPromptWithDiscard();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					InManager->CancelPendingDiscardAction();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+			CenterNextModal("Save Level As");
+			if (ImGui::BeginPopupModal("Save Level As", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+			{
+				ImGui::TextUnformatted("File name (saved under Assets/Levels):");
+				ImGui::SetNextItemWidth(320.0f);
+				if (ImGui::IsWindowAppearing())
+				{
+					ImGui::SetKeyboardFocusHere();
+				}
+				const BOOL32 bConfirmByEnter = ImGui::InputText("##SaveAsName", g_SaveAsNameBuffer, sizeof(g_SaveAsNameBuffer),
+					ImGuiInputTextFlags_EnterReturnsTrue);
+				if (ImGui::Button("Save") || (bConfirmByEnter != FALSE))
+				{
+					EString FileName(g_SaveAsNameBuffer);
+					if ((FileName.Length() > 0u) && (!HasLevelExtension(FileName)))
+					{
+						FileName += EString(PE_TEXT(".PLevel"));
+					}
+					if (FileName.Length() > 0u)
+					{
+						InManager->RequestSaveLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
+					}
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
+			DrawLevelFileOperationPopup(InManager);
+
+			if (g_bOpenPopupRequested)
+			{
+				g_bOpenPopupRequested = FALSE;
+				g_bLevelListDirty = TRUE;
+				ImGui::OpenPopup("Open Level");
+			}
+			CenterNextModal("Open Level");
+			if (ImGui::BeginPopupModal("Open Level", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+			{
+				if (g_bLevelListDirty)
+				{
+					RefreshLevelList();
+				}
+				if (g_LevelFiles.Num<UINT32>() == 0u)
+				{
+					ImGui::TextUnformatted("No .PLevel files under Assets/Levels.");
+				}
+				for (UINT32 Index = 0u, Num = g_LevelFiles.Num<UINT32>(); Index < Num; Index++)
+				{
+					const EString& FileName = g_LevelFiles[Index];
+					ImGui::PushID(Index);
+					if (ImGui::Selectable(*FileName))
+					{
+						InManager->RequestLoadLevel(EString(EBaseSettings::ENGINE_LEVEL_PATH) + FileName);
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::PopID();
+				}
+				ImGui::Separator();
+				if (ImGui::Button("Cancel"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 		}
 	}
 }

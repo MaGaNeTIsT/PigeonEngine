@@ -6,14 +6,31 @@
 #include "Component/Character/MovementComponent.h"
 #include "World/World.h"
 #include <Development/EditorLogManager.h>
+#include <Reflection/Property.h>
 
 
 namespace PigeonEngine
 {
 
+#if ENGINE_EDITOR_ONLY
+	static void RegisterClassProperties()
+	{
+		// EDITOR_ONLY keeps the property out of SerializeObject: the level format already
+		// writes the actor Name as its own top-level field, so this row is a view onto the
+		// same value for the Details panel, not a second serialized copy.
+		AddClassPropertyAccessors<PActor, EString>(GetClassHashCode<PActor>(), PE_TEXT("Name"),
+			[](const PActor* InActor) -> EString { return POBJ_DEBUGNAME_GET(InActor); },
+			[](PActor* InActor, const EString& InName) -> void { POBJ_DEBUGNAME_SET(InActor, InName); },
+			static_cast<UINT32>(EPropertyFlagsType::EDIT_ANYWHERE) | static_cast<UINT32>(EPropertyFlagsType::EDITOR_ONLY));
+	}
+#endif
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PActor, PObject>();
+#if ENGINE_EDITOR_ONLY
+		RegisterClassProperties();
+#endif
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

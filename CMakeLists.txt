@@ -122,11 +122,9 @@ configure_file(
 	${BASE_CONFIG_SOURCE_DIR}/BaseConfig.h.in
 	${CONFIGS_BINARY_DIR}/BaseConfig.h
 )
-configure_file(
-	${BASE_CONFIG_SOURCE_DIR}/ImGUIEngine.ini
-	${CONFIGS_BINARY_DIR}/ImGUIEngine.ini
-	COPYONLY
-)
+# ImGUIEngine.ini is runtime state, not a build input: ImGui creates and rewrites it with
+# the current docking layout. Copying the committed template here on configure reset the
+# user's layout on every CMake regeneration, so it is deliberately not seeded.
 # Settings templates are copied for runs whose working directory is the build tree;
 # the runtime only writes the *.user.json sibling, never the template.
 configure_file(

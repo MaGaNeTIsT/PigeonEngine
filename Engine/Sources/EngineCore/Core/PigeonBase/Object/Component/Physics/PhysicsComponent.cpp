@@ -48,6 +48,12 @@ namespace PigeonEngine
 	void PPhysicsComponent::Init()
 	{
 		PActorComponent::Init();
+#if ENGINE_EDITOR_ONLY
+		// The component has no regular Tick; EDITOR is the only domain it needs, and that
+		// domain is registered only for tickable components (RegisterTickDomains). Without
+		// this, EditorTick never runs and Show Collision queues no shapes.
+		SetIsTickable(TRUE);
+#endif
 		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
 		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FContactEventListenerInterface*>(this));
 		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FPhysicsContactModifierInterface*>(this));

@@ -1475,6 +1475,9 @@ namespace PigeonEngine
 				bPhysicsOk = Box &&
 					(LoadedPhysics->MotionType == PhysicsUtility::EMotionType::Kinematic) &&
 					(LoadedPhysics->Layer.GetValue() == 1u) &&
+					// EDITOR-domain dispatch is gated on IsTickable; without this the
+					// collision debug shapes never queue.
+					(LoadedPhysics->IsTickable() != FALSE) &&
 					IsVectorNearlyEqual(Box->HalfExtent, Vector3(10.f, 20.f, 30.f), 1.0e-4f) &&
 					(EMath::Abs(Box->ConvexRadius - 0.05f) <= 1.0e-5f);
 			}
@@ -2314,6 +2317,33 @@ namespace PigeonEngine
 		const BOOL32 bUndoDeleteActorOk = Stack.Undo();
 		const BOOL32 bUndoDeleteActorValue = (World->GetAllActors().Num<UINT32>() == 1u) ? TRUE : FALSE;
 
+		// Actor Name is an EDITOR_ONLY reflected property; the outline rename and the Details
+		// row both commit through this command path, so exercise its undo/redo here.
+		BOOL32 bRenamePushed = FALSE;
+		BOOL32 bUndoRenameOk = FALSE;
+		BOOL32 bUndoRenameValue = FALSE;
+		BOOL32 bRedoRenameOk = FALSE;
+		BOOL32 bRedoRenameValue = FALSE;
+		if (World->GetAllActors().Num<UINT32>() > 0u)
+		{
+			PActor* RenameActor = World->GetAllActors()[0];
+			const EString OldName = POBJ_DEBUGNAME_GET(RenameActor);
+			const EString NewName(PE_TEXT("SanityRenamedActor"));
+			FPropertyValue BeforeName;
+			BeforeName.Type = EPropertyValueType::STRING;
+			BeforeName.StringValue = OldName;
+			POBJ_DEBUGNAME_SET(RenameActor, NewName);
+			FPropertyValue AfterName;
+			AfterName.Type = EPropertyValueType::STRING;
+			AfterName.StringValue = NewName;
+			bRenamePushed = PushSetPropertyCommand(Stack, MakeObjectHandle(RenameActor), FALSE,
+				GetClassHashCode<PActor>(), EString(PE_TEXT("Name")), BeforeName, AfterName);
+			bUndoRenameOk = Stack.Undo();
+			bUndoRenameValue = (POBJ_DEBUGNAME_GET(RenameActor) == OldName) ? TRUE : FALSE;
+			bRedoRenameOk = Stack.Redo();
+			bRedoRenameValue = (POBJ_DEBUGNAME_GET(RenameActor) == NewName) ? TRUE : FALSE;
+		}
+
 		Stack.Clear();
 		World->Destroy();
 		(void)bSpawnPushed;
@@ -2333,7 +2363,8 @@ namespace PigeonEngine
 			bUndoPropertyAgainOk && bUndoPropertyAgainValue &&
 			bUndoAddOk && bUndoAddValue && bUndoSpawnOk && bUndoSpawnValue && bRedoSpawnOk && bRedoSpawnValue &&
 			bTransformPushed && bUndoTransformOk && bUndoTransformValue && bRedoTransformOk && bRedoTransformValue &&
-			bDeleteActorPushed && bDeleteActorValue && bUndoDeleteActorOk && bUndoDeleteActorValue) ? TRUE : FALSE;
+			bDeleteActorPushed && bDeleteActorValue && bUndoDeleteActorOk && bUndoDeleteActorValue &&
+			bRenamePushed && bUndoRenameOk && bUndoRenameValue && bRedoRenameOk && bRedoRenameValue) ? TRUE : FALSE;
 		if (!bOk)
 		{
 			PE_LOG_ERROR(EString(PE_TEXT("command stack detail: pushed=")) + EString::FromInt(bSpawnPushed) + EString::FromInt(bAddPushed) + EString::FromInt(bPropertyPushed) + EString::FromInt(bDeletePushed) +
@@ -2348,7 +2379,8 @@ namespace PigeonEngine
 				EString(PE_TEXT(" redoSpawn=")) + EString::FromInt(bRedoSpawnOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoSpawnValue) +
 				EString(PE_TEXT(" transform=")) + EString::FromInt(bTransformPushed) + EString(PE_TEXT("/")) + EString::FromInt(bUndoTransformOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoTransformValue) + EString(PE_TEXT("/")) + EString::FromInt(bRedoTransformOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoTransformValue) +
 				EString(PE_TEXT(" deleteActor=")) + EString::FromInt(bDeleteActorPushed) + EString(PE_TEXT("/")) + EString::FromInt(bDeleteActorValue) +
-				EString(PE_TEXT(" undoDeleteActor=")) + EString::FromInt(bUndoDeleteActorOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoDeleteActorValue));
+				EString(PE_TEXT(" undoDeleteActor=")) + EString::FromInt(bUndoDeleteActorOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoDeleteActorValue) +
+				EString(PE_TEXT(" rename=")) + EString::FromInt(bRenamePushed) + EString(PE_TEXT("/")) + EString::FromInt(bUndoRenameOk) + EString(PE_TEXT("/")) + EString::FromInt(bUndoRenameValue) + EString(PE_TEXT("/")) + EString::FromInt(bRedoRenameOk) + EString(PE_TEXT("/")) + EString::FromInt(bRedoRenameValue));
 		}
 		return bOk;
 	}

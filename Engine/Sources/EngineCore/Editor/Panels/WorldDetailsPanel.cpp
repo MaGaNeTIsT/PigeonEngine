@@ -18,8 +18,8 @@ namespace PigeonEngine
 {
 	namespace
 	{
-		// PActor extras: the scene component tree and the non-scene component list. The name
-		// row and the reflection grid are host-level and drawn before this.
+		// PActor extras: the scene component tree and the non-scene component list. The
+		// reflection grid (including the editor-only Name row) is drawn before this.
 		void DrawDefaultActorExtras(PActor* Actor, PWorld* World)
 		{
 			if (Actor->GetRootComponent())
@@ -114,21 +114,9 @@ namespace PigeonEngine
 				return;
 			}
 
-			// Host frame: the actor's name row, then the grid plus every per-class editor on
-			// the actor chain, then the selected component's details.
-			CHAR NameBuffer[256] = {};
-			{
-				const EString& ActorDebugName = POBJ_DEBUGNAME_GET(SelectedActor);
-				const UINT32 NameLength = EMath::Min(ActorDebugName.Length(), static_cast<UINT32>(sizeof(NameBuffer) - 1u));
-				if (NameLength > 0u)
-				{
-					memcpy(NameBuffer, *ActorDebugName, NameLength);
-				}
-			}
-			if (ImGui::InputText("##ActorName", NameBuffer, sizeof(NameBuffer)))
-			{
-				POBJ_DEBUGNAME_SET(SelectedActor, EString(NameBuffer));
-			}
+			// The actor Name is an EDITOR_ONLY reflected property, so the grid draws (and
+			// commits it through the command stack) like every other value; no hand-written
+			// row is needed here.
 			EEditorCustomization::DrawActorDetails(SelectedActor, InWorld);
 
 			PActorComponent* SelectedComponent = EEditorWorldContext::GetSelectedComponent(InWorld);

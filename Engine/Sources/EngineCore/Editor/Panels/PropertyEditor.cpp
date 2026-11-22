@@ -335,6 +335,10 @@ namespace PigeonEngine
 				memcpy(Buffer, *InOutValue.StringValue, Length);
 			}
 			const BOOL32 bChanged = ImGui::InputText("##value", Buffer, sizeof(Buffer));
+			// InputText reverts its buffer on Escape and deactivates in the same frame. The
+			// reverted text still reports a change, so the live value is restored above, but
+			// committing here would record a no-op undo entry for the edit start.
+			const BOOL32 bCanceled = (ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) ? TRUE : FALSE;
 			if (ImGui::IsItemActivated())
 			{
 				StoreEditStart(InProperty, InOutValue);
@@ -344,7 +348,7 @@ namespace PigeonEngine
 				InOutValue.StringValue = Buffer;
 				InProperty.SetValue(InObject, InOutValue);
 			}
-			if (ImGui::IsItemDeactivatedAfterEdit())
+			if ((!bCanceled) && ImGui::IsItemDeactivatedAfterEdit())
 			{
 				FPropertyValue Before;
 				if (TakeEditStart(InProperty, Before))
@@ -1267,10 +1271,14 @@ namespace PigeonEngine
 			FPropertyValue Value;
 			InProperty.GetValue(InObject, Value);
 
+			// The object is part of the widget id: selecting another actor/component while an
+			// InputText is active must not hand the old edit state to the new object's row.
+			ImGui::PushID(InObject);
 			ImGui::PushID(&InProperty);
 			if (InProperty.ValueType == EPropertyValueType::STRUCT)
 			{
 				const BOOL32 bChanged = DrawStructProperty(InProperty, InObject, InClassHash, Value);
+				ImGui::PopID();
 				ImGui::PopID();
 				return bChanged;
 			}
@@ -1334,6 +1342,7 @@ namespace PigeonEngine
 				break;
 			}
 
+			ImGui::PopID();
 			ImGui::PopID();
 			return bChanged;
 		}

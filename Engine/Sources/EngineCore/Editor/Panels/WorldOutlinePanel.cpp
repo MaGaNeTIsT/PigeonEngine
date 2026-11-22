@@ -20,9 +20,79 @@ namespace PigeonEngine
 {
 	namespace
 	{
-		// Actor rename state: one rename at a time, kept alive between frames.
-		PActor* g_RenameActor = nullptr;
+		// Actor rename state: one rename at a time, kept alive between frames. The target is
+		// a handle, not a raw pointer: deleting the actor or reloading the level must turn
+		// the pending edit into a no-op rather than a stale dereference.
+		FObjectHandle g_RenameActorHandle;
+		PActor* g_RenameTarget = nullptr;
 		CHAR g_RenameBuffer[256] = {};
+		BOOL32 g_bRenameFocusRequested = FALSE;
+		INT32 g_RenameFocusAttempts = 0;
+		BOOL32 g_bRenameRowDrawn = FALSE;
+		// The context menu starts a rename after the row's input block already ran for this
+		// frame. Without this flag the end-of-pass "row not drawn" cleanup would cancel the
+		// request before the next frame can show the input.
+		BOOL32 g_bRenameStartedThisFrame = FALSE;
+		// Frame of the last GenerateOutline call. A gap means the outline window was hidden
+		// or collapsed and the edit widget did not exist, so the pending edit is dropped.
+		INT64 g_RenameLastFrame = -1;
+
+		void CancelRename()
+		{
+			g_RenameActorHandle = FObjectHandle();
+			g_RenameTarget = nullptr;
+			g_bRenameFocusRequested = FALSE;
+			g_RenameFocusAttempts = 0;
+			g_bRenameStartedThisFrame = FALSE;
+			g_RenameBuffer[0] = 0;
+		}
+
+		void BeginRename(PActor* Actor)
+		{
+			if (!Actor)
+			{
+				return;
+			}
+			g_RenameActorHandle = MakeObjectHandle(Actor);
+			g_RenameTarget = Actor;
+			g_bRenameFocusRequested = TRUE;
+			g_RenameFocusAttempts = 0;
+			g_bRenameStartedThisFrame = TRUE;
+			const EString& ActorName = POBJ_DEBUGNAME_GET(Actor);
+			const UINT32 NameLength = EMath::Min(ActorName.Length(), static_cast<UINT32>(sizeof(g_RenameBuffer) - 1u));
+			memset(g_RenameBuffer, 0, sizeof(g_RenameBuffer));
+			if (NameLength > 0u)
+			{
+				memcpy(g_RenameBuffer, *ActorName, NameLength);
+			}
+		}
+
+		void CommitRename(PActor* Actor, PWorld* World)
+		{
+			const EString NewName(g_RenameBuffer);
+			const EString OldName = POBJ_DEBUGNAME_GET(Actor);
+			if ((NewName.Length() == 0u) || (NewName == OldName))
+			{
+				CancelRename();
+				return;
+			}
+			// Apply first, then record: PushSetPropertyCommand expects an executed edit. The
+			// reflected Name property is the same path Details uses, so undo, redo and the
+			// level dirty flag behave identically from both places.
+			POBJ_DEBUGNAME_SET(Actor, NewName);
+			if (FWorldEditorCommandStack* Commands = EEditorWorldContext::GetEditorCommandStack(World))
+			{
+				FPropertyValue Before;
+				Before.Type = EPropertyValueType::STRING;
+				Before.StringValue = OldName;
+				FPropertyValue After;
+				After.Type = EPropertyValueType::STRING;
+				After.StringValue = NewName;
+				PushSetPropertyCommand(*Commands, MakeObjectHandle(Actor), FALSE, GetClassHashCode<PActor>(),
+					EString(PE_TEXT("Name")), Before, After);
+			}
+			CancelRename();
+		}
 
 		BOOL32 IsClassDerivedFrom(const size_t& InClassHash, const size_t& InBaseHash)
 		{
@@ -44,7 +114,55 @@ namespace PigeonEngine
 			ImGui::PushID((void*)Actor);
 			BOOL8 bTreeNodeExpand	= ImGui::TreeNodeEx("##node", TreeNodeFlag);
 			ImGui::SameLine();
-			BOOL8 bSelected		= ImGui::Selectable(*(POBJ_DEBUGNAME_GET(Actor)), &bSelectedActor);
+			BOOL8 bSelected = FALSE;
+			if (g_RenameTarget == Actor)
+			{
+				g_bRenameRowDrawn = TRUE;
+				ImGui::SetNextItemWidth(220.0f);
+				if (g_bRenameFocusRequested != FALSE)
+				{
+					// The context menu restores focus to the window that was active before it
+					// opened (often EditorController), and SetKeyboardFocusHere alone cannot
+					// move focus into a window that is not the NavWindow. Focus the outline
+					// first, then request the inline item.
+					ImGui::SetWindowFocus();
+					ImGui::SetKeyboardFocusHere();
+				}
+				const BOOL32 bConfirm = ImGui::InputText("##ActorRename", g_RenameBuffer, sizeof(g_RenameBuffer),
+					ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+				if (g_bRenameFocusRequested != FALSE)
+				{
+					g_RenameFocusAttempts++;
+					if ((ImGui::IsItemActive() != false) || (g_RenameFocusAttempts >= 3))
+					{
+						g_bRenameFocusRequested = FALSE;
+					}
+				}
+				const BOOL32 bDeactivated = ImGui::IsItemDeactivated();
+				// Escape reverts the buffer inside InputText and deactivates in the same frame.
+				const BOOL32 bCanceled = (bDeactivated && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) ? TRUE : FALSE;
+				if (bConfirm != FALSE)
+				{
+					CommitRename(Actor, World);
+				}
+				else if (bDeactivated != FALSE)
+				{
+					// Clicking another row, the viewport or empty space commits, matching the
+					// rest of the editor's text fields; Escape is the explicit cancel.
+					if (bCanceled != FALSE)
+					{
+						CancelRename();
+					}
+					else
+					{
+						CommitRename(Actor, World);
+					}
+				}
+			}
+			else
+			{
+				bSelected = ImGui::Selectable(*(POBJ_DEBUGNAME_GET(Actor)), &bSelectedActor);
+			}
 
 			// Hierarchy editing: dragging this row carries the actor, dropping a dragged actor
 			// here re-parents it below this one (KEEP_WORLD, undoable through the command stack).
@@ -72,14 +190,7 @@ namespace PigeonEngine
 			{
 				if (ImGui::MenuItem("Rename"))
 				{
-					g_RenameActor = Actor;
-					const EString& ActorName = POBJ_DEBUGNAME_GET(Actor);
-					const UINT32 NameLength = EMath::Min(ActorName.Length(), static_cast<UINT32>(sizeof(g_RenameBuffer) - 1u));
-					memset(g_RenameBuffer, 0, sizeof(g_RenameBuffer));
-					if (NameLength > 0u)
-					{
-						memcpy(g_RenameBuffer, *ActorName, NameLength);
-					}
+					BeginRename(Actor);
 				}
 				FWorldEditorCommandStack* Commands = EEditorWorldContext::GetEditorCommandStack(World);
 				if (Commands && ImGui::MenuItem("Delete"))
@@ -123,21 +234,6 @@ namespace PigeonEngine
 				ImGui::EndPopup();
 			}
 			ImGui::PopID();
-
-			if (g_RenameActor == Actor)
-			{
-				ImGui::SetNextItemWidth(220.0f);
-				ImGui::InputText("##ActorRename", g_RenameBuffer, sizeof(g_RenameBuffer));
-				if (ImGui::IsItemDeactivatedAfterEdit() || ImGui::IsKeyPressed(ImGuiKey_Enter))
-				{
-					POBJ_DEBUGNAME_SET(Actor, EString(g_RenameBuffer));
-					g_RenameActor = nullptr;
-				}
-				else if (ImGui::IsKeyPressed(ImGuiKey_Escape))
-				{
-					g_RenameActor = nullptr;
-				}
-			}
 
 			if (bTreeNodeExpand)
 			{
@@ -230,6 +326,30 @@ namespace PigeonEngine
 			}
 			FWorldEditorCommandStack* Commands = EEditorWorldContext::GetEditorCommandStack(InWorld);
 
+			// A frame gap means the outline window was hidden or collapsed and the inline
+			// editor did not run; resuming a stale buffer would show a field with no focus.
+			const INT64 FrameCount = static_cast<INT64>(ImGui::GetFrameCount());
+			if ((g_RenameActorHandle.IsValid() != FALSE) && (g_RenameLastFrame != (FrameCount - 1)))
+			{
+				CancelRename();
+			}
+			g_RenameLastFrame = FrameCount;
+			g_RenameTarget = (g_RenameActorHandle.IsValid() != FALSE) ? InWorld->ResolveActor(g_RenameActorHandle) : nullptr;
+			if ((g_RenameActorHandle.IsValid() != FALSE) && (g_RenameTarget == nullptr))
+			{
+				CancelRename();
+			}
+			g_bRenameRowDrawn = FALSE;
+			g_bRenameStartedThisFrame = FALSE;
+
+			if ((g_RenameActorHandle.IsValid() == FALSE) &&
+				(ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) != false) &&
+				(ImGui::GetIO().WantTextInput == false) &&
+				(ImGui::IsKeyPressed(ImGuiKey_F2, false) != false))
+			{
+				BeginRename(EEditorWorldContext::GetSelectedActor(InWorld));
+			}
+
 			if (Commands)
 			{
 				if (ImGui::Button("Create Actor"))
@@ -275,6 +395,15 @@ namespace PigeonEngine
 			for (PActor* Actor : RootActor->GetAllActorsAttached())
 			{
 				GenerateActorNode(Actor, InWorld);
+			}
+
+			// A target whose row was not reached (collapsed parent, filtered tree) cannot be
+			// edited this frame; drop the pending edit instead of keeping it alive unseen.
+			// A rename started by the row's own context menu is exempt for this frame: that
+			// menu is handled after the input block, so the row was already drawn without it.
+			if ((g_RenameActorHandle.IsValid() != FALSE) && (g_bRenameRowDrawn == FALSE) && (g_bRenameStartedThisFrame == FALSE))
+			{
+				CancelRename();
 			}
 
 			// Detach drop zone: dropping a dragged actor here re-homes it under the world

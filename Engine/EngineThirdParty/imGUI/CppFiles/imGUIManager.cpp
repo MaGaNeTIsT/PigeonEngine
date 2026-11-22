@@ -50,8 +50,13 @@ namespace PigeonEngine
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		ImGui::StyleColorsDark();
 
-		io.IniFilename = "./Engine/Configs/ImGUIEngine.ini";
-		io.LogFilename = "./Engine/Configs/ImGUIEngineLog.txt";
+		// Absolute paths from the configured build directory: a relative "./Engine/Configs"
+		// silently changes target when the editor is launched from another working directory,
+		// which makes the docking layout look like it is not being saved.
+		static const EString ImGuiIniPath = EString(EBaseSettings::ENGINE_CONFIG_DIRECTORY) + EString(PE_TEXT("ImGUIEngine.ini"));
+		static const EString ImGuiLogPath = EString(EBaseSettings::ENGINE_CONFIG_DIRECTORY) + EString(PE_TEXT("ImGUIEngineLog.txt"));
+		io.IniFilename = *ImGuiIniPath;
+		io.LogFilename = *ImGuiLogPath;
 		io.IniSavingRate = 30.f;
 
 		InitWnd();
@@ -70,6 +75,18 @@ namespace PigeonEngine
 	}
 	void CImGUIManager::ShutDown()
 	{
+		// ImGui normally flushes its .ini on the SettingsDirtyTimer (30 s here). Without this
+		// explicit save, a layout change made shortly before exit is lost when the process
+		// closes, which looks like the editor refusing to remember its docking layout.
+		if (ImGui::GetCurrentContext() != nullptr)
+		{
+			ImGuiIO& ShutdownIO = ImGui::GetIO();
+			if (ShutdownIO.IniFilename != nullptr)
+			{
+				ImGui::SaveIniSettingsToDisk(ShutdownIO.IniFilename);
+			}
+		}
+
 		// Platform windows first: destroying them runs Renderer_DestroyWindow, which releases
 		// the swap chains, and those have to go before the device does.
 		ShutDownWndViewportSupport();

@@ -103,8 +103,9 @@ namespace PigeonEngine
 		ImGui::Separator();
 
 		// The collision shapes a physics body draws are queued as debug wireframe primitives of
-		// their own, so this decides whether they are queued at all. Off by default: a scene full
-		// of bodies otherwise fills the view with boxes.
+		// their own, so this decides whether they are queued at all. The wireframe overlay has
+		// its own master switch below; with that off, nothing reaches the render pass even when
+		// this is on.
 		FPhysicsCommonSettings* PhysicsSettings = FPhysicsCommonSettings::GetSingleton();
 		bool bShowCollision = (PhysicsSettings->bDrawCollision != FALSE);
 		if (ImGui::Checkbox("Show Collision", &bShowCollision))
@@ -122,6 +123,10 @@ namespace PigeonEngine
 		{
 			DebugWireframeManager->SetDebugWireframeVisible(bShowDebugWireframe ? TRUE : FALSE);
 			EEditorSettings::SetShowDebugWireframe(bShowDebugWireframe ? TRUE : FALSE);
+		}
+		if ((PhysicsSettings->bDrawCollision != FALSE) && (DebugWireframeManager->IsDebugWireframeVisible() == FALSE))
+		{
+			ImGui::TextDisabled("Collision shapes are hidden while Show Debug Wireframe is off.");
 		}
 
 		// The navigation overlay is drawn from the manager's cached segment list, so it keeps a

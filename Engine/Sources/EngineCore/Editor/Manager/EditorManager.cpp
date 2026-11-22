@@ -628,6 +628,25 @@ namespace PigeonEngine
 				DrawTranslationGizmo(PC->GetCamera(), SelectedComponent, bDragging ? DragAxis : EGizmoAxis::NONE);
 			}
 		}
+
+		// Level dialogs are reachable from the File menu while the Level window is hidden or
+		// collapsed, so they cannot live in that window's draw callback: ImGui popup ids are
+		// relative to the current window, and a fixed invisible host keeps the ID stack alive
+		// every frame. Submitted last so the modal sits above every panel regardless of which
+		// windows existed before it; no inputs, background, docking or saved layout entry.
+		// Pin the host to the main viewport. Without this the multi-viewport backend can give
+		// this tiny borderless window its own OS window, which is visible as a black square at
+		// the top-left of the desktop even though the ImGui window has no background.
+		ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+		ImGui::SetNextWindowSize(ImVec2(1.0f, 1.0f));
+		ImGui::Begin("##LevelDialogHost", nullptr,
+			ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
+			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking |
+			ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus |
+			ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs);
+		ELevelPanel::DrawLevelDialogs(WorldManager);
+		ImGui::End();
 	}
 #endif
 }
