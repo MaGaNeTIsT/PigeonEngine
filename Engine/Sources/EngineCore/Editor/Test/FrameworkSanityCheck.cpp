@@ -42,7 +42,12 @@
 #include <Reflection/LevelSerializer.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <Development/EditorLogManager.h>
+#include <Development/LogStore.h>
+#include <Editor/Asset/AssetFileOperations.h>
+#include <Editor/Asset/AssetTypeUtil.h>
 #include <Editor/Commands/WorldEditorCommand.h>
+
+#include <filesystem>
 #include <Editor/Manager/EditorHelper.h>
 #include <Editor/Panels/PropertyEditor.h>
 
@@ -3934,6 +3939,135 @@ namespace PigeonEngine
 		return bOk;
 	}
 
+	// Output Log storage: level counts, category parsing, the display cap, the file-only
+	// path and clear semantics. The store is exercised on its own, so the live session's
+	// window history and file are not disturbed.
+	static BOOL32 CheckLogStore()
+	{
+		FLogStore Store(8u);
+		Store.Add(ELT_LOG, EString(PE_TEXT("[Test] format %s stays data")), TRUE);
+		Store.Add(ELT_WARNING, EString(PE_TEXT("[Test] warning")), TRUE);
+		Store.Add(ELT_ERROR, EString(PE_TEXT("[Test] error")), TRUE);
+
+		TArray<TSharedPtr<ELog>> Snapshot;
+		Store.SnapshotVisible(Snapshot);
+		BOOL32 bOk = ((Snapshot.Num<INT32>() == 3)
+			&& (Store.GetCount(ELT_LOG) == 1u)
+			&& (Store.GetCount(ELT_WARNING) == 1u)
+			&& (Store.GetCount(ELT_ERROR) == 1u)
+			&& (Store.GetRevision() == 3u)) ? TRUE : FALSE;
+		if (bOk != FALSE)
+		{
+			bOk = ((Snapshot[0]->Category == EString(PE_TEXT("Test")))
+				&& (Snapshot[0]->GetText().Contains(EString(PE_TEXT("%s"))) != FALSE)
+				&& (Snapshot[0]->GetText().Contains(EString(PE_TEXT("Error:"))) == FALSE)) ? TRUE : FALSE;
+		}
+
+		// A file-only line is written but never enters the visible list.
+		Store.Add(ELT_LOG, EString(PE_TEXT("[Test] file only")), FALSE);
+		bOk = ((bOk != FALSE) && (Store.GetVisibleNum() == 3u)) ? TRUE : FALSE;
+
+		for (UINT32 Index = 0u; Index < 10u; Index++)
+		{
+			Store.Add(ELT_LOG, EString(PE_TEXT("[Test] flood")), TRUE);
+		}
+		Store.SnapshotVisible(Snapshot);
+		bOk = ((bOk != FALSE) && (Snapshot.Num<INT32>() == 8)
+			&& (Store.GetCount(ELT_LOG) == 8u)
+			&& (Store.GetCount(ELT_WARNING) == 0u)
+			&& (Store.GetCount(ELT_ERROR) == 0u)) ? TRUE : FALSE;
+
+		TArray<EString> PendingLines;
+		Store.TakePendingFileLines(PendingLines);
+		bOk = ((bOk != FALSE) && (PendingLines.Num<INT32>() == 14) && (Store.GetPendingFileLineNum() == 0u)) ? TRUE : FALSE;
+		Store.RequeuePendingFileLines(PendingLines);
+		bOk = ((bOk != FALSE) && (Store.GetPendingFileLineNum() == 14u)) ? TRUE : FALSE;
+
+		Store.ClearVisible();
+		bOk = ((bOk != FALSE) && (Store.GetVisibleNum() == 0u)
+			&& (Store.GetCount(ELT_LOG) == 0u)
+			&& (Store.GetCount(ELT_WARNING) == 0u)
+			&& (Store.GetCount(ELT_ERROR) == 0u)
+			&& (Store.GetPendingFileLineNum() == 14u)) ? TRUE : FALSE;
+
+		Store.Add(ELT_ERROR, EString(PE_TEXT("[Test] after clear")), TRUE);
+		bOk = ((bOk != FALSE) && (Store.GetVisibleNum() == 1u)
+			&& (Store.GetCount(ELT_ERROR) == 1u)) ? TRUE : FALSE;
+
+		if (bOk == FALSE)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("log store detail: visible=")) + EString::FromInt(Store.GetVisibleNum())
+				+ EString(PE_TEXT(" pending=")) + EString::FromInt(Store.GetPendingFileLineNum()));
+		}
+		return bOk;
+	}
+
+	// Asset name rules, header type reads and the file/folder operations the content
+	// browser calls. Everything runs in a private temp directory and is cleaned up.
+	static BOOL32 CheckAssetFileOperations()
+	{
+		const std::filesystem::path TempRootPath = std::filesystem::temp_directory_path()
+			/ "PigeonEngineSanityAssetOps";
+		const EString RootPath(TempRootPath.string());
+		const EString SubPath = RootPath + EString("/Sub");
+		EFileHelper::DeleteDirectory(RootPath);
+		if ((EFileHelper::MakeDirectory(RootPath) == FALSE)
+			|| (EFileHelper::MakeDirectory(SubPath) == FALSE))
+		{
+			return FALSE;
+		}
+
+		const EString AssetPath = RootPath + EString("/Anim.PAsset");
+		const UINT32 StoredType = static_cast<UINT32>(ASSET_TYPE_ANIMATION);
+		CHAR AssetBytes[8] = { 0 };
+		EMemory::Memcpy(AssetBytes, &StoredType, sizeof(StoredType));
+		EFileHelper::SaveBytesToFile(AssetPath, AssetBytes, sizeof(AssetBytes));
+		const EString TruncatedPath = RootPath + EString("/Truncated.PAsset");
+		CHAR TruncatedBytes[2] = { 0, 0 };
+		EFileHelper::SaveBytesToFile(TruncatedPath, TruncatedBytes, sizeof(TruncatedBytes));
+
+		EString Error;
+		BOOL32 bOk = ((EAssetTypeUtil::ReadTypeFromFile(AssetPath) == ASSET_TYPE_ANIMATION)
+			&& (EAssetTypeUtil::ReadTypeFromFile(TruncatedPath) == ASSET_TYPE_UNKNOWN)) ? TRUE : FALSE;
+
+		bOk = ((bOk != FALSE)
+			&& (EAssetFileOperations::ValidateName(EString(PE_TEXT("GoodName")), Error) != FALSE)
+			&& (EAssetFileOperations::ValidateName(EString(PE_TEXT("bad/name")), Error) == FALSE)
+			&& (EAssetFileOperations::ValidateName(EString(PE_TEXT("Trailing.")), Error) == FALSE)
+			&& (EAssetFileOperations::StripAssetExtension(EString(PE_TEXT("Foo.PAsset"))) == EString(PE_TEXT("Foo")))
+			&& (EAssetFileOperations::StripAssetExtension(EString(PE_TEXT("Foo"))) == EString(PE_TEXT("Foo")))) ? TRUE : FALSE;
+
+		EString RenamedPath;
+		bOk = ((bOk != FALSE)
+			&& (EAssetFileOperations::RenameAssetFile(AssetPath, EString(PE_TEXT("Renamed.PAsset")), RenamedPath, Error) != FALSE)
+			&& (EFileHelper::IsFileExists(RenamedPath) != FALSE)
+			&& (RenamedPath.ToLower().Contains(EString(PE_TEXT(".passet.passet"))) == FALSE)) ? TRUE : FALSE;
+
+		EString MovedPath;
+		bOk = ((bOk != FALSE)
+			&& (EAssetFileOperations::MoveAssetFile(RenamedPath, SubPath, MovedPath, Error) != FALSE)
+			&& (EFileHelper::IsFileExists(MovedPath) != FALSE)) ? TRUE : FALSE;
+
+		const EString NormalizedRoot = RootPath.Replace("\\", "/");
+		const EString RenamedFolder = NormalizedRoot + EString("/RenamedSub");
+		EString FolderPath;
+		bOk = ((bOk != FALSE)
+			&& (EAssetFileOperations::RenameFolder(SubPath, EString(PE_TEXT("RenamedSub")), FolderPath, Error) != FALSE)
+			&& (EFileHelper::IsDirectoryExists(RenamedFolder) != FALSE)
+			&& (FolderPath == RenamedFolder)) ? TRUE : FALSE;
+
+		bOk = ((bOk != FALSE)
+			&& (EAssetFileOperations::DeleteFolder(RenamedFolder, Error) != FALSE)
+			&& (EFileHelper::IsDirectoryExists(RenamedFolder) == FALSE)) ? TRUE : FALSE;
+
+		EFileHelper::DeleteDirectory(RootPath);
+		if (bOk == FALSE)
+		{
+			PE_LOG_ERROR(EString(PE_TEXT("asset file operation detail: ")) + Error);
+		}
+		return bOk;
+	}
+
 	void EFrameworkSanityCheck::RunAllChecks(PWorld* InWorld)
 	{
 		if (!InWorld)
@@ -4077,12 +4211,28 @@ namespace PigeonEngine
 		}
 		const BOOL32 bWorldEditorCommands = CheckWorldEditorCommands();
 		ReportSanityResult(EString(PE_TEXT("world editor command stack")), bWorldEditorCommands);
+		if (!bWorldEditorCommands)
+		{
+			FailedCount += 1u;
+		}
 		const BOOL32 bAttachmentReparent = CheckWorldAttachmentReparent();
 		ReportSanityResult(EString(PE_TEXT("attachment reparent commands")), bAttachmentReparent);
+		if (!bAttachmentReparent)
+		{
+			FailedCount += 1u;
+		}
 		const BOOL32 bEditorCustomization = CheckEditorCustomizationRegistry();
 		ReportSanityResult(EString(PE_TEXT("editor customization registry")), bEditorCustomization);
+		if (!bEditorCustomization)
+		{
+			FailedCount += 1u;
+		}
 		const BOOL32 bEditorWorldContext = CheckEditorWorldContextSelection();
 		ReportSanityResult(EString(PE_TEXT("editor world context selection")), bEditorWorldContext);
+		if (!bEditorWorldContext)
+		{
+			FailedCount += 1u;
+		}
 		const BOOL32 bJsonConfigFile = CheckJsonConfigFile();
 		ReportSanityResult(EString(PE_TEXT("json config file")), bJsonConfigFile);
 		if (!bJsonConfigFile)
@@ -4091,7 +4241,19 @@ namespace PigeonEngine
 		}
 		const BOOL32 bLevelFileState = CheckLevelFileStateTransitions();
 		ReportSanityResult(EString(PE_TEXT("level file state transitions")), bLevelFileState);
-		if (!bWorldEditorCommands)
+		if (!bLevelFileState)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bLogStore = CheckLogStore();
+		ReportSanityResult(EString(PE_TEXT("output log store")), bLogStore);
+		if (!bLogStore)
+		{
+			FailedCount += 1u;
+		}
+		const BOOL32 bAssetFileOperations = CheckAssetFileOperations();
+		ReportSanityResult(EString(PE_TEXT("asset file operations")), bAssetFileOperations);
+		if (!bAssetFileOperations)
 		{
 			FailedCount += 1u;
 		}
