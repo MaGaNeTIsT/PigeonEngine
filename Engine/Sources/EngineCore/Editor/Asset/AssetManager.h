@@ -32,6 +32,8 @@ namespace PigeonEngine
 	public:
 		void EditorInit();
 		void EditorUpdate();
+		// Content of the Content Browser window. The window registry owns Begin/End.
+		void DrawContentBrowserPanel();
 		// Opens the skeleton's SlotGroup document in the animation workspace. Montage
 		// sections resolve their slot against this skeleton-owned order, so the montage
 		// editor links here instead of maintaining a second group list.

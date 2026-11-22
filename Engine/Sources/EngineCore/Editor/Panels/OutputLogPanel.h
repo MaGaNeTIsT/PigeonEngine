@@ -19,7 +19,8 @@ namespace PigeonEngine
 		FOutputLogPanel();
 		~FOutputLogPanel() = default;
 
-		void Draw();
+		// Draws the contents only; the window registry owns Begin/End and the size.
+		void DrawContents();
 
 	private:
 		struct FLogRow

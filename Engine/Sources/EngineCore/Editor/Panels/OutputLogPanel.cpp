@@ -2,8 +2,6 @@
 
 #if ENGINE_EDITOR_ONLY
 
-#include <Editor/Manager/EditorWindowRegistry.h>
-
 #include <Windows.h>
 #include <shellapi.h>
 #include <imgui.h>
@@ -31,17 +29,8 @@ namespace PigeonEngine
 		Categories.Add(EString("All Categories"));
 	}
 
-	void FOutputLogPanel::Draw()
+	void FOutputLogPanel::DrawContents()
 	{
-		// Size is a first-use default; position and docking come from the saved layout.
-		// No SetNextWindowPos here - it would undock a reopened panel.
-		ImGui::SetNextWindowSize(ImVec2(720.0f, 360.0f), ImGuiCond_FirstUseEver);
-		FScopedEditorWindow Window(EEditorWindowType::OutputLog);
-		if (Window.IsOpen() == FALSE)
-		{
-			return;
-		}
-
 		RefreshSnapshot();
 		if (bFilterDirty != FALSE)
 		{

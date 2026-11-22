@@ -13,7 +13,8 @@ namespace PigeonEngine
 		void ShutDown() override;
 		// Pushes the persisted Display Settings switches into the managers that own them.
 		void ApplySettings();
-		void DrawDisplaySettings();
+		// Draws the contents only; the window registry owns Begin/End and the size.
+		void DrawDisplaySettingsContents();
 	private:
 		INT32	SelectedResolutionIndex	= 0;
 		BOOL32	bIsFullscreen			= FALSE;

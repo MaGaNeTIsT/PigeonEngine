@@ -47,7 +47,7 @@ namespace PigeonEngine
 		NavigationManager->SetDebugTrianglesEnabled(EEditorSettings::GetShowNavMeshTriangulation());
 	}
 
-	void EEditorGlobalPanel::DrawDisplaySettings()
+	void EEditorGlobalPanel::DrawDisplaySettingsContents()
 	{
 		EMainManager* MainManager = EMainManager::GetManagerSingleton();
 		if (!MainManager)
@@ -57,8 +57,6 @@ namespace PigeonEngine
 
 		const TArray<RResolutionItem>& Resolutions = MainManager->GetSupportedResolutions();
 		const INT32 ResolutionCount = static_cast<INT32>(Resolutions.Num());
-
-		ImGui::Begin("Display Settings");
 
 		if (ResolutionCount > 0)
 		{
@@ -164,8 +162,6 @@ namespace PigeonEngine
 				Manager->ApplyResolution(Selected.Width, Selected.Height, bIsFullscreen);
 			}
 		}
-
-		ImGui::End();
 	}
 }
 

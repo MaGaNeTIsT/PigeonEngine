@@ -26,6 +26,12 @@ namespace PigeonEngine
 	private:
 		void HandleMouseEvent(IMouse::Event::EType Type, const Vector2& MousePos);
 		void AttachToCurrentController();
+		// Registers the built-in optional windows in Window-menu order. Runs before
+		// EEditorSettings::Initialize() so their Panels.* keys load from the files.
+		void RegisterEditorWindows();
+		// Registers the File, Edit and Build menu items into the path-based menu registry.
+		// Runs before RegisterEditorWindows() so the root order is File, Edit, Build, Window.
+		void RegisterEditorMenus();
 
 	private:
 		BOOL32 bEditorOpen = FALSE;

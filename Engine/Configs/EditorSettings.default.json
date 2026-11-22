@@ -2,8 +2,12 @@
     "Panels": {
         "Level": false,
         "Navigation": false,
+        "WorldOutline": true,
+        "Details": true,
         "ContentBrowser": true,
-        "OutputLog": true
+        "OutputLog": true,
+        "Profiler": true,
+        "DisplaySettings": true
     },
     "Display": {
         "ShowCollision": true,

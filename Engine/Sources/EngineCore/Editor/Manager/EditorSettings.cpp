@@ -2,6 +2,7 @@
 
 #if ENGINE_EDITOR_ONLY
 
+#include <Development/EditorLogManager.h>
 #include <IO/JsonConfigFile.h>
 
 namespace PigeonEngine
@@ -13,6 +14,15 @@ namespace PigeonEngine
 			static EJsonConfigFile Instance(PE_TEXT("EditorSettings"));
 			return Instance;
 		}
+
+		BOOL32 bInitialized = FALSE;
+
+		EString MakePanelKey(const EString& InId)
+		{
+			EString Key(PE_TEXT("Panels."));
+			Key += InId;
+			return Key;
+		}
 	}
 
 	namespace EEditorSettings
@@ -20,58 +30,37 @@ namespace PigeonEngine
 		void Initialize()
 		{
 			EJsonConfigFile& Settings = Config();
-			// Schema defaults are the engine's startup values; EditorSettings.default.json can
-			// change them without a rebuild, and EditorSettings.user.json keeps only overrides.
-			Settings.AddBool(PE_TEXT("Panels.Level"), FALSE);
-			Settings.AddBool(PE_TEXT("Panels.Navigation"), FALSE);
-			Settings.AddBool(PE_TEXT("Panels.ContentBrowser"), TRUE);
-			Settings.AddBool(PE_TEXT("Panels.OutputLog"), TRUE);
+			// Panel keys are declared by EEditorWindowRegistry::RegisterWindow before this
+			// call, so their defaults also participate in the default/user layering.
 			Settings.AddBool(PE_TEXT("Display.ShowCollision"), TRUE);
 			Settings.AddBool(PE_TEXT("Display.ShowDebugWireframe"), FALSE);
 			Settings.AddBool(PE_TEXT("Display.ShowNavigation"), TRUE);
 			Settings.AddBool(PE_TEXT("Display.FullNavMeshPolygons"), FALSE);
 			Settings.AddBool(PE_TEXT("Display.ShowNavMeshTriangulation"), TRUE);
 			Settings.Load();
+			bInitialized = TRUE;
 		}
 
-		BOOL32 IsLevelPanelVisible()
+		void RegisterPanelVisibility(const EString& InId, const BOOL32& bInDefault)
 		{
-			return Config().GetBool(PE_TEXT("Panels.Level"));
+			if (bInitialized != FALSE)
+			{
+				// EJsonConfigFile only copies declared keys while loading. Registering after
+				// the load would silently ignore the default and user files for this key.
+				PE_LOG_ERROR(EString("EditorSettings: panel registered after Initialize: ") + InId);
+				return;
+			}
+			Config().AddBool(MakePanelKey(InId), bInDefault);
 		}
 
-		void SetLevelPanelVisible(const BOOL32& bInVisible)
+		BOOL32 IsPanelVisible(const EString& InId)
 		{
-			Config().SetBool(PE_TEXT("Panels.Level"), bInVisible);
+			return Config().GetBool(MakePanelKey(InId));
 		}
 
-		BOOL32 IsNavigationPanelVisible()
+		void SetPanelVisible(const EString& InId, const BOOL32& bInVisible)
 		{
-			return Config().GetBool(PE_TEXT("Panels.Navigation"));
-		}
-
-		void SetNavigationPanelVisible(const BOOL32& bInVisible)
-		{
-			Config().SetBool(PE_TEXT("Panels.Navigation"), bInVisible);
-		}
-
-		BOOL32 IsContentBrowserPanelVisible()
-		{
-			return Config().GetBool(PE_TEXT("Panels.ContentBrowser"));
-		}
-
-		void SetContentBrowserPanelVisible(const BOOL32& bInVisible)
-		{
-			Config().SetBool(PE_TEXT("Panels.ContentBrowser"), bInVisible);
-		}
-
-		BOOL32 IsOutputLogPanelVisible()
-		{
-			return Config().GetBool(PE_TEXT("Panels.OutputLog"));
-		}
-
-		void SetOutputLogPanelVisible(const BOOL32& bInVisible)
-		{
-			Config().SetBool(PE_TEXT("Panels.OutputLog"), bInVisible);
+			Config().SetBool(MakePanelKey(InId), bInVisible);
 		}
 
 		BOOL32 GetShowCollision()

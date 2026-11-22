@@ -373,44 +373,16 @@ namespace PigeonEngine
 		}
 
 		// ---- Level panel: current file plus New/Open/Save/Save As/Reload ----
-		if (EEditorWindowRegistry::IsVisible(EEditorWindowType::Level))
-		{
-			// No SetNextWindowPos here: it implicitly undocks, so a panel reopened into its
-			// saved Details tab would pop out as a floating window. Size is still a first-use
-			// default; dock and position come from the ImGui layout.
-			ImGui::SetNextWindowSize(ImVec2(360, 330), ImGuiCond_FirstUseEver);
-			FScopedEditorWindow Window(EEditorWindowType::Level);
-			if (Window.IsOpen())
-			{
-				ELevelPanel::GenerateLevelPanel(this);
-			}
-		}
+		EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("Level")));
 
 		// ---- World Outline panel ----
-		ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
-		ImGui::Begin("World Outline");
-		EWorldOutlinePanel::GenerateOutline(this->GetWorld());
-		ImGui::End();
+		EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("WorldOutline")));
 
 		// ---- Details panel ----
-		ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(10, 440), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Details");
-		EWorldDetailsPanel::GenerateDetails(this->GetWorld());
-		ImGui::End();
+		EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("Details")));
 
 		// ---- Navigation panel: every navmesh agent of the level in one place ----
-		if (EEditorWindowRegistry::IsVisible(EEditorWindowType::Navigation))
-		{
-			// Same as Level: no SetNextWindowPos, so reopening keeps the saved dock/tab.
-			ImGui::SetNextWindowSize(ImVec2(380, 300), ImGuiCond_FirstUseEver);
-			FScopedEditorWindow Window(EEditorWindowType::Navigation);
-			if (Window.IsOpen())
-			{
-				EWorldNavigationPanel::GenerateNavigation(this->GetWorld());
-			}
-		}
+		EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("Navigation")));
 	}
 #endif
 	PWorld* EWorldManager::GetWorld() const

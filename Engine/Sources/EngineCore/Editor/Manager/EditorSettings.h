@@ -20,16 +20,11 @@ namespace PigeonEngine
 		// Loads the default and user files; the user file is written only when a value changes.
 		void Initialize();
 
-		// Optional panels. Level and Navigation start closed; the Content Browser and
-		// Output Log start visible because they used to be drawn unconditionally.
-		PE_NODISCARD BOOL32 IsLevelPanelVisible();
-		void SetLevelPanelVisible(const BOOL32& bInVisible);
-		PE_NODISCARD BOOL32 IsNavigationPanelVisible();
-		void SetNavigationPanelVisible(const BOOL32& bInVisible);
-		PE_NODISCARD BOOL32 IsContentBrowserPanelVisible();
-		void SetContentBrowserPanelVisible(const BOOL32& bInVisible);
-		PE_NODISCARD BOOL32 IsOutputLogPanelVisible();
-		void SetOutputLogPanelVisible(const BOOL32& bInVisible);
+		// Optional panels. The registry declares one Panels.<Id> key per window before
+		// Initialize() loads the files; the default comes from the window descriptor.
+		void RegisterPanelVisibility(const EString& InId, const BOOL32& bInDefault);
+		PE_NODISCARD BOOL32 IsPanelVisible(const EString& InId);
+		void SetPanelVisible(const EString& InId, const BOOL32& bInVisible);
 
 		// Display Settings switches. Defaults match the engine defaults, so a missing file
 		// leaves the first run exactly as before.

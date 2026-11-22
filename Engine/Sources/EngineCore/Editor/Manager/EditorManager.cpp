@@ -15,8 +15,12 @@
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 #include <Editor/Panels/PropertyEditor.h>
 #include <Editor/Panels/WorldDetailsPanel.h>
+#include <Editor/Panels/WorldOutlinePanel.h>
+#include <Editor/Panels/LevelPanel.h>
+#include <Editor/Panels/NavigationPanel.h>
 #include <Editor/Manager/EditorWorldContext.h>
 #include <Editor/Manager/EditorWindowRegistry.h>
+#include <Editor/Manager/EditorMenuRegistry.h>
 #include <Editor/Manager/EditorSettings.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #include "Navigation/NavigationManager.h"
@@ -105,6 +109,10 @@ namespace PigeonEngine
 	{
 		EPropertyEditor::SetPropertyCommittedCallback(EPropertyEditor::FOnPropertyCommitted());
 		WorldCommands.Clear();
+		// Drop menu callbacks and window descriptors before the panels they capture are
+		// destroyed. The window menu items call back into the window registry by id.
+		EEditorMenuRegistry::Clear();
+		EEditorWindowRegistry::Clear();
 		if (OutputLogPanel)
 		{
 			delete OutputLogPanel;
@@ -144,13 +152,18 @@ namespace PigeonEngine
 		// here draws on top of the reflection grid for its class chain.
 		EWorldDetailsPanel::RegisterBuiltinCustomEditors();
 
+		// Declares the Panels.* schema keys, so the settings Load below sees the tracked
+		// default and the user overrides for every optional window. The File/Edit/Build
+		// items are registered first so the Window root stays last in the menu bar.
+		RegisterEditorMenus();
+		RegisterEditorWindows();
+
 		// Editor preferences (optional panels, Display Settings switches) are loaded before
 		// any panel draws and applied to the managers that own the runtime flags.
 		EEditorSettings::Initialize();
 		EditorGlobalPanel->ApplySettings();
 
-		// Both optional panels (Level and Navigation) start hidden; the Window menu opens the
-		// one that is needed without disturbing the rest of the layout.
+		// Reads the persisted visibility for every registered window.
 		EEditorWindowRegistry::Initialize();
 
 		// One registration point for every reflected edit: the Details panel applies the value
@@ -169,6 +182,232 @@ namespace PigeonEngine
 		});
 
 		AttachToCurrentController();
+	}
+
+	void EEditorManager::RegisterEditorMenus()
+	{
+		// File. Paths are Root/Group.../Item; the last segment is the displayed label.
+		EEditorMenuRegistry::RegisterItem({
+			EString("File/New Level"),
+			[this]() -> void { WorldManager->RequestNewLevel(); }
+		});
+		EEditorMenuRegistry::RegisterItem({
+			EString("File/Open Level..."),
+			[this]() -> void { WorldManager->RequestOpenLevelPopup(); }
+		});
+		EEditorMenuRegistry::RegisterItem({
+			EString("File/Save Level"),
+			[this]() -> void
+			{
+				if (WorldManager->GetCurrentLevelPath().Length() > 0u)
+				{
+					WorldManager->RequestSaveLevel(WorldManager->GetCurrentLevelPath());
+				}
+				else
+				{
+					WorldManager->RequestSaveAsPopup();
+				}
+			}
+		});
+		EEditorMenuRegistry::RegisterItem({
+			EString("File/Save Level As..."),
+			[this]() -> void { WorldManager->RequestSaveAsPopup(); }
+		});
+		EEditorMenuRegistry::RegisterItem({
+			EString("File/Reload Level"),
+			[this]() -> void { WorldManager->RequestReloadLevel(); }
+		});
+
+		// Edit. The label and enabled state are resolved while the menu is open.
+		EEditorMenuRegistry::RegisterItem({
+			EString("Edit/Undo"),
+			[this]() -> void { WorldCommands.Undo(); },
+			EString("Ctrl+Z"),
+			[this]() -> EString
+			{
+				const EString Label = WorldCommands.GetUndoLabel();
+				return (WorldCommands.CanUndo() != FALSE) ? (EString("Undo ") + Label) : EString("Undo");
+			},
+			nullptr,
+			[this]() -> BOOL32 { return WorldCommands.CanUndo(); }
+		});
+		EEditorMenuRegistry::RegisterItem({
+			EString("Edit/Redo"),
+			[this]() -> void { WorldCommands.Redo(); },
+			EString("Ctrl+Y"),
+			[this]() -> EString
+			{
+				const EString Label = WorldCommands.GetRedoLabel();
+				return (WorldCommands.CanRedo() != FALSE) ? (EString("Redo ") + Label) : EString("Redo");
+			},
+			nullptr,
+			[this]() -> BOOL32 { return WorldCommands.CanRedo(); }
+		});
+
+		// Build. The two status rows only appear while they describe the current state.
+		EEditorMenuRegistry::RegisterItem({
+			EString("Build/Navigation/Build Navigation"),
+			[this]() -> void
+			{
+				PWorld* World = WorldManager->GetWorld();
+				if (World)
+				{
+					ENavigationManager::GetManagerSingleton()->RequestWorldBuild(*World
+						, ENavigationManager::ENavigationWorldBuildReason::EDITOR);
+				}
+			},
+			EString(),
+			nullptr,
+			nullptr,
+			[this]() -> BOOL32
+			{
+				PWorld* World = WorldManager->GetWorld();
+				return (World && (ENavigationManager::GetManagerSingleton()->IsWorldBuildRunning(*World) == FALSE))
+					? TRUE : FALSE;
+			}
+		});
+		EEditorMenuRegistry::RegisterItem({
+			EString("Build/Navigation/Building navigation..."),
+			nullptr,
+			EString(),
+			nullptr,
+			[this]() -> BOOL32
+			{
+				PWorld* World = WorldManager->GetWorld();
+				return (World && (ENavigationManager::GetManagerSingleton()->IsWorldBuildRunning(*World) != FALSE))
+					? TRUE : FALSE;
+			},
+			nullptr,
+			nullptr,
+			TRUE
+		});
+		EEditorMenuRegistry::RegisterItem({
+			EString("Build/Navigation/LastBuild"),
+			nullptr,
+			EString(),
+			[this]() -> EString
+			{
+				PWorld* World = WorldManager->GetWorld();
+				if (!World)
+				{
+					return EString();
+				}
+				const ENavigationManager::FNavigationWorldBuildReport& Report =
+					ENavigationManager::GetManagerSingleton()->GetWorldBuildReport(*World);
+				if (Report.bHasRun == FALSE)
+				{
+					return EString();
+				}
+				UINT32 Built = 0u;
+				for (UINT32 Index = 0u, Num = Report.Profiles.Num<UINT32>(); Index < Num; Index++)
+				{
+					if (Report.Profiles[Index].bSucceeded != FALSE)
+					{
+						Built++;
+					}
+				}
+				return EString("Last build: ") + EString::FromInt(Built) + EString("/")
+					+ EString::FromInt(Report.Profiles.Num<UINT32>()) + EString(" agents");
+			},
+			[this]() -> BOOL32
+			{
+				PWorld* World = WorldManager->GetWorld();
+				if (!World)
+				{
+					return FALSE;
+				}
+				ENavigationManager* Navigation = ENavigationManager::GetManagerSingleton();
+				if (Navigation->IsWorldBuildRunning(*World) != FALSE)
+				{
+					return FALSE;
+				}
+				return (Navigation->GetWorldBuildReport(*World).bHasRun != FALSE) ? TRUE : FALSE;
+			},
+			nullptr,
+			nullptr,
+			TRUE
+		});
+	}
+
+	void EEditorManager::RegisterEditorWindows()
+	{
+		// MenuPath controls the Window-menu section; registration order controls its item
+		// order. The draw callbacks only paint the contents: EEditorWindowRegistry owns
+		// Begin/End, the X button and the size.
+		EEditorWindowRegistry::RegisterWindow({
+			EString("Level"), EString("Level"), EString("Window/World/Level"), FALSE, ImVec2(360.0f, 330.0f),
+			[this]() -> void
+			{
+				if (WorldManager && WorldManager->GetWorld())
+				{
+					ELevelPanel::GenerateLevelPanel(WorldManager);
+				}
+			}
+		});
+		EEditorWindowRegistry::RegisterWindow({
+			EString("Navigation"), EString("Navigation"), EString("Window/World/Navigation"), FALSE, ImVec2(380.0f, 300.0f),
+			[this]() -> void
+			{
+				if (WorldManager && WorldManager->GetWorld())
+				{
+					EWorldNavigationPanel::GenerateNavigation(WorldManager->GetWorld());
+				}
+			}
+		});
+		EEditorWindowRegistry::RegisterWindow({
+			EString("WorldOutline"), EString("World Outline"), EString("Window/World/World Outline"), TRUE, ImVec2(280.0f, 400.0f),
+			[this]() -> void
+			{
+				if (WorldManager && WorldManager->GetWorld())
+				{
+					EWorldOutlinePanel::GenerateOutline(WorldManager->GetWorld());
+				}
+			}
+		});
+		EEditorWindowRegistry::RegisterWindow({
+			EString("Details"), EString("Details"), EString("Window/World/Details"), TRUE, ImVec2(280.0f, 400.0f),
+			[this]() -> void
+			{
+				if (WorldManager && WorldManager->GetWorld())
+				{
+					EWorldDetailsPanel::GenerateDetails(WorldManager->GetWorld());
+				}
+			}
+		});
+		EEditorWindowRegistry::RegisterWindow({
+			EString("ContentBrowser"), EString("Content Browser"), EString("Window/Assets/Content Browser"), TRUE, ImVec2(900.0f, 420.0f),
+			[this]() -> void
+			{
+				if (AssetManager)
+				{
+					AssetManager->DrawContentBrowserPanel();
+				}
+			}
+		});
+		EEditorWindowRegistry::RegisterWindow({
+			EString("OutputLog"), EString("Output Log"), EString("Window/Debug/Output Log"), TRUE, ImVec2(720.0f, 360.0f),
+			[this]() -> void
+			{
+				if (OutputLogPanel)
+				{
+					OutputLogPanel->DrawContents();
+				}
+			}
+		});
+		EEditorWindowRegistry::RegisterWindow({
+			EString("Profiler"), EString("Profiler"), EString("Window/Debug/Profiler"), TRUE, ImVec2(424.0f, 360.0f),
+			[]() -> void
+			{
+				EEditorProfilerPanel::GetManagerSingleton()->DrawContents();
+			}
+		});
+		EEditorWindowRegistry::RegisterWindow({
+			EString("DisplaySettings"), EString("Display Settings"), EString("Window/Settings/Display Settings"), TRUE, ImVec2(424.0f, 212.0f),
+			[]() -> void
+			{
+				EEditorGlobalPanel::GetManagerSingleton()->DrawDisplaySettingsContents();
+			}
+		});
 	}
 
 	void EEditorManager::AttachToCurrentController()
@@ -309,97 +548,7 @@ namespace PigeonEngine
 			WorldCommands.Clear();
 			LastCommandRevision = WorldCommands.GetHistoryRevision();
 		}
-		if (ImGui::BeginMainMenuBar())
-		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("New Level"))
-				{
-					WorldManager->RequestNewLevel();
-				}
-				if (ImGui::MenuItem("Open Level..."))
-				{
-					WorldManager->RequestOpenLevelPopup();
-				}
-				if (ImGui::MenuItem("Save Level"))
-				{
-					if (WorldManager->GetCurrentLevelPath().Length() > 0u)
-					{
-						WorldManager->RequestSaveLevel(WorldManager->GetCurrentLevelPath());
-					}
-					else
-					{
-						WorldManager->RequestSaveAsPopup();
-					}
-				}
-				if (ImGui::MenuItem("Save Level As..."))
-				{
-					WorldManager->RequestSaveAsPopup();
-				}
-				if (ImGui::MenuItem("Reload Level"))
-				{
-					WorldManager->RequestReloadLevel();
-				}
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Edit"))
-			{
-				const EString UndoLabel = WorldCommands.GetUndoLabel();
-				const EString RedoLabel = WorldCommands.GetRedoLabel();
-				const EString UndoMenuLabel = WorldCommands.CanUndo() ? (EString(PE_TEXT("Undo ")) + UndoLabel) : EString(PE_TEXT("Undo"));
-				const EString RedoMenuLabel = WorldCommands.CanRedo() ? (EString(PE_TEXT("Redo ")) + RedoLabel) : EString(PE_TEXT("Redo"));
-				if (ImGui::MenuItem(*UndoMenuLabel, "Ctrl+Z", false, WorldCommands.CanUndo() != FALSE))
-				{
-					WorldCommands.Undo();
-				}
-				if (ImGui::MenuItem(*RedoMenuLabel, "Ctrl+Y", false, WorldCommands.CanRedo() != FALSE))
-				{
-					WorldCommands.Redo();
-				}
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Build"))
-			{
-				PWorld* EditorWorld = WorldManager->GetWorld();
-				ENavigationManager* Navigation = ENavigationManager::GetManagerSingleton();
-				const BOOL32 bBuilding = ((EditorWorld) && (Navigation->IsWorldBuildRunning(*EditorWorld) != FALSE)) ? TRUE : FALSE;
-				// One action for the whole level: every navmesh agent (default, large, ...) is
-				// baked together. No actor has to be selected or clicked.
-				if (ImGui::MenuItem("Build Navigation", nullptr, false, ((EditorWorld) && (!bBuilding)) ? true : false))
-				{
-					Navigation->RequestWorldBuild(*EditorWorld, ENavigationManager::ENavigationWorldBuildReason::EDITOR);
-				}
-				if (bBuilding)
-				{
-					ImGui::MenuItem("Building navigation...", nullptr, false, false);
-				}
-				else if (EditorWorld)
-				{
-					const ENavigationManager::FNavigationWorldBuildReport& Report = Navigation->GetWorldBuildReport(*EditorWorld);
-					if (Report.bHasRun)
-					{
-						UINT32 Built = 0u;
-						for (UINT32 Index = 0u, Num = Report.Profiles.Num<UINT32>(); Index < Num; Index++)
-						{
-							if (Report.Profiles[Index].bSucceeded)
-							{
-								Built++;
-							}
-						}
-						const EString Label = EString(PE_TEXT("Last build: ")) + EString::FromInt(Built)
-							+ EString(PE_TEXT("/")) + EString::FromInt(Report.Profiles.Num<UINT32>()) + EString(PE_TEXT(" agents"));
-						ImGui::MenuItem(*Label, nullptr, false, false);
-					}
-				}
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Window"))
-			{
-				EEditorWindowRegistry::DrawWindowMenu();
-				ImGui::EndMenu();
-			}
-			ImGui::EndMainMenuBar();
-		}
+		EEditorMenuRegistry::DrawMainMenuBar();
 
 		ImGuiIO& IO = ImGui::GetIO();
 		if ((!IO.WantTextInput) && IO.KeyCtrl)
@@ -433,19 +582,14 @@ namespace PigeonEngine
 		WorldManager->EditorUpdate();
 		AssetManager->EditorUpdate();
 		LogsManager->Tick();
-		if (OutputLogPanel)
-		{
-			OutputLogPanel->Draw();
-		}
+		EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("OutputLog")));
 		ImportManager->EditorUpdate();
-		if (EditorGlobalPanel)
-		{
-			EditorGlobalPanel->DrawDisplaySettings();
-		}
+		EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("DisplaySettings")));
 		if (EditorProfilerPanel)
 		{
-			EditorProfilerPanel->DrawPanel();
+			EditorProfilerPanel->Tick();
 		}
+		EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("Profiler")));
 
 		// Any command pushed by the panels (property edits, structural edits, gizmo release)
 		// makes the current level dirty.

@@ -6,6 +6,7 @@
 #include <Editor/Asset/ContentBrowserPanel.h>
 #include <Editor/AssetImporter/ImportManager.h>
 #include <Editor/AnimationEditorCore/AnimationWorkspace.h>
+#include <Editor/Manager/EditorWindowRegistry.h>
 #include <Editor/MeshEditor/MeshEditor.h>
 
 namespace PigeonEngine
@@ -112,7 +113,7 @@ namespace PigeonEngine
 
 		if (BrowserPanel)
 		{
-			BrowserPanel->Draw();
+			EEditorWindowRegistry::DrawWindow(EString(PE_TEXT("ContentBrowser")));
 		}
 		if (AnimationWorkspace)
 		{
@@ -121,6 +122,14 @@ namespace PigeonEngine
 		if (MeshEditor)
 		{
 			MeshEditor->EditorUpdate();
+		}
+	}
+
+	void EAssetManager::DrawContentBrowserPanel()
+	{
+		if (BrowserPanel)
+		{
+			BrowserPanel->DrawContents();
 		}
 	}
 

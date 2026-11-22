@@ -57,7 +57,10 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize() override;
 		virtual void	ShutDown() override;
-		void			DrawPanel();
+		// Runs the benchmark state machine every frame, whether the window is visible.
+		void			Tick();
+		// Draws the contents only; the window registry owns Begin/End and the size.
+		void			DrawContents();
 	private:
 		void			RefreshRows();
 		void			BuildCpuTree();
@@ -76,7 +79,6 @@ namespace PigeonEngine
 			FAILED,
 		};
 	private:
-		BOOL32						bWindowOpen		= TRUE;
 		BOOL32						bPaused			= FALSE;
 		BOOL32						bRowsValid		= FALSE;
 		TArray<EProfilerTableRow>	CpuRows;

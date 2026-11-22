@@ -101,7 +101,6 @@ namespace PigeonEngine
 		BenchmarkLastMinMilliseconds = 0.0;
 		BenchmarkLastMaxMilliseconds = 0.0;
 		BenchmarkSamplesMilliseconds.Empty();
-		bWindowOpen	= TRUE;
 		bPaused		= FALSE;
 		bRowsValid	= FALSE;
 		CpuRows.Empty();
@@ -1038,22 +1037,16 @@ namespace PigeonEngine
 	// Draw
 	// -----------------------------------------------------------------------
 
-	void EEditorProfilerPanel::DrawPanel()
+	void EEditorProfilerPanel::Tick()
 	{
 		TickPerformanceBenchmark();
-		bool bOpen = (bWindowOpen != FALSE);
-		if (!ImGui::Begin("Profiler", &bOpen))
-		{
-			bWindowOpen = bOpen ? TRUE : FALSE;
-			ImGui::End();
-			return;
-		}
-		bWindowOpen = bOpen ? TRUE : FALSE;
+	}
 
+	void EEditorProfilerPanel::DrawContents()
+	{
 #if !ENGINE_ENABLE_PROFILER
 		ImGui::TextDisabled("Profiler disabled (ENGINE_ENABLE_PROFILER=0).");
 		ImGui::TextDisabled("Rebuild with PIGEON_ENABLE_PROFILER=ON to capture samples.");
-		ImGui::End();
 		return;
 #else
 		if ((bPaused == FALSE) || (bRowsValid == FALSE))
@@ -1158,8 +1151,6 @@ namespace PigeonEngine
 			}
 			ImGui::EndTabBar();
 		}
-
-		ImGui::End();
 #endif
 	}
 }

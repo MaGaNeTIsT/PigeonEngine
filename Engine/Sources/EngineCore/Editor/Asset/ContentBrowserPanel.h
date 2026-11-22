@@ -23,7 +23,8 @@ namespace PigeonEngine
 	public:
 		void Initialize(EAssetManager* InHost);
 		void ShutDown();
-		void Draw();
+		// Draws the contents only; the window registry owns Begin/End and the size.
+		void DrawContents();
 		// Called by the host after a catalog rescan: drops selection entries that no
 		// longer exist and falls back to a valid current folder.
 		void PruneSelectionAfterCatalogRefresh();

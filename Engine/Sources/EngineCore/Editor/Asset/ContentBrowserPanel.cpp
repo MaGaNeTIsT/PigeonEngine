@@ -8,7 +8,6 @@
 #include <Editor/Asset/AssetManager.h>
 #include <Editor/Asset/AssetTypeUtil.h>
 #include <Editor/Asset/AssetUsage.h>
-#include <Editor/Manager/EditorWindowRegistry.h>
 #include <Editor/AnimationEditorCore/AnimationWorkspace.h>
 #include <Editor/MeshEditor/MeshEditor.h>
 #include <Editor/AssetImporter/ImportManager.h>
@@ -188,15 +187,8 @@ namespace PigeonEngine
 		PruneSelection();
 	}
 
-	void FContentBrowserPanel::Draw()
+	void FContentBrowserPanel::DrawContents()
 	{
-		// Size is a first-use default; the dock position comes from the ImGui layout.
-		ImGui::SetNextWindowSize(ImVec2(900.0f, 420.0f), ImGuiCond_FirstUseEver);
-		FScopedEditorWindow Window(EEditorWindowType::ContentBrowser);
-		if (Window.IsOpen() == FALSE)
-		{
-			return;
-		}
 		if (!Host)
 		{
 			ImGui::TextDisabled("The asset catalog is not available.");
