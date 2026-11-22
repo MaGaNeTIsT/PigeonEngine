@@ -377,7 +377,7 @@ namespace PigeonEngine
 	void EAnimationWorkspace::DrawEmptyState()
 	{
 		ImGui::TextDisabled("No animation document is open.");
-		ImGui::TextDisabled("Double-click an Animation, Montage, or State Machine PAsset in PigeonContent to open it here.");
+		ImGui::TextDisabled("Double-click an Animation, Montage, or State Machine PAsset in the Content Browser to open it here.");
 	}
 
 }

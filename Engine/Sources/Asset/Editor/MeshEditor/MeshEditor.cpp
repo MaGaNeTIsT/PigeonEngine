@@ -7,6 +7,7 @@
 #include <IO/FileHelper.h>
 #include <BaseAsset.h>
 #include <Config/EngineConfig.h>
+#include <Editor/Asset/AssetTypeUtil.h>
 #include <MeshAsset/MeshAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <Base/DataStructure/Text/Path.h>
@@ -84,15 +85,8 @@ namespace PigeonEngine
 
 		BOOL8 ReadAssetTypeFromAssetFile(const EString& InAssetFullPath, EAssetType& OutAssetType)
 		{
-			void* HeaderData = nullptr;
-			if (!(EFileHelper::ReadFirstNumberOfBytesInFile(InAssetFullPath, HeaderData, sizeof(UINT32))) || (!HeaderData))
-			{
-				return FALSE;
-			}
-
-			OutAssetType = static_cast<EAssetType>(*static_cast<const UINT32*>(HeaderData));
-			delete[] static_cast<CHAR*>(HeaderData);
-			return TRUE;
+			OutAssetType = EAssetTypeUtil::ReadTypeFromFile(InAssetFullPath);
+			return (OutAssetType != EAssetType::ASSET_TYPE_UNKNOWN) ? TRUE : FALSE;
 		}
 
 		BOOL8 LoadSkeletonAssetFromFullPath(const EString& InAssetFullPath, const ESkeletonAsset*& OutSkeletonAsset)

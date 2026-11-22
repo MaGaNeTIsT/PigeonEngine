@@ -261,4 +261,19 @@ namespace PigeonEngine
 		const bool bRemoved = std::filesystem::remove(std::filesystem::path(*FilePath), Error);
 		return (((Error) || (!bRemoved)) ? FALSE : TRUE);
 	}
+
+	BOOL8 EFileHelper::MoveDirectory(const EString& DirectoryPath, const EString& NewDirectoryPath)
+	{
+		std::error_code Error;
+		std::filesystem::rename(std::filesystem::path(*DirectoryPath)
+			, std::filesystem::path(*NewDirectoryPath), Error);
+		return ((Error) ? FALSE : TRUE);
+	}
+
+	BOOL8 EFileHelper::DeleteDirectory(const EString& DirectoryPath)
+	{
+		std::error_code Error;
+		std::filesystem::remove_all(std::filesystem::path(*DirectoryPath), Error);
+		return ((Error) ? FALSE : TRUE);
+	}
 };

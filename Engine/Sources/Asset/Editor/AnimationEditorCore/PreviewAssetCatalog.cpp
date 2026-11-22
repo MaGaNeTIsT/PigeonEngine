@@ -7,6 +7,7 @@
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <Base/DataStructure/Text/Path.h>
 #include <Config/EngineConfig.h>
+#include <Editor/Asset/AssetTypeUtil.h>
 
 namespace PigeonEngine
 {
@@ -21,18 +22,6 @@ namespace PigeonEngine
 				Result += "/";
 			}
 			return Result;
-		}
-
-		BOOL32 ReadAssetType(const EString& InPath, EAssetType& OutType)
-		{
-			void* HeaderData = nullptr;
-			if (!(EFileHelper::ReadFirstNumberOfBytesInFile(InPath, HeaderData, sizeof(UINT32))) || (!HeaderData))
-			{
-				return FALSE;
-			}
-			OutType = static_cast<EAssetType>(*static_cast<const UINT32*>(HeaderData));
-			delete[] static_cast<CHAR*>(HeaderData);
-			return TRUE;
 		}
 
 		BOOL32 IsSkinnedMesh(const EString& InPath)
@@ -77,8 +66,8 @@ namespace PigeonEngine
 			{
 				continue;
 			}
-			EAssetType AssetType = EAssetType::ASSET_TYPE_UNKNOWN;
-			if ((ReadAssetType(Path, AssetType)) && (AssetType == EAssetType::ASSET_TYPE_SKELETON))
+			const EAssetType AssetType = EAssetTypeUtil::ReadTypeFromFile(Path);
+			if (AssetType == EAssetType::ASSET_TYPE_SKELETON)
 			{
 				SkeletonPaths.Add(Path);
 			}

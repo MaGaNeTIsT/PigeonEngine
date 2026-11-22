@@ -44,12 +44,9 @@ void PigeonEngine::EImportManager::ShutDown()
 	bContentBrowserRefreshRequested = FALSE;
 }
 
-void PigeonEngine::EImportManager::ShowImporterButton()
+void PigeonEngine::EImportManager::RequestImportDialog()
 {
-	if (ImGui::Button("Import"))
-	{
-		bShowEditor = TRUE;
-	}
+	bShowEditor = TRUE;
 }
 
 void PigeonEngine::EImportManager::NotifyImportFinished()

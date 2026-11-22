@@ -15,7 +15,9 @@ namespace PigeonEngine
 	public:
 		virtual void Initialize();
 		virtual void ShutDown();
-		virtual void ShowImporterButton();
+		// Opens the importer selection window on the next EditorUpdate. The content
+		// browser draws the button; this manager only owns the window.
+		void RequestImportDialog();
 	public:
 		void EditorInit();
 	public:

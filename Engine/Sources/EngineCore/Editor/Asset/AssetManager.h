@@ -1,63 +1,25 @@
 #pragma once
+
 #include "Base/DataStructure/ObjectBase.h"
+
 #if ENGINE_EDITOR_ONLY
-#include <imgui.h>
-#include "BaseAsset.h"
+
 #include "Base/DataStructure/Container/Array.h"
-#include "Base/DataStructure/Pointer/SharedPtr.h"
+#include <Editor/Asset/AssetCatalog.h>
 
 namespace PigeonEngine
 {
 	class EMeshEditor;
 	class EAnimationWorkspace;
+	class FAssetIconRegistry;
+	class FContentBrowserPanel;
 
-
-	class EAssetFile
-	{
-	public:
-		EAssetFile() = delete;
-		EAssetFile(const EString& InPath);
-		~EAssetFile() = default;
-	public:
-		PE_NODISCARD EString GetDisplayName() const;
-		PE_NODISCARD EAssetType GetType() const;
-		PE_NODISCARD EString GetPath() const;
-	private:
-		EString Path;
-		EAssetType Type = EAssetType::ASSET_TYPE_UNKNOWN;
-	};
-
-	class EFolderTreeNode
-	{
-	public:
-		EFolderTreeNode() = delete;
-		EFolderTreeNode(EString InPath);
-		EFolderTreeNode(const TSharedPtr<EFolderTreeNode>& InParent, EString InPath);
-
-		static void TraverseFolder(const TSharedPtr<EFolderTreeNode>& Node, TSharedPtr<EFolderTreeNode>& CurrentSelectedFolder);
-		~EFolderTreeNode();
-
-	public:
-		void SetChildrenFolder(const TArray<EString>& Paths);
-		void SetChildrenFiles(const TArray<EString>& Paths);
-		PE_NODISCARD const TArray<TSharedPtr<EFolderTreeNode>>& GetChildrenFolder() const;
-		PE_NODISCARD const TArray<TSharedPtr<EAssetFile>>& GetChildrenFile() const;
-		void ClearChildren();
-
-		PE_NODISCARD const EString& GetPath() const;
-		PE_NODISCARD EString GetDisplayName() const;
-
-	private:
-		EString Path;
-		TSharedPtr<EFolderTreeNode> Parent = nullptr;
-		TArray<TSharedPtr<EFolderTreeNode>> ChildrenFolder;
-		TArray<TSharedPtr<EAssetFile>> ChildrenFile;
-	};
-
-
-
-
-
+	/*
+	* Host for the editor's asset tooling: the filesystem catalog, the editor icon table,
+	* the animation/mesh document editors, and the Content Browser panel. The browsing UI
+	* lives in FContentBrowserPanel; this class only owns lifetime and routes refresh and
+	* open requests.
+	*/
 	class EAssetManager : public EManagerBase
 	{
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EAssetManager)
@@ -69,7 +31,6 @@ namespace PigeonEngine
 		void Uninit();
 	public:
 		void EditorInit();
-	public:
 		void EditorUpdate();
 		// Opens the skeleton's SlotGroup document in the animation workspace. Montage
 		// sections resolve their slot against this skeleton-owned order, so the montage
@@ -77,82 +38,24 @@ namespace PigeonEngine
 		void OpenSkeletonSlotGroups(const EString& InAssetFullPath);
 
 	public:
-		// Rescans the content tree now. Called by a family manager that wrote a new asset outside
-		// the browser's own actions, such as a navigation mesh bake.
-		void RefreshAssetTree();
-		// Requests that rescan for the next editor frame instead, so several writes in one frame
-		// coalesce into a single rebuild of the tree.
+		// Requests a catalog rescan for the next editor frame, so several writes in one
+		// frame coalesce into a single rebuild of the tree.
 		void RequestContentRefresh();
-	protected:
-		void GenerateContentBrowser();
-		ImTextureID GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File = nullptr);
-		static EString AssetTypeAsString(const EAssetType& Type);
+
+	public:
+		PE_NODISCARD FAssetCatalog& GetCatalog();
+		PE_NODISCARD const FAssetCatalog& GetCatalog() const;
+		PE_NODISCARD FAssetIconRegistry& GetIcons();
+		PE_NODISCARD EAnimationWorkspace* GetAnimationWorkspace() const;
+		PE_NODISCARD EMeshEditor* GetMeshEditor() const;
+
 	private:
-		void OpenNewAssetDialog(const EAssetType& InType);
-		void DrawNewAssetDialog();
-		void RefreshNewAssetClipsAndSlots();
-		void RefreshNewAssetSlots();
-		BOOL32 CreateNewAsset(EString& OutError);
-		void RefreshContentTree();
-		void RequestOpenAsset(const EString& InAssetPath, const EAssetType& InType);
-		void ProcessPendingOpen();
-		void CollectAssetUsers(const EString& InAssetPath, const EAssetType& InType
-			, TArray<EString>& OutUsers)const;
-		BOOL32 RenameSelectedAsset(const EString& InNewName, EString& OutError);
-		BOOL32 DeleteSelectedAsset(EString& OutError);
-		void DrawAssetManagementPopups();
-	private:
-		TSharedPtr<EFolderTreeNode> EngineAssetRoot  = nullptr;
-		TSharedPtr<EFolderTreeNode> ProjectAssetRoot = nullptr;
-		// Committed engine content (Assets/): navmesh assets a saved level references travel
-		// with the checkout, so the browser needs a root for them.
-		TSharedPtr<EFolderTreeNode> SourceAssetRoot  = nullptr;
-		TSharedPtr<EFolderTreeNode> Current          = nullptr;
-		TSharedPtr<EAssetFile>      SelectedFile     = nullptr;
-		ImTextureID FolderTextureId;
-		TMap<EAssetType, ImTextureID> TypeThumbNails;
-		TMap<EString, ImTextureID>    TextureThumbNails;
-		// Animation authoring is owned by the Workspace. The legacy per-asset editor
-		// objects are retired and no longer constructed or drawn.
-		EAnimationWorkspace*         AnimationWorkspace = nullptr;
-		EMeshEditor*                 MeshEditor = nullptr;
-
-		// New Asset window. Names currently come from ENGINE_ANIMATION_PATH; the
-		// destination is the same fixed folder the JSON importers use.
-		BOOL8		m_bNewAssetWindowOpen = FALSE;
-		BOOL8		m_bResetNewAssetWindowPos = FALSE;
-		BOOL8		m_bFocusNewAssetWindow = FALSE;
-		EAssetType	m_NewAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
-		CHAR		m_NewAssetName[128] = { 0 };
-		TArray<EString>	m_NewAssetAnimationNames;
-		INT32		m_NewAssetAnimationIndex = -1;
-		TArray<EString>	m_NewAssetClipNames;
-		INT32		m_NewAssetClipIndex = -1;
-		TArray<EString>	m_NewAssetSkeletonNames;
-		INT32		m_NewAssetSkeletonIndex = -1;
-		TArray<EString>	m_NewAssetSlotNames;
-		INT32		m_NewAssetSlotIndex = -1;
-		EString		m_NewAssetSkeletonName;
-		EString		m_NewAssetError;
-
-		CHAR		m_ContentSearch[128] = { 0 };
-		BOOL8		m_bHasPendingOpen = FALSE;
-		EString		m_PendingOpenPath;
-		EAssetType	m_PendingOpenType = EAssetType::ASSET_TYPE_UNKNOWN;
-
-		CHAR		m_RenameBuffer[128] = { 0 };
-		EString		m_RenameTargetPath;
-		EAssetType	m_RenameTargetType = EAssetType::ASSET_TYPE_UNKNOWN;
-		EString		m_DeleteTargetPath;
-		EAssetType	m_DeleteTargetType = EAssetType::ASSET_TYPE_UNKNOWN;
-		EString		m_ManageAssetError;
-		BOOL8		m_bRenameRequested = FALSE;
-		BOOL8		m_bDeleteRequested = FALSE;
-		// Set by RequestContentRefresh, consumed at the top of the next EditorUpdate.
-		BOOL8		m_bContentRefreshRequested = FALSE;
-
-
+		FAssetCatalog			Catalog;
+		FAssetIconRegistry*		Icons = nullptr;
+		FContentBrowserPanel*	BrowserPanel = nullptr;
+		EAnimationWorkspace*	AnimationWorkspace = nullptr;
+		EMeshEditor*			MeshEditor = nullptr;
 	};
-
 }
+
 #endif

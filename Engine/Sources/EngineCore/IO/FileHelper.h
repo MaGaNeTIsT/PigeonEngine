@@ -31,6 +31,10 @@ namespace PigeonEngine
 		// Editor asset management: move/delete a single file without touching other files.
 		static BOOL8 MoveFile(const EString& FilePath, const EString& NewFilePath);
 		static BOOL8 DeleteFile(const EString& FilePath);
+		// Folder equivalents used by the content browser. Both report failure through the
+		// return value; the caller owns the user-facing error text.
+		static BOOL8 MoveDirectory(const EString& DirectoryPath, const EString& NewDirectoryPath);
+		static BOOL8 DeleteDirectory(const EString& DirectoryPath);
 	public:
 		EFileHelper() = delete;
 		EFileHelper(const EFileHelper&) = delete;
