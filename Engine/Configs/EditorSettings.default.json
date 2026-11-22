@@ -1,7 +1,9 @@
 {
     "Panels": {
         "Level": false,
-        "Navigation": false
+        "Navigation": false,
+        "ContentBrowser": true,
+        "OutputLog": true
     },
     "Display": {
         "ShowCollision": true,

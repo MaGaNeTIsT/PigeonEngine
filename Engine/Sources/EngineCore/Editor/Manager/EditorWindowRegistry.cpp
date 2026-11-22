@@ -22,8 +22,10 @@ namespace PigeonEngine
 		// Indexed by EEditorWindowType.
 		FEditorWindowEntry WindowEntries[EditorWindowCount] =
 		{
-			{ PE_TEXT("Level"),			FALSE	},
-			{ PE_TEXT("Navigation"),	FALSE	},
+			{ PE_TEXT("Level"),				FALSE	},
+			{ PE_TEXT("Navigation"),		FALSE	},
+			{ PE_TEXT("Content Browser"),	TRUE	},
+			{ PE_TEXT("Output Log"),		TRUE	},
 		};
 
 		BOOL32 IsValidWindow(const EEditorWindowType& InWindow)
@@ -39,6 +41,10 @@ namespace PigeonEngine
 				return EEditorSettings::IsLevelPanelVisible();
 			case EEditorWindowType::Navigation:
 				return EEditorSettings::IsNavigationPanelVisible();
+			case EEditorWindowType::ContentBrowser:
+				return EEditorSettings::IsContentBrowserPanelVisible();
+			case EEditorWindowType::OutputLog:
+				return EEditorSettings::IsOutputLogPanelVisible();
 			default:
 				return FALSE;
 			}
@@ -53,6 +59,12 @@ namespace PigeonEngine
 				break;
 			case EEditorWindowType::Navigation:
 				EEditorSettings::SetNavigationPanelVisible(bInVisible);
+				break;
+			case EEditorWindowType::ContentBrowser:
+				EEditorSettings::SetContentBrowserPanelVisible(bInVisible);
+				break;
+			case EEditorWindowType::OutputLog:
+				EEditorSettings::SetOutputLogPanelVisible(bInVisible);
 				break;
 			default:
 				break;

@@ -12,16 +12,19 @@ namespace PigeonEngine
 	{
 		Level,
 		Navigation,
+		ContentBrowser,
+		OutputLog,
 
 		Count
 	};
 
 	/*
-	* Visibility state shared by the Window menu and the two optional panels.
+	* Visibility state shared by the Window menu and the registry-managed panels.
 	*
 	* A panel draws through FScopedEditorWindow: the X button and the menu write the same
-	* flag, so closing a panel and reopening it from Window can never disagree. Both panels
-	* start hidden; the rest of the editor layout is untouched.
+	* flag, so closing a panel and reopening it from Window can never disagree. Level and
+	* Navigation start hidden; the Content Browser and Output Log start visible because
+	* they replace windows that used to be drawn unconditionally.
 	*/
 	namespace EEditorWindowRegistry
 	{

@@ -24,6 +24,8 @@ namespace PigeonEngine
 			// change them without a rebuild, and EditorSettings.user.json keeps only overrides.
 			Settings.AddBool(PE_TEXT("Panels.Level"), FALSE);
 			Settings.AddBool(PE_TEXT("Panels.Navigation"), FALSE);
+			Settings.AddBool(PE_TEXT("Panels.ContentBrowser"), TRUE);
+			Settings.AddBool(PE_TEXT("Panels.OutputLog"), TRUE);
 			Settings.AddBool(PE_TEXT("Display.ShowCollision"), TRUE);
 			Settings.AddBool(PE_TEXT("Display.ShowDebugWireframe"), FALSE);
 			Settings.AddBool(PE_TEXT("Display.ShowNavigation"), TRUE);
@@ -50,6 +52,26 @@ namespace PigeonEngine
 		void SetNavigationPanelVisible(const BOOL32& bInVisible)
 		{
 			Config().SetBool(PE_TEXT("Panels.Navigation"), bInVisible);
+		}
+
+		BOOL32 IsContentBrowserPanelVisible()
+		{
+			return Config().GetBool(PE_TEXT("Panels.ContentBrowser"));
+		}
+
+		void SetContentBrowserPanelVisible(const BOOL32& bInVisible)
+		{
+			Config().SetBool(PE_TEXT("Panels.ContentBrowser"), bInVisible);
+		}
+
+		BOOL32 IsOutputLogPanelVisible()
+		{
+			return Config().GetBool(PE_TEXT("Panels.OutputLog"));
+		}
+
+		void SetOutputLogPanelVisible(const BOOL32& bInVisible)
+		{
+			Config().SetBool(PE_TEXT("Panels.OutputLog"), bInVisible);
 		}
 
 		BOOL32 GetShowCollision()
